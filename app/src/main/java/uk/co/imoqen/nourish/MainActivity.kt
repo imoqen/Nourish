@@ -81,7 +81,7 @@ fun MainContent(modifier: Modifier = Modifier) {
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.Top
             ) {
-                Text("Nourish")
+                //Text("Nourish") //title text.
                 NourishNavigationBar(TabDestination.entries.drop(3), selectedDestinationTab, navController)
             }
             // Top navbar destinations are those after the first 3 items of the TabDestination enum (3.. end)
