@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    // Google Cloud and Firebase connection: app-level. Also in root (nourish/build.gradle.kts)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -56,4 +58,24 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    // Taken from: https://firebase.google.com/docs/android/setup At the end of this page,
+    // it also specifies all firebase services which are available to use.
+
+    // Google Firebase BOM:
+    // "By using the Firebase Android BoM, your app will always use compatible Firebase library versions."
+    // https://firebase.google.com/docs/android/learn-more
+    implementation(platform("com.google.firebase:firebase-bom:34.7.0"))
+
+    // TODO: Add the dependencies for Firebase products you want to use
+    // When using the BoM, don't specify versions in Firebase dependencies
+    // https://firebase.google.com/docs/android/setup#available-libraries
+    // For example, add the dependencies for Firebase Authentication and Cloud Firestore
+    //implementation("com.google.firebase:firebase-auth")
+    //implementation("com.google.firebase:firebase-firestore")
+
+    // Firebase Authentication
+    // When using BoM, you don't specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-auth")
+
 }
