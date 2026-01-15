@@ -14,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
@@ -55,5 +56,31 @@ fun AppNavHost(
         // can add here. then can add params to them as shown in this video: https://www.youtube.com/watch?v=wJKwsI5WUI4
         // only pass IDs, not complex data, then can find the data from the view model and it can make calls to the db.
     }
+}
 
+@Composable
+fun NourishNavigationBar(
+    navigationItems: List<TabDestination>,
+    selectedDestinationTab: Char,
+    navController: NavController
+) {
+    NavigationBar(windowInsets = NavigationBarDefaults.windowInsets) {
+        // Bottom navbar destinations are the first 3 values of the TabDestination enum (0..2)
+        navigationItems.forEachIndexed { index, destination ->
+            NavigationBarItem(
+                // If the selected destination is equal to the destination identified, highlight that as being selected
+                selected = selectedDestinationTab == destination.route[0],
+                onClick = {
+                    navController.navigate(route = destination.route) // Update the currently selected item in navigation
+                },
+                icon = {
+                    Icon(
+                        destination.icon,
+                        contentDescription = destination.iconContentDescription
+                    )
+                },
+                label = { Text(destination.title) }
+            )
+        }
+    }
 }

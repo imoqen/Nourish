@@ -5,6 +5,9 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -20,6 +23,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -28,6 +32,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import uk.co.imoqen.nourish.navigation.AppNavHost
+import uk.co.imoqen.nourish.navigation.NourishNavigationBar
 import uk.co.imoqen.nourish.navigation.TabDestination
 import uk.co.imoqen.nourish.ui.theme.NourishTheme
 
@@ -54,67 +59,34 @@ class MainActivity : ComponentActivity() {
 fun MainContent(modifier: Modifier = Modifier) {
     // Creates the navigation controller:
     val navController = rememberNavController()
+
     // The start destination to begin the app at:
     val startDestination = TabDestination.RECIPE_FINDER
 
     // Note that the selected destinations are remembered by the NavController/NavHost, so dont need to remember it here.
-    // The currently selected route to display
-    val selectedDestinationRoute = navController.currentBackStackEntryAsState().value?.destination?.route ?: startDestination.route
-    // Then the tab value of this destination, required as RouteDestinations are within tabs. So must determine which tab to display for each route.
-    var selectedDestinationTab = selectedDestinationRoute[0] // gets the first character as this encodes which tab the content is on
-
-    Log.i("selected tab", "$selectedDestinationTab and destination route: $selectedDestinationRoute")
+    // The currently selected tab value to display (dynamically determined based on the route - first char of the string x/route),
+    // required as RouteDestinations are within tabs. So must determine which tab to display for each route.
+    val selectedDestinationTab = navController.currentBackStackEntryAsState().value?.destination?.route?.firstOrNull() ?: startDestination.route[0]
 
     Scaffold(
         modifier = modifier,
         bottomBar = {
+            // Bottom navbar destinations are the first 3 values of the TabDestination enum (0..2)
+            NourishNavigationBar(TabDestination.entries.take(3), selectedDestinationTab, navController)
             // Potentially move this to Navigation.kt
-            NavigationBar(windowInsets = NavigationBarDefaults.windowInsets) {
-                // Bottom navbar destinations are the first 3 values of the TabDestination enum (0..2)
-                TabDestination.entries.take(3).forEachIndexed { index, destination ->
-                    NavigationBarItem(
-                        // If the selected destination is equal to the destination identified, highlight that as being selected
-                        selected = selectedDestinationTab == destination.route[0],
-                        onClick = {
-                            navController.navigate(route = destination.route) // Update the currently selected item in navigation
-                            selectedDestinationTab = destination.route[0] // Then select the corresponding screen to update which icon is highlighted in the navbar
-                        },
-                        icon = {
-                            Icon(
-                                destination.icon,
-                                contentDescription = destination.iconContentDescription
-                            )
-                        },
-                        label = { Text(destination.title) }
-                    )
-                }
-            }
         },
         topBar = {
-            Text("Nourish")
-            // Potentially move this to Navigation.kt
-            NavigationBar(windowInsets = NavigationBarDefaults.windowInsets) {
-                // Top navbar destinations are those after the first 3 items of the TabDestination enum (3.. end)
-                TabDestination.entries.drop(3).forEachIndexed { index, destination ->
-                    NavigationBarItem(
-                        // If the selected destination is equal to the destination identified, highlight that as being selected
-                        selected = selectedDestinationTab == destination.route[0],
-                        onClick = {
-                            navController.navigate(route = destination.route) // Update the currently selected item in navigation
-                            selectedDestinationTab = destination.route[0] // Then select the corresponding screen to update which icon is highlighted in the navbar
-                        },
-                        icon = {
-                            Icon(
-                                destination.icon,
-                                contentDescription = destination.iconContentDescription
-                            )
-                        },
-                        label = { Text(destination.title) }
-                    )
-                }
+            Row(
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.Top
+            ) {
+                Text("Nourish")
+                NourishNavigationBar(TabDestination.entries.drop(3), selectedDestinationTab, navController)
             }
+            // Top navbar destinations are those after the first 3 items of the TabDestination enum (3.. end)
         }
     ) { contentPadding ->
+        // Navigation is controlled by the app navigation host:
         AppNavHost(navController, startDestination.route, modifier = Modifier.padding(contentPadding))
     }
 }
