@@ -8,7 +8,7 @@ plugins {
     id("com.google.gms.google-services")
 
     // For navigation: https://developer.android.com/guide/navigation
-    // Kotlin serialization plugin for type safe routes and navigation arguments
+    // Kotlin serialization plugin for type safe routes and navigation arguments.
     kotlin("plugin.serialization") version "2.0.21"
 }
 
@@ -70,19 +70,6 @@ dependencies {
     // Jetpack Compose integration
     implementation("androidx.navigation:navigation-compose:$nav_version")
 
-    // Views/Fragments integration
-    implementation("androidx.navigation:navigation-fragment:$nav_version")
-    implementation("androidx.navigation:navigation-ui:$nav_version")
-
-    // Feature module support for Fragments
-    implementation("androidx.navigation:navigation-dynamic-features-fragment:$nav_version")
-
-    // Testing Navigation
-    androidTestImplementation("androidx.navigation:navigation-testing:$nav_version")
-
-    // JSON serialization library, works with the Kotlin serialization plugin
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
-
     // Taken from: https://firebase.google.com/docs/android/setup At the end of this page,
     // it also specifies all firebase services which are available to use.
 
@@ -101,5 +88,11 @@ dependencies {
     // Firebase Authentication
     // When using BoM, you don't specify versions in Firebase library dependencies
     implementation("com.google.firebase:firebase-auth")
+
+    // Firebase Google account authentication (for logins with Google):
+    // also with dependencies for the Credential Manager libraries and specify their versions
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
 }

@@ -31,6 +31,7 @@ import androidx.navigation.compose.rememberNavController
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
+import uk.co.imoqen.nourish.authentication.LoginScreen
 import uk.co.imoqen.nourish.navigation.AppNavHost
 import uk.co.imoqen.nourish.navigation.NourishNavigationBar
 import uk.co.imoqen.nourish.navigation.TabDestination
@@ -38,13 +39,13 @@ import uk.co.imoqen.nourish.ui.theme.NourishTheme
 
 class MainActivity : ComponentActivity() {
 
-    private lateinit var auth: FirebaseAuth
+    //private lateinit var auth: FirebaseAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         // Initialize Firebase Auth
-        auth = Firebase.auth
+        //auth = Firebase.auth
 
         enableEdgeToEdge()
         setContent {
@@ -93,7 +94,8 @@ fun MainContent(modifier: Modifier = Modifier) {
 
 @Composable
 fun RecipeFinderScreen() {
-    Text("Recipe Finder Screen")
+    LoginScreen()
+    //Text("Recipe Finder Screen")
 }
 
 @Composable
