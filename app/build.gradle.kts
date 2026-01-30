@@ -67,8 +67,11 @@ dependencies {
 
     // Navigation:
     val nav_version = "2.9.6"
-    // Jetpack Compose integration
     implementation("androidx.navigation:navigation-compose:$nav_version")
+
+    // ViewModel:
+    val lifecycle_version = "2.10.0"
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:${lifecycle_version}")
 
     // Taken from: https://firebase.google.com/docs/android/setup At the end of this page,
     // it also specifies all firebase services which are available to use.
