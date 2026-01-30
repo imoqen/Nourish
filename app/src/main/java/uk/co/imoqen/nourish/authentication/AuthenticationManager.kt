@@ -51,14 +51,16 @@ import java.util.UUID
 // also need to refactor a lot
 
 class AuthenticationManager(val context: Context) {
+
     private val auth = Firebase.auth
 
-    // returns the current user.
     fun getCurrentUser(): FirebaseUser? {
         return Firebase.auth.currentUser
     }
 
-    fun signOutUser() {
+    // sign out method. a different method is used in view model as it cannot access authentication manager as it uses the context.
+
+    fun firebaseSignOut() {
         if (Firebase.auth.currentUser != null) {
             Firebase.auth.signOut()
         }
@@ -97,6 +99,8 @@ class AuthenticationManager(val context: Context) {
             }
         awaitClose()
     }
+
+// left here as firebase functions. rest of functions are above
 
     private fun generateNonce(): String {
         val rawNonce = UUID.randomUUID().toString()

@@ -26,6 +26,7 @@ import uk.co.imoqen.nourish.ProfileScreen
 import uk.co.imoqen.nourish.RecipeBookScreen
 import uk.co.imoqen.nourish.SettingsScreen
 import uk.co.imoqen.nourish.ShoppingListScreen
+import uk.co.imoqen.nourish.authentication.AuthenticationUiState
 import uk.co.imoqen.nourish.authentication.AuthenticationViewModel
 
 
@@ -35,6 +36,8 @@ import uk.co.imoqen.nourish.authentication.AuthenticationViewModel
 fun AppNavHost(
     navController: NavHostController,
     startDestination: String,
+    loggedinEmailAddress: String,
+    signOut: () -> Unit, // method for signing out
     modifier: Modifier
 ) {
 
@@ -53,13 +56,15 @@ fun AppNavHost(
             // as the authentication view model is used across the app,
             //val authenticationViewModel: AuthenticationViewModel = viewModel()
             // The composable to display for this tab:
-            RecipeFinderScreen()
+            RecipeFinderScreen(loggedinEmailAddress)
         }
         composable(TabDestination.RECIPE_BOOK.route) { RecipeBookScreen() }
         composable(TabDestination.SHOPPING_LIST.route) { ShoppingListScreen() }
 
         // Top Navbar: Tab destinations
-        composable(TabDestination.PROFILE.route) { ProfileScreen() }
+        composable(TabDestination.PROFILE.route) { ProfileScreen(
+            signOut
+        ) }
         composable(TabDestination.SETTINGS.route) { SettingsScreen() }
 
         // From within screens:

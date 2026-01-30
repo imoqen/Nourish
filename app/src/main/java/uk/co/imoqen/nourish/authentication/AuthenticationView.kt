@@ -29,6 +29,7 @@ import uk.co.imoqen.nourish.ui.theme.NourishTheme
 
 @Composable
 fun LoginScreen(
+    modifier: Modifier,
     authenticationViewModel: AuthenticationViewModel
 ) {
 
@@ -47,22 +48,10 @@ fun LoginScreen(
 
 
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize()
     ) {
 
 
-
-        if(uiState.currentUser != null) {
-            Text("Logged in with email: ${uiState.currentUser?.email}")
-            Button(
-                onClick = {
-                    authenticationManager.signOutUser() // sign out in firebase
-                    authenticationViewModel.setLoggedInUser(null) // sign out locally by changing the auth current user state via the method
-                }
-            ) {
-                Text("Sign out")
-            }
-        } else {
 
             Text("Sign in")
             // email:
@@ -131,7 +120,7 @@ fun LoginScreen(
                 Text("Sign in with Google")
             }
         }
-    }
+
 }
 
 /*@Preview(showBackground = true)
