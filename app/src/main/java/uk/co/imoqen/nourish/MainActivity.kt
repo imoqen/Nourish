@@ -31,6 +31,7 @@ import androidx.navigation.compose.rememberNavController
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
+import uk.co.imoqen.nourish.authentication.AuthenticationViewModel
 import uk.co.imoqen.nourish.authentication.LoginScreen
 import uk.co.imoqen.nourish.navigation.AppNavHost
 import uk.co.imoqen.nourish.navigation.NourishNavigationBar
@@ -93,8 +94,10 @@ fun MainContent(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun RecipeFinderScreen() {
-    LoginScreen()
+fun RecipeFinderScreen(
+    authenticationViewModel: AuthenticationViewModel
+) {
+    LoginScreen(authenticationViewModel)
     //Text("Recipe Finder Screen")
 }
 

@@ -18,10 +18,26 @@ class AuthenticationViewModel: ViewModel() {
     // is observable from the Authentication composables.
     val uiState: StateFlow<AuthenticationUiState> = mutableUiState.asStateFlow()
 
-    fun setLoggedInUser(firebaseUser: FirebaseUser) {
+    fun setLoggedInUser(firebaseUser: FirebaseUser?) {
         mutableUiState.update { currentState ->
             currentState.copy(
                 currentUser = firebaseUser
+            )
+        }
+    }
+
+    fun setEmail(email: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                email = email
+            )
+        }
+    }
+
+    fun setPassword(password: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                password = password
             )
         }
     }

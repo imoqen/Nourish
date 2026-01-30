@@ -14,7 +14,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
@@ -24,6 +26,7 @@ import uk.co.imoqen.nourish.ProfileScreen
 import uk.co.imoqen.nourish.RecipeBookScreen
 import uk.co.imoqen.nourish.SettingsScreen
 import uk.co.imoqen.nourish.ShoppingListScreen
+import uk.co.imoqen.nourish.authentication.AuthenticationViewModel
 
 
 // Navigation host: https://developer.android.com/guide/navigation/design#compose
@@ -34,6 +37,7 @@ fun AppNavHost(
     startDestination: String,
     modifier: Modifier
 ) {
+
     NavHost(
         navController = navController,
         startDestination = startDestination,
@@ -42,7 +46,15 @@ fun AppNavHost(
         // From the navigation bar, to go to certain screens:
 
         // Bottom Navbar: Tab destinations
-        composable(TabDestination.RECIPE_FINDER.route) { RecipeFinderScreen() }
+        composable(TabDestination.RECIPE_FINDER.route) {
+            // View models to pass in:
+            // PUT VIEW MODELS USED SPECIFICALLY ONLY IN EACH SCREEN, IN THESE.
+            // if share, can declare it on line 40 (above NavHost) in this composable and pass into both. (havent tested this but assume it will work)
+            // as the authentication view model is used across the app,
+            //val authenticationViewModel: AuthenticationViewModel = viewModel()
+            // The composable to display for this tab:
+            RecipeFinderScreen()
+        }
         composable(TabDestination.RECIPE_BOOK.route) { RecipeBookScreen() }
         composable(TabDestination.SHOPPING_LIST.route) { ShoppingListScreen() }
 
@@ -71,7 +83,16 @@ fun NourishNavigationBar(
                 // If the selected destination is equal to the destination identified, highlight that as being selected
                 selected = selectedDestinationTab == destination.route[0],
                 onClick = {
-                    navController.navigate(route = destination.route) // Update the currently selected item in navigation
+                    navController.navigate(route = destination.route) { // Update the currently selected item in navigation
+                        launchSingleTop = true // ensures destinations are not duplicated
+                        // the following 4 lines are to prevent previous destinations from being destroyed and recreated
+                        // e.g. a -> b -> a, to use the same a as the start:
+                        // from android docs https://developer.android.com/guide/navigation/backstack/multi-back-stacks
+                        restoreState = true
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                    }
                 },
                 icon = {
                     Icon(
