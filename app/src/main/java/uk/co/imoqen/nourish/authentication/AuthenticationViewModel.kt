@@ -27,6 +27,9 @@ class AuthenticationViewModel: ViewModel() {
 
     private val auth = Firebase.auth
 
+    // SEPARATION OF CONCERNS: ui state vs state
+
+    // UI STATE:
     // Purpose: pattern to encapsulate the mutable state to ensure it is not mutable from the viewmodel.
     // this is what is editable, only within this view model and not within composables.
     // pattern taken from advice in: https://medium.com/@rowaido.game/managing-ui-states-in-jetpack-compose-7eb15e4f6931
@@ -36,14 +39,33 @@ class AuthenticationViewModel: ViewModel() {
     // is observable from the Authentication composables.
     val uiState: StateFlow<AuthenticationUiState> = mutableUiState.asStateFlow()
 
+    // STATE:
+    private val mutableState = MutableStateFlow(AuthenticationState())
+    val state: StateFlow<AuthenticationState> = mutableState.asStateFlow()
+
+    // STATE:
+    // update logged in user
     fun setLoggedInUser(firebaseUser: FirebaseUser?) {
-        mutableUiState.update { currentState ->
+        mutableState.update { currentState ->
             currentState.copy(
                 currentUser = firebaseUser
             )
         }
     }
+    fun signOut() {
+        mutableState.update { currentState ->
+            currentState.copy(
+                currentUser = null // simply set the current user to be null
+            )
+        }
+        // then sign out on firebase too:
+        if (Firebase.auth.currentUser != null) {
+            Firebase.auth.signOut()
+        }
+        Log.i("logout", "current firebase user: ${Firebase.auth.currentUser}, current local user: ${mutableState.value.currentUser}")
+    }
 
+    // UI STATE:
     fun setEmail(email: String) {
         mutableUiState.update { currentState ->
             currentState.copy(
@@ -60,16 +82,35 @@ class AuthenticationViewModel: ViewModel() {
         }
     }
 
-    fun signOut() {
+    fun setStatus(status: AuthenticationUiStatus) {
         mutableUiState.update { currentState ->
             currentState.copy(
-                currentUser = null // simply set the current user to be null
+                status = status
             )
         }
-        // then sign out on firebase too:
-        if (Firebase.auth.currentUser != null) {
-            Firebase.auth.signOut()
+    }
+
+    fun setSignupEmail(signupEmail: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                signupEmail = signupEmail
+            )
         }
-        Log.i("logout", "current firebase user: ${Firebase.auth.currentUser}, current local user: ${uiState.value.currentUser}")
+    }
+
+    fun setSignupPassword(signupPassword: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                signupPassword = signupPassword
+            )
+        }
+    }
+
+    fun setSignupPasswordConfirmation(signupPasswordConfirmation: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                signupPasswordConfirmation = signupPasswordConfirmation
+            )
+        }
     }
 }

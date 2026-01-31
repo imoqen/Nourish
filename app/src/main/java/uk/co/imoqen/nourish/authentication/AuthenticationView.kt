@@ -1,6 +1,7 @@
 package uk.co.imoqen.nourish.authentication
 
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -51,7 +52,8 @@ fun LoginScreen(
         modifier = modifier.fillMaxSize()
     ) {
 
-
+        // display login view:
+        if (uiState.status == AuthenticationUiStatus.LOGIN) {
 
             Text("Sign in")
             // email:
@@ -72,7 +74,7 @@ fun LoginScreen(
             OutlinedTextField(
                 value = uiState.password,
                 onValueChange = { newPassword ->
-                    authenticationViewModel.setEmail(newPassword)
+                    authenticationViewModel.setPassword(newPassword)
                 },
                 placeholder = {
                     Text("Enter password")
@@ -86,7 +88,10 @@ fun LoginScreen(
 
             Button(
                 onClick = {
-                    authenticationManager.signInWithEmailAndPassword(uiState.email, uiState.password)
+                    authenticationManager.signInWithEmailAndPassword(
+                        uiState.email,
+                        uiState.password
+                    )
                         .onEach { response ->
                             if (response is AuthenticationResponse.Success) {
                                 Log.i("login", "login success username password")
@@ -101,6 +106,16 @@ fun LoginScreen(
             ) {
                 Text("Sign in")
             }
+
+            Text("Don't have an account?")
+            Button(
+                onClick = {
+                    authenticationViewModel.setStatus(AuthenticationUiStatus.SIGNUP)
+                }
+            ) {
+                Text("Sign up")
+            }
+            Text("Or:")
 
             Button(
                 onClick = {
@@ -120,7 +135,87 @@ fun LoginScreen(
                 Text("Sign in with Google")
             }
         }
+        // otherwise display sign up:
+        else {
+            BackHandler {
+                // handle back button press by going back to login view if on sign up view:
+                authenticationViewModel.setStatus(AuthenticationUiStatus.LOGIN)
+            }
 
+            // back to login?:
+            Button(
+                onClick = {
+                    authenticationViewModel.setStatus(AuthenticationUiStatus.LOGIN)
+                }
+            ) {
+                Text("Back to login")
+            }
+
+            // sign up form:
+            OutlinedTextField(
+                value = uiState.signupEmail,
+                onValueChange = { newEmail ->
+                    authenticationViewModel.setSignupEmail(newEmail)
+                },
+                placeholder = {
+                    Text("Enter email address")
+                },
+                leadingIcon = {
+                    Icons.Filled.MailOutline
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+            // password:
+            OutlinedTextField(
+                value = uiState.signupPassword,
+                onValueChange = { newPassword ->
+                    authenticationViewModel.setSignupPassword(newPassword)
+                },
+                placeholder = {
+                    Text("Enter password")
+                },
+                leadingIcon = {
+                    Icons.Filled.Lock
+                },
+                visualTransformation = PasswordVisualTransformation(), // to prevent password from being visible when typed
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = uiState.signupPasswordConfirmation,
+                onValueChange = { newPassword ->
+                    authenticationViewModel.setSignupPasswordConfirmation(newPassword)
+                },
+                placeholder = {
+                    Text("Confirm password")
+                },
+                leadingIcon = {
+                    Icons.Filled.Lock
+                },
+                visualTransformation = PasswordVisualTransformation(), // to prevent password from being visible when typed
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Button(
+                onClick = {
+                    if (uiState.signupPassword == uiState.signupPasswordConfirmation) {
+                        authenticationManager.signUpWithUsernameAndPassword(uiState.signupEmail, uiState.signupPassword)
+                            .onEach { response ->
+                                if (response is AuthenticationResponse.Success) {
+                                    Log.i("signup", "login success signup")
+                                    // redetermine the logged in user to trigger recomposition:
+                                    authenticationViewModel.setLoggedInUser(authenticationManager.getCurrentUser())
+                                } else {
+                                    Log.i("signup", "login error signup")
+                                }
+                            }
+                            .launchIn(coroutineScope) // have to launch in coroutine scope or else wont return anything
+                    }
+                }
+            ) {
+                Text("Sign up")
+            }
+        }
+    }
 }
 
 /*@Preview(showBackground = true)

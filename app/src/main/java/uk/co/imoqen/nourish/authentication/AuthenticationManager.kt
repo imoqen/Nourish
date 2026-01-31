@@ -68,7 +68,7 @@ class AuthenticationManager(val context: Context) {
     }
 
     // adapted from android docs:
-    fun createUserWithEmailAndPassword(
+    fun signUpWithUsernameAndPassword(
         email: String, password: String
     ): Flow<AuthenticationResponse> = callbackFlow {
         auth.createUserWithEmailAndPassword(email, password)

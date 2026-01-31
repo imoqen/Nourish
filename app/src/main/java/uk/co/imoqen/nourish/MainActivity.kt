@@ -73,8 +73,8 @@ fun MainContent(modifier: Modifier = Modifier) {
     // authentication view model, used across the whole app therefore declared here:
     val authenticationViewModel: AuthenticationViewModel = viewModel()
 
-    // get the authentication state:
-    val authenticationState by authenticationViewModel.uiState.collectAsState()
+    // get the authentication state (not the ui state as this is used only in the authentication view):
+    val authenticationState by authenticationViewModel.state.collectAsState()
 
     Log.i("inii", "intiialis")
 
