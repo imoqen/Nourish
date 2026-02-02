@@ -98,4 +98,8 @@ dependencies {
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
+    // For HTTP requests and responses. retrofit: https://github.com/square/retrofit
+    implementation("com.squareup.retrofit2:retrofit:3.0.0")
+    // json converter
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 }
