@@ -79,7 +79,8 @@ dependencies {
     // Google Firebase BOM:
     // "By using the Firebase Android BoM, your app will always use compatible Firebase library versions."
     // https://firebase.google.com/docs/android/learn-more
-    implementation(platform("com.google.firebase:firebase-bom:34.7.0"))
+    // for firebase auth and firebase firestore.
+    implementation(platform("com.google.firebase:firebase-bom:34.8.0"))
 
     // TODO: Add the dependencies for Firebase products you want to use
     // When using the BoM, don't specify versions in Firebase dependencies
@@ -102,4 +103,9 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:3.0.0")
     // json converter
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // Firebase Firestore (database):
+    // Declare the dependency for the Cloud Firestore library
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-firestore")
 }

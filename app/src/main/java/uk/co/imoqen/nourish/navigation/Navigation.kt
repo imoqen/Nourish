@@ -22,6 +22,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import uk.co.imoqen.nourish.RecipeFinderScreen
 import androidx.navigation.compose.composable
+import com.google.firebase.auth.FirebaseUser
 import uk.co.imoqen.nourish.ProfileScreen
 import uk.co.imoqen.nourish.RecipeBookScreen
 import uk.co.imoqen.nourish.SettingsScreen
@@ -36,7 +37,7 @@ import uk.co.imoqen.nourish.authentication.AuthenticationViewModel
 fun AppNavHost(
     navController: NavHostController,
     startDestination: String,
-    loggedinEmailAddress: String,
+    loggedInUser: FirebaseUser,
     signOut: () -> Unit, // method for signing out
     modifier: Modifier
 ) {
@@ -56,7 +57,7 @@ fun AppNavHost(
             // as the authentication view model is used across the app,
             //val authenticationViewModel: AuthenticationViewModel = viewModel()
             // The composable to display for this tab:
-            RecipeFinderScreen(loggedinEmailAddress)
+            RecipeFinderScreen(loggedInUser)
         }
         composable(TabDestination.RECIPE_BOOK.route) { RecipeBookScreen() }
         composable(TabDestination.SHOPPING_LIST.route) { ShoppingListScreen() }

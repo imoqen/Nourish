@@ -5,55 +5,44 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.NonNull
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarDefaults
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.google.firebase.Firebase
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.auth
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.GetTokenResult
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import uk.co.imoqen.nourish.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.authentication.AuthenticationViewModel
 import uk.co.imoqen.nourish.authentication.LoginScreen
 import uk.co.imoqen.nourish.navigation.AppNavHost
 import uk.co.imoqen.nourish.navigation.NourishNavigationBar
 import uk.co.imoqen.nourish.navigation.TabDestination
 import uk.co.imoqen.nourish.network.ApiClient
-import uk.co.imoqen.nourish.network.ApiResponse
-import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.LlmRequest
 import uk.co.imoqen.nourish.network.LlmResponse
 import uk.co.imoqen.nourish.ui.theme.NourishTheme
+
 
 class MainActivity : ComponentActivity() {
 
@@ -91,7 +80,9 @@ fun MainContent(modifier: Modifier = Modifier) {
 
     Log.i("inii", "intiialis")
 
-    if (authenticationState.currentUser == null) {
+    val loggedInUser = authenticationState.currentUser
+
+    if (loggedInUser == null) {
         // display sign up page if null
         Scaffold(
             modifier = modifier,
@@ -127,7 +118,7 @@ fun MainContent(modifier: Modifier = Modifier) {
         ) { contentPadding ->
             // Navigation is controlled by the app navigation host, also with the auth state and sign out method passed in.
             // current user must not be null here so !! can be used, since check was above. as must be logged in.
-            AppNavHost(navController, startDestination.route, authenticationState.currentUser!!.email!!, authenticationViewModel::signOut, modifier = Modifier.padding(contentPadding))
+            AppNavHost(navController, startDestination.route, loggedInUser, authenticationViewModel::signOut, modifier = Modifier.padding(contentPadding))
 
         }
     }
@@ -136,12 +127,13 @@ fun MainContent(modifier: Modifier = Modifier) {
 
 @Composable
 fun RecipeFinderScreen(
-    email: String
+    loggedInUser: FirebaseUser,
+    authenticationViewModel: AuthenticationViewModel = viewModel()
     //authenticationViewModel: AuthenticationViewModel put view models here
 ) {
     //LoginScreen()
     Column() {
-        Text("Recipe Finder Screen, hello $email")
+        Text("Recipe Finder Screen, hello ${loggedInUser.email}")
 
         val data = rememberSaveable { mutableStateOf("") }
         val userInput = rememberSaveable { mutableStateOf("") }
@@ -156,7 +148,6 @@ fun RecipeFinderScreen(
             },
             modifier = Modifier.fillMaxWidth()
         )
-
         // will fail if: NO INTERNET PERMISSIONS GRANTED OR POOR INTERNET CONNECTION. need to handle exception, not currently being handled.
         // permission has been added to the android manifest to get internet permission.
 
@@ -165,28 +156,46 @@ fun RecipeFinderScreen(
         Button(
             onClick = {
                 val request = LlmRequest("Generate a recipe for this food, give fewest steps and list ingredients at the start. Don't say okay lets do it etc, just get straight to the recipe. Keep it in under 100 words, list ingredients all on one line and dont do formatting apart from new lines for each recipe step: $userInput")
-                val call = ApiClient.apiService.generateRecipe(request)
+                val loggedInToken = FirebaseAuth.getInstance().currentUser!!.getIdToken(true).addOnSuccessListener { tokenResult ->
+                    Log.i("true token", "true: ${tokenResult.token}")
+                }
+                val token = loggedInUser.getIdToken(true).addOnSuccessListener { tokenResult ->
+                    // if token is obtained, send request with that token
+                    val token = tokenResult.token
+                    Log.i("token success:", "the token is: $token")
+                    if (token != null) {
+                        val call = ApiClient.apiService.generateRecipe(request, "Bearer $token")
 
-                // callback, call, response etc are all retrofit2. not javax. had issue where used javax
-                call.enqueue(object : Callback<LlmResponse> {
-                    override fun onResponse(
-                        call: Call<LlmResponse>,
-                        response: Response<LlmResponse>
-                    ) {
-                        if (response.isSuccessful) {
-                            val post = response.body()
-                            if (post != null) {
-                                data.value = post.text // gets the text field from the response
+                        // callback, call, response etc are all retrofit2. not javax. had issue where used javax
+                        call.enqueue(object : Callback<LlmResponse> {
+                            override fun onResponse(
+                                call: Call<LlmResponse>,
+                                response: Response<LlmResponse>
+                            ) {
+                                if (response.isSuccessful) {
+                                    val post = response.body()
+                                    if (post != null) {
+                                        data.value =
+                                            post.text // gets the text field from the response
+                                    }
+                                } else {
+                                    Log.i("api error", "an error occurred")
+                                }
                             }
-                        } else {
-                            Log.i("api error", "an error occurred")
-                        }
+
+                            override fun onFailure(call: Call<LlmResponse>, t: Throwable) {
+                                Log.i("api failure", "a failure occurred")
+                            }
+                        })
+                    }
+                }
+                    .addOnFailureListener {
+                        // otherwise return error
+                        Log.i("error", "error while getting token")
                     }
 
-                    override fun onFailure(call: Call<LlmResponse>, t: Throwable) {
-                        Log.i("api failure", "a failure occurred")
-                    }
-                })
+
+
             }
         ) {
             Text("Click me to make the POST request")
