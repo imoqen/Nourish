@@ -32,6 +32,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.auth
+import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -52,10 +53,48 @@ import java.util.UUID
 
 class AuthenticationManager(val context: Context) {
 
+    // firebase authentication:
     private val auth = Firebase.auth
+
+    // firestore:
+    private val db = Firebase.firestore
 
     fun getCurrentUser(): FirebaseUser? {
         return Firebase.auth.currentUser
+    }
+
+    // once creating the user in the firebase authentication, put them in the firestore too
+    fun addUserToFirestore(user: FirebaseUser) {
+        // adding data to firestore: https://firebase.google.com/docs/firestore/quickstart#android
+        val userData = hashMapOf(
+            "email" to user.email,
+        )
+
+        // adds the uid to the users and updates if already exists
+        db.collection("users")
+            .document(user.uid) // adds new doc with uid title
+            .set(userData) // sets the email of the user in it
+            .addOnSuccessListener {
+                Log.d("Firestore Add", "User (${user.email}) with uid ${user.uid} successfully added to Firestore")
+            }
+            .addOnFailureListener { e ->
+                Log.d("Firestore Add", "User could not be added to Firestore: $e")
+            }
+    }
+
+    fun addIfNotExists(user: FirebaseUser) {
+        // check if document with uid already exists:
+        db.collection("users").document(user.uid)
+            .get()
+            .addOnSuccessListener { result ->
+                if (!result.exists()) {
+                    addUserToFirestore(user)
+                }
+                // otherwise dont add, as already exists.
+            }
+            .addOnFailureListener { e ->
+                Log.d("Firestore error", "error: $e")
+            }
     }
 
     // sign out method. a different method is used in view model as it cannot access authentication manager as it uses the context.
@@ -76,6 +115,7 @@ class AuthenticationManager(val context: Context) {
                 if (task.isSuccessful) {
                     // user created successfully
                     trySend(AuthenticationResponse.Success)
+                    addIfNotExists(auth.currentUser!!) // create account in firestore too
                 } else {
                     // user not created successfully
                     trySend(
@@ -93,6 +133,8 @@ class AuthenticationManager(val context: Context) {
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     trySend(AuthenticationResponse.Success)
+                    // user is now logged in: add them to firebase if not already.
+                    addIfNotExists(auth.currentUser!!)
                 } else {
                     trySend(AuthenticationResponse.Error(errorMessage = task.exception?.message ?: ""))
                 }
@@ -150,6 +192,8 @@ class AuthenticationManager(val context: Context) {
                             .addOnCompleteListener { task ->
                                 if (task.isSuccessful) {
                                     trySend(AuthenticationResponse.Success)
+                                    // user is now logged in: add them to firebase if not already.
+                                    addIfNotExists(auth.currentUser!!)
                                 } else {
                                     Log.i("login error", "${task.exception?.message}")
                                     trySend(AuthenticationResponse.Error(errorMessage = task.exception?.message ?: ""))
