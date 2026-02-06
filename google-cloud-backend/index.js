@@ -2,7 +2,7 @@ const { GoogleGenAI } = require('@google/genai');
 const express = require('express')
 
 // firebase admin SDK and firestore:
-const { initializeApp, applicationDefault, cert } = require('firebase-admin/app'); // firebase admin sdk
+const { initializeApp } = require('firebase-admin/app'); // firebase admin sdk
 // authentication for users:
 const { getAuth } = require("firebase-admin/auth"); // auth method from firebase
 // firestore:
@@ -19,76 +19,56 @@ initializeApp(); // admin sdk initialised, uses application default credentials
 // the firestore database:
 const db = getFirestore();
 
-async function getUserData(uid) {
+async function rateLimitUser(uid) {
   const userRef = db.collection("users").doc(uid)
-  userRef.get().then((userDoc) => {
-    console.log("Doc gotten successfully: " + JSON.stringify(userDoc))
-    if (userDoc.exists) { // use .exists property not .exists(). exists is for admin SDK which is used in the cloud run service. .exists() is for the client app (kotlin)
-      //console.log("SUCCESS: User " + uid + " data: " + JSON.stringify(doc.data()));
-      const dateToday = new Date().toJSON().slice(0,10);
-      //const dailyTokensRef = userRef.collection("token-usage").doc(dateToday) // check if document exists for token usage today. if it doesnt, create it with value 0. if it does, increment it.
-      //console.log("daily tokens: " + JSON.stringify(dailyTokensRef))
-      console.log("doc exists")
 
-      //const collection = admin.firestore().collection("collection")
+  try {
+  const userDoc = await userRef.get()
 
-      // check that token limit for today has not been exceeded:
-      userRef.collection("token-usage").doc(dateToday).get().then((tokenDoc) => {
-        if (tokenDoc.exists) {
-          if (tokenDoc.get("amount") < 100) {
-            console.log("amount is less than 100 - valid.")
-            const inc = FieldValue.increment(1)      
-            // increments by 1 , and makes it if it doesnt exist:
-            userRef.collection("token-usage").doc(dateToday).set({amount: inc}, {merge: true}).then(
-              console.log("successfully updated token usage.")
-             )
+  console.log("Doc gotten successfully: " + JSON.stringify(userDoc))
+  if (userDoc.exists) { // use .exists property not .exists(). exists is for admin SDK which is used in the cloud run service. .exists() is for the client app (kotlin)
+    //console.log("SUCCESS: User " + uid + " data: " + JSON.stringify(doc.data()));
+    const dateToday = new Date().toJSON().slice(0,10);
+    //const dailyTokensRef = userRef.collection("token-usage").doc(dateToday) // check if document exists for token usage today. if it doesnt, create it with value 0. if it does, increment it.
+    //console.log("daily tokens: " + JSON.stringify(dailyTokensRef))
+    console.log("doc exists")
 
-          } else {
-            console.log("amount exceeds 100 - invalid.")
-          }
-        } else {
-          console.log("amount = 0, valid.")
-          const inc = FieldValue.increment(1)      
-          // increments by 1 , and makes it if it doesnt exist:
-          userRef.collection("token-usage").doc(dateToday).set({amount: inc}, {merge: true}).then(
-           console.log("successfully updated token usage.")
-          )
+    //const collection = admin.firestore().collection("collection")
 
-        }
-      })
-
-      /*dailyTokensRef.get().then((dailyTokensDoc) => {
-        if (dailyTokensDoc.exists) {
-          console.log("SUCCESS: daily tokens doc exists. need to increment with value +1")
-          dailyTokensRef.set({
-            amount: dailyTokensRef.data.amount + 1
-          }).then(() => {
-              console.log("Document successfully written!");
-          })
-          .catch((error) => {
-              console.error("Error writing document: ", error);
-          });
-        } else {
-          console.log("doesnt exist - need to make with value 1")
-          dailyTokensRef.set({
-            amount: 0
-          }).then(() => {
-              console.log("Document successfully written!");
-          })
-          .catch((error) => {
-              console.error("Error writing document: ", error);
-          });
-        }
-      })*/
-
+    // check that token limit for today has not been exceeded:
+    const tokenAmountDoc = await userRef.collection("token-usage").doc(dateToday).get()
+    if (tokenAmountDoc.exists) {
+      if (tokenAmountDoc.get("amount") < 100) {
+        console.log("amount is less than 100 - valid.")
+        await updateUserTokenCount(userRef, dateToday, 1);
+        return true;
+      } else {
+        console.log("amount exceeds 100 - invalid.")
+        return false;
+      }
     } else {
-      console.log("ERROR: User " + uid + " could not be found!");
+      console.log("amount = 0, valid.")
+      await updateUserTokenCount(userRef, dateToday, 1);
+      return true;
     }
-  }).catch((error) => {
-    console.log("Error " + JSON.stringify(userRef) + "getting document:" + error);
-  })
+  }
 
+   else {
+    console.log("ERROR: User " + uid + " could not be found!");
+  }
+
+  }
+  catch(error) {
+    console.log("Error " + JSON.stringify(userRef) + "getting document:" + error);
+  }
   
+}
+
+async function updateUserTokenCount(userRef, date, incrementAmount) {
+  const inc = FieldValue.increment(incrementAmount) // will increment the value by the increment amount  
+  userRef.collection("token-usage").doc(date).set({amount: inc}, {merge: true}).then(
+    console.log("successfully updated token usage.")
+  )
 }
 
 async function generateContent(
@@ -120,36 +100,38 @@ async function generate(
     const prompt = req.body?.prompt;
     if (!prompt) return res.status(400).json({ error: "Missing or malformed prompt." });
 
-    const tokenIsValid = await validateToken(req)
-    console.log("token validation result: " + tokenIsValid)
+    const requesterUid = await authenticateUser(req)
+    if (requesterUid == null) return res.status(500).json({ error: "Invalid or non existent bearer token" });
 
-    if (tokenIsValid) {
+    if (! await rateLimitUser(requesterUid)) return res.status(500).json({ error: "Token limit exceeded. Come back tomorrow" });
 
-    const text = await generateContent(
-      GOOGLE_CLOUD_PROJECT,
-      GOOGLE_CLOUD_LOCATION,
-      prompt
-    );
+    // if not null, user must be authenticated with uid requesterUid found in authenticateUser
+  
+      // if can successfully rate limit, allow the user to query the llm. otherwise return "rate limit exceeded" error
+    
 
-    res.json({ text });
-
-    } else {
-      res.status(500).json({ error: "Invalid or non existent bearer token" });
-    }
+        const text = await generateContent(
+          GOOGLE_CLOUD_PROJECT,
+          GOOGLE_CLOUD_LOCATION,
+          prompt
+        );
+        res.json({ text });
 
   } catch (e) {
     console.error(e);
-    res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: e.message });
   }
    
 }
 
-async function validateToken(req) {
+// returns:
+// null if user not authenticated. uid of the user if authenticated.
+async function authenticateUser(req) {
   const auth = req.get("Authorization"); // gets the authorisation header via express (Authorization)
   console.log("header: " + auth)
   if (auth == null) {
     // auth header is missing
-    return false
+    return null
   }
   // check that it is a Bearer token
   if (!auth.startsWith("Bearer ")) {
@@ -160,12 +142,12 @@ async function validateToken(req) {
     try {
       const decodedToken = await getAuth().verifyIdToken(bearer)
       console.log("user who made req: " + decodedToken.uid)
-      getUserData(decodedToken.uid)
+      //await rateLimitUser(decodedToken.uid)
       // code reached this point therefore it must be valid
-      return true
+      return decodedToken.uid
     } catch (e) {
       // validation failed.
-      return false
+      return null
     }
 }
 
