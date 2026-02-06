@@ -32,12 +32,30 @@ async function getUserData(uid) {
 
       //const collection = admin.firestore().collection("collection")
 
-      const inc = FieldValue.increment(1)
-      const objectFromExcel = { "amount": inc } 
-      // increments by 1 , and makes it if it doesnt exist:
-      userRef.collection("token-usage").doc(dateToday).set({amount: inc}, {merge: true}).then(
-        console.log("successfully updated token usage.")
-      )
+      // check that token limit for today has not been exceeded:
+      userRef.collection("token-usage").doc(dateToday).get().then((tokenDoc) => {
+        if (tokenDoc.exists) {
+          if (tokenDoc.get("amount") < 100) {
+            console.log("amount is less than 100 - valid.")
+            const inc = FieldValue.increment(1)      
+            // increments by 1 , and makes it if it doesnt exist:
+            userRef.collection("token-usage").doc(dateToday).set({amount: inc}, {merge: true}).then(
+              console.log("successfully updated token usage.")
+             )
+
+          } else {
+            console.log("amount exceeds 100 - invalid.")
+          }
+        } else {
+          console.log("amount = 0, valid.")
+          const inc = FieldValue.increment(1)      
+          // increments by 1 , and makes it if it doesnt exist:
+          userRef.collection("token-usage").doc(dateToday).set({amount: inc}, {merge: true}).then(
+           console.log("successfully updated token usage.")
+          )
+
+        }
+      })
 
       /*dailyTokensRef.get().then((dailyTokensDoc) => {
         if (dailyTokensDoc.exists) {
