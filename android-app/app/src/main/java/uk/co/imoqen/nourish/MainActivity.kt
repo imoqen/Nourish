@@ -25,9 +25,12 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GetTokenResult
+import com.google.firebase.auth.auth
+import com.google.gson.Gson
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -37,6 +40,7 @@ import uk.co.imoqen.nourish.navigation.AppNavHost
 import uk.co.imoqen.nourish.navigation.NourishNavigationBar
 import uk.co.imoqen.nourish.navigation.TabDestination
 import uk.co.imoqen.nourish.network.ApiClient
+import uk.co.imoqen.nourish.network.LlmError
 import uk.co.imoqen.nourish.network.LlmRequest
 import uk.co.imoqen.nourish.network.LlmResponse
 import uk.co.imoqen.nourish.ui.theme.NourishTheme
@@ -132,6 +136,7 @@ fun RecipeFinderScreen(
         Text("Recipe Finder Screen, hello ${loggedInUser.email}")
 
         val data = rememberSaveable { mutableStateOf("") }
+        val responseError = rememberSaveable { mutableStateOf("") }
         val userInput = rememberSaveable { mutableStateOf("") }
 
         OutlinedTextField(
@@ -151,47 +156,53 @@ fun RecipeFinderScreen(
         // https://medium.com/@imkuldeepsinghrai/api-calls-with-retrofit-in-android-kotlin-a-comprehensive-guide-e049e19deba9
         Button(
             onClick = {
-                val request = LlmRequest("Generate a recipe for this food, give fewest steps and list ingredients at the start. Don't say okay lets do it etc, just get straight to the recipe. Keep it in under 100 words, list ingredients all on one line and dont do formatting apart from new lines for each recipe step: $userInput")
-                val loggedInToken = FirebaseAuth.getInstance().currentUser!!.getIdToken(true).addOnSuccessListener { tokenResult ->
-                    Log.i("true token", "true: ${tokenResult.token}")
-                }
-                val token = loggedInUser.getIdToken(true).addOnSuccessListener { tokenResult ->
-                    // if token is obtained, send request with that token
-                    val token = tokenResult.token
-                    Log.i("token success:", "the token is: $token")
-                    if (token != null) {
-                        val call = ApiClient.apiService.generateRecipe(request, "Bearer $token")
+                if (userInput.value == "") { responseError.value = "Prompt cannot be blank."
+                } else {
+                    val request =
+                        LlmRequest("Test request. simply reply with the following text plus test appended if you received this: ${userInput.value}")
+                    val loggedInToken = FirebaseAuth.getInstance().currentUser!!.getIdToken(true)
+                        .addOnSuccessListener { tokenResult ->
+                            Log.i("true token", "true: ${tokenResult.token}")
+                        }
+                    val token = loggedInUser.getIdToken(true).addOnSuccessListener { tokenResult ->
+                        // if token is obtained, send request with that token
+                        val token = tokenResult.token
+                        Log.i("token success:", "the token is: $token")
+                        if (token != null) {
+                            val call = ApiClient.apiService.generateRecipe(request, "Bearer $token")
 
-                        // callback, call, response etc are all retrofit2. not javax. had issue where used javax
-                        call.enqueue(object : Callback<LlmResponse> {
-                            override fun onResponse(
-                                call: Call<LlmResponse>,
-                                response: Response<LlmResponse>
-                            ) {
-                                if (response.isSuccessful) {
-                                    val post = response.body()
-                                    if (post != null) {
-                                        data.value =
-                                            post.text // gets the text field from the response
+                            // callback, call, response etc are all retrofit2. not javax. had issue where used javax
+                            call.enqueue(object : Callback<LlmResponse> {
+                                override fun onResponse(
+                                    call: Call<LlmResponse>,
+                                    response: Response<LlmResponse>
+                                ) {
+                                    if (response.isSuccessful) {
+                                        val post = response.body()
+                                        if (post != null) {
+                                            data.value =
+                                                post.text // gets the text field from the response
+                                            //responseError.value = post.error.toString()
+                                        }
+                                    } else {
+                                        val error = response.errorBody()?.string()
+                                        // extracts the error json from the error string using the LlmError template
+                                        val errorJson = Gson().fromJson(error, LlmError::class.java)
+                                        responseError.value = errorJson.error
                                     }
-                                } else {
-                                    Log.i("api error", "an error occurred")
                                 }
-                            }
 
-                            override fun onFailure(call: Call<LlmResponse>, t: Throwable) {
-                                Log.i("api failure", "a failure occurred")
-                            }
-                        })
+                                override fun onFailure(call: Call<LlmResponse>, t: Throwable) {
+                                    Log.i("api failure", "a failure occurred")
+                                }
+                            })
+                        }
                     }
+                        .addOnFailureListener {
+                            // otherwise return error
+                            Log.i("error", "error while getting token")
+                        }
                 }
-                    .addOnFailureListener {
-                        // otherwise return error
-                        Log.i("error", "error while getting token")
-                    }
-
-
-
             }
         ) {
             Text("Click me to make the POST request")
@@ -199,6 +210,9 @@ fun RecipeFinderScreen(
 
         if (data.value != "") {
             Text(data.value)
+        }
+        else if (responseError.value != "") {
+            Text(responseError.value)
         }
     }
 }
