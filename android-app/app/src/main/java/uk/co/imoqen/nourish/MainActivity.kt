@@ -259,22 +259,9 @@ fun ProfileScreen(
 
         Text("Profile Screen")
 
-        /*const user = firebase.auth().currentUser;
-
-// TODO(you): prompt the user to re-provide their sign-in credentials
-        const credential = promptForCredentials();
-
-        user.reauthenticateWithCredential(credential).then(() => {
-            // User re-authenticated.
-        }).catch((error) => {
-        // An error occurred
-        // ...
-    });*/
-
         val sheetState = rememberModalBottomSheetState()
         val scope = rememberCoroutineScope()
         var showBottomSheet by remember { mutableStateOf(false) }
-        var email by remember { mutableStateOf("") }
         var oldPassword by remember { mutableStateOf("") }
         var newPassword by remember { mutableStateOf("") }
         var status by remember { mutableStateOf("") }
