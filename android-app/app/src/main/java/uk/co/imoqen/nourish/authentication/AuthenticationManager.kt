@@ -196,6 +196,11 @@ class AuthenticationManager() {
         userRef.delete()
     }
 
+    // make the password request
+    suspend fun passwordResetRequest(email: String) {
+        auth.sendPasswordResetEmail(email).await()
+    }
+
     fun isLoggedIn(): Boolean {
         if (auth.currentUser != null) {
             Log.i("STATUS: ", "logged in")

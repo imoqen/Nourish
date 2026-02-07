@@ -7,6 +7,7 @@ import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
@@ -122,10 +123,26 @@ class AuthenticationViewModel: ViewModel() {
 
     // for password resetting:
 
-    fun set(signupPasswordConfirmation: String) {
+    fun setShowBottomSheet(showBottomSheet: Boolean) {
         mutableUiState.update { currentState ->
             currentState.copy(
-                signupPasswordConfirmation = signupPasswordConfirmation
+                showBottomSheet = showBottomSheet
+            )
+        }
+    }
+
+    fun setEmailToResetPassword(emailToResetPassword: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                emailToResetPassword = emailToResetPassword
+            )
+        }
+    }
+
+    fun setPasswordResetStatus(passwordResetStatus: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                passwordResetStatus = passwordResetStatus
             )
         }
     }
@@ -183,6 +200,24 @@ class AuthenticationViewModel: ViewModel() {
                 }
                 .onFailure { fail ->
                     Log.i("sign up:", "fail: $fail")
+                }
+        }
+    }
+
+    fun passwordResetRequest() {
+        if (mutableUiState.value.emailToResetPassword == "") {
+            setPasswordResetStatus("The email cannot be blank.")
+            return // early return
+        }
+        viewModelScope.launch() {
+            runCatching {
+                authenticationManager.passwordResetRequest(mutableUiState.value.emailToResetPassword)
+            }
+                .onSuccess {
+                    setPasswordResetStatus("A password reset email has been sent to ${mutableUiState.value.emailToResetPassword}. Please follow the instructions in this email. Can't find the email? make sure to check your spam folder!")
+                }
+                .onFailure {
+                    setPasswordResetStatus("The password reset email failed to send.")
                 }
         }
     }

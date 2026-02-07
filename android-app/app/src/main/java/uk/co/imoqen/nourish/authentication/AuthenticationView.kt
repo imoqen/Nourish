@@ -1,6 +1,5 @@
 package uk.co.imoqen.nourish.authentication
 
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,32 +10,17 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.google.firebase.Firebase
-import com.google.firebase.auth.auth
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
-import uk.co.imoqen.nourish.ui.theme.NourishTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -116,21 +100,18 @@ fun LoginScreen(
             }
 
             val sheetState = rememberModalBottomSheetState()
-            val scope = rememberCoroutineScope()
-
-
                     Button(
                         onClick = {
-                            showBottomSheet = true
+                            authenticationViewModel.setShowBottomSheet(true)
                         }
                     ) {
                         Text("reset password")
                     }
 
-                if (showBottomSheet) {
+                if (uiState.showBottomSheet) {
                     ModalBottomSheet(
                         onDismissRequest = {
-                            showBottomSheet = false
+                            authenticationViewModel.setShowBottomSheet(false)
                         },
                         sheetState = sheetState
                     ) {
@@ -138,9 +119,9 @@ fun LoginScreen(
                         Column() {
                             // email for password reset:
                             OutlinedTextField(
-                                value = emailToResetPassword,
+                                value = uiState.emailToResetPassword,
                                 onValueChange = { newEmail ->
-                                    emailToResetPassword = newEmail
+                                    authenticationViewModel.setEmailToResetPassword(newEmail)
                                 },
                                 placeholder = {
                                     Text("Enter account email")
@@ -153,57 +134,18 @@ fun LoginScreen(
 
                             Button(
                                 onClick = {
-                                    if (emailToResetPassword == "") {
-                                        passwordResetStatus = "The email cannot be blank."
-                                        return@Button // early return
-                                    }
-                                    Firebase.auth.sendPasswordResetEmail(emailToResetPassword)
-                                        .addOnSuccessListener{
-                                            passwordResetStatus = "A password reset email has been sent to $emailToResetPassword. Please follow the instructions in this email.\nCan't find the email? make sure to check your spam folder!"
-                                        }
-                                        .addOnFailureListener { error ->
-                                            passwordResetStatus = if (error.message != null) {
-                                                error.message!!
-                                            } else {
-                                                "The password reset email failed to send."
-                                            }
-                                        }
+                                    authenticationViewModel.passwordResetRequest()
                                 }
                             ) {
                                 Text("Reset password")
                             }
 
-                            if (passwordResetStatus != "") {
-                                Text(passwordResetStatus)
-                            }
-
-                            Button(onClick = {
-                                scope.launch { sheetState.hide() }.invokeOnCompletion {
-                                    if (!sheetState.isVisible) {
-                                        showBottomSheet = false
-                                    }
-                                }
-                            }) {
-                                Text("Hide bottom sheet")
+                            if (uiState.passwordResetStatus != "") {
+                                Text(uiState.passwordResetStatus)
                             }
                         }
                     }
                 }
-
-
-                    /*Firebase.auth.sendPasswordResetEmail(email)
-                        .then(() => {
-                            // Password reset email sent!
-                            // ..
-                        })
-                    .catch((error) => {
-                    var errorCode = error.code;
-                    var errorMessage = error.message;
-                    // ..
-                });
-
-                     */
-
         }
         // otherwise display sign up:
         else {
@@ -277,11 +219,3 @@ fun LoginScreen(
         }
     }
 }
-
-/*@Preview(showBackground = true)
-@Composable
-private fun LoginPreview() {
-    NourishTheme {
-        LoginScreen()
-    }
-}*/
