@@ -15,6 +15,11 @@ data class AuthenticationUiState(
     val signupPassword: String = "",
     val signupPasswordConfirmation: String = "",
 
+    // for resetting password:
+    val showBottomSheet: Boolean = false,
+    val emailToResetPassword: String = "",
+    val passwordResetStatus: String = "",
+
     val status: AuthenticationUiStatus = AuthenticationUiStatus.LOGIN // login page by default
 )
 

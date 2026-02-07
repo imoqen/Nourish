@@ -113,23 +113,10 @@ class AuthenticationManager() {
     }
 
     // adapted from android docs:
-    fun signUpWithUsernameAndPassword(
+    suspend fun signUpWithUsernameAndPassword(
         email: String, password: String
-    ): Flow<AuthenticationResponse> = callbackFlow {
-        auth.createUserWithEmailAndPassword(email, password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    // user created successfully
-                    trySend(AuthenticationResponse.Success)
-                    addIfNotExists() // create account in firestore too
-                } else {
-                    // user not created successfully
-                    trySend(
-                        AuthenticationResponse.Error(errorMessage= task.exception?.message ?: "")
-                    )
-                }
-            }
-        awaitClose()
+    ) {
+        auth.createUserWithEmailAndPassword(email, password).await()
     }
 
     // throws error if failure, has to be handled by the viewmodel.
@@ -154,7 +141,7 @@ class AuthenticationManager() {
         }
     }
 
-    fun signInWithGoogle(context: Context): Flow<AuthenticationResponse> = callbackFlow {
+    suspend fun signInWithGoogle(context: Context) {
         val googleIdOption = GetGoogleIdOption.Builder()
             .setFilterByAuthorizedAccounts(false)
             // gets the default web client id from the resources, generated from details provided in
@@ -185,30 +172,16 @@ class AuthenticationManager() {
                             null
                         )
 
-                        auth.signInWithCredential(firebaseCredential)
-                            .addOnCompleteListener { task ->
-                                if (task.isSuccessful) {
-                                    trySend(AuthenticationResponse.Success)
-                                    // user is now logged in: add them to firebase if not already.
-                                    addIfNotExists()
-                                } else {
-                                    Log.i("login error", "${task.exception?.message}")
-                                    trySend(AuthenticationResponse.Error(errorMessage = task.exception?.message ?: ""))
-                                }
-                            }
+                        auth.signInWithCredential(firebaseCredential).await()
 
                     } catch (e: GoogleIdTokenParsingException) {
                         Log.i("login error", "token parsing: ${e.message}")
-                        trySend(AuthenticationResponse.Error(errorMessage = e.message ?: ""))
                     }
                 }
             }
         } catch (e: Exception) {
             Log.i("login error", "${e.message}")
-            trySend(AuthenticationResponse.Error(errorMessage = e.message ?: ""))
         }
-
-        awaitClose()
     }
 
     suspend fun deleteAllUserData(user: FirebaseUser) {

@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish.authentication
 
+import android.content.Context
 import android.util.Log
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
@@ -119,6 +120,16 @@ class AuthenticationViewModel: ViewModel() {
         }
     }
 
+    // for password resetting:
+
+    fun set(signupPasswordConfirmation: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                signupPasswordConfirmation = signupPasswordConfirmation
+            )
+        }
+    }
+
     // calling the authentication manager methods from the view model:
     fun signInWithEmailAndPassword() {
         viewModelScope.launch() {
@@ -138,6 +149,40 @@ class AuthenticationViewModel: ViewModel() {
                 }
                 .onFailure {
                     // maybe do something
+                }
+        }
+    }
+
+    fun signInWithGoogle(context: Context) {
+        viewModelScope.launch() {
+            runCatching {
+                authenticationManager.signInWithGoogle(context)
+            }
+                .onSuccess {
+                    authenticationManager.addIfNotExists()
+                    setLoggedIn(true) // update logged in state for use around the app
+                }
+                .onFailure {
+
+                }
+        }
+    }
+
+    fun signUpWithUsernameAndPassword() {
+        viewModelScope.launch() {
+            runCatching {
+                authenticationManager.signUpWithUsernameAndPassword(
+                    mutableUiState.value.signupEmail,
+                    mutableUiState.value.signupPassword
+                )
+            }
+                .onSuccess {
+                    authenticationManager.addIfNotExists()
+                    setLoggedIn(true) // update logged in state for use around the app
+                    Log.i("sign up:", "success")
+                }
+                .onFailure { fail ->
+                    Log.i("sign up:", "fail: $fail")
                 }
         }
     }

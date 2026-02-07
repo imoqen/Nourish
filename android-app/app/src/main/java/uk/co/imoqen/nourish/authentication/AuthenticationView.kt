@@ -50,12 +50,6 @@ fun LoginScreen(
 
     // stores the current logged in user, method provided by firebase:
     val context = LocalContext.current
-    val authenticationManager = remember {
-        AuthenticationManager()
-    }
-
-    val coroutineScope = rememberCoroutineScope()
-
 
     Column(
         modifier = modifier.fillMaxSize()
@@ -113,20 +107,9 @@ fun LoginScreen(
             }
             Text("Or:")
 
-            val ctxt = LocalContext.current
             Button(
                 onClick = {
-                    authenticationManager.signInWithGoogle(ctxt)
-                        .onEach { response ->
-                            if (response is AuthenticationResponse.Success) {
-                                Log.i("login", "login success google")
-                                // redetermine the logged in user to trigger recomposition:
-                                authenticationViewModel.updateLoggedInStatus()
-                            } else {
-                                Log.i("login", "login error google")
-                            }
-                        }
-                        .launchIn(coroutineScope) // have to launch in coroutine scope or else wont return anything
+                    authenticationViewModel.signInWithGoogle(context)
                 }
             ) {
                 Text("Sign in with Google")
@@ -134,9 +117,7 @@ fun LoginScreen(
 
             val sheetState = rememberModalBottomSheetState()
             val scope = rememberCoroutineScope()
-            var showBottomSheet by remember { mutableStateOf(false) }
-            var emailToResetPassword by remember { mutableStateOf("") }
-            var passwordResetStatus by remember { mutableStateOf("") }
+
 
                     Button(
                         onClick = {
@@ -287,17 +268,7 @@ fun LoginScreen(
             Button(
                 onClick = {
                     if (uiState.signupPassword == uiState.signupPasswordConfirmation) {
-                        authenticationManager.signUpWithUsernameAndPassword(uiState.signupEmail, uiState.signupPassword)
-                            .onEach { response ->
-                                if (response is AuthenticationResponse.Success) {
-                                    Log.i("signup", "login success signup")
-                                    // redetermine the logged in user to trigger recomposition:
-                                    authenticationViewModel.updateLoggedInStatus()
-                                } else {
-                                    Log.i("signup", "login error signup")
-                                }
-                            }
-                            .launchIn(coroutineScope) // have to launch in coroutine scope or else wont return anything
+                        authenticationViewModel.signUpWithUsernameAndPassword()
                     }
                 }
             ) {
