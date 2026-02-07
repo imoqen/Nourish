@@ -52,7 +52,7 @@ import java.util.UUID
 // then they will have an associated account!
 // also need to refactor a lot
 
-class AuthenticationManager(val context: Context) {
+class AuthenticationManager() {
 
     // firebase authentication:
     private val auth = Firebase.auth
@@ -83,19 +83,24 @@ class AuthenticationManager(val context: Context) {
             }
     }
 
-    fun addIfNotExists(user: FirebaseUser) {
-        // check if document with uid already exists:
-        db.collection("users").document(user.uid)
-            .get()
-            .addOnSuccessListener { result ->
-                if (!result.exists()) {
-                    addUserToFirestore(user)
+    fun addIfNotExists() {
+        try {
+            val user = auth.currentUser!!
+            // check if document with uid already exists:
+            db.collection("users").document(user.uid)
+                .get()
+                .addOnSuccessListener { result ->
+                    if (!result.exists()) {
+                        addUserToFirestore(user)
+                    }
+                    // otherwise dont add, as already exists.
                 }
-                // otherwise dont add, as already exists.
-            }
-            .addOnFailureListener { e ->
-                Log.d("Firestore error", "error: $e")
-            }
+                .addOnFailureListener { e ->
+                    Log.d("Firestore error", "error: $e")
+                }
+        } catch (e: Error) {
+            Log.d("Firestore error", "error: $e")
+        }
     }
 
     // sign out method. a different method is used in view model as it cannot access authentication manager as it uses the context.
@@ -116,7 +121,7 @@ class AuthenticationManager(val context: Context) {
                 if (task.isSuccessful) {
                     // user created successfully
                     trySend(AuthenticationResponse.Success)
-                    addIfNotExists(auth.currentUser!!) // create account in firestore too
+                    addIfNotExists() // create account in firestore too
                 } else {
                     // user not created successfully
                     trySend(
@@ -127,20 +132,11 @@ class AuthenticationManager(val context: Context) {
         awaitClose()
     }
 
-    fun signInWithEmailAndPassword(
+    // throws error if failure, has to be handled by the viewmodel.
+    suspend fun signInWithEmailAndPassword(
         email: String, password: String
-    ): Flow<AuthenticationResponse> = callbackFlow {
-        auth.signInWithEmailAndPassword(email, password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    trySend(AuthenticationResponse.Success)
-                    // user is now logged in: add them to firebase if not already.
-                    addIfNotExists(auth.currentUser!!)
-                } else {
-                    trySend(AuthenticationResponse.Error(errorMessage = task.exception?.message ?: ""))
-                }
-            }
-        awaitClose()
+    ) {
+        auth.signInWithEmailAndPassword(email, password).await()
     }
 
 // left here as firebase functions. rest of functions are above
@@ -158,7 +154,7 @@ class AuthenticationManager(val context: Context) {
         }
     }
 
-    fun signInWithGoogle(): Flow<AuthenticationResponse> = callbackFlow {
+    fun signInWithGoogle(context: Context): Flow<AuthenticationResponse> = callbackFlow {
         val googleIdOption = GetGoogleIdOption.Builder()
             .setFilterByAuthorizedAccounts(false)
             // gets the default web client id from the resources, generated from details provided in
@@ -194,7 +190,7 @@ class AuthenticationManager(val context: Context) {
                                 if (task.isSuccessful) {
                                     trySend(AuthenticationResponse.Success)
                                     // user is now logged in: add them to firebase if not already.
-                                    addIfNotExists(auth.currentUser!!)
+                                    addIfNotExists()
                                 } else {
                                     Log.i("login error", "${task.exception?.message}")
                                     trySend(AuthenticationResponse.Error(errorMessage = task.exception?.message ?: ""))
@@ -215,7 +211,30 @@ class AuthenticationManager(val context: Context) {
         awaitClose()
     }
 
+    suspend fun deleteAllUserData(user: FirebaseUser) {
+        val db = Firebase.firestore
+
+        val userRef = db.collection("users").document(user.uid)
+        // recursively delete all of the user data
+        val tokenUsages = userRef.collection("token-usage").get().await().documents
+        tokenUsages.forEach{ tokenUsage ->
+            tokenUsage.reference.delete().await()
+        }
+        userRef.delete()
+    }
+
+    fun isLoggedIn(): Boolean {
+        if (auth.currentUser != null) {
+            Log.i("STATUS: ", "logged in")
+            return true
+        }
+        Log.i("STATUS: ", "not logged in")
+
+        return false
+    }
+
 }
+
 
 interface AuthenticationResponse {
     data object Success: AuthenticationResponse

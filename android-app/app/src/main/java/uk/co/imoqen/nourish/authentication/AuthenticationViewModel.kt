@@ -5,6 +5,7 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
@@ -19,13 +20,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.R
 import java.security.MessageDigest
 import java.util.UUID
 
 class AuthenticationViewModel: ViewModel() {
-
-    private val auth = Firebase.auth
 
     // SEPARATION OF CONCERNS: ui state vs state
 
@@ -33,36 +33,41 @@ class AuthenticationViewModel: ViewModel() {
     // Purpose: pattern to encapsulate the mutable state to ensure it is not mutable from the viewmodel.
     // this is what is editable, only within this view model and not within composables.
     // pattern taken from advice in: https://medium.com/@rowaido.game/managing-ui-states-in-jetpack-compose-7eb15e4f6931
+    // this is used IN the view model and NOT OUTSIDE of it (not in the view):
     private val mutableUiState = MutableStateFlow(AuthenticationUiState())
 
     // this is the encapsulated, immutable state made from the mutable state above. this is what
-    // is observable from the Authentication composables.
+    // is observable from the Authentication composables. not used within the view model.
     val uiState: StateFlow<AuthenticationUiState> = mutableUiState.asStateFlow()
 
     // STATE:
     private val mutableState = MutableStateFlow(AuthenticationState())
     val state: StateFlow<AuthenticationState> = mutableState.asStateFlow()
 
+    val authenticationManager = AuthenticationManager()
+
+    // runs when app starts
+    init {
+        updateLoggedInStatus()
+    }
+
     // STATE:
-    // update logged in user
-    fun setLoggedInUser(firebaseUser: FirebaseUser?) {
+    // update logged in state
+    fun setLoggedIn(loggedInState: Boolean) {
         mutableState.update { currentState ->
             currentState.copy(
-                currentUser = firebaseUser
+                loggedIn = loggedInState
             )
         }
     }
     fun signOut() {
-        mutableState.update { currentState ->
-            currentState.copy(
-                currentUser = null // simply set the current user to be null
-            )
-        }
+
         // then sign out on firebase too:
         if (Firebase.auth.currentUser != null) {
             Firebase.auth.signOut()
         }
-        Log.i("logout", "current firebase user: ${Firebase.auth.currentUser}, current local user: ${mutableState.value.currentUser}")
+        // and update stored logged in status:
+        updateLoggedInStatus()
     }
 
     // UI STATE:
@@ -112,5 +117,32 @@ class AuthenticationViewModel: ViewModel() {
                 signupPasswordConfirmation = signupPasswordConfirmation
             )
         }
+    }
+
+    // calling the authentication manager methods from the view model:
+    fun signInWithEmailAndPassword() {
+        viewModelScope.launch() {
+            // because suspend function:
+            // this can throw error
+            // https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/run-catching.html
+            runCatching {
+                authenticationManager.signInWithEmailAndPassword(
+                    mutableUiState.value.email,
+                    mutableUiState.value.password
+                )
+            }
+                .onSuccess {
+                    // add the user to firestore if they dont already exist in firestore:
+                    authenticationManager.addIfNotExists()
+                    setLoggedIn(true) // update logged in state for use around the app
+                }
+                .onFailure {
+                    // maybe do something
+                }
+        }
+    }
+
+    fun updateLoggedInStatus() {
+        setLoggedIn(authenticationManager.isLoggedIn())
     }
 }

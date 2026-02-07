@@ -51,10 +51,8 @@ fun LoginScreen(
     // stores the current logged in user, method provided by firebase:
     val context = LocalContext.current
     val authenticationManager = remember {
-        AuthenticationManager(context)
+        AuthenticationManager()
     }
-    // ensure that if the user is logged in, it is stored in the view model. if not logged in, will just be null.:
-    authenticationViewModel.setLoggedInUser(authenticationManager.getCurrentUser())
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -99,20 +97,7 @@ fun LoginScreen(
 
             Button(
                 onClick = {
-                    authenticationManager.signInWithEmailAndPassword(
-                        uiState.email,
-                        uiState.password
-                    )
-                        .onEach { response ->
-                            if (response is AuthenticationResponse.Success) {
-                                Log.i("login", "login success username password")
-                                // redetermine the logged in user to trigger recomposition:
-                                authenticationViewModel.setLoggedInUser(authenticationManager.getCurrentUser())
-                            } else {
-                                Log.i("login", "login error username password")
-                            }
-                        }
-                        .launchIn(coroutineScope) // have to launch in coroutine scope or else wont return anything
+                    authenticationViewModel.signInWithEmailAndPassword()
                 }
             ) {
                 Text("Sign in")
@@ -128,14 +113,15 @@ fun LoginScreen(
             }
             Text("Or:")
 
+            val ctxt = LocalContext.current
             Button(
                 onClick = {
-                    authenticationManager.signInWithGoogle()
+                    authenticationManager.signInWithGoogle(ctxt)
                         .onEach { response ->
                             if (response is AuthenticationResponse.Success) {
                                 Log.i("login", "login success google")
                                 // redetermine the logged in user to trigger recomposition:
-                                authenticationViewModel.setLoggedInUser(authenticationManager.getCurrentUser())
+                                authenticationViewModel.updateLoggedInStatus()
                             } else {
                                 Log.i("login", "login error google")
                             }
@@ -306,7 +292,7 @@ fun LoginScreen(
                                 if (response is AuthenticationResponse.Success) {
                                     Log.i("signup", "login success signup")
                                     // redetermine the logged in user to trigger recomposition:
-                                    authenticationViewModel.setLoggedInUser(authenticationManager.getCurrentUser())
+                                    authenticationViewModel.updateLoggedInStatus()
                                 } else {
                                     Log.i("signup", "login error signup")
                                 }

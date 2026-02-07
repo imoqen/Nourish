@@ -20,15 +20,16 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
-import uk.co.imoqen.nourish.RecipeFinderScreen
 import androidx.navigation.compose.composable
 import com.google.firebase.auth.FirebaseUser
-import uk.co.imoqen.nourish.ProfileScreen
-import uk.co.imoqen.nourish.RecipeBookScreen
-import uk.co.imoqen.nourish.SettingsScreen
-import uk.co.imoqen.nourish.ShoppingListScreen
+
 import uk.co.imoqen.nourish.authentication.AuthenticationUiState
 import uk.co.imoqen.nourish.authentication.AuthenticationViewModel
+import uk.co.imoqen.nourish.profile.ProfileScreen
+import uk.co.imoqen.nourish.recipebook.RecipeBookScreen
+import uk.co.imoqen.nourish.recipediscovery.RecipeFinderScreen
+import uk.co.imoqen.nourish.settings.SettingsScreen
+import uk.co.imoqen.nourish.shoppinglist.ShoppingListScreen
 
 
 // Navigation host: https://developer.android.com/guide/navigation/design#compose
@@ -37,7 +38,6 @@ import uk.co.imoqen.nourish.authentication.AuthenticationViewModel
 fun AppNavHost(
     navController: NavHostController,
     startDestination: String,
-    loggedInUser: FirebaseUser,
     signOut: () -> Unit, // method for signing out
     modifier: Modifier
 ) {
@@ -57,15 +57,17 @@ fun AppNavHost(
             // as the authentication view model is used across the app,
             //val authenticationViewModel: AuthenticationViewModel = viewModel()
             // The composable to display for this tab:
-            RecipeFinderScreen(loggedInUser)
+            RecipeFinderScreen()
         }
         composable(TabDestination.RECIPE_BOOK.route) { RecipeBookScreen() }
         composable(TabDestination.SHOPPING_LIST.route) { ShoppingListScreen() }
 
         // Top Navbar: Tab destinations
-        composable(TabDestination.PROFILE.route) { ProfileScreen(
-            signOut
-        ) }
+        composable(TabDestination.PROFILE.route) {
+            ProfileScreen(
+                signOut
+            )
+        }
         composable(TabDestination.SETTINGS.route) { SettingsScreen() }
 
         // From within screens:
