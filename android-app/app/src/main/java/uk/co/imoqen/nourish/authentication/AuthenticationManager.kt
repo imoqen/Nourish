@@ -38,6 +38,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.tasks.await
 import uk.co.imoqen.nourish.R
 import uk.co.imoqen.nourish.ui.theme.NourishTheme
 import java.security.MessageDigest
