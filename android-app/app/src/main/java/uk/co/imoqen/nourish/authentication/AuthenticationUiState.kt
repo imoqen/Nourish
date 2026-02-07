@@ -1,9 +1,5 @@
 package uk.co.imoqen.nourish.authentication
 
-import com.google.firebase.Firebase
-import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.auth.auth
-
 // purpose: stores things in the auth ui
 data class AuthenticationUiState(
     // for logging in:

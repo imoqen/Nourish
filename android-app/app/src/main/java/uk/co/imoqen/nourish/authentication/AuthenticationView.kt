@@ -100,13 +100,13 @@ fun LoginScreen(
             }
 
             val sheetState = rememberModalBottomSheetState()
-                    Button(
-                        onClick = {
-                            authenticationViewModel.setShowBottomSheet(true)
-                        }
-                    ) {
-                        Text("reset password")
-                    }
+            Button(
+                onClick = {
+                    authenticationViewModel.setShowBottomSheet(true)
+                }
+            ) {
+                Text("reset password")
+            }
 
                 if (uiState.showBottomSheet) {
                     ModalBottomSheet(
