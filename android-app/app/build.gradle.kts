@@ -10,6 +10,10 @@ plugins {
     // For navigation: https://developer.android.com/guide/navigation
     // Kotlin serialization plugin for type safe routes and navigation arguments.
     kotlin("plugin.serialization") version "2.0.21"
+
+    // hilt:
+    id("com.google.devtools.ksp")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -108,4 +112,10 @@ dependencies {
     // Declare the dependency for the Cloud Firestore library
     // When using the BoM, you don't specify versions in Firebase library dependencies
     implementation("com.google.firebase:firebase-firestore")
+
+    // hilt:
+    implementation("com.google.dagger:hilt-android:2.57.1")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+
+    ksp("com.google.dagger:hilt-compiler:2.57.1")
 }
