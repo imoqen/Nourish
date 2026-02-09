@@ -110,23 +110,22 @@ fun ProfileScreen(
         }
 
         val deleteAccountBottomSheetState = rememberModalBottomSheetState()
-        var showDeleteAccountBottomSheet by remember { mutableStateOf(false) }
         var deleteAccountPassword by remember { mutableStateOf("") }
         var deleteStatus by remember { mutableStateOf("") }
 
 
         Button(
             onClick = {
-                showDeleteAccountBottomSheet = true
+                profileViewModel.setShowDeleteAccountBottomSheet(true)
             }
         ) {
             Text("Delete Account")
         }
 
-        if (showDeleteAccountBottomSheet) {
+        if (uiState.showDeleteAccountBottomSheet) {
             ModalBottomSheet(
                 onDismissRequest = {
-                    showDeleteAccountBottomSheet = false
+                    profileViewModel.setShowDeleteAccountBottomSheet(false)
                 },
                 sheetState = deleteAccountBottomSheetState
             ) {
@@ -139,9 +138,9 @@ fun ProfileScreen(
                         Text("Please type your password below to confirm.")
                         // old password:
                         OutlinedTextField(
-                            value = deleteAccountPassword,
+                            value = uiState.deleteAccountPassword,
                             onValueChange = { password ->
-                                deleteAccountPassword = password
+                                profileViewModel.setDeleteAccountPassword(password)
                             },
                             placeholder = {
                                 Text("Enter your password")

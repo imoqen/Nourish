@@ -32,35 +32,14 @@ class AuthenticationViewModel @Inject constructor(
     // is observable from the Authentication composables. not used within the view model.
     val uiState: StateFlow<AuthenticationUiState> = mutableUiState.asStateFlow()
 
-    // STATE:
-    private val mutableState = MutableStateFlow(AuthenticationState())
-    val state: StateFlow<AuthenticationState> = mutableState.asStateFlow()
+
 
     //val authenticationManager = AuthenticationManager()
 
     // runs when app starts
-    init {
-        updateLoggedInStatus()
-    }
+    init {}
 
-    // STATE:
-    // update logged in state
-    fun setLoggedIn(loggedInState: Boolean) {
-        mutableState.update { currentState ->
-            currentState.copy(
-                loggedIn = loggedInState
-            )
-        }
-    }
-    fun signOut() {
 
-        // then sign out on firebase too:
-        if (Firebase.auth.currentUser != null) {
-            Firebase.auth.signOut()
-        }
-        // and update stored logged in status:
-        updateLoggedInStatus()
-    }
 
     // UI STATE:
     fun setEmail(email: String) {
@@ -152,7 +131,6 @@ class AuthenticationViewModel @Inject constructor(
                 .onSuccess {
                     // add the user to firestore if they dont already exist in firestore:
                     authenticationManager.addIfNotExists()
-                    setLoggedIn(true) // update logged in state for use around the app
                 }
                 .onFailure {
                     // maybe do something
@@ -167,7 +145,6 @@ class AuthenticationViewModel @Inject constructor(
             }
                 .onSuccess {
                     authenticationManager.addIfNotExists()
-                    setLoggedIn(true) // update logged in state for use around the app
                 }
                 .onFailure {
 
@@ -185,7 +162,6 @@ class AuthenticationViewModel @Inject constructor(
             }
                 .onSuccess {
                     authenticationManager.addIfNotExists()
-                    setLoggedIn(true) // update logged in state for use around the app
                     Log.i("sign up:", "success")
                 }
                 .onFailure { fail ->
@@ -210,9 +186,5 @@ class AuthenticationViewModel @Inject constructor(
                     setPasswordResetStatus("The password reset email failed to send.")
                 }
         }
-    }
-
-    fun updateLoggedInStatus() {
-        setLoggedIn(authenticationManager.isLoggedIn())
     }
 }

@@ -3,8 +3,12 @@ package uk.co.imoqen.nourish.authentication
 import android.content.Context
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseUser
+import kotlinx.coroutines.flow.StateFlow
 
 interface AuthenticationManager {
+
+    // keeps track of if logged in
+    val authenticationState: StateFlow<AuthenticationState>
     fun getCurrentUser(): FirebaseUser?
 
     fun addUserToFirestore(user: FirebaseUser)
@@ -12,6 +16,10 @@ interface AuthenticationManager {
     fun addIfNotExists()
 
     fun firebaseSignOut()
+
+    fun updateLoggedInState()
+
+    fun signOut()
 
     suspend fun signUpWithUsernameAndPassword(email: String, password: String)
 
@@ -34,4 +42,6 @@ interface AuthenticationManager {
     suspend fun reauthenticate(password: String)
 
     suspend fun updatePassword(newPassword: String)
+
+    suspend fun deleteAccount()
 }

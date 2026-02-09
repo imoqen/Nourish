@@ -19,6 +19,10 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
 import dagger.Module
 import dagger.hilt.InstallIn
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.tasks.await
 import uk.co.imoqen.nourish.R
 import java.security.MessageDigest
@@ -40,6 +44,37 @@ class AuthenticationManagerImpl @Inject constructor(
     private val auth: FirebaseAuth,
     private val db: FirebaseFirestore
 ): AuthenticationManager {
+
+    // loggedin state:
+    private val mutableAuthenticationState = MutableStateFlow(AuthenticationState())
+    override val authenticationState: StateFlow<AuthenticationState> = mutableAuthenticationState.asStateFlow()
+
+    init {
+        updateLoggedInState()
+    }
+
+    override fun updateLoggedInState() {
+        setLoggedIn(isLoggedIn())
+    }
+
+    override fun signOut() {
+        // sign out on firebase too:
+        if (isLoggedIn()) {
+            auth.signOut()
+        }
+        // and update stored logged in status:
+        setLoggedIn(false)
+    }
+
+    // STATE:
+    // update logged in state
+    fun setLoggedIn(loggedInState: Boolean) {
+        mutableAuthenticationState.update { currentState ->
+            currentState.copy(
+                loggedIn = loggedInState
+            )
+        }
+    }
 
     override fun getCurrentUser(): FirebaseUser? {
         return Firebase.auth.currentUser
@@ -87,8 +122,8 @@ class AuthenticationManagerImpl @Inject constructor(
     // sign out method. a different method is used in view model as it cannot access authentication manager as it uses the context.
 
     override fun firebaseSignOut() {
-        if (Firebase.auth.currentUser != null) {
-            Firebase.auth.signOut()
+        if (auth.currentUser != null) {
+            auth.signOut()
         }
         // otherwise does nothing as not signed in!
     }
@@ -97,7 +132,12 @@ class AuthenticationManagerImpl @Inject constructor(
     override suspend fun signUpWithUsernameAndPassword(
         email: String, password: String
     ) {
+        // attempt to sign up and subsequently log in:
         auth.createUserWithEmailAndPassword(email, password).await()
+        // log in successful if current user is not null
+        if (auth.currentUser != null) {
+            setLoggedIn(true) // set logged in if successful
+        }
     }
 
     // throws error if failure, has to be handled by the viewmodel.
@@ -105,6 +145,9 @@ class AuthenticationManagerImpl @Inject constructor(
         email: String, password: String
     ) {
         auth.signInWithEmailAndPassword(email, password).await()
+        if (auth.currentUser != null) {
+            setLoggedIn(true) // set logged in if successful
+        }
     }
 
 // left here as firebase functions. rest of functions are above
@@ -155,6 +198,11 @@ class AuthenticationManagerImpl @Inject constructor(
                         )
 
                         auth.signInWithCredential(firebaseCredential).await()
+
+                        // check if validly signed in:
+                        if (auth.currentUser != null) {
+                            setLoggedIn(true) // set logged in if successful
+                        }
 
                     } catch (e: GoogleIdTokenParsingException) {
                         Log.i("login error", "token parsing: ${e.message}")
@@ -215,9 +263,9 @@ class AuthenticationManagerImpl @Inject constructor(
         // first get the credentials
         val credentials = getCredentials(password)
         if (credentials != null) { // therefore must also be logged in so can do currentUser!!
+            // then reauthenticate with those credentials:
             auth.currentUser!!.reauthenticate(credentials)
         }
-        // then reauthenticate with those credentials:
     }
 
     override suspend fun updatePassword(newPassword: String) {
@@ -225,6 +273,19 @@ class AuthenticationManagerImpl @Inject constructor(
             return // early return if not logged in; no auth credentials.
         }
         auth.currentUser!!.updatePassword(newPassword)
+    }
+
+    override suspend fun deleteAccount() {
+        if (!isLoggedIn()) {
+            return // early return if not logged in; no auth credentials.
+        }
+        val user = auth.currentUser!!
+        deleteAllUserData(user)
+        user.delete().addOnSuccessListener {
+            signOut() // sign them out as the account is now deleted
+
+        }
+
     }
 
 }

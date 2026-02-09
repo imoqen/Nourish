@@ -137,5 +137,44 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
+    fun deleteAccount() {
+        if (mutableUiState.value.deleteAccountPassword == "") {
+            setDeleteStatus("The password must not be blank.")
+            return // early return
+        }
+        viewModelScope.launch() {
+            runCatching {
+                // first reauthenticate the user:
+                authenticationManager.reauthenticate(mutableUiState.value.deleteAccountPassword)
+            }
+                .onSuccess {
+                    authenticationManager.deleteAccount()
+                }
+                .onFailure {
+
+                }
+        }
+            .addOnSuccessListener {
+                // delete all of the user data from firestore:
+                scope.launch() {
+                    //TODO Uncomment:
+                    //deleteAllUserData(Firebase.auth.currentUser!!)
+                }
+                // then delete the user:
+                Firebase.auth.currentUser!!.delete().addOnSuccessListener {
+                    signOut() // sign them out as the account is now deleted
+
+                }
+                // now can change the password as user authenticated successfully:
+                //deleteStatus = "Account deleted successfully."
+            }
+            .addOnFailureListener { error ->
+
+                deleteStatus =
+                    "Invalid password. Account could not be deleted."
+
+            }
+    }
+
 
 }
