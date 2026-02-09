@@ -15,9 +15,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import dagger.hilt.android.AndroidEntryPoint
 import uk.co.imoqen.nourish.authentication.AuthenticationViewModel
 import uk.co.imoqen.nourish.authentication.LoginScreen
 import uk.co.imoqen.nourish.navigation.AppNavHost
@@ -25,6 +27,9 @@ import uk.co.imoqen.nourish.navigation.NourishNavigationBar
 import uk.co.imoqen.nourish.navigation.TabDestination
 import uk.co.imoqen.nourish.ui.theme.NourishTheme
 
+// hilt: wraps the component activity so that it can create a depoendency container and inject fields/viewmodels.
+// this signature tells hilt that this component should have dependencies injected into it.
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,7 +54,7 @@ fun MainContent(modifier: Modifier = Modifier) {
     val startDestination = TabDestination.RECIPE_FINDER
 
     // authentication view model, used across the whole app therefore declared here:
-    val authenticationViewModel: AuthenticationViewModel = viewModel()
+    val authenticationViewModel: AuthenticationViewModel = hiltViewModel()
 
     // get the authentication state (not the ui state as this is used only in the authentication view):
     val authenticationState by authenticationViewModel.state.collectAsState()

@@ -55,7 +55,6 @@ fun AppNavHost(
             // PUT VIEW MODELS USED SPECIFICALLY ONLY IN EACH SCREEN, IN THESE.
             // if share, can declare it on line 40 (above NavHost) in this composable and pass into both. (havent tested this but assume it will work)
             // as the authentication view model is used across the app,
-            //val authenticationViewModel: AuthenticationViewModel = viewModel()
             // The composable to display for this tab:
             RecipeFinderScreen()
         }

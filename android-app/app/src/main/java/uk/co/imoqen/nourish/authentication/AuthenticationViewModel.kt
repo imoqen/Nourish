@@ -15,6 +15,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.auth
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,8 +27,12 @@ import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.R
 import java.security.MessageDigest
 import java.util.UUID
+import javax.inject.Inject
 
-class AuthenticationViewModel: ViewModel() {
+@HiltViewModel
+class AuthenticationViewModel @Inject constructor(
+    private val authenticationManager: AuthenticationManager
+): ViewModel() {
 
     // SEPARATION OF CONCERNS: ui state vs state
 
@@ -46,7 +51,7 @@ class AuthenticationViewModel: ViewModel() {
     private val mutableState = MutableStateFlow(AuthenticationState())
     val state: StateFlow<AuthenticationState> = mutableState.asStateFlow()
 
-    val authenticationManager = AuthenticationManager()
+    //val authenticationManager = AuthenticationManager()
 
     // runs when app starts
     init {
