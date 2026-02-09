@@ -28,7 +28,7 @@ fun RecipeFinderScreen(
 ) {
     //LoginScreen()
     Column() {
-        val loggedInUser = Firebase.auth.currentUser!!
+        /*val loggedInUser = Firebase.auth.currentUser!!
         Text("Recipe Finder Screen, hello ${loggedInUser.email}")
 
         val data = rememberSaveable { mutableStateOf("") }
@@ -109,6 +109,6 @@ fun RecipeFinderScreen(
         }
         else if (responseError.value != "") {
             Text(responseError.value)
-        }
+        }*/
     }
 }

@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish.authentication
 
+import android.app.Activity
 import android.content.Context
 import android.util.Log
 import androidx.credentials.CredentialManager
@@ -14,6 +15,7 @@ import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.auth.OAuthProvider
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
@@ -23,6 +25,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import uk.co.imoqen.nourish.R
 import java.security.MessageDigest
@@ -171,7 +174,7 @@ class AuthenticationManagerImpl @Inject constructor(
             .setFilterByAuthorizedAccounts(false)
             // gets the default web client id from the resources, generated from details provided in
             // the google-services.json file provided by google cloud:
-            .setServerClientId(context.getString(R.string.web_client_id))
+            .setServerClientId(context.getString(R.string.default_web_client_id))
             .setAutoSelectEnabled(false) // wont auto select an account
             .setNonce(generateNonce())
             .build()
@@ -180,7 +183,7 @@ class AuthenticationManagerImpl @Inject constructor(
             .addCredentialOption(googleIdOption)
             .build()
 
-        try {
+
             val credentialManager = CredentialManager.create(context)
             val result = credentialManager.getCredential(context = context, request = request)
 
@@ -188,30 +191,24 @@ class AuthenticationManagerImpl @Inject constructor(
 
             if (credential is CustomCredential) {
                 if (credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-                    try {
-                        val googleIdTokenCredential = GoogleIdTokenCredential
-                            .createFrom(credential.data)
 
-                        val firebaseCredential = GoogleAuthProvider.getCredential(
-                            googleIdTokenCredential.idToken,
-                            null
-                        )
+                    val googleIdTokenCredential = GoogleIdTokenCredential
+                        .createFrom(credential.data)
 
-                        auth.signInWithCredential(firebaseCredential).await()
+                    val firebaseCredential = GoogleAuthProvider.getCredential(
+                        googleIdTokenCredential.idToken,
+                        null
+                    )
 
-                        // check if validly signed in:
-                        if (auth.currentUser != null) {
-                            setLoggedIn(true) // set logged in if successful
-                        }
+                    auth.signInWithCredential(firebaseCredential).await()
 
-                    } catch (e: GoogleIdTokenParsingException) {
-                        Log.i("login error", "token parsing: ${e.message}")
+                    // check if validly signed in:
+                    if (auth.currentUser != null) {
+                        Log.i("sign in", "success sign in")
+                        setLoggedIn(true) // set logged in if successful
                     }
-                }
-            }
-        } catch (e: Exception) {
-            Log.i("login error", "${e.message}")
-        }
+                }}
+
     }
 
     override suspend fun deleteAllUserData(user: FirebaseUser) {
@@ -275,17 +272,46 @@ class AuthenticationManagerImpl @Inject constructor(
         auth.currentUser!!.updatePassword(newPassword)
     }
 
-    override suspend fun deleteAccount() {
+    override suspend fun deletePasswordAccount() {
         if (!isLoggedIn()) {
             return // early return if not logged in; no auth credentials.
         }
         val user = auth.currentUser!!
         deleteAllUserData(user)
-        user.delete().addOnSuccessListener {
-            signOut() // sign them out as the account is now deleted
+        user.delete()
+            .addOnSuccessListener {
+                signOut() // sign them out as the account is now deleted
+            }
+
+    }
+
+    override suspend fun deleteGoogleAccount(activity: Activity, provider: OAuthProvider) {
+        if (!isLoggedIn()) {
+            return // early return if not logged in; no auth credentials.
+        }
+        try {
+            val user = auth.currentUser!!
+            // reauthenticate by opening log in in users browser
+            user.startActivityForReauthenticateWithProvider(
+                activity,
+                provider
+            ).await()
+            // delete user on firebase
+            deleteAllUserData(user)
+            try {
+                // delete user
+                user.delete().await()
+                // then sign out:
+                signOut()
+            }
+            catch (e: Exception) {
+                Log.e("delete google", "error: $e")
+            }
 
         }
-
+        catch (e: Exception) {
+            Log.e("delete google", "error: $e")
+        }
     }
 
 }

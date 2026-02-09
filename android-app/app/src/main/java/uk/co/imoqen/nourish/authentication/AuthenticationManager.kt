@@ -1,8 +1,10 @@
 package uk.co.imoqen.nourish.authentication
 
+import android.app.Activity
 import android.content.Context
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.OAuthProvider
 import kotlinx.coroutines.flow.StateFlow
 
 interface AuthenticationManager {
@@ -43,5 +45,7 @@ interface AuthenticationManager {
 
     suspend fun updatePassword(newPassword: String)
 
-    suspend fun deleteAccount()
+    suspend fun deletePasswordAccount()
+
+    suspend fun deleteGoogleAccount(activity: Activity, provider: OAuthProvider)
 }

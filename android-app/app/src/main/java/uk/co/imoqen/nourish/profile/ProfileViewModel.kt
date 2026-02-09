@@ -1,10 +1,12 @@
 package uk.co.imoqen.nourish.profile
 
+import android.app.Activity
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.Firebase
 import com.google.firebase.auth.EmailAuthProvider
+import com.google.firebase.auth.OAuthProvider
 import com.google.firebase.auth.auth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -137,7 +139,7 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun deleteAccount() {
+    fun deletePasswordAccount() {
         if (mutableUiState.value.deleteAccountPassword == "") {
             setDeleteStatus("The password must not be blank.")
             return // early return
@@ -148,32 +150,39 @@ class ProfileViewModel @Inject constructor(
                 authenticationManager.reauthenticate(mutableUiState.value.deleteAccountPassword)
             }
                 .onSuccess {
-                    authenticationManager.deleteAccount()
+                    runCatching {
+                        authenticationManager.deletePasswordAccount()
+                    }
+                        .onSuccess {
+                            // would put status message here but user is logged out anyway
+                        }
+                        .onFailure {
+                            setDeleteStatus("Account could not be deleted.")
+                        }
                 }
                 .onFailure {
-
+                    setDeleteStatus("Account could not be deleted.")
                 }
         }
-            .addOnSuccessListener {
-                // delete all of the user data from firestore:
-                scope.launch() {
-                    //TODO Uncomment:
-                    //deleteAllUserData(Firebase.auth.currentUser!!)
+    }
+
+    fun deleteGoogleAccount(activity: Activity?) {
+        viewModelScope.launch() {
+            // https://stackoverflow.com/questions/40898952/how-to-re-authenticate-a-user-on-firebase-with-google-provider
+            val provider = OAuthProvider.newBuilder("google.com").build()
+            if (activity != null) {
+                runCatching {
+                    authenticationManager.deleteGoogleAccount(activity, provider)
                 }
-                // then delete the user:
-                Firebase.auth.currentUser!!.delete().addOnSuccessListener {
-                    signOut() // sign them out as the account is now deleted
-
-                }
-                // now can change the password as user authenticated successfully:
-                //deleteStatus = "Account deleted successfully."
+                    .onFailure {
+                        setDeleteStatus("Account could not be deleted.")
+                    }
             }
-            .addOnFailureListener { error ->
+        }
+    }
 
-                deleteStatus =
-                    "Invalid password. Account could not be deleted."
-
-            }
+    fun signOut() {
+        authenticationManager.signOut()
     }
 
 

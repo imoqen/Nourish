@@ -32,7 +32,6 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    signOut: () -> Unit // sign out method
 ) {
 
     Column() {
@@ -110,7 +109,6 @@ fun ProfileScreen(
         }
 
         val deleteAccountBottomSheetState = rememberModalBottomSheetState()
-        var deleteAccountPassword by remember { mutableStateOf("") }
         var deleteStatus by remember { mutableStateOf("") }
 
 
@@ -153,72 +151,20 @@ fun ProfileScreen(
 
                         Button(
                             onClick = {
-                                if (deleteAccountPassword == "") {
-                                    deleteStatus = "The password must not be blank."
-                                    return@Button // early return
-                                }
-                                val credentials = EmailAuthProvider.getCredential(
-                                    Firebase.auth.currentUser!!.email!!,
-                                    deleteAccountPassword
-                                )
-                                Firebase.auth.currentUser!!.reauthenticate(credentials)
-                                    .addOnSuccessListener {
-                                        // delete all of the user data from firestore:
-                                        scope.launch() {
-                                            //TODO Uncomment:
-                                            //deleteAllUserData(Firebase.auth.currentUser!!)
-                                        }
-                                        // then delete the user:
-                                        Firebase.auth.currentUser!!.delete().addOnSuccessListener {
-                                            signOut() // sign them out as the account is now deleted
-
-                                        }
-                                        // now can change the password as user authenticated successfully:
-                                        //deleteStatus = "Account deleted successfully."
-                                    }
-                                    .addOnFailureListener { error ->
-
-                                        deleteStatus =
-                                            "Invalid password. Account could not be deleted."
-
-                                    }
+                                profileViewModel.deletePasswordAccount()
                             }
                         ) {
                             Text("Delete Account")
                         }
                     }
+
                     else {
                         Text("Confirm by signing back in to google")
-                        val context = LocalContext.current
-                        val credentialManager = CredentialManager.create(context)
-                        val scope = rememberCoroutineScope()
                         val activity = LocalActivity.current
 
                         Button(
                             onClick = {
-                                scope.launch() {
-                                    // https://stackoverflow.com/questions/40898952/how-to-re-authenticate-a-user-on-firebase-with-google-provider
-                                    val provider = OAuthProvider.newBuilder("google.com").build()
-
-                                    if (activity != null) {
-                                        Firebase.auth.currentUser!!.startActivityForReauthenticateWithProvider(
-                                            activity,
-                                            provider
-                                        )
-                                            .addOnSuccessListener {
-                                                // delete all of the user data from firestore:
-                                                scope.launch() {
-                                                    //TODO Uncomment:
-                                                    //deleteAllUserData(Firebase.auth.currentUser!!)
-                                                }
-                                                // then delete the user:
-                                                Firebase.auth.currentUser!!.delete().addOnSuccessListener {
-                                                    signOut() // sign them out as the account is now deleted
-                                                } }
-                                            .addOnFailureListener { e -> deleteStatus = "error: $e" }
-                                    }
-
-                                }
+                                profileViewModel.deleteGoogleAccount(activity)
                             }
                         ) {
                             Text("Delete Account")
@@ -233,7 +179,7 @@ fun ProfileScreen(
                     Button(onClick = {
                         scope.launch { deleteAccountBottomSheetState.hide() }.invokeOnCompletion {
                             if (!deleteAccountBottomSheetState.isVisible) {
-                                showDeleteAccountBottomSheet = false
+                                profileViewModel.setShowDeleteAccountBottomSheet(false)
                             }
                         }
                     }) {
@@ -247,7 +193,7 @@ fun ProfileScreen(
 
         Button(
             onClick = {
-                signOut() // sign out locally by changing the auth current user state via the method
+                profileViewModel.signOut() // sign out locally by changing the auth current user state via the method
                 Log.i("signoutreq", "signing out")
             }
         ) {

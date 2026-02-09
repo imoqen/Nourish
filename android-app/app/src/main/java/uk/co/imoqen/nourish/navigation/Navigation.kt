@@ -38,7 +38,6 @@ import uk.co.imoqen.nourish.shoppinglist.ShoppingListScreen
 fun AppNavHost(
     navController: NavHostController,
     startDestination: String,
-    signOut: () -> Unit, // method for signing out
     modifier: Modifier
 ) {
 
@@ -63,9 +62,7 @@ fun AppNavHost(
 
         // Top Navbar: Tab destinations
         composable(TabDestination.PROFILE.route) {
-            ProfileScreen(
-                signOut
-            )
+            ProfileScreen()
         }
         composable(TabDestination.SETTINGS.route) { SettingsScreen() }
 

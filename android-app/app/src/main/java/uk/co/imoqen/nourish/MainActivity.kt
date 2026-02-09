@@ -55,9 +55,10 @@ fun MainContent(modifier: Modifier = Modifier) {
 
     // authentication view model, used across the whole app therefore declared here:
     val authenticationViewModel: AuthenticationViewModel = hiltViewModel()
+    val appViewModel: AppViewModel = hiltViewModel()
 
-    // get the authentication state (not the ui state as this is used only in the authentication view):
-    val authenticationState by authenticationViewModel.state.collectAsState()
+    // get the authentication state (holds log in state):
+    val authenticationState by appViewModel.authenticationState.collectAsState()
 
     //val loggedIn = authenticationState.loggedIn
     Log.i("auth state: ", "${authenticationState.loggedIn}")
@@ -110,7 +111,6 @@ fun MainContent(modifier: Modifier = Modifier) {
             AppNavHost(
                 navController,
                 startDestination.route,
-                authenticationViewModel::signOut,
                 modifier = Modifier.padding(contentPadding)
             )
 

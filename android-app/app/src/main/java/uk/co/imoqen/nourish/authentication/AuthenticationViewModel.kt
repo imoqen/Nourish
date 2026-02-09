@@ -146,8 +146,8 @@ class AuthenticationViewModel @Inject constructor(
                 .onSuccess {
                     authenticationManager.addIfNotExists()
                 }
-                .onFailure {
-
+                .onFailure { e ->
+                    Log.e("Login error", "$e")
                 }
         }
     }
@@ -186,5 +186,9 @@ class AuthenticationViewModel @Inject constructor(
                     setPasswordResetStatus("The password reset email failed to send.")
                 }
         }
+    }
+
+    fun isLoggedIn(): Boolean {
+        return authenticationManager.isLoggedIn()
     }
 }
