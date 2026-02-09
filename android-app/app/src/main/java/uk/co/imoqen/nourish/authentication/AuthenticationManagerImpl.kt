@@ -9,6 +9,8 @@ import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.google.firebase.Firebase
+import com.google.firebase.auth.AuthCredential
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
@@ -189,6 +191,40 @@ class AuthenticationManagerImpl @Inject constructor(
         Log.i("STATUS: ", "not logged in")
 
         return false
+    }
+
+    override suspend fun hasPasswordProvider(): Boolean {
+        if (!isLoggedIn()) {
+            return false // early return if not logged in
+        }
+        // determine if the user has a password provider. true if so, false if their account is a Google acc.
+        return auth.currentUser!!.providerData.any { it.providerId == "password" }
+    }
+
+    override suspend fun getCredentials(password: String): AuthCredential? {
+        if (!isLoggedIn()) {
+            return null // early return if not logged in; no auth credentials.
+        }
+        return EmailAuthProvider.getCredential(
+            auth.currentUser!!.email!!,
+            password
+        )
+    }
+
+    override suspend fun reauthenticate(password: String) {
+        // first get the credentials
+        val credentials = getCredentials(password)
+        if (credentials != null) { // therefore must also be logged in so can do currentUser!!
+            auth.currentUser!!.reauthenticate(credentials)
+        }
+        // then reauthenticate with those credentials:
+    }
+
+    override suspend fun updatePassword(newPassword: String) {
+        if (!isLoggedIn()) {
+            return // early return if not logged in; no auth credentials.
+        }
+        auth.currentUser!!.updatePassword(newPassword)
     }
 
 }

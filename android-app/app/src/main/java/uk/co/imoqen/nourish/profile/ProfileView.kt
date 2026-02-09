@@ -13,6 +13,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.credentials.CredentialManager
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.OAuthProvider
@@ -37,29 +39,26 @@ fun ProfileScreen(
 
         Text("Profile Screen")
 
+        val profileViewModel: ProfileViewModel = hiltViewModel()
+        val uiState by profileViewModel.uiState.collectAsState()
+
         val sheetState = rememberModalBottomSheetState()
         val scope = rememberCoroutineScope()
-        var showBottomSheet by remember { mutableStateOf(false) }
-        var oldPassword by remember { mutableStateOf("") }
-        var newPassword by remember { mutableStateOf("") }
-        var status by remember { mutableStateOf("") }
 
         // to ensure password reset is only possible for username/password accounts (not Google accounts), to avoid confusion:
-        val hasPasswordProvider = Firebase.auth.currentUser!!.providerData.any { it.providerId == "password" }
-
-        if (hasPasswordProvider) {
+        if (uiState.hasPasswordProvider) {
             Button(
                 onClick = {
-                    showBottomSheet = true
+                    profileViewModel.setShowPasswordChangeBottomSheet(true)
                 }
             ) {
                 Text("Change password")
             }
 
-            if (showBottomSheet) {
+            if (uiState.showPasswordChangeBottomSheet) {
                 ModalBottomSheet(
                     onDismissRequest = {
-                        showBottomSheet = false
+                        profileViewModel.setShowPasswordChangeBottomSheet(false)
                     },
                     sheetState = sheetState
                 ) {
@@ -67,9 +66,9 @@ fun ProfileScreen(
                     Column() {
                         // old password:
                         OutlinedTextField(
-                            value = oldPassword,
+                            value = uiState.oldPassword,
                             onValueChange = { password ->
-                                oldPassword = password
+                                profileViewModel.setOldPassword(password)
                             },
                             placeholder = {
                                 Text("Enter your account's existing password")
@@ -81,9 +80,9 @@ fun ProfileScreen(
                         )
                         // new password:
                         OutlinedTextField(
-                            value = newPassword,
+                            value = uiState.newPassword,
                             onValueChange = { updatedPassword ->
-                                newPassword = updatedPassword
+                                profileViewModel.setOldPassword(updatedPassword)
                             },
                             placeholder = {
                                 Text("Enter a new password for your account")
@@ -96,54 +95,21 @@ fun ProfileScreen(
 
                         Button(
                             onClick = {
-                                if (oldPassword == "" || newPassword == "") {
-                                    status = "All fields must not be blank."
-                                    return@Button // early return
-                                }
-                                val credentials = EmailAuthProvider.getCredential(
-                                    Firebase.auth.currentUser!!.email!!,
-                                    oldPassword
-                                )
-                                Firebase.auth.currentUser!!.reauthenticate(credentials)
-                                    .addOnSuccessListener {
-                                        // now can change the password as user authenticated successfully:
-                                        Firebase.auth.currentUser!!.updatePassword(newPassword)
-                                            .addOnSuccessListener {
-                                                status = "Password updated successfully."
-                                            }
-                                            .addOnFailureListener {
-                                                status = "Password update failed."
-                                            }
-                                    }
-                                    .addOnFailureListener { error ->
-
-                                        status = "The existing password inputted is incorrect."
-
-                                    }
+                                profileViewModel.updatePassword()
                             }
                         ) {
                             Text("Update Password")
                         }
 
-                        if (status != "") {
-                            Text(status)
-                        }
-
-                        Button(onClick = {
-                            scope.launch { sheetState.hide() }.invokeOnCompletion {
-                                if (!sheetState.isVisible) {
-                                    showBottomSheet = false
-                                }
-                            }
-                        }) {
-                            Text("Hide bottom sheet")
+                        if (uiState.passwordChangeStatus != "") {
+                            Text(uiState.passwordChangeStatus)
                         }
                     }
                 }
             }
         }
 
-        var deleteAccountBottomSheetState = rememberModalBottomSheetState()
+        val deleteAccountBottomSheetState = rememberModalBottomSheetState()
         var showDeleteAccountBottomSheet by remember { mutableStateOf(false) }
         var deleteAccountPassword by remember { mutableStateOf("") }
         var deleteStatus by remember { mutableStateOf("") }
@@ -169,7 +135,7 @@ fun ProfileScreen(
                     Text("Are you sure you wish to delete your account?")
                     Text("This will delete all data associated with your account. This action cannot be undone.")
 
-                    if (hasPasswordProvider) {
+                    if (uiState.hasPasswordProvider) {
                         Text("Please type your password below to confirm.")
                         // old password:
                         OutlinedTextField(

@@ -1,6 +1,7 @@
 package uk.co.imoqen.nourish.authentication
 
 import android.content.Context
+import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseUser
 
 interface AuthenticationManager {
@@ -22,5 +23,15 @@ interface AuthenticationManager {
 
     suspend fun passwordResetRequest(email: String)
 
+    // used in profile view model:
+
+    suspend fun hasPasswordProvider(): Boolean
+
     fun isLoggedIn(): Boolean
+
+    suspend fun getCredentials(password: String): AuthCredential?
+
+    suspend fun reauthenticate(password: String)
+
+    suspend fun updatePassword(newPassword: String)
 }
