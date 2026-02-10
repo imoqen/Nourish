@@ -15,7 +15,7 @@ interface AuthenticationManager {
 
     fun addUserToFirestore(user: FirebaseUser)
 
-    fun addIfNotExists()
+    suspend fun addIfNotExists()
 
     fun firebaseSignOut()
 

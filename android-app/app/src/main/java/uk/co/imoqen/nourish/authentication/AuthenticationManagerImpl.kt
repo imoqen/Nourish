@@ -42,6 +42,9 @@ import javax.inject.Singleton
 // also need to refactor a lot
 
 // singleton compomnent: only one exists across the whole app
+
+// methods in here shouldnt use try catch if they are async. the exception should be thrown up to the
+// view model method which calls it, and deal with it appropriately.
 @Singleton
 class AuthenticationManagerImpl @Inject constructor(
     private val auth: FirebaseAuth,
@@ -102,24 +105,17 @@ class AuthenticationManagerImpl @Inject constructor(
             }
     }
 
-    override fun addIfNotExists() {
-        try {
-            val user = auth.currentUser!!
-            // check if document with uid already exists:
-            db.collection("users").document(user.uid)
-                .get()
-                .addOnSuccessListener { result ->
-                    if (!result.exists()) {
-                        addUserToFirestore(user)
-                    }
-                    // otherwise dont add, as already exists.
-                }
-                .addOnFailureListener { e ->
-                    Log.d("Firestore error", "error: $e")
-                }
-        } catch (e: Error) {
-            Log.d("Firestore error", "error: $e")
+    override suspend fun addIfNotExists() {
+        if (!isLoggedIn()) {
+            return // early return if not logged in MAYBE HAVE TO RETURN AN ERROR HERE OR SO? OR NOTHING?
         }
+        val user = auth.currentUser!!
+        // check if document with uid already exists:
+        val result = db.collection("users").document(user.uid).get().await()
+        if (!result.exists()) {
+            addUserToFirestore(user)
+        }
+        // otherwise dont add, as already exists.
     }
 
     // sign out method. a different method is used in view model as it cannot access authentication manager as it uses the context.
@@ -289,29 +285,18 @@ class AuthenticationManagerImpl @Inject constructor(
         if (!isLoggedIn()) {
             return // early return if not logged in; no auth credentials.
         }
-        try {
-            val user = auth.currentUser!!
-            // reauthenticate by opening log in in users browser
-            user.startActivityForReauthenticateWithProvider(
-                activity,
-                provider
-            ).await()
-            // delete user on firebase
-            deleteAllUserData(user)
-            try {
-                // delete user
-                user.delete().await()
-                // then sign out:
-                signOut()
-            }
-            catch (e: Exception) {
-                Log.e("delete google", "error: $e")
-            }
-
-        }
-        catch (e: Exception) {
-            Log.e("delete google", "error: $e")
-        }
+        val user = auth.currentUser!!
+        // reauthenticate by opening log in in users browser
+        user.startActivityForReauthenticateWithProvider(
+            activity,
+            provider
+        ).await()
+        // delete users data on firebase firestore
+        deleteAllUserData(user)
+        // delete user from firebase authentication
+        user.delete().await()
+        // then sign out locally:
+        signOut()
     }
 
 }
