@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish.recipediscovery
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
@@ -73,14 +74,8 @@ class RecipeDiscoveryViewModel @Inject constructor(
      * If an error occurs, the error is stored as above and displayed in the view.
      */
     fun makeLlmApiCall() {
-        val request =
-            LlmRequest(
-                "Generate a recipe for the following food item: ${mutableUiState.value.userRequest}. " +
-                        "Do not include anything at the start like Sure! etc, just get straight to the recipe. " +
-                        "Do not include any * etc, it should be plaintext not markdown format." +
-                        "Do it in less than 100 words and use numbers to specify the steps. Write all the ingredients at the start." +
-                        "Put a title at the start to outline the title of the recipe."
-            )
+        // The request simply sends the name of the meal, and the Cloud Run service deals with it appropriately.
+        val request = LlmRequest(mutableUiState.value.userRequest)
         viewModelScope.launch() {
             runCatching {
                 val tokenResult = authenticationManager.getUserToken()
@@ -95,10 +90,13 @@ class RecipeDiscoveryViewModel @Inject constructor(
                         call: Call<LlmResponse>, response: Response<LlmResponse>
                     ) {
                         if (response.isSuccessful) {
+                            Log.i("response", "${response}")
+                            Log.i("responsebody", "${response.body()}")
                             val post = response.body()
+                            Log.i("post", "$post")
                             if (post != null) {
                                 // Extracts the text and updates the UiState
-                                setApiResponse(post.text)
+                                setApiResponse("${post.title}:\n\n Ingredients: \n${post.ingredients} \n\nMethod: \n${post.method}")
                                 setApiResponseError("")
                             }
                         } else {
