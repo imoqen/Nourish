@@ -93,7 +93,15 @@ class RecipeDiscoveryViewModel @Inject constructor(
                             val post = response.body()
                             if (post != null) {
                                 // Extracts the text and updates the UiState
-                                setApiResponse("${post.title}:\n\n Ingredients: \n${post.ingredients} \n\nMethod: \n${post.method}")
+                                setApiResponse(
+                                    "${post.title}:" +
+                                            "\n\nIngredients: \n${post.ingredients} " +
+                                            "\n\nIngredient Amounts: \n${post.ingredient_amounts} " +
+                                            "\n\nIngredient Units: \n${post.ingredient_amount_units} " +
+                                            "\n\nMethod: \n${post.method}" +
+                                            "\n\nServing Size: \n${post.servings} " +
+                                            "\n\nType of Meal: \n${post.meal_type} "
+                                )
                                 setApiResponseError("")
                             }
                         } else {

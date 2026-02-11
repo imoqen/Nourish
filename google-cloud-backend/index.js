@@ -181,7 +181,11 @@ async function generateContent(
   //https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
   const RecipeSchemaZod = z.object({
     title: z.string().describe("title of the recipe"),
-    ingredients: z.string().describe("a list of the ingredients of the recipe"),
+    ingredients: z
+      .string()
+      .describe(
+        "a list of the ingredients of the recipe, do not include the amounts here; these will go in ingredient_amounts and ingredient_amount_units.",
+      ),
     ingredient_amounts: z
       .string()
       .describe(
@@ -190,7 +194,7 @@ async function generateContent(
     ingredient_amount_units: z
       .string()
       .describe(
-        "a list of the ingredient units of each ingredient amount to use (e.g. tsp). must correspond with the ingredient in the ingredients list and ingredient_amounts list.",
+        "a list of the ingredient units (UK) of each ingredient amount to use (e.g. tsp). must correspond with the ingredient in the ingredients list and ingredient_amounts list.",
       ),
     servings: z
       .string()
@@ -229,7 +233,7 @@ async function generateContent(
       {
         role: "system",
         content:
-          "Return in the required schema and use less than 100 words total",
+          "Return in the required schema, write in sufficient detail but not too much (keep below 250 words).",
       },
       {
         role: "user",
