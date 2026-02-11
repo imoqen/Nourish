@@ -1,9 +1,15 @@
 const { GoogleGenAI } = require("@google/genai");
+const { ChatVertexAI } = require("@langchain/google-vertexai");
 const express = require("express"); // to handle request/responses
 
 const { initializeApp } = require("firebase-admin/app"); // firebase admin sdk
 const { getAuth } = require("firebase-admin/auth"); // auth method from firebase
 const { getFirestore, FieldValue } = require("firebase-admin/firestore"); // firestore
+
+const { z } = require("zod");
+
+// langchain:
+const { createAgent, providerStrategy, toolStrategy } = require("langchain");
 
 const GOOGLE_CLOUD_PROJECT = "GOOGLE_CLOUD_PROJECT_NAME";
 const GOOGLE_CLOUD_LOCATION = "GOOGLE_CLOUD_PROJECT_REGION";
@@ -59,12 +65,12 @@ async function generate(req, res) {
     }
 
     // Perform the LLM request and retrieve the response
-    const text = await generateContent(
+    const recipe = await generateContent(
       GOOGLE_CLOUD_PROJECT,
       GOOGLE_CLOUD_LOCATION,
       prompt,
     );
-    res.json({ text });
+    res.json(recipe);
     return res;
   } catch (e) {
     console.error(e);
@@ -171,18 +177,72 @@ async function generateContent(
   location = GOOGLE_CLOUD_LOCATION,
   prompt,
 ) {
-  const client = new GoogleGenAI({
-    vertexai: true,
+  // tool strategy for formatting output:
+  //https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
+  const RecipeSchemaZod = z.object({
+    title: z.string().describe("title of the recipe"),
+    ingredients: z.string().describe("a list of the ingredients of the recipe"),
+    ingredient_amounts: z
+      .string()
+      .describe(
+        "a list of the amounts of each ingredient to use, given only as integers or floats. must correspond with the ingredient in the ingredients list.",
+      ),
+    ingredient_amount_units: z
+      .string()
+      .describe(
+        "a list of the ingredient units of each ingredient amount to use (e.g. tsp). must correspond with the ingredient in the ingredients list and ingredient_amounts list.",
+      ),
+    servings: z
+      .string()
+      .describe(
+        "the number of servings made of this meal using the amount of ingredients in the ingredient_amounts and ingredient_amount_units list",
+      ),
+    meal_type: z
+      .string()
+      .describe(
+        "the type of meal that this corresponds to (breakfast, lunch, dinner, snack)",
+      ),
+    method: z
+      .string()
+      .describe(
+        "numbered list of the recipe's method, in the form \\nX. for all X to ensure each step is on its own line",
+      ),
+  });
+
+  // https://docs.langchain.com/oss/javascript/integrations/chat/google_vertex_ai
+  const llm = new ChatVertexAI({
     project: projectId,
     location: location,
-  });
-
-  const response = await client.models.generateContent({
     model: "gemini-2.0-flash",
-    contents: prompt,
   });
 
-  return response.text;
+  const agent = createAgent({
+    model: llm,
+    tools: [],
+    responseFormat: toolStrategy(RecipeSchemaZod),
+  });
+
+  console.log("Generating recipe for: " + prompt);
+
+  const result = await agent.invoke({
+    messages: [
+      {
+        role: "system",
+        content:
+          "Return in the required schema and use less than 100 words total",
+      },
+      {
+        role: "user",
+        content: "Create a recipe for the following dish: " + prompt,
+      },
+    ],
+  });
+
+  // note: this returns the tokens. should use this value to increment the token count instead.
+
+  console.log(result.structuredResponse);
+
+  return result.structuredResponse;
 }
 
 // To run the POST endpoint:
