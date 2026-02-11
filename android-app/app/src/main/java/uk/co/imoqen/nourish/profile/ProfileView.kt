@@ -32,13 +32,13 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
+    profileViewModel: ProfileViewModel
 ) {
 
     Column() {
 
         Text("Profile Screen")
 
-        val profileViewModel: ProfileViewModel = hiltViewModel()
         val uiState by profileViewModel.uiState.collectAsState()
 
         val sheetState = rememberModalBottomSheetState()
@@ -81,7 +81,7 @@ fun ProfileScreen(
                         OutlinedTextField(
                             value = uiState.newPassword,
                             onValueChange = { updatedPassword ->
-                                profileViewModel.setOldPassword(updatedPassword)
+                                profileViewModel.setNewPassword(updatedPassword)
                             },
                             placeholder = {
                                 Text("Enter a new password for your account")
@@ -109,8 +109,6 @@ fun ProfileScreen(
         }
 
         val deleteAccountBottomSheetState = rememberModalBottomSheetState()
-        var deleteStatus by remember { mutableStateOf("") }
-
 
         Button(
             onClick = {
@@ -172,8 +170,8 @@ fun ProfileScreen(
 
                     }
 
-                    if (deleteStatus != "") {
-                        Text(deleteStatus)
+                    if (uiState.deleteStatus != "") {
+                        Text(uiState.deleteStatus)
                     }
 
                     Button(onClick = {

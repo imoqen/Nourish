@@ -25,9 +25,10 @@ class ProfileViewModel @Inject constructor(
     private val mutableUiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = mutableUiState.asStateFlow()
 
-    // runs when app starts
+    // runs when app starts AND NEEDS TO run when users log out then log back in (as another user or not).
     init {
         // determine if the user has password provider:
+        Log.i("init","initialising profile vm")
         hasPasswordProvider()
     }
 
@@ -148,19 +149,14 @@ class ProfileViewModel @Inject constructor(
             runCatching {
                 // first reauthenticate the user:
                 authenticationManager.reauthenticate(mutableUiState.value.deleteAccountPassword)
+                // if no failure yet, can delete acc:
+                authenticationManager.deletePasswordAccount()
             }
                 .onSuccess {
-                    runCatching {
-                        authenticationManager.deletePasswordAccount()
-                    }
-                        .onSuccess {
-                            // would put status message here but user is logged out anyway
-                        }
-                        .onFailure {
-                            setDeleteStatus("Account could not be deleted.")
-                        }
+                    Log.i("s", "successful deletion")
                 }
                 .onFailure {
+                    Log.i("f", "failed to delete")
                     setDeleteStatus("Account could not be deleted.")
                 }
         }

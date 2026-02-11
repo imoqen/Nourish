@@ -60,7 +60,11 @@ class AuthenticationManagerImpl @Inject constructor(
     }
 
     override fun updateLoggedInState() {
-        setLoggedIn(isLoggedIn())
+        if (isLoggedIn()) {
+            setLoginState(true, auth.currentUser!!.uid)
+            return
+        }
+        setLoginState(false)
     }
 
     override fun signOut() {
@@ -69,18 +73,21 @@ class AuthenticationManagerImpl @Inject constructor(
             auth.signOut()
         }
         // and update stored logged in status:
-        setLoggedIn(false)
+        setLoginState(false)
     }
 
     // STATE:
-    // update logged in state
-    fun setLoggedIn(loggedInState: Boolean) {
+    // update logged in state with the boolean and string
+    // private so not override
+    fun setLoginState(loggedInState: Boolean, uid: String = "") {
         mutableAuthenticationState.update { currentState ->
             currentState.copy(
-                loggedIn = loggedInState
+                loggedIn = loggedInState,
+                uid = uid
             )
         }
     }
+
 
     override fun getCurrentUser(): FirebaseUser? {
         return Firebase.auth.currentUser
@@ -135,7 +142,7 @@ class AuthenticationManagerImpl @Inject constructor(
         auth.createUserWithEmailAndPassword(email, password).await()
         // log in successful if current user is not null
         if (auth.currentUser != null) {
-            setLoggedIn(true) // set logged in if successful
+            setLoginState(true, auth.currentUser!!.uid) // set logged in if successful
         }
     }
 
@@ -145,7 +152,7 @@ class AuthenticationManagerImpl @Inject constructor(
     ) {
         auth.signInWithEmailAndPassword(email, password).await()
         if (auth.currentUser != null) {
-            setLoggedIn(true) // set logged in if successful
+            setLoginState(true, auth.currentUser!!.uid) // set logged in if successful
         }
     }
 
@@ -201,7 +208,7 @@ class AuthenticationManagerImpl @Inject constructor(
                     // check if validly signed in:
                     if (auth.currentUser != null) {
                         Log.i("sign in", "success sign in")
-                        setLoggedIn(true) // set logged in if successful
+                        setLoginState(true, auth.currentUser!!.uid) // set logged in if successful
                     }
                 }}
 
@@ -216,7 +223,7 @@ class AuthenticationManagerImpl @Inject constructor(
         tokenUsages.forEach{ tokenUsage ->
             tokenUsage.reference.delete().await()
         }
-        userRef.delete()
+        userRef.delete().await()
     }
 
     // make the password request
@@ -235,11 +242,15 @@ class AuthenticationManagerImpl @Inject constructor(
     }
 
     override suspend fun hasPasswordProvider(): Boolean {
+        var result = false
         if (!isLoggedIn()) {
+            Log.i("has pw prov", "$result")
             return false // early return if not logged in
         }
         // determine if the user has a password provider. true if so, false if their account is a Google acc.
-        return auth.currentUser!!.providerData.any { it.providerId == "password" }
+        result = auth.currentUser!!.providerData.any { it.providerId == "password" }
+        Log.i("has pw prov", "$result")
+        return result
     }
 
     override suspend fun getCredentials(password: String): AuthCredential? {
@@ -257,7 +268,8 @@ class AuthenticationManagerImpl @Inject constructor(
         val credentials = getCredentials(password)
         if (credentials != null) { // therefore must also be logged in so can do currentUser!!
             // then reauthenticate with those credentials:
-            auth.currentUser!!.reauthenticate(credentials)
+            auth.currentUser!!.reauthenticate(credentials).await()
+            Log.i("fin", "finished")
         }
     }
 

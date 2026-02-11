@@ -28,6 +28,6 @@ enum class TabDestination(
     RECIPE_BOOK("b/recipe-book","Recipe Book", Icons.Filled.FavoriteBorder, "Go to view recipes"),
     SHOPPING_LIST("l/shopping-list", "Shopping List", Icons.AutoMirrored.Filled.List, "Go to shopping list"),
     PROFILE("p/profile", "Profile", Icons.Filled.Person, "Go to profile"),
-    SETTINGS("s/settings", "Settings", Icons.Filled.Settings, "Go to settings")
+    //SETTINGS("s/settings", "Settings", Icons.Filled.Settings, "Go to settings")
 
 }

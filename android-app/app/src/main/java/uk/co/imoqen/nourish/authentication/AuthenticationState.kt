@@ -8,4 +8,5 @@ import com.google.firebase.auth.auth
 // but determined IN the authentication view: a product of it.
 data class AuthenticationState (
     val loggedIn: Boolean = false,
+    val uid: String = ""
 )

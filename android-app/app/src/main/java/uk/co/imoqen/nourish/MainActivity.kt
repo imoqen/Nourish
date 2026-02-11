@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -20,6 +21,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.NonCancellable.key
 import uk.co.imoqen.nourish.authentication.AuthenticationViewModel
 import uk.co.imoqen.nourish.authentication.LoginScreen
 import uk.co.imoqen.nourish.navigation.AppNavHost
@@ -48,7 +50,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainContent(modifier: Modifier = Modifier) {
     // Creates the navigation controller:
-    val navController = rememberNavController()
 
     // The start destination to begin the app at:
     val startDestination = TabDestination.RECIPE_FINDER
@@ -61,7 +62,7 @@ fun MainContent(modifier: Modifier = Modifier) {
     val authenticationState by appViewModel.authenticationState.collectAsState()
 
     //val loggedIn = authenticationState.loggedIn
-    Log.i("auth state: ", "${authenticationState.loggedIn}")
+    Log.i("auth state: ", "${authenticationState.loggedIn}, uid: ${authenticationState.uid}")
     if (!authenticationState.loggedIn) {
         // display sign up page if null
         Scaffold(
@@ -71,27 +72,29 @@ fun MainContent(modifier: Modifier = Modifier) {
         }
 
     } else {
-        // otherwise display rest of app and pass the logged in user and logout function to everything else
+        key(authenticationState.uid) {
+            val navController = rememberNavController() // new nav controller for each logged in user, to clear the previous to ensure no state carryover
+            // otherwise display rest of app and pass the logged in user and logout function to everything else
 
-        // Note that the selected destinations are remembered by the NavController/NavHost, so dont need to remember it here.
-        // The currently selected tab value to display (dynamically determined based on the route - first char of the string x/route),
-        // required as RouteDestinations are within tabs. So must determine which tab to display for each route.
-        val selectedDestinationTab =
-            navController.currentBackStackEntryAsState().value?.destination?.route?.firstOrNull()
-                ?: startDestination.route[0]
+            // Note that the selected destinations are remembered by the NavController/NavHost, so dont need to remember it here.
+            // The currently selected tab value to display (dynamically determined based on the route - first char of the string x/route),
+            // required as RouteDestinations are within tabs. So must determine which tab to display for each route.
+            val selectedDestinationTab =
+                navController.currentBackStackEntryAsState().value?.destination?.route?.firstOrNull()
+                    ?: startDestination.route[0]
 
-        Scaffold(
-            modifier = modifier,
-            bottomBar = {
-                // Bottom navbar destinations are the first 3 values of the TabDestination enum (0..2)
-                NourishNavigationBar(
-                    TabDestination.entries.take(3),
-                    selectedDestinationTab,
-                    navController
-                )
-                // Potentially move this to Navigation.kt
-            },
-            topBar = {
+            Scaffold(
+                modifier = modifier,
+                bottomBar = {
+                    // Bottom navbar destinations are the first 3 values of the TabDestination enum (0..2)
+                    NourishNavigationBar(
+                        TabDestination.entries,
+                        selectedDestinationTab,
+                        navController
+                    )
+                    // Potentially move this to Navigation.kt
+                },
+                /*topBar = {
                 Row(
                     horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.Top
@@ -104,16 +107,18 @@ fun MainContent(modifier: Modifier = Modifier) {
                     )
                 }
                 // Top navbar destinations are those after the first 3 items of the TabDestination enum (3.. end)
-            }
-        ) { contentPadding ->
-            // Navigation is controlled by the app navigation host, also with the auth state and sign out method passed in.
-            // current user must not be null here so !! can be used, since check was above. as must be logged in.
-            AppNavHost(
-                navController,
-                startDestination.route,
-                modifier = Modifier.padding(contentPadding)
-            )
+            }*/
+            ) { contentPadding ->
 
+                // Navigation is controlled by the app navigation host, also with the auth state and sign out method passed in.
+                // current user must not be null here so !! can be used, since check was above. as must be logged in.
+                AppNavHost(
+                    navController,
+                    startDestination.route,
+                    modifier = Modifier.padding(contentPadding)
+                )
+
+            }
         }
     }
 
