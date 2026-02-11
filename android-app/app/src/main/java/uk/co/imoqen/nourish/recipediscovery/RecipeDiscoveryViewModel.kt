@@ -37,8 +37,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
     private val apiService: ApiService,
     private val authenticationManager: AuthenticationManager
 ): ViewModel() {
-
-    // Ui State
     private val mutableUiState = MutableStateFlow(RecipeDiscoveryUiState())
     val uiState: StateFlow<RecipeDiscoveryUiState> = mutableUiState.asStateFlow()
 

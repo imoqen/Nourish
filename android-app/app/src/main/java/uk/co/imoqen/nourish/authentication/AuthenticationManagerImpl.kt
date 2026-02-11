@@ -242,18 +242,36 @@ class AuthenticationManagerImpl @Inject constructor(
         return false
     }
 
-    override suspend fun hasPasswordProvider(): Boolean {
-        var result = false
+    override suspend fun getUserToken(): GetTokenResult? {
         if (!isLoggedIn()) {
-            Log.i("has pw prov", "$result")
-            return false // early return if not logged in
+            return null // early return if not logged in; no auth credentials.
         }
-        // determine if the user has a password provider. true if so, false if their account is a Google acc.
-        result = auth.currentUser!!.providerData.any { it.providerId == "password" }
-        Log.i("has pw prov", "$result")
-        return result
+        val user = auth.currentUser!!
+        return user.getIdToken(true).await()
     }
 
+    // Methods specific to use in the ProfileViewModel:
+
+    /**
+     * Determines whether the currently logged in user has a password provider.
+     * There are two types of provider supported:
+     * - Google (sign up/in with Google)
+     * - Password (sign up/in with email and password)
+     * This method checks if the user has the latter type of account.
+     * @returns true if has password provider, false otherwise.
+     */
+    override suspend fun hasPasswordProvider(): Boolean {
+        if (!isLoggedIn()) {
+            return false
+        }
+        return auth.currentUser!!.providerData.any { it.providerId == "password" }
+    }
+
+    /**
+     * Gets the credentials of the current user, for use during reauthentication.
+     * @param password - the password to get the credentials for, using the current email.
+     * @returns valid AuthCredentials if password is valid for the email, null otherwise.
+     */
     override suspend fun getCredentials(password: String): AuthCredential? {
         if (!isLoggedIn()) {
             return null // early return if not logged in; no auth credentials.
@@ -264,16 +282,25 @@ class AuthenticationManagerImpl @Inject constructor(
         )
     }
 
+    /**
+     * Reauthenticates an account. This is required to perform sensitive actions such as
+     * password changes and account deletion; required for an extra level of security.
+     * Only performed on password-provider accounts (Google accounts must follow an alternative flow).
+     * https://firebase.google.com/docs/auth/admin/manage-sessions
+     * @param password - the password to reauthenticate the email with
+     */
     override suspend fun reauthenticate(password: String) {
         // first get the credentials
         val credentials = getCredentials(password)
         if (credentials != null) { // therefore must also be logged in so can do currentUser!!
             // then reauthenticate with those credentials:
             auth.currentUser!!.reauthenticate(credentials).await()
-            Log.i("fin", "finished")
         }
     }
 
+    /**
+     * Updates the password of a password-provider account. Requires reauthentication beforehand.
+     */
     override suspend fun updatePassword(newPassword: String) {
         if (!isLoggedIn()) {
             return // early return if not logged in; no auth credentials.
@@ -281,6 +308,9 @@ class AuthenticationManagerImpl @Inject constructor(
         auth.currentUser!!.updatePassword(newPassword)
     }
 
+    /**
+     * Deletes a password-provider account.
+     */
     override suspend fun deletePasswordAccount() {
         if (!isLoggedIn()) {
             return // early return if not logged in; no auth credentials.
@@ -294,6 +324,15 @@ class AuthenticationManagerImpl @Inject constructor(
 
     }
 
+    /**
+     * Deletes a Google-provider account.
+     * This is based on an approach found on StackOverflow:
+     * https://stackoverflow.com/questions/40898952/how-to-re-authenticate-a-user-on-firebase-with-google-provider
+     * it requires navigating the user into their web app and following a flow to reauthenticate
+     * their Google account. If successful, the account is deleted and the user is logged out.
+     * @param activity - the current activity, allowing the web app to be opened for reauthentication
+     * @param provider - the Google OAuthProvider
+     */
     override suspend fun deleteGoogleAccount(activity: Activity, provider: OAuthProvider) {
         if (!isLoggedIn()) {
             return // early return if not logged in; no auth credentials.
@@ -311,15 +350,6 @@ class AuthenticationManagerImpl @Inject constructor(
         // then sign out locally:
         signOut()
     }
-
-    override suspend fun getUserToken(): GetTokenResult? {
-        if (!isLoggedIn()) {
-            return null // early return if not logged in; no auth credentials.
-        }
-        val user = auth.currentUser!!
-        return user.getIdToken(true).await()
-    }
-
 }
 
 

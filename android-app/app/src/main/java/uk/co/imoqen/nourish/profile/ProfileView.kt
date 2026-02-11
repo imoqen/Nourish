@@ -1,6 +1,5 @@
 package uk.co.imoqen.nourish.profile
 
-import android.util.Log
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,36 +14,25 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.credentials.CredentialManager
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.google.firebase.Firebase
-import com.google.firebase.auth.EmailAuthProvider
-import com.google.firebase.auth.OAuthProvider
-import com.google.firebase.auth.auth
-import kotlinx.coroutines.launch
 
+/**
+ * View for Profile, where the user can log out, delete their account and (if their account is
+ * password-provider), change their password.
+ * @param profileViewModel - the view model holding methods and state for use in the view.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     profileViewModel: ProfileViewModel
 ) {
-
     Column() {
-
-        Text("Profile Screen")
-
+        Text("Profile")
         val uiState by profileViewModel.uiState.collectAsState()
 
-        val sheetState = rememberModalBottomSheetState()
-        val scope = rememberCoroutineScope()
+        val passwordChangeSheetState = rememberModalBottomSheetState()
 
-        // to ensure password reset is only possible for username/password accounts (not Google accounts), to avoid confusion:
+        // Ensures password reset is only possible for username/password accounts (not Google accounts)
         if (uiState.hasPasswordProvider) {
             Button(
                 onClick = {
@@ -59,11 +47,11 @@ fun ProfileScreen(
                     onDismissRequest = {
                         profileViewModel.setShowPasswordChangeBottomSheet(false)
                     },
-                    sheetState = sheetState
+                    sheetState = passwordChangeSheetState
                 ) {
-                    // Sheet content
+                    // Bottom sheet for password change:
                     Column() {
-                        // old password:
+                        // Old password, for reauthentication
                         OutlinedTextField(
                             value = uiState.oldPassword,
                             onValueChange = { password ->
@@ -77,7 +65,7 @@ fun ProfileScreen(
                             },
                             modifier = Modifier.fillMaxWidth()
                         )
-                        // new password:
+                        // New password, for password change
                         OutlinedTextField(
                             value = uiState.newPassword,
                             onValueChange = { updatedPassword ->
@@ -108,7 +96,7 @@ fun ProfileScreen(
             }
         }
 
-        val deleteAccountBottomSheetState = rememberModalBottomSheetState()
+        val deleteAccountSheetState = rememberModalBottomSheetState()
 
         Button(
             onClick = {
@@ -123,16 +111,16 @@ fun ProfileScreen(
                 onDismissRequest = {
                     profileViewModel.setShowDeleteAccountBottomSheet(false)
                 },
-                sheetState = deleteAccountBottomSheetState
+                sheetState = deleteAccountSheetState
             ) {
-                // Sheet content
+                // Bottom sheet for account deletion:
                 Column() {
                     Text("Are you sure you wish to delete your account?")
                     Text("This will delete all data associated with your account. This action cannot be undone.")
-
+                    // Case: password-provider account
                     if (uiState.hasPasswordProvider) {
                         Text("Please type your password below to confirm.")
-                        // old password:
+                        // Password for reauthentication
                         OutlinedTextField(
                             value = uiState.deleteAccountPassword,
                             onValueChange = { password ->
@@ -155,7 +143,7 @@ fun ProfileScreen(
                             Text("Delete Account")
                         }
                     }
-
+                    // Case: Google-provider account
                     else {
                         Text("Confirm by signing back in to google")
                         val activity = LocalActivity.current
@@ -167,32 +155,18 @@ fun ProfileScreen(
                         ) {
                             Text("Delete Account")
                         }
-
                     }
-
                     if (uiState.deleteStatus != "") {
                         Text(uiState.deleteStatus)
-                    }
-
-                    Button(onClick = {
-                        scope.launch { deleteAccountBottomSheetState.hide() }.invokeOnCompletion {
-                            if (!deleteAccountBottomSheetState.isVisible) {
-                                profileViewModel.setShowDeleteAccountBottomSheet(false)
-                            }
-                        }
-                    }) {
-                        Text("Hide bottom sheet")
                     }
                 }
             }
         }
 
-
-
+        // Sign out:
         Button(
             onClick = {
-                profileViewModel.signOut() // sign out locally by changing the auth current user state via the method
-                Log.i("signoutreq", "signing out")
+                profileViewModel.signOut()
             }
         ) {
             Text("Sign out")
