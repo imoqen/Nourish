@@ -30,6 +30,7 @@ import uk.co.imoqen.nourish.authentication.AuthenticationViewModel
 import uk.co.imoqen.nourish.profile.ProfileScreen
 import uk.co.imoqen.nourish.profile.ProfileViewModel
 import uk.co.imoqen.nourish.recipebook.RecipeBookScreen
+import uk.co.imoqen.nourish.recipediscovery.RecipeDiscoveryViewModel
 import uk.co.imoqen.nourish.recipediscovery.RecipeFinderScreen
 import uk.co.imoqen.nourish.settings.SettingsScreen
 import uk.co.imoqen.nourish.shoppinglist.ShoppingListScreen
@@ -54,12 +55,13 @@ fun AppNavHost(
 
         // Bottom Navbar: Tab destinations
         composable(TabDestination.RECIPE_FINDER.route) {
+            val recipeDiscoveryViewModel: RecipeDiscoveryViewModel = hiltViewModel()
             // View models to pass in:
             // PUT VIEW MODELS USED SPECIFICALLY ONLY IN EACH SCREEN, IN THESE.
             // if share, can declare it on line 40 (above NavHost) in this composable and pass into both. (havent tested this but assume it will work)
             // as the authentication view model is used across the app,
             // The composable to display for this tab:
-            RecipeFinderScreen()
+            RecipeFinderScreen(recipeDiscoveryViewModel)
         }
         composable(TabDestination.RECIPE_BOOK.route) { RecipeBookScreen() }
         composable(TabDestination.SHOPPING_LIST.route) { ShoppingListScreen() }

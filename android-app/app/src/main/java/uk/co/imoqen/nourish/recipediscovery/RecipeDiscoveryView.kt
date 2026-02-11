@@ -7,6 +7,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -25,20 +27,18 @@ import uk.co.imoqen.nourish.network.LlmResponse
 
 @Composable
 fun RecipeFinderScreen(
+    recipeDiscoveryViewModel: RecipeDiscoveryViewModel
 ) {
     //LoginScreen()
     Column() {
         val loggedInUser = Firebase.auth.currentUser!!
         Text("Recipe Finder Screen, hello ${loggedInUser.email}")
 
-        val data = rememberSaveable { mutableStateOf("") }
-        val responseError = rememberSaveable { mutableStateOf("") }
-        val userInput = rememberSaveable { mutableStateOf("") }
-
+        val uiState by recipeDiscoveryViewModel.uiState.collectAsState()
         OutlinedTextField(
-            value = userInput.value,
-            onValueChange = { newValue: String ->
-                userInput.value = newValue
+            value = uiState.userRequest,
+            onValueChange = { request: String ->
+                recipeDiscoveryViewModel.setUserRequest(request)
             },
             placeholder = {
                 Text("What would you like to cook?")
@@ -52,10 +52,11 @@ fun RecipeFinderScreen(
         // https://medium.com/@imkuldeepsinghrai/api-calls-with-retrofit-in-android-kotlin-a-comprehensive-guide-e049e19deba9
         Button(
             onClick = {
-                if (userInput.value == "") { responseError.value = "Prompt cannot be blank."
+                if (uiState.userRequest == "") {
+                    recipeDiscoveryViewModel.setApiResponseError("Prompt cannot be blank.")
                 } else {
                     val request =
-                        LlmRequest("Test request. simply reply with the following text plus test appended if you received this: ${userInput.value}")
+                        LlmRequest("Test request. simply reply with the following text plus test appended if you received this: ${uiState.userRequest}")
                     val loggedInToken = FirebaseAuth.getInstance().currentUser!!.getIdToken(true)
                         .addOnSuccessListener { tokenResult ->
                             Log.i("true token", "true: ${tokenResult.token}")
@@ -76,15 +77,15 @@ fun RecipeFinderScreen(
                                     if (response.isSuccessful) {
                                         val post = response.body()
                                         if (post != null) {
-                                            data.value =
-                                                post.text // gets the text field from the response
+                                            // gets the text field from the response:
+                                            recipeDiscoveryViewModel.setApiResponse(post.text)
                                             //responseError.value = post.error.toString()
                                         }
                                     } else {
                                         val error = response.errorBody()?.string()
                                         // extracts the error json from the error string using the LlmError template
                                         val errorJson = Gson().fromJson(error, LlmError::class.java)
-                                        responseError.value = errorJson.error
+                                        recipeDiscoveryViewModel.setApiResponseError(errorJson.error)
                                     }
                                 }
 
@@ -104,11 +105,11 @@ fun RecipeFinderScreen(
             Text("Click me to make the POST request")
         }
 
-        if (data.value != "") {
-            Text(data.value)
+        if (uiState.apiResponse != "") {
+            Text(uiState.apiResponse)
         }
-        else if (responseError.value != "") {
-            Text(responseError.value)
+        if (uiState.apiResponseError != "") {
+            Text(uiState.apiResponseError)
         }
     }
 }
