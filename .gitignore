@@ -7,6 +7,7 @@ android-app/.idea/modules.xml
 android-app/.idea/workspace.xml
 android-app/.idea/navEditor.xml
 android-app/.idea/assetWizardSettings.xml
+android-app/.idea
 .DS_Store
 android-app/app/build
 android-app/app/captures
