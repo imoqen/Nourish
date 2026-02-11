@@ -1,83 +1,46 @@
 package uk.co.imoqen.nourish.authentication
 
-import android.util.Log
-import androidx.credentials.CredentialManager
-import androidx.credentials.CustomCredential
-import androidx.credentials.GetCredentialRequest
+import android.content.Context
 import androidx.lifecycle.ViewModel
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
-import com.google.firebase.Firebase
-import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.auth.GoogleAuthProvider
-import com.google.firebase.auth.auth
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.update
-import uk.co.imoqen.nourish.R
-import java.security.MessageDigest
-import java.util.UUID
+import kotlinx.coroutines.launch
+import uk.co.imoqen.nourish.constants.ErrorMessage
+import javax.inject.Inject
 
-class AuthenticationViewModel: ViewModel() {
-
-    private val auth = Firebase.auth
-
-    // SEPARATION OF CONCERNS: ui state vs state
-
-    // UI STATE:
+/**
+ * ViewModel for Authentication.
+ * Dependent on the AuthenticationManager to perform authentication based actions such as
+ * sign up, sign in, password change.
+ * @param authenticationManager - dependent on the AuthenticationManager
+ */
+@HiltViewModel
+class AuthenticationViewModel @Inject constructor(
+    private val authenticationManager: AuthenticationManager
+): ViewModel() {
     // Purpose: pattern to encapsulate the mutable state to ensure it is not mutable from the viewmodel.
-    // this is what is editable, only within this view model and not within composables.
     // pattern taken from advice in: https://medium.com/@rowaido.game/managing-ui-states-in-jetpack-compose-7eb15e4f6931
     private val mutableUiState = MutableStateFlow(AuthenticationUiState())
-
-    // this is the encapsulated, immutable state made from the mutable state above. this is what
-    // is observable from the Authentication composables.
+    // Observable from the Authentication composables; not used within the view model.
     val uiState: StateFlow<AuthenticationUiState> = mutableUiState.asStateFlow()
 
-    // STATE:
-    private val mutableState = MutableStateFlow(AuthenticationState())
-    val state: StateFlow<AuthenticationState> = mutableState.asStateFlow()
-
-    // STATE:
-    // update logged in user
-    fun setLoggedInUser(firebaseUser: FirebaseUser?) {
-        mutableState.update { currentState ->
-            currentState.copy(
-                currentUser = firebaseUser
-            )
-        }
-    }
-    fun signOut() {
-        mutableState.update { currentState ->
-            currentState.copy(
-                currentUser = null // simply set the current user to be null
-            )
-        }
-        // then sign out on firebase too:
-        if (Firebase.auth.currentUser != null) {
-            Firebase.auth.signOut()
-        }
-        Log.i("logout", "current firebase user: ${Firebase.auth.currentUser}, current local user: ${mutableState.value.currentUser}")
-    }
-
-    // UI STATE:
-    fun setEmail(email: String) {
+    // Setters for the UiState values
+    fun setSigninEmail(signinEmail: String) {
         mutableUiState.update { currentState ->
             currentState.copy(
-                email = email
+                signinEmail = signinEmail
             )
         }
     }
 
-    fun setPassword(password: String) {
+    fun setSigninPassword(signinPassword: String) {
         mutableUiState.update { currentState ->
             currentState.copy(
-                password = password
+                signinPassword = signinPassword
             )
         }
     }
@@ -111,6 +74,133 @@ class AuthenticationViewModel: ViewModel() {
             currentState.copy(
                 signupPasswordConfirmation = signupPasswordConfirmation
             )
+        }
+    }
+
+    // for password resetting:
+
+    fun setShowBottomSheet(showBottomSheet: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                showBottomSheet = showBottomSheet
+            )
+        }
+    }
+
+    fun setEmailToResetPassword(emailToResetPassword: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                emailToResetPassword = emailToResetPassword
+            )
+        }
+    }
+
+    fun setPasswordResetStatus(passwordResetStatus: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                passwordResetStatus = passwordResetStatus
+            )
+        }
+    }
+
+    fun setSigninError(signinError: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                signinError = signinError
+            )
+        }
+    }
+
+    fun setSignupError(signupError: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                signupError = signupError
+            )
+        }
+    }
+
+    // Functions used within the View to perform actions:
+
+    /**
+     * Sign in with email and password: password-provider account.
+     */
+    fun signInWithEmailAndPassword() {
+        viewModelScope.launch() {
+            // runCatching is used to call a suspend error and handle exceptions appropriately
+            // https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/run-catching.html
+            runCatching {
+                authenticationManager.signInWithEmailAndPassword(
+                    mutableUiState.value.signinEmail,
+                    mutableUiState.value.signinPassword
+                )
+                // then add the user to firestore if they don't already exist in firestore:
+                authenticationManager.addIfNotExists()
+            }
+                .onFailure {
+                    setSigninError(ErrorMessage.USER_ERROR_SIGNIN)
+                }
+        }
+    }
+
+    /**
+     * Sign in with Google account: Google-provider account.
+     */
+    fun signInWithGoogle(context: Context) {
+        viewModelScope.launch() {
+            runCatching {
+                authenticationManager.signInWithGoogle(context)
+                // then add the user to firestore if they don't already exist in firestore:
+                authenticationManager.addIfNotExists()
+            }
+                .onFailure { e ->
+                    setSigninError(ErrorMessage.USER_ERROR_SIGNIN)
+                }
+        }
+    }
+
+    /**
+     * Sign up with email and password: create a password-provider account.
+     */
+    fun signUpWithUsernameAndPassword() {
+        viewModelScope.launch() {
+            runCatching {
+                authenticationManager.signUpWithEmailAndPassword(
+                    mutableUiState.value.signupEmail,
+                    mutableUiState.value.signupPassword
+                )
+                // then add the user to firestore if they don't already exist in firestore:
+                authenticationManager.addIfNotExists()
+            }
+                .onFailure { fail ->
+                    setSignupError(ErrorMessage.USER_ERROR_SIGNUP)
+                }
+        }
+    }
+
+    /**
+     * Send a password reset request email to the associated account.
+     * The user can then reset their password using this link.
+     * If the account is a Google-provider account, this will add password-provider to their account;
+     * so their account will now use both password and Google login.
+     */
+    fun passwordResetRequest() {
+        if (mutableUiState.value.emailToResetPassword == "") {
+            setPasswordResetStatus(ErrorMessage.INPUT_ERROR_BLANK)
+            return // early return
+        }
+        viewModelScope.launch() {
+            runCatching {
+                authenticationManager.passwordResetRequest(mutableUiState.value.emailToResetPassword)
+            }
+                .onSuccess {
+                    setPasswordResetStatus(
+                        "A password reset email has been sent to ${mutableUiState.value.emailToResetPassword}. " +
+                                "Please follow the instructions in this email. Can't find the email? " +
+                                "Make sure to check your spam folder!")
+                }
+                .onFailure {
+                    setPasswordResetStatus(ErrorMessage.USER_ERROR_EMAIL_SEND)
+                }
         }
     }
 }

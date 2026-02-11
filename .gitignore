@@ -8,10 +8,13 @@ android-app/.idea/workspace.xml
 android-app/.idea/navEditor.xml
 android-app/.idea/assetWizardSettings.xml
 .DS_Store
-android-app/build
-android-app/captures
+android-app/app/build
+android-app/app/captures
+/captures
+/build
 .externalNativeBuild
 .cxx
 android-app/local.properties
 /google-cloud-backend/node_modules/
+
 
