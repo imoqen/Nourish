@@ -16,5 +16,5 @@ android-app/app/captures
 .cxx
 android-app/local.properties
 /google-cloud-backend/node_modules/
-
+android-app/build
 
