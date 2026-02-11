@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import uk.co.imoqen.nourish.constants.ErrorMessage
 
 /**
  * View for RecipeDiscovery, where LLM calls can be made and recipes thus generated.
@@ -35,13 +36,14 @@ fun RecipeDiscoveryScreen(
         Button(
             onClick = {
                 if (uiState.userRequest == "") {
-                    recipeDiscoveryViewModel.setApiResponseError("Prompt cannot be blank.")
+                    recipeDiscoveryViewModel.setApiResponseError(ErrorMessage.API_ERROR_BLANK_PROMPT)
+                    recipeDiscoveryViewModel.setApiResponse("")
                 } else {
                     recipeDiscoveryViewModel.makeLlmApiCall()
                 }
             }
         ) {
-            Text("Click me to make the POST request")
+            Text("Discover a recipe")
         }
 
         // Outputs the response, or error if occurred.

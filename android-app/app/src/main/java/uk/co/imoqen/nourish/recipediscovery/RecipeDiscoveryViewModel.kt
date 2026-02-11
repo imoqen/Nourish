@@ -75,7 +75,11 @@ class RecipeDiscoveryViewModel @Inject constructor(
     fun makeLlmApiCall() {
         val request =
             LlmRequest(
-                "Test request. simply reply with the following text plus test appended if you received this: ${mutableUiState.value.userRequest}"
+                "Generate a recipe for the following food item: ${mutableUiState.value.userRequest}. " +
+                        "Do not include anything at the start like Sure! etc, just get straight to the recipe. " +
+                        "Do not include any * etc, it should be plaintext not markdown format." +
+                        "Do it in less than 100 words and use numbers to specify the steps. Write all the ingredients at the start." +
+                        "Put a title at the start to outline the title of the recipe."
             )
         viewModelScope.launch() {
             runCatching {
@@ -109,11 +113,13 @@ class RecipeDiscoveryViewModel @Inject constructor(
                     // OnFailure occurs when no internet/timeout
                     override fun onFailure(call: Call<LlmResponse>, t: Throwable) {
                         setApiResponseError(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE)
+                        setApiResponse("")
                     }
                 })
             }
                 .onFailure {
                     setApiResponseError(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE)
+                    setApiResponse("")
                 }
         }
     }
