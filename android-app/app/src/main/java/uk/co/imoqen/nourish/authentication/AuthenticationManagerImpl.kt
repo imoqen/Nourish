@@ -14,6 +14,7 @@ import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.GetTokenResult
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.OAuthProvider
 import com.google.firebase.auth.auth
@@ -309,6 +310,14 @@ class AuthenticationManagerImpl @Inject constructor(
         user.delete().await()
         // then sign out locally:
         signOut()
+    }
+
+    override suspend fun getUserToken(): GetTokenResult? {
+        if (!isLoggedIn()) {
+            return null // early return if not logged in; no auth credentials.
+        }
+        val user = auth.currentUser!!
+        return user.getIdToken(true).await()
     }
 
 }

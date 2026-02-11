@@ -1,38 +1,25 @@
 package uk.co.imoqen.nourish.navigation
 
 import android.util.Log
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.composable
-import com.google.firebase.auth.FirebaseUser
 
-import uk.co.imoqen.nourish.authentication.AuthenticationUiState
-import uk.co.imoqen.nourish.authentication.AuthenticationViewModel
 import uk.co.imoqen.nourish.profile.ProfileScreen
 import uk.co.imoqen.nourish.profile.ProfileViewModel
 import uk.co.imoqen.nourish.recipebook.RecipeBookScreen
 import uk.co.imoqen.nourish.recipediscovery.RecipeDiscoveryViewModel
-import uk.co.imoqen.nourish.recipediscovery.RecipeFinderScreen
-import uk.co.imoqen.nourish.settings.SettingsScreen
+import uk.co.imoqen.nourish.recipediscovery.RecipeDiscoveryScreen
 import uk.co.imoqen.nourish.shoppinglist.ShoppingListScreen
 
 
@@ -61,7 +48,7 @@ fun AppNavHost(
             // if share, can declare it on line 40 (above NavHost) in this composable and pass into both. (havent tested this but assume it will work)
             // as the authentication view model is used across the app,
             // The composable to display for this tab:
-            RecipeFinderScreen(recipeDiscoveryViewModel)
+            RecipeDiscoveryScreen(recipeDiscoveryViewModel)
         }
         composable(TabDestination.RECIPE_BOOK.route) { RecipeBookScreen() }
         composable(TabDestination.SHOPPING_LIST.route) { ShoppingListScreen() }
@@ -95,15 +82,15 @@ fun NourishNavigationBar(
                 selected = selectedDestinationTab == destination.route[0],
                 onClick = {
                     navController.navigate(route = destination.route) { // Update the currently selected item in navigation
-                        popUpTo(navController.graph.id) {inclusive = true; saveState = false} // clear root back stack, which disposes app back stack entries
-                        //launchSingleTop = true // ensures destinations are not duplicated
+                        //popUpTo(navController.graph.id) {inclusive = true; saveState = false} // clear root back stack, which disposes app back stack entries
+                        launchSingleTop = true // ensures destinations are not duplicated
                         // the following 4 lines are to prevent previous destinations from being destroyed and recreated
                         // e.g. a -> b -> a, to use the same a as the start:
                         // from android docs https://developer.android.com/guide/navigation/backstack/multi-back-stacks
                         restoreState = false // to reset view models as user has changed
-                        /*popUpTo(navController.graph.findStartDestination().id) {
+                        popUpTo(navController.graph.findStartDestination().id) {
                             saveState = true
-                        }*/
+                        }
                     }
                 },
                 icon = {

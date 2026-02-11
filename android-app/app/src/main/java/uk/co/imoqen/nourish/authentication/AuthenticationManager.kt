@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.GetTokenResult
 import com.google.firebase.auth.OAuthProvider
 import kotlinx.coroutines.flow.StateFlow
 
@@ -48,4 +49,6 @@ interface AuthenticationManager {
     suspend fun deletePasswordAccount()
 
     suspend fun deleteGoogleAccount(activity: Activity, provider: OAuthProvider)
+
+    suspend fun getUserToken(): GetTokenResult?
 }

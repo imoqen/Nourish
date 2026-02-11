@@ -5,9 +5,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import uk.co.imoqen.nourish.authentication.AuthenticationManager
 import javax.inject.Inject
 
-// view model holding state / methods used across the entire app
-// such as the logins tate
-
+/**
+ * View model accessible across the entire app, for holding state such as the login state.
+ * @param authenticationManager - dependent on the AuthenticationManager
+ */
 @HiltViewModel
 class AppViewModel @Inject constructor(
     private val authenticationManager: AuthenticationManager
