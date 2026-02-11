@@ -90,10 +90,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
                         call: Call<LlmResponse>, response: Response<LlmResponse>
                     ) {
                         if (response.isSuccessful) {
-                            Log.i("response", "${response}")
-                            Log.i("responsebody", "${response.body()}")
                             val post = response.body()
-                            Log.i("post", "$post")
                             if (post != null) {
                                 // Extracts the text and updates the UiState
                                 setApiResponse("${post.title}:\n\n Ingredients: \n${post.ingredients} \n\nMethod: \n${post.method}")

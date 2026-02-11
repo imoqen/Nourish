@@ -8,6 +8,10 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
 
+/**
+ * Retrofit2 API module, building the Retrofit instance which is called in the service.
+ * This is connected to the Google Cloud URL which is called.
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 object ApiModule {

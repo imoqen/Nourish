@@ -17,37 +17,37 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 
+/**
+ * View for Authentication, where the user can sign up, sign in and send a password reset link to
+ * their account's email address.
+ * @param authenticationViewModel - the view model holding methods and state for use in the view.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     modifier: Modifier,
     authenticationViewModel: AuthenticationViewModel
 ) {
-
-    // the ui state from the view model:
+    // Ui State:
     val uiState by authenticationViewModel.uiState.collectAsState()
-
-    // stores the current logged in user, method provided by firebase:
     val context = LocalContext.current
 
     Column(
         modifier = modifier.fillMaxSize()
     ) {
-
-        // display login view:
-        if (uiState.status == AuthenticationUiStatus.LOGIN) {
-
+        // Sign in View:
+        if (uiState.status == AuthenticationUiStatus.SIGNIN) {
             Text("Sign in")
-            // email:
+
+            // Email:
             OutlinedTextField(
-                value = uiState.email,
+                value = uiState.signinEmail,
                 onValueChange = { newEmail ->
-                    authenticationViewModel.setEmail(newEmail)
+                    authenticationViewModel.setSigninEmail(newEmail)
                 },
                 placeholder = {
                     Text("Enter email address")
@@ -57,11 +57,11 @@ fun LoginScreen(
                 },
                 modifier = Modifier.fillMaxWidth()
             )
-            // password:
+            // Password:
             OutlinedTextField(
-                value = uiState.password,
+                value = uiState.signinPassword,
                 onValueChange = { newPassword ->
-                    authenticationViewModel.setPassword(newPassword)
+                    authenticationViewModel.setSigninPassword(newPassword)
                 },
                 placeholder = {
                     Text("Enter password")
@@ -105,7 +105,7 @@ fun LoginScreen(
                     authenticationViewModel.setShowBottomSheet(true)
                 }
             ) {
-                Text("reset password")
+                Text("Forgotten your password?")
             }
 
                 if (uiState.showBottomSheet) {
@@ -115,9 +115,8 @@ fun LoginScreen(
                         },
                         sheetState = sheetState
                     ) {
-                        // Sheet content
                         Column() {
-                            // email for password reset:
+                            // Email for password reset:
                             OutlinedTextField(
                                 value = uiState.emailToResetPassword,
                                 onValueChange = { newEmail ->
@@ -147,23 +146,23 @@ fun LoginScreen(
                     }
                 }
         }
-        // otherwise display sign up:
+        // Sign up View:
         else {
             BackHandler {
                 // handle back button press by going back to login view if on sign up view:
-                authenticationViewModel.setStatus(AuthenticationUiStatus.LOGIN)
+                authenticationViewModel.setStatus(AuthenticationUiStatus.SIGNIN)
             }
 
-            // back to login?:
+            // Back to login?:
             Button(
                 onClick = {
-                    authenticationViewModel.setStatus(AuthenticationUiStatus.LOGIN)
+                    authenticationViewModel.setStatus(AuthenticationUiStatus.SIGNIN)
                 }
             ) {
                 Text("Back to login")
             }
 
-            // sign up form:
+            // Sign up form:
             OutlinedTextField(
                 value = uiState.signupEmail,
                 onValueChange = { newEmail ->
@@ -177,7 +176,7 @@ fun LoginScreen(
                 },
                 modifier = Modifier.fillMaxWidth()
             )
-            // password:
+            // Password:
             OutlinedTextField(
                 value = uiState.signupPassword,
                 onValueChange = { newPassword ->

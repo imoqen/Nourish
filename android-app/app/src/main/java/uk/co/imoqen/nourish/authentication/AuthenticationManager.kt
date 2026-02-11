@@ -3,42 +3,60 @@ package uk.co.imoqen.nourish.authentication
 import android.app.Activity
 import android.content.Context
 import com.google.firebase.auth.AuthCredential
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GetTokenResult
 import com.google.firebase.auth.OAuthProvider
 import kotlinx.coroutines.flow.StateFlow
 
 interface AuthenticationManager {
 
-    // keeps track of if logged in
+    // State to manage the currently logged in user's uid and state (logged in or logged out)
     val authenticationState: StateFlow<AuthenticationState>
-    fun getCurrentUser(): FirebaseUser?
 
-    fun addUserToFirestore(user: FirebaseUser)
-
+    /**
+     * Adds a user to the Firebase Firestore if they are not already in it, to ensure the Firestore
+     * is always kept up to date with all user data.
+     */
     suspend fun addIfNotExists()
 
-    fun firebaseSignOut()
-
+    /**
+     * Update the logged in status using the setter; to set whether a user is currently logged in,
+     * and if so, their uid.
+     */
     fun updateLoggedInState()
 
+    /**
+     * Sign out the currently signed in user and update login status.
+     */
     fun signOut()
 
-    suspend fun signUpWithUsernameAndPassword(email: String, password: String)
+    // Methods used by the AuthenticationViewModel
 
+    /**
+     * Sign up with email and password: create a password-provider account.
+     */
+    suspend fun signUpWithEmailAndPassword(email: String, password: String)
+
+    /**
+     * Sign in with email and password: password-provider account.
+     * @param email - the email of the account to sign in
+     * @param password - the password of the account to sign in
+     */
     suspend fun signInWithEmailAndPassword(email: String, password: String)
 
+    /**
+     * Sign in with a Google account: Google-provider account.
+     * @param context - the local context, allowing the default_web_client_id string to be obtained.
+     */
     suspend fun signInWithGoogle(context: Context)
 
-    suspend fun deleteAllUserData(user: FirebaseUser)
-
+    /**
+     * Sends the password request email to the given email address. Only sends if the email is
+     * associated with an account on the app.
+     * @param email - the email to send the request to.
+     */
     suspend fun passwordResetRequest(email: String)
 
-    fun isLoggedIn(): Boolean
-
-    suspend fun getUserToken(): GetTokenResult?
-
-    // Methods specific to use in the ProfileViewModel:
+    // Methods used by the ProfileViewModel:
 
     /**
      * Determines whether the currently logged in user has a password-provider.
@@ -86,4 +104,14 @@ interface AuthenticationManager {
      * @param provider - the Google OAuthProvider
      */
     suspend fun deleteGoogleAccount(activity: Activity, provider: OAuthProvider)
+
+    // Methods used in the RecipeDiscoveryViewModel:
+
+    /**
+     * Gets the current token of a user, containing the JWT (Java Web Token) string allowing for
+     * authentication.
+     * This can be passed into the Bearer Authorization header of API requests to authenticate a user.
+     * @returns the token result if the user is logged in and valid, null otherwise.
+     */
+    suspend fun getUserToken(): GetTokenResult?
 }
