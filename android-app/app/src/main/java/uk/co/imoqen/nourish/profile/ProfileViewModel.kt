@@ -6,13 +6,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.OAuthProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.authentication.AuthenticationManager
-import uk.co.imoqen.nourish.constants.ErrorMessage
+import uk.co.imoqen.nourish.common.ErrorMessage
+import uk.co.imoqen.nourish.common.UiEvent
 import javax.inject.Inject
 
 /**
@@ -27,6 +30,10 @@ class ProfileViewModel @Inject constructor(
 ): ViewModel() {
     private val mutableUiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = mutableUiState.asStateFlow()
+
+    // UiEvents (for sending toast):
+    val mutableUiEvent = MutableSharedFlow<UiEvent>()
+    val uiEvent = mutableUiEvent.asSharedFlow()
 
     // When the app launches or user logs in, the profile view model is re-initialised to ensure fresh state.
     init {
@@ -138,11 +145,13 @@ class ProfileViewModel @Inject constructor(
             }
                 .onSuccess {
                     setPasswordChangeStatus("Password updated successfully.")
+                    mutableUiEvent.emit(UiEvent.MakeToast("Password updated successfully."))
                 }
                 .onFailure {
                     // Password change error messages are purposefully non-revealing, as revealing
                     // if the password is correct / incorrect etc could allow for an enumeration attack.
                     setPasswordChangeStatus(ErrorMessage.PASSWORD_ERROR_CHANGE)
+                    mutableUiEvent.emit(UiEvent.MakeToast(ErrorMessage.PASSWORD_ERROR_CHANGE))
                 }
         }
     }
@@ -162,9 +171,12 @@ class ProfileViewModel @Inject constructor(
                 // Failure has not occurred thus can delete the account.
                 authenticationManager.deletePasswordAccount()
             }
-                // Nothing occurs on success as the user is automatically signed out.
+                .onSuccess {
+                    mutableUiEvent.emit(UiEvent.MakeToast("Account successfully deleted."))
+                }
                 .onFailure {
                     setDeleteStatus(ErrorMessage.DELETE_ERROR)
+                    mutableUiEvent.emit(UiEvent.MakeToast(ErrorMessage.DELETE_ERROR))
                 }
         }
     }
@@ -185,9 +197,12 @@ class ProfileViewModel @Inject constructor(
                 runCatching {
                     authenticationManager.deleteGoogleAccount(activity, provider)
                 }
-                    // Nothing occurs on success as the user is automatically signed out.
+                    .onSuccess {
+                        mutableUiEvent.emit(UiEvent.MakeToast("Account successfully deleted."))
+                    }
                     .onFailure {
                         setDeleteStatus(ErrorMessage.DELETE_ERROR)
+                        mutableUiEvent.emit(UiEvent.MakeToast(ErrorMessage.DELETE_ERROR))
                     }
             }
         }
@@ -198,5 +213,8 @@ class ProfileViewModel @Inject constructor(
      */
     fun signOut() {
         authenticationManager.signOut()
+        viewModelScope.launch() {
+            mutableUiEvent.emit(UiEvent.MakeToast("Sign out successful."))
+        }
     }
 }

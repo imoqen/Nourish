@@ -15,11 +15,13 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import uk.co.imoqen.nourish.common.UiEvent
 
 /**
  * View for Authentication, where the user can sign up, sign in and send a password reset link to
@@ -30,11 +32,19 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 @Composable
 fun LoginScreen(
     modifier: Modifier,
-    authenticationViewModel: AuthenticationViewModel
+    authenticationViewModel: AuthenticationViewModel,
+    onEvent: (UiEvent) -> Unit
 ) {
     // Ui State:
     val uiState by authenticationViewModel.uiState.collectAsState()
     val context = LocalContext.current
+
+    // Handle UiEvents: (this is for sending Toasts)
+    LaunchedEffect(Unit) {
+        authenticationViewModel.uiEvent.collect { event ->
+            onEvent(event)
+        }
+    }
 
     Column(
         modifier = modifier.fillMaxSize()
@@ -97,6 +107,10 @@ fun LoginScreen(
                 }
             ) {
                 Text("Sign in with Google")
+            }
+
+            if (uiState.signinError != "") {
+                Text(uiState.signinError)
             }
 
             val sheetState = rememberModalBottomSheetState()
@@ -206,11 +220,14 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            if (uiState.signupError != "") {
+                Text(uiState.signupError)
+            }
+
+
             Button(
                 onClick = {
-                    if (uiState.signupPassword == uiState.signupPasswordConfirmation) {
-                        authenticationViewModel.signUpWithUsernameAndPassword()
-                    }
+                    authenticationViewModel.signUpWithUsernameAndPassword()
                 }
             ) {
                 Text("Sign up")

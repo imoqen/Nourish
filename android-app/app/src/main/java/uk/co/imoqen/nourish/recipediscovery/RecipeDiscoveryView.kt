@@ -9,7 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import uk.co.imoqen.nourish.constants.ErrorMessage
+import uk.co.imoqen.nourish.common.ErrorMessage
 
 /**
  * View for RecipeDiscovery, where LLM calls can be made and recipes thus generated.

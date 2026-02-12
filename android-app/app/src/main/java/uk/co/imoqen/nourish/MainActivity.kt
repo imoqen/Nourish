@@ -1,6 +1,7 @@
 package uk.co.imoqen.nourish
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -11,12 +12,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import uk.co.imoqen.nourish.authentication.AuthenticationViewModel
 import uk.co.imoqen.nourish.authentication.LoginScreen
+import uk.co.imoqen.nourish.common.UiEvent
 import uk.co.imoqen.nourish.navigation.AppNavHost
 import uk.co.imoqen.nourish.navigation.NourishNavigationBar
 import uk.co.imoqen.nourish.navigation.TabDestination
@@ -53,6 +56,18 @@ fun MainContent(modifier: Modifier = Modifier) {
 
     val startDestination = TabDestination.RECIPE_FINDER
 
+    // UiEvent handling:
+    val context = LocalContext.current
+
+    fun onEvent(event: UiEvent) {
+        when (event) {
+            is UiEvent.MakeToast -> {
+                val toast = Toast.makeText(context, event.message, Toast.LENGTH_LONG) // in Activity
+                toast.show()
+            }
+        }
+    }
+
     // Authentication ViewModel and App ViewModel are used across the whole app therefore instantiated
     val authenticationViewModel: AuthenticationViewModel = hiltViewModel()
     val appViewModel: AppViewModel = hiltViewModel()
@@ -63,7 +78,7 @@ fun MainContent(modifier: Modifier = Modifier) {
         Scaffold(
             modifier = modifier,
         ) { contentPadding ->
-            LoginScreen(modifier = Modifier.padding(contentPadding), authenticationViewModel)
+            LoginScreen(modifier = Modifier.padding(contentPadding), authenticationViewModel, ::onEvent)
         }
     } else {
         // User is logged in: display app.
@@ -93,7 +108,8 @@ fun MainContent(modifier: Modifier = Modifier) {
                 AppNavHost(
                     navController,
                     startDestination.route,
-                    modifier = Modifier.padding(contentPadding)
+                    modifier = Modifier.padding(contentPadding),
+                    ::onEvent
                 )
             }
         }

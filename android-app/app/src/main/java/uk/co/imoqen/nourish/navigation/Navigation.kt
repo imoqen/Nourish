@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish.navigation
 
+import android.widget.Toast
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarDefaults
@@ -7,12 +8,14 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import uk.co.imoqen.nourish.common.UiEvent
 import uk.co.imoqen.nourish.profile.ProfileScreen
 import uk.co.imoqen.nourish.profile.ProfileViewModel
 import uk.co.imoqen.nourish.recipebook.RecipeBookScreen
@@ -32,12 +35,13 @@ import uk.co.imoqen.nourish.shoppinglist.ShoppingListScreen
 fun AppNavHost(
     navController: NavHostController,
     startDestination: String,
-    modifier: Modifier
+    modifier: Modifier,
+    onEvent: (UiEvent) -> Unit
 ) {
     NavHost(
         navController = navController,
         startDestination = startDestination,
-        modifier = modifier
+        modifier = modifier,
     ) {
         // Bottom Navbar: Tab destinations
         composable(TabDestination.RECIPE_FINDER.route) {
@@ -50,7 +54,7 @@ fun AppNavHost(
         composable(TabDestination.SHOPPING_LIST.route) { ShoppingListScreen() }
         composable(TabDestination.PROFILE.route) {
             val profileViewModel: ProfileViewModel = hiltViewModel()
-            ProfileScreen(profileViewModel)
+            ProfileScreen(profileViewModel, onEvent)
         }
         // Can add Route destinations too (those not from tabs)
         // can add here. then can add params to them as shown in this video: https://www.youtube.com/watch?v=wJKwsI5WUI4

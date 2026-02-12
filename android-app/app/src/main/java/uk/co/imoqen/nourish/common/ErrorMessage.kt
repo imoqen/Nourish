@@ -1,4 +1,4 @@
-package uk.co.imoqen.nourish.constants
+package uk.co.imoqen.nourish.common
 
 /**
  * Constants file consisting of error messages used throughout the app.
@@ -15,10 +15,11 @@ object ErrorMessage {
 
     // Authentication errors involving password and account
     const val PASSWORD_ERROR_CHANGE = "Password could not be updated."
+    const val PASSWORD_ERROR_MATCH = "Passwords do not match."
 
     const val DELETE_ERROR = "Account could not be deleted."
 
-    const val USER_ERROR_SIGNUP = "Account could not be created."
+    const val USER_ERROR_SIGNUP = "Your sign up attempt was unsuccessful."
     const val USER_ERROR_SIGNIN = "Your sign in attempt was unsuccessful."
 
     const val USER_ERROR_EMAIL_SEND = "Password reset email failed to send."
