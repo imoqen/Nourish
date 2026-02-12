@@ -22,21 +22,12 @@ import uk.co.imoqen.nourish.common.UiEvent
  * View for Profile, where the user can log out, delete their account and (if their account is
  * password-provider), change their password.
  * @param profileViewModel - the view model holding methods and state for use in the view.
- * @param onEvent - event handler for ui events such as Toast popups to provide user with info.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     profileViewModel: ProfileViewModel,
-    onEvent: (UiEvent) -> Unit
 ) {
-    // Handle UiEvents: (this is for sending Toasts)
-    LaunchedEffect(Unit) {
-        profileViewModel.uiEvent.collect { event ->
-            onEvent(event)
-        }
-    }
-
     Column() {
         Text("Profile")
         val uiState by profileViewModel.uiState.collectAsState()

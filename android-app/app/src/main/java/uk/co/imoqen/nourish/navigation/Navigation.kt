@@ -36,7 +36,6 @@ fun AppNavHost(
     navController: NavHostController,
     startDestination: String,
     modifier: Modifier,
-    onEvent: (UiEvent) -> Unit
 ) {
     NavHost(
         navController = navController,
@@ -54,7 +53,7 @@ fun AppNavHost(
         composable(TabDestination.SHOPPING_LIST.route) { ShoppingListScreen() }
         composable(TabDestination.PROFILE.route) {
             val profileViewModel: ProfileViewModel = hiltViewModel()
-            ProfileScreen(profileViewModel, onEvent)
+            ProfileScreen(profileViewModel)
         }
         // Can add Route destinations too (those not from tabs)
         // can add here. then can add params to them as shown in this video: https://www.youtube.com/watch?v=wJKwsI5WUI4

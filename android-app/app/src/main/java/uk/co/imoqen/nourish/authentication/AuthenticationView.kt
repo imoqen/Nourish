@@ -33,19 +33,10 @@ import uk.co.imoqen.nourish.common.UiEvent
 fun LoginScreen(
     modifier: Modifier,
     authenticationViewModel: AuthenticationViewModel,
-    onEvent: (UiEvent) -> Unit
 ) {
     // Ui State:
     val uiState by authenticationViewModel.uiState.collectAsState()
-    val context = LocalContext.current
-
-    // Handle UiEvents: (this is for sending Toasts)
-    LaunchedEffect(Unit) {
-        authenticationViewModel.uiEvent.collect { event ->
-            onEvent(event)
-        }
-    }
-
+    val context = LocalContext.current // required for Google sign in
     Column(
         modifier = modifier.fillMaxSize()
     ) {

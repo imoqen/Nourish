@@ -8,6 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -20,10 +21,12 @@ import dagger.hilt.android.AndroidEntryPoint
 import uk.co.imoqen.nourish.authentication.AuthenticationViewModel
 import uk.co.imoqen.nourish.authentication.LoginScreen
 import uk.co.imoqen.nourish.common.UiEvent
+import uk.co.imoqen.nourish.common.UiEventBus
 import uk.co.imoqen.nourish.navigation.AppNavHost
 import uk.co.imoqen.nourish.navigation.NourishNavigationBar
 import uk.co.imoqen.nourish.navigation.TabDestination
 import uk.co.imoqen.nourish.ui.theme.NourishTheme
+import javax.inject.Inject
 
 /**
  * The entry point for the app.
@@ -33,12 +36,33 @@ import uk.co.imoqen.nourish.ui.theme.NourishTheme
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    // Dependencies for the main activity component:
+    // https://developer.android.com/training/dependency-injection/hilt-android
+    @Inject lateinit var uiEventBus: UiEventBus
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
 
         setContent {
+            // Collect and perform UiEvents across entire app:
+            val context = LocalContext.current
+            fun onEvent(event: UiEvent) {
+                when (event) {
+                    is UiEvent.MakeToast -> {
+                        val toast = Toast.makeText(context, event.message, Toast.LENGTH_LONG)
+                        toast.show()
+                    }
+                }
+            }
+            // Handle UiEvents: (this is for sending Toasts currently)
+            LaunchedEffect(Unit) {
+                uiEventBus.uiEvents.collect { event ->
+                    onEvent(event)
+                }
+            }
+
             NourishTheme {
                 MainContent()
             }
@@ -57,16 +81,7 @@ fun MainContent(modifier: Modifier = Modifier) {
     val startDestination = TabDestination.RECIPE_FINDER
 
     // UiEvent handling:
-    val context = LocalContext.current
 
-    fun onEvent(event: UiEvent) {
-        when (event) {
-            is UiEvent.MakeToast -> {
-                val toast = Toast.makeText(context, event.message, Toast.LENGTH_LONG) // in Activity
-                toast.show()
-            }
-        }
-    }
 
     // Authentication ViewModel and App ViewModel are used across the whole app therefore instantiated
     val authenticationViewModel: AuthenticationViewModel = hiltViewModel()
@@ -78,7 +93,7 @@ fun MainContent(modifier: Modifier = Modifier) {
         Scaffold(
             modifier = modifier,
         ) { contentPadding ->
-            LoginScreen(modifier = Modifier.padding(contentPadding), authenticationViewModel, ::onEvent)
+            LoginScreen(modifier = Modifier.padding(contentPadding), authenticationViewModel)
         }
     } else {
         // User is logged in: display app.
@@ -108,8 +123,7 @@ fun MainContent(modifier: Modifier = Modifier) {
                 AppNavHost(
                     navController,
                     startDestination.route,
-                    modifier = Modifier.padding(contentPadding),
-                    ::onEvent
+                    modifier = Modifier.padding(contentPadding)
                 )
             }
         }

@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.UiEvent
+import uk.co.imoqen.nourish.common.UiEventBus
 import javax.inject.Inject
 
 /**
@@ -20,20 +21,19 @@ import javax.inject.Inject
  * Dependent on the AuthenticationManager to perform authentication based actions such as
  * sign up, sign in, password change.
  * @param authenticationManager - dependent on the AuthenticationManager
+ * @param uiEventBus - event bus for handling Ui events such as Toasts, shared across the app
+ *
  */
 @HiltViewModel
 class AuthenticationViewModel @Inject constructor(
-    private val authenticationManager: AuthenticationManager
+    private val authenticationManager: AuthenticationManager,
+    private val uiEventBus: UiEventBus
 ): ViewModel() {
     // Purpose: pattern to encapsulate the mutable state to ensure it is not mutable from the viewmodel.
     // pattern taken from advice in: https://medium.com/@rowaido.game/managing-ui-states-in-jetpack-compose-7eb15e4f6931
     private val mutableUiState = MutableStateFlow(AuthenticationUiState())
     // Observable from the Authentication composables; not used within the view model.
     val uiState: StateFlow<AuthenticationUiState> = mutableUiState.asStateFlow()
-
-    // UiEvents (for sending toast):
-    val mutableUiEvent = MutableSharedFlow<UiEvent>()
-    val uiEvent = mutableUiEvent.asSharedFlow()
 
     // Setters for the UiState values
     fun setSigninEmail(signinEmail: String) {
@@ -135,7 +135,7 @@ class AuthenticationViewModel @Inject constructor(
         viewModelScope.launch() {
             if (mutableUiState.value.signinEmail == "" || mutableUiState.value.signinPassword == "") {
                 setSigninError(ErrorMessage.INPUT_ERROR_BLANK)
-                mutableUiEvent.emit(UiEvent.MakeToast(ErrorMessage.USER_ERROR_SIGNIN))
+                uiEventBus.enqueueEvent(UiEvent.MakeToast(ErrorMessage.USER_ERROR_SIGNIN))
                 return@launch
             }
             // runCatching is used to call a suspend error and handle exceptions appropriately
@@ -149,11 +149,11 @@ class AuthenticationViewModel @Inject constructor(
                 authenticationManager.addIfNotExists()
             }
                 .onSuccess {
-                    mutableUiEvent.emit(UiEvent.MakeToast("Sign in successful."))
+                    uiEventBus.enqueueEvent(UiEvent.MakeToast("Sign in successful."))
                 }
                 .onFailure {
                     setSigninError(ErrorMessage.USER_ERROR_SIGNIN)
-                    mutableUiEvent.emit(UiEvent.MakeToast(ErrorMessage.USER_ERROR_SIGNIN))
+                    uiEventBus.enqueueEvent(UiEvent.MakeToast(ErrorMessage.USER_ERROR_SIGNIN))
                 }
         }
     }
@@ -169,11 +169,11 @@ class AuthenticationViewModel @Inject constructor(
                 authenticationManager.addIfNotExists()
             }
                 .onSuccess {
-                    mutableUiEvent.emit(UiEvent.MakeToast("Sign in successful."))
+                    uiEventBus.enqueueEvent(UiEvent.MakeToast("Sign in successful."))
                 }
                 .onFailure { e ->
                     setSigninError(ErrorMessage.USER_ERROR_SIGNIN)
-                    mutableUiEvent.emit(UiEvent.MakeToast(ErrorMessage.USER_ERROR_SIGNIN))
+                    uiEventBus.enqueueEvent(UiEvent.MakeToast(ErrorMessage.USER_ERROR_SIGNIN))
                 }
         }
     }
@@ -190,13 +190,13 @@ class AuthenticationViewModel @Inject constructor(
                 mutableUiState.value.signupPasswordConfirmation == ""
             ) {
                 setSignupError(ErrorMessage.INPUT_ERROR_BLANK)
-                mutableUiEvent.emit(UiEvent.MakeToast(ErrorMessage.USER_ERROR_SIGNUP))
+                uiEventBus.enqueueEvent(UiEvent.MakeToast(ErrorMessage.USER_ERROR_SIGNUP))
                 return@launch
             }
             // Passwords do not match:
             if (mutableUiState.value.signupPassword != mutableUiState.value.signupPasswordConfirmation) {
                 setSignupError(ErrorMessage.PASSWORD_ERROR_MATCH)
-                mutableUiEvent.emit(UiEvent.MakeToast(ErrorMessage.USER_ERROR_SIGNUP))
+                uiEventBus.enqueueEvent(UiEvent.MakeToast(ErrorMessage.USER_ERROR_SIGNUP))
                 return@launch
             }
             runCatching {
@@ -208,11 +208,11 @@ class AuthenticationViewModel @Inject constructor(
                 authenticationManager.addIfNotExists()
             }
                 .onSuccess {
-                    mutableUiEvent.emit(UiEvent.MakeToast("Sign up successful. You have now been signed in."))
+                    uiEventBus.enqueueEvent(UiEvent.MakeToast("Sign up successful. You have now been signed in."))
                 }
                 .onFailure { fail ->
                     setSignupError(ErrorMessage.USER_ERROR_SIGNUP)
-                    mutableUiEvent.emit(UiEvent.MakeToast(ErrorMessage.USER_ERROR_SIGNUP))
+                    uiEventBus.enqueueEvent(UiEvent.MakeToast(ErrorMessage.USER_ERROR_SIGNUP))
                 }
         }
     }
@@ -240,7 +240,7 @@ class AuthenticationViewModel @Inject constructor(
                 }
                 .onFailure {
                     setPasswordResetStatus(ErrorMessage.USER_ERROR_EMAIL_SEND)
-                    mutableUiEvent.emit(UiEvent.MakeToast(ErrorMessage.USER_ERROR_EMAIL_SEND))
+                    uiEventBus.enqueueEvent(UiEvent.MakeToast(ErrorMessage.USER_ERROR_EMAIL_SEND))
                 }
         }
     }

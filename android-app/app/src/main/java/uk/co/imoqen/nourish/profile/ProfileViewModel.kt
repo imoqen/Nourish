@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.UiEvent
+import uk.co.imoqen.nourish.common.UiEventBus
 import javax.inject.Inject
 
 /**
@@ -23,17 +24,15 @@ import javax.inject.Inject
  * Dependent on the AuthenticationManager to perform authentication based actions such as
  * sign out, password changing and account deletion.
  * @param authenticationManager - dependent on the AuthenticationManager
+ * @param uiEventBus - event bus for handling Ui events such as Toasts, shared across the app
  */
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val authenticationManager: AuthenticationManager
+    private val authenticationManager: AuthenticationManager,
+    private val uiEventBus: UiEventBus
 ): ViewModel() {
     private val mutableUiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = mutableUiState.asStateFlow()
-
-    // UiEvents (for sending toast):
-    val mutableUiEvent = MutableSharedFlow<UiEvent>()
-    val uiEvent = mutableUiEvent.asSharedFlow()
 
     // When the app launches or user logs in, the profile view model is re-initialised to ensure fresh state.
     init {
@@ -145,13 +144,13 @@ class ProfileViewModel @Inject constructor(
             }
                 .onSuccess {
                     setPasswordChangeStatus("Password updated successfully.")
-                    mutableUiEvent.emit(UiEvent.MakeToast("Password updated successfully."))
+                    uiEventBus.enqueueEvent(UiEvent.MakeToast("Password updated successfully."))
                 }
                 .onFailure {
                     // Password change error messages are purposefully non-revealing, as revealing
                     // if the password is correct / incorrect etc could allow for an enumeration attack.
                     setPasswordChangeStatus(ErrorMessage.PASSWORD_ERROR_CHANGE)
-                    mutableUiEvent.emit(UiEvent.MakeToast(ErrorMessage.PASSWORD_ERROR_CHANGE))
+                    uiEventBus.enqueueEvent(UiEvent.MakeToast(ErrorMessage.PASSWORD_ERROR_CHANGE))
                 }
         }
     }
@@ -172,11 +171,11 @@ class ProfileViewModel @Inject constructor(
                 authenticationManager.deletePasswordAccount()
             }
                 .onSuccess {
-                    mutableUiEvent.emit(UiEvent.MakeToast("Account successfully deleted."))
+                    uiEventBus.enqueueEvent(UiEvent.MakeToast("Account successfully deleted."))
                 }
                 .onFailure {
                     setDeleteStatus(ErrorMessage.DELETE_ERROR)
-                    mutableUiEvent.emit(UiEvent.MakeToast(ErrorMessage.DELETE_ERROR))
+                    uiEventBus.enqueueEvent(UiEvent.MakeToast(ErrorMessage.DELETE_ERROR))
                 }
         }
     }
@@ -198,11 +197,11 @@ class ProfileViewModel @Inject constructor(
                     authenticationManager.deleteGoogleAccount(activity, provider)
                 }
                     .onSuccess {
-                        mutableUiEvent.emit(UiEvent.MakeToast("Account successfully deleted."))
+                        uiEventBus.enqueueEvent(UiEvent.MakeToast("Account successfully deleted."))
                     }
                     .onFailure {
                         setDeleteStatus(ErrorMessage.DELETE_ERROR)
-                        mutableUiEvent.emit(UiEvent.MakeToast(ErrorMessage.DELETE_ERROR))
+                        uiEventBus.enqueueEvent(UiEvent.MakeToast(ErrorMessage.DELETE_ERROR))
                     }
             }
         }
@@ -214,7 +213,7 @@ class ProfileViewModel @Inject constructor(
     fun signOut() {
         authenticationManager.signOut()
         viewModelScope.launch() {
-            mutableUiEvent.emit(UiEvent.MakeToast("Sign out successful."))
+            uiEventBus.enqueueEvent(UiEvent.MakeToast("Sign out successful."))
         }
     }
 }
