@@ -7,4 +7,6 @@ package uk.co.imoqen.nourish.common
 
 sealed interface UiEvent {
     data class MakeToast(val message: String): UiEvent
+
+    data class ShowSnackbar(val message: String): UiEvent
 }

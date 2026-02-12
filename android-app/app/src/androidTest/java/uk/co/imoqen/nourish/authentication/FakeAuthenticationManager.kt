@@ -17,7 +17,7 @@ class FakeAuthenticationManager(): AuthenticationManager {
     override val authenticationState: StateFlow<AuthenticationState> = mutableAuthenticationState.asStateFlow()
 
     override suspend fun addIfNotExists() {
-        TODO("Not yet implemented")
+        // do nothing
     }
 
     override fun updateLoggedInState() {
@@ -48,6 +48,9 @@ class FakeAuthenticationManager(): AuthenticationManager {
         }
         // Known email address, registered on the app:
         // dont throw anything; success.
+        else {
+            setLoginState(true, "test_uid")
+        }
     }
 
     override suspend fun signInWithGoogle(context: Context) {

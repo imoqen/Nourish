@@ -135,7 +135,7 @@ class AuthenticationViewModel @Inject constructor(
         viewModelScope.launch() {
             if (mutableUiState.value.signinEmail == "" || mutableUiState.value.signinPassword == "") {
                 setSigninError(ErrorMessage.INPUT_ERROR_BLANK)
-                uiEventBus.enqueueEvent(UiEvent.MakeToast(ErrorMessage.USER_ERROR_SIGNIN))
+                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNIN))
                 return@launch
             }
             // runCatching is used to call a suspend error and handle exceptions appropriately
@@ -149,11 +149,10 @@ class AuthenticationViewModel @Inject constructor(
                 authenticationManager.addIfNotExists()
             }
                 .onSuccess {
-                    uiEventBus.enqueueEvent(UiEvent.MakeToast("Sign in successful."))
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Sign in successful."))
                 }
                 .onFailure {
-                    setSigninError(ErrorMessage.USER_ERROR_SIGNIN)
-                    uiEventBus.enqueueEvent(UiEvent.MakeToast(ErrorMessage.USER_ERROR_SIGNIN))
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNIN))
                 }
         }
     }
@@ -169,11 +168,10 @@ class AuthenticationViewModel @Inject constructor(
                 authenticationManager.addIfNotExists()
             }
                 .onSuccess {
-                    uiEventBus.enqueueEvent(UiEvent.MakeToast("Sign in successful."))
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Sign in successful."))
                 }
                 .onFailure { e ->
-                    setSigninError(ErrorMessage.USER_ERROR_SIGNIN)
-                    uiEventBus.enqueueEvent(UiEvent.MakeToast(ErrorMessage.USER_ERROR_SIGNIN))
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNIN))
                 }
         }
     }
@@ -190,13 +188,13 @@ class AuthenticationViewModel @Inject constructor(
                 mutableUiState.value.signupPasswordConfirmation == ""
             ) {
                 setSignupError(ErrorMessage.INPUT_ERROR_BLANK)
-                uiEventBus.enqueueEvent(UiEvent.MakeToast(ErrorMessage.USER_ERROR_SIGNUP))
+                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNUP))
                 return@launch
             }
             // Passwords do not match:
             if (mutableUiState.value.signupPassword != mutableUiState.value.signupPasswordConfirmation) {
                 setSignupError(ErrorMessage.PASSWORD_ERROR_MATCH)
-                uiEventBus.enqueueEvent(UiEvent.MakeToast(ErrorMessage.USER_ERROR_SIGNUP))
+                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNUP))
                 return@launch
             }
             runCatching {
@@ -208,11 +206,11 @@ class AuthenticationViewModel @Inject constructor(
                 authenticationManager.addIfNotExists()
             }
                 .onSuccess {
-                    uiEventBus.enqueueEvent(UiEvent.MakeToast("Sign up successful. You have now been signed in."))
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Sign up successful. You have now been signed in."))
                 }
                 .onFailure { fail ->
                     setSignupError(ErrorMessage.USER_ERROR_SIGNUP)
-                    uiEventBus.enqueueEvent(UiEvent.MakeToast(ErrorMessage.USER_ERROR_SIGNUP))
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNUP))
                 }
         }
     }
@@ -240,7 +238,7 @@ class AuthenticationViewModel @Inject constructor(
                 }
                 .onFailure {
                     setPasswordResetStatus(ErrorMessage.USER_ERROR_EMAIL_SEND)
-                    uiEventBus.enqueueEvent(UiEvent.MakeToast(ErrorMessage.USER_ERROR_EMAIL_SEND))
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_EMAIL_SEND))
                 }
         }
     }

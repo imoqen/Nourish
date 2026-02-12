@@ -144,13 +144,13 @@ class ProfileViewModel @Inject constructor(
             }
                 .onSuccess {
                     setPasswordChangeStatus("Password updated successfully.")
-                    uiEventBus.enqueueEvent(UiEvent.MakeToast("Password updated successfully."))
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Password updated successfully."))
                 }
                 .onFailure {
                     // Password change error messages are purposefully non-revealing, as revealing
                     // if the password is correct / incorrect etc could allow for an enumeration attack.
                     setPasswordChangeStatus(ErrorMessage.PASSWORD_ERROR_CHANGE)
-                    uiEventBus.enqueueEvent(UiEvent.MakeToast(ErrorMessage.PASSWORD_ERROR_CHANGE))
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.PASSWORD_ERROR_CHANGE))
                 }
         }
     }
@@ -171,11 +171,11 @@ class ProfileViewModel @Inject constructor(
                 authenticationManager.deletePasswordAccount()
             }
                 .onSuccess {
-                    uiEventBus.enqueueEvent(UiEvent.MakeToast("Account successfully deleted."))
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Account successfully deleted."))
                 }
                 .onFailure {
                     setDeleteStatus(ErrorMessage.DELETE_ERROR)
-                    uiEventBus.enqueueEvent(UiEvent.MakeToast(ErrorMessage.DELETE_ERROR))
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.DELETE_ERROR))
                 }
         }
     }
@@ -197,11 +197,11 @@ class ProfileViewModel @Inject constructor(
                     authenticationManager.deleteGoogleAccount(activity, provider)
                 }
                     .onSuccess {
-                        uiEventBus.enqueueEvent(UiEvent.MakeToast("Account successfully deleted."))
+                        uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Account successfully deleted."))
                     }
                     .onFailure {
                         setDeleteStatus(ErrorMessage.DELETE_ERROR)
-                        uiEventBus.enqueueEvent(UiEvent.MakeToast(ErrorMessage.DELETE_ERROR))
+                        uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.DELETE_ERROR))
                     }
             }
         }
@@ -213,7 +213,7 @@ class ProfileViewModel @Inject constructor(
     fun signOut() {
         authenticationManager.signOut()
         viewModelScope.launch() {
-            uiEventBus.enqueueEvent(UiEvent.MakeToast("Sign out successful."))
+            uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Sign out successful."))
         }
     }
 }

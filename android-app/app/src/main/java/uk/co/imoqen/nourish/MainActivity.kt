@@ -5,19 +5,31 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.authentication.AuthenticationViewModel
 import uk.co.imoqen.nourish.authentication.LoginScreen
 import uk.co.imoqen.nourish.common.UiEvent
@@ -46,13 +58,24 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
+            val snackbarHostState = remember { SnackbarHostState() }
+
             // Collect and perform UiEvents across entire app:
             val context = LocalContext.current
-            fun onEvent(event: UiEvent) {
+            suspend fun onEvent(event: UiEvent) {
                 when (event) {
                     is UiEvent.MakeToast -> {
+                        // To show a Toast. potentially remove as have replaced with Snackbar.
                         val toast = Toast.makeText(context, event.message, Toast.LENGTH_LONG)
                         toast.show()
+                    }
+                    is UiEvent.ShowSnackbar -> {
+                        // Snackbar: https://developer.android.com/develop/ui/compose/components/snackbar
+                        snackbarHostState.showSnackbar(
+                            message = event.message,
+                            actionLabel = "Dismiss",
+                            duration = SnackbarDuration.Short
+                        )
                     }
                 }
             }
@@ -64,7 +87,7 @@ class MainActivity : ComponentActivity() {
             }
 
             NourishTheme {
-                MainContent()
+                MainContent(Modifier, snackbarHostState)
             }
         }
     }
@@ -76,7 +99,10 @@ class MainActivity : ComponentActivity() {
  * only access login/signup views.
  */
 @Composable
-fun MainContent(modifier: Modifier = Modifier) {
+fun MainContent(
+    modifier: Modifier = Modifier,
+    snackbarHostState: SnackbarHostState
+) {
 
     val startDestination = TabDestination.RECIPE_FINDER
 
@@ -89,6 +115,10 @@ fun MainContent(modifier: Modifier = Modifier) {
         // User is not logged in: display login/signup view
         Scaffold(
             modifier = modifier,
+            // Display all potential snackbar messages:
+            snackbarHost = {
+                SnackbarHost(hostState = snackbarHostState)
+            }
         ) { contentPadding ->
             LoginScreen(modifier = Modifier.padding(contentPadding), authenticationViewModel)
         }
@@ -108,6 +138,10 @@ fun MainContent(modifier: Modifier = Modifier) {
 
             Scaffold(
                 modifier = modifier,
+                // Display all potential snackbar messages:
+                snackbarHost = {
+                    SnackbarHost(hostState = snackbarHostState)
+                },
                 bottomBar = {
                     NourishNavigationBar(
                         TabDestination.entries,
