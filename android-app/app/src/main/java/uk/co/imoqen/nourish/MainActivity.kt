@@ -80,9 +80,6 @@ fun MainContent(modifier: Modifier = Modifier) {
 
     val startDestination = TabDestination.RECIPE_FINDER
 
-    // UiEvent handling:
-
-
     // Authentication ViewModel and App ViewModel are used across the whole app therefore instantiated
     val authenticationViewModel: AuthenticationViewModel = hiltViewModel()
     val appViewModel: AppViewModel = hiltViewModel()

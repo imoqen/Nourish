@@ -1,3 +1,6 @@
+import org.gradle.kotlin.dsl.invoke
+import java.util.Locale
+
 // app module build gradle file
 
 plugins {
@@ -14,6 +17,9 @@ plugins {
     // hilt:
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
+
+    // JaCoCo to generate coverage reports for instrumented tests
+    id("jacoco")
 }
 
 android {
@@ -27,7 +33,8 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // Instrumentation test runner:
+        testInstrumentationRunner = "uk.co.imoqen.nourish.NourishTestRunner"
     }
 
     buildTypes {
@@ -37,6 +44,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        debug {
+            enableUnitTestCoverage = true
+            enableAndroidTestCoverage = true
         }
     }
     compileOptions {
@@ -118,4 +129,67 @@ dependencies {
     implementation("com.google.dagger:hilt-android:2.57.1")
     ksp("com.google.dagger:hilt-compiler:2.57.1")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+
+    // Hilt testing:
+    androidTestImplementation("com.google.dagger:hilt-android-testing:2.57.1")
+    kspAndroidTest("com.google.dagger:hilt-android-compiler:2.57.1")
+}
+
+// For generating coverage report: Jacoco
+// https://docs.gradle.org/current/userguide/jacoco_plugin.html
+// code adapted from: https://medium.com/make-android/measure-your-codes-reach-integrating-jacoco-code-coverage-in-android-apps-with-kotlin-dsl-382d577864e7
+// coverage reports are generated in app/build/customJacocoReportDir/JacocoCodeCoverage
+
+jacoco {
+    toolVersion = "0.8.14"
+    reportsDirectory = layout.buildDirectory.dir("customJacocoReportDir")
+}
+
+val exclusions = listOf(
+    "**/R.class",
+    "**/R\$*.class",
+    "**/BuildConfig.*",
+    "**/Manifest*.*",
+    "**/*Test*.*",
+    "**/hilt_aggregated_deps/**",
+    "**/dagger/hilt/internal/aggregatedroot/codegen/**",
+    "**/dagger/**"
+)
+
+tasks.withType(Test::class) {
+    configure<JacocoTaskExtension> {
+        isIncludeNoLocationClasses = true
+        excludes = listOf("jdk.internal.*")
+    }
+}
+
+// Register a JacocoReport task for code coverage analysis
+tasks.register<JacocoReport>("JacocoCodeCoverage") {
+    // Depend on unit tests and Android tests tasks
+    dependsOn("connectedDebugAndroidTest")
+    // Set task grouping and description
+    group = "Reporting"
+    description = "Execute UI and unit tests, generate and combine Jacoco coverage report"
+    // Configure reports to generate both XML and HTML formats
+    reports {
+        xml.required.set(false)
+        html.required.set(true)
+    }
+    // Set source directories to the main source directory
+    sourceDirectories.setFrom(layout.projectDirectory.dir("src/main"))
+    // Set class directories to compiled Java and Kotlin classes, excluding specified exclusions
+    classDirectories.setFrom(
+        files(
+        fileTree(layout.buildDirectory.dir("intermediates/javac/")) {
+            exclude(exclusions)
+        },
+        fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/")) {
+            exclude(exclusions)
+        }
+    ))
+    // Collect execution data from .exec and .ec files generated during test execution
+    executionData.setFrom(
+        files(
+        fileTree(layout.buildDirectory) { include(listOf("**/*.exec", "**/*.ec")) }
+    ))
 }
