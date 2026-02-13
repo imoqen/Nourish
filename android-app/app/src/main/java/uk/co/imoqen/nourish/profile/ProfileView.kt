@@ -140,7 +140,7 @@ fun ProfileScreen(
                                 profileViewModel.deletePasswordAccount()
                             }
                         ) {
-                            Text("Delete Account")
+                            Text("Confirm and Delete")
                         }
                     }
                     // Case: Google-provider account
@@ -153,7 +153,7 @@ fun ProfileScreen(
                                 profileViewModel.deleteGoogleAccount(activity)
                             }
                         ) {
-                            Text("Delete Account")
+                            Text("Confirm and Delete")
                         }
                     }
                     if (uiState.deleteStatus != "") {

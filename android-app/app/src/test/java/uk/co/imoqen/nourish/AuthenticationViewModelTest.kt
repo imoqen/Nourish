@@ -11,7 +11,7 @@ import uk.co.imoqen.nourish.authentication.AuthenticationViewModel
 import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 
-internal class AuthenticationViewModelTest {
+class AuthenticationViewModelTest {
 
     val fakeAuthenticationManager = FakeAuthenticationManager()
     lateinit var fakeUiEventBus: FakeUiEventBus
