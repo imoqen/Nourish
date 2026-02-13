@@ -1,4 +1,4 @@
-package uk.co.imoqen.nourish.common
+package uk.co.imoqen.nourish.common.uievent
 
 /**
  * onEvent is handled in main activity so viewable across the app

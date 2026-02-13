@@ -2,25 +2,19 @@ package uk.co.imoqen.nourish.recipediscovery
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.common.ErrorMessage
-import uk.co.imoqen.nourish.common.UiEvent
-import uk.co.imoqen.nourish.common.UiEventBus
+import uk.co.imoqen.nourish.common.uievent.UiEvent
+import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import uk.co.imoqen.nourish.network.ApiService
-import uk.co.imoqen.nourish.network.LlmError
 import uk.co.imoqen.nourish.network.LlmRequest
-import uk.co.imoqen.nourish.network.LlmResponse
 import javax.inject.Inject
 
 /**

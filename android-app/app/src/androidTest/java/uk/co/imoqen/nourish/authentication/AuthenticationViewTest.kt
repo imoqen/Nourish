@@ -18,7 +18,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import uk.co.imoqen.nourish.MainActivity
-import uk.co.imoqen.nourish.common.UiEventBus
+import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import co.uk.imoqen.testfixtures.firebase.FakeAuthenticationManager
 import co.uk.imoqen.testfixtures.firebase.FakeFirestoreManager
 import uk.co.imoqen.nourish.firebase.FirebaseModule

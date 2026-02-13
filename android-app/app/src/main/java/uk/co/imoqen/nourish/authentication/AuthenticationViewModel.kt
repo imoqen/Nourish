@@ -4,16 +4,14 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.ErrorMessage
-import uk.co.imoqen.nourish.common.UiEvent
-import uk.co.imoqen.nourish.common.UiEventBus
+import uk.co.imoqen.nourish.common.uievent.UiEvent
+import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import javax.inject.Inject
 
@@ -180,7 +178,7 @@ class AuthenticationViewModel @Inject constructor(
     /**
      * Sign up with email and password: create a password-provider account.
      */
-    fun signUpWithUsernameAndPassword() {
+    fun signUpWithEmailAndPassword() {
         viewModelScope.launch() {
             // Blank input fields:
             if (
@@ -210,8 +208,7 @@ class AuthenticationViewModel @Inject constructor(
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Sign up successful. You have now been signed in."))
                 }
                 .onFailure { fail ->
-                    setSignupError(ErrorMessage.USER_ERROR_SIGNUP)
-                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNUP))
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNUP_EMAIL))
                 }
         }
     }
