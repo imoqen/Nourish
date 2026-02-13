@@ -139,6 +139,8 @@ dependencies {
     testImplementation(project(":test-fixtures"))
     androidTestImplementation(project(":test-fixtures"))
 
+    // To allow coroutines to run in Unit tests (to allow viewModelScope.launch()
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
 }
 
 // For generating coverage report: Jacoco
@@ -151,7 +153,7 @@ jacoco {
     reportsDirectory = layout.buildDirectory.dir("customJacocoReportDir")
 }
 
-val exclusions = listOf(
+val instrumentedTestExclusions = listOf(
     "**/R.class",
     "**/R\$*.class",
     "**/BuildConfig.*",
@@ -165,6 +167,16 @@ val exclusions = listOf(
     "**/network/**"
 )
 
+val unitTestInclusions = listOf(
+    "**/*ViewModel*.class",
+    "**/*Repository*.class"
+)
+val unitTestExclusions = listOf(
+    "**/hilt_aggregated_deps/**",
+    "**/*Test*.class",
+    "**/**AppViewModel**.class" // for Hilt, untestable.
+)
+
 tasks.withType(Test::class) {
     configure<JacocoTaskExtension> {
         isIncludeNoLocationClasses = true
@@ -173,12 +185,13 @@ tasks.withType(Test::class) {
 }
 
 // Register a JacocoReport task for code coverage analysis
-tasks.register<JacocoReport>("JacocoCodeCoverage") {
-    // Depend on unit tests and Android tests tasks
+// INSTRUMENTED TESTS:
+tasks.register<JacocoReport>("JacocoInstrumentedCodeCoverage") {
+    // Depends on Instrumented (Android UI) tests
     dependsOn("connectedDebugAndroidTest")
     // Set task grouping and description
     group = "Reporting"
-    description = "Execute UI and unit tests, generate and combine Jacoco coverage report"
+    description = "Execute Instrumented Android UI tests and generate Jacoco coverage report"
     // Configure reports to generate both XML and HTML formats
     reports {
         xml.required.set(false)
@@ -190,10 +203,10 @@ tasks.register<JacocoReport>("JacocoCodeCoverage") {
     classDirectories.setFrom(
         files(
         fileTree(layout.buildDirectory.dir("intermediates/javac/")) {
-            exclude(exclusions)
+            exclude(instrumentedTestExclusions)
         },
         fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/")) {
-            exclude(exclusions)
+            exclude(instrumentedTestExclusions)
         }
     ))
     // Collect execution data from .exec and .ec files generated during test execution
@@ -201,4 +214,37 @@ tasks.register<JacocoReport>("JacocoCodeCoverage") {
         files(
         fileTree(layout.buildDirectory) { include(listOf("**/*.exec", "**/*.ec")) }
     ))
+}
+
+// UNIT TESTS:
+tasks.register<JacocoReport>("JacocoUnitCodeCoverage") {
+    // Depends on Instrumented (Android UI) tests
+    dependsOn("testDebugUnitTest")
+    // Set task grouping and description
+    group = "Reporting"
+    description = "Execute Unit tests and generate Jacoco coverage report"
+    // Configure reports to generate both XML and HTML formats
+    reports {
+        xml.required.set(false)
+        html.required.set(true)
+    }
+    // Set source directories to the main source directory
+    sourceDirectories.setFrom(layout.projectDirectory.dir("src/main"))
+    // Set class directories to compiled Java and Kotlin classes, excluding specified exclusions
+    classDirectories.setFrom(
+        files(
+            fileTree(layout.buildDirectory.dir("intermediates/javac/")) {
+                include(unitTestInclusions)
+                exclude(unitTestExclusions)
+            },
+            fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/")) {
+                include(unitTestInclusions)
+                exclude(unitTestExclusions)
+            }
+        ))
+    // Collect execution data from .exec and .ec files generated during test execution
+    executionData.setFrom(
+        files(
+            fileTree(layout.buildDirectory) { include(listOf("**/*.exec", "**/*.ec")) }
+        ))
 }
