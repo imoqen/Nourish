@@ -24,7 +24,7 @@ import androidx.compose.ui.Modifier
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    profileViewModel: ProfileViewModel
+    profileViewModel: ProfileViewModel,
 ) {
     Column() {
         Text("Profile")

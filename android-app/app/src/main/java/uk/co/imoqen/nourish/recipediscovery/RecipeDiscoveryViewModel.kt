@@ -1,24 +1,20 @@
 package uk.co.imoqen.nourish.recipediscovery
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import uk.co.imoqen.nourish.authentication.AuthenticationManager
-import uk.co.imoqen.nourish.constants.ErrorMessage
+import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
+import uk.co.imoqen.nourish.common.ErrorMessage
+import uk.co.imoqen.nourish.common.uievent.UiEvent
+import uk.co.imoqen.nourish.common.uievent.UiEventBus
+import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import uk.co.imoqen.nourish.network.ApiService
-import uk.co.imoqen.nourish.network.LlmError
 import uk.co.imoqen.nourish.network.LlmRequest
-import uk.co.imoqen.nourish.network.LlmResponse
 import javax.inject.Inject
 
 /**
@@ -36,7 +32,9 @@ import javax.inject.Inject
 @HiltViewModel
 class RecipeDiscoveryViewModel @Inject constructor(
     private val apiService: ApiService,
-    private val authenticationManager: AuthenticationManager
+    private val authenticationManager: AuthenticationManager,
+    private val apiManager: ApiManager,
+    private val uiEventBus: UiEventBus
 ): ViewModel() {
     private val mutableUiState = MutableStateFlow(RecipeDiscoveryUiState())
     val uiState: StateFlow<RecipeDiscoveryUiState> = mutableUiState.asStateFlow()
@@ -50,18 +48,18 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
-    fun setApiResponseError(apiResponseError: String) {
-        mutableUiState.update { currentState ->
-            currentState.copy(
-                apiResponseError = apiResponseError
-            )
-        }
-    }
-
     fun setUserRequest(userRequest: String) {
         mutableUiState.update { currentState ->
             currentState.copy(
                 userRequest = userRequest
+            )
+        }
+    }
+
+    fun setAwaitingResponse(awaitingResponse: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                awaitingResponse = awaitingResponse
             )
         }
     }
@@ -75,46 +73,49 @@ class RecipeDiscoveryViewModel @Inject constructor(
      */
     fun makeLlmApiCall() {
         // The request simply sends the name of the meal, and the Cloud Run service deals with it appropriately.
-        val request = LlmRequest(mutableUiState.value.userRequest)
+        setAwaitingResponse(true)
         viewModelScope.launch() {
+            // User submitted empty string as prompt; send error.
+            if (mutableUiState.value.userRequest == "") {
+                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_BLANK_PROMPT))
+                setAwaitingResponse(false)
+                return@launch
+            }
+            // Otherwise proceed
+            val request = LlmRequest(mutableUiState.value.userRequest)
+
             runCatching {
                 val tokenResult = authenticationManager.getUserToken()
                 if (tokenResult == null) {
-                    setApiResponseError(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE)
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
+                    setAwaitingResponse(false)
                     return@launch
                 }
-                val call = apiService.generateRecipe(request, "Bearer ${tokenResult.token}")
-                call.enqueue(object : Callback<LlmResponse> {
-                    // OnResponse occurs when a response has been received from the server. could be error.
-                    override fun onResponse(
-                        call: Call<LlmResponse>, response: Response<LlmResponse>
-                    ) {
-                        if (response.isSuccessful) {
-                            val post = response.body()
-                            if (post != null) {
-                                // Extracts the text and updates the UiState
-                                setApiResponse("${post.title}:\n\n Ingredients: \n${post.ingredients} \n\nMethod: \n${post.method}")
-                                setApiResponseError("")
-                            }
-                        } else {
-                            // Extracts the error json from the error string using the LlmError
-                            // template, updates the UiState
-                            val error = response.errorBody()?.string()
-                            val errorJson = Gson().fromJson(error, LlmError::class.java)
-                            setApiResponseError(errorJson.error)
-                            setApiResponse("")
+
+                apiManager.handleRecipeGeneration(request, tokenResult) { response ->
+                    viewModelScope.launch() {
+                        if (response == null) {
+                            // Error message in Snackbar:
+                            uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
+                            setAwaitingResponse(false)
+                            return@launch
                         }
+                        if (response.startsWith("An error occurred.") || response.startsWith("Internal Server Error:")) {
+                            // Response error in Snackbar:
+                            uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(response))
+                            setAwaitingResponse(false)
+                            return@launch
+                        }
+                        // Response is valid - output in a recipe card to the user
+                        setApiResponse(response)
+                        setAwaitingResponse(false)
                     }
-                    // OnFailure occurs when no internet/timeout
-                    override fun onFailure(call: Call<LlmResponse>, t: Throwable) {
-                        setApiResponseError(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE)
-                        setApiResponse("")
-                    }
-                })
+                }
             }
                 .onFailure {
-                    setApiResponseError(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE)
-                    setApiResponse("")
+                    // error occurred
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
+                    setAwaitingResponse(false)
                 }
         }
     }

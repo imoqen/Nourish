@@ -32,12 +32,12 @@ import uk.co.imoqen.nourish.shoppinglist.ShoppingListScreen
 fun AppNavHost(
     navController: NavHostController,
     startDestination: String,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     NavHost(
         navController = navController,
         startDestination = startDestination,
-        modifier = modifier
+        modifier = modifier,
     ) {
         // Bottom Navbar: Tab destinations
         composable(TabDestination.RECIPE_FINDER.route) {

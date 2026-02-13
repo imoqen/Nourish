@@ -30,12 +30,11 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 @Composable
 fun LoginScreen(
     modifier: Modifier,
-    authenticationViewModel: AuthenticationViewModel
+    authenticationViewModel: AuthenticationViewModel,
 ) {
     // Ui State:
     val uiState by authenticationViewModel.uiState.collectAsState()
-    val context = LocalContext.current
-
+    val context = LocalContext.current // required for Google sign in
     Column(
         modifier = modifier.fillMaxSize()
     ) {
@@ -97,6 +96,10 @@ fun LoginScreen(
                 }
             ) {
                 Text("Sign in with Google")
+            }
+
+            if (uiState.signinError != "") {
+                Text(uiState.signinError)
             }
 
             val sheetState = rememberModalBottomSheetState()
@@ -206,11 +209,14 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            if (uiState.signupError != "") {
+                Text(uiState.signupError)
+            }
+
+
             Button(
                 onClick = {
-                    if (uiState.signupPassword == uiState.signupPasswordConfirmation) {
-                        authenticationViewModel.signUpWithUsernameAndPassword()
-                    }
+                    authenticationViewModel.signUpWithEmailAndPassword()
                 }
             ) {
                 Text("Sign up")

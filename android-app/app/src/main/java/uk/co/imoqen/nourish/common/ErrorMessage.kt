@@ -1,4 +1,4 @@
-package uk.co.imoqen.nourish.constants
+package uk.co.imoqen.nourish.common
 
 /**
  * Constants file consisting of error messages used throughout the app.
@@ -6,8 +6,8 @@ package uk.co.imoqen.nourish.constants
  */
 object ErrorMessage {
     // API errors, relating to LLM requests
-    const val API_ERROR_SERVICE_UNREACHABLE = "An error occurred. Please check your device's internet " +
-            "connection and ensure that the Nourish app has permission to access the internet."
+    const val API_ERROR_SERVICE_UNREACHABLE = "An error occurred. Please check your device's internet connection."
+    const val API_ERROR_FAILED_TO_GEN = "An error occurred. Please try again later."
     const val API_ERROR_BLANK_PROMPT = "Prompt cannot be blank."
 
     // Input errors for input fields
@@ -15,10 +15,13 @@ object ErrorMessage {
 
     // Authentication errors involving password and account
     const val PASSWORD_ERROR_CHANGE = "Password could not be updated."
+    const val PASSWORD_ERROR_MATCH = "Passwords do not match."
 
     const val DELETE_ERROR = "Account could not be deleted."
 
-    const val USER_ERROR_SIGNUP = "Account could not be created."
+    const val USER_ERROR_SIGNUP = "Your sign up attempt was unsuccessful."
+    const val USER_ERROR_SIGNUP_EMAIL = "Your sign up attempt was unsuccessful. The email address may already be taken."
+
     const val USER_ERROR_SIGNIN = "Your sign in attempt was unsuccessful."
 
     const val USER_ERROR_EMAIL_SEND = "Password reset email failed to send."

@@ -4,15 +4,16 @@ import android.app.Activity
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.OAuthProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import uk.co.imoqen.nourish.authentication.AuthenticationManager
-import uk.co.imoqen.nourish.constants.ErrorMessage
+import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
+import uk.co.imoqen.nourish.common.ErrorMessage
+import uk.co.imoqen.nourish.common.uievent.UiEvent
+import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import javax.inject.Inject
 
 /**
@@ -20,10 +21,12 @@ import javax.inject.Inject
  * Dependent on the AuthenticationManager to perform authentication based actions such as
  * sign out, password changing and account deletion.
  * @param authenticationManager - dependent on the AuthenticationManager
+ * @param uiEventBus - event bus for handling Ui events such as Toasts, shared across the app
  */
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val authenticationManager: AuthenticationManager
+    private val authenticationManager: AuthenticationManager,
+    private val uiEventBus: UiEventBus
 ): ViewModel() {
     private val mutableUiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = mutableUiState.asStateFlow()
@@ -138,11 +141,13 @@ class ProfileViewModel @Inject constructor(
             }
                 .onSuccess {
                     setPasswordChangeStatus("Password updated successfully.")
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Password updated successfully."))
                 }
                 .onFailure {
                     // Password change error messages are purposefully non-revealing, as revealing
                     // if the password is correct / incorrect etc could allow for an enumeration attack.
                     setPasswordChangeStatus(ErrorMessage.PASSWORD_ERROR_CHANGE)
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.PASSWORD_ERROR_CHANGE))
                 }
         }
     }
@@ -162,9 +167,12 @@ class ProfileViewModel @Inject constructor(
                 // Failure has not occurred thus can delete the account.
                 authenticationManager.deletePasswordAccount()
             }
-                // Nothing occurs on success as the user is automatically signed out.
+                .onSuccess {
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Account successfully deleted."))
+                }
                 .onFailure {
                     setDeleteStatus(ErrorMessage.DELETE_ERROR)
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.DELETE_ERROR))
                 }
         }
     }
@@ -179,15 +187,16 @@ class ProfileViewModel @Inject constructor(
      */
     fun deleteGoogleAccount(activity: Activity?) {
         viewModelScope.launch() {
-            // Identifies the Google OAuthProvider
-            val provider = OAuthProvider.newBuilder("google.com").build()
             if (activity != null) {
                 runCatching {
-                    authenticationManager.deleteGoogleAccount(activity, provider)
+                    authenticationManager.deleteGoogleAccount(activity)
                 }
-                    // Nothing occurs on success as the user is automatically signed out.
+                    .onSuccess {
+                        uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Account successfully deleted."))
+                    }
                     .onFailure {
                         setDeleteStatus(ErrorMessage.DELETE_ERROR)
+                        uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.DELETE_ERROR))
                     }
             }
         }
@@ -198,5 +207,8 @@ class ProfileViewModel @Inject constructor(
      */
     fun signOut() {
         authenticationManager.signOut()
+        viewModelScope.launch() {
+            uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Sign out successful."))
+        }
     }
 }

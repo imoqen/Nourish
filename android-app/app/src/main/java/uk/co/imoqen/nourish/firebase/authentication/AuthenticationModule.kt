@@ -1,9 +1,10 @@
-package uk.co.imoqen.nourish.authentication
+package uk.co.imoqen.nourish.firebase.authentication
 
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
 /**
  * Module to bind the authentication manager, providing the dependency via Hilt.
@@ -13,6 +14,7 @@ import dagger.hilt.components.SingletonComponent
 abstract class AuthenticationModule {
 
     @Binds
+    @Singleton
     abstract fun bindAuthenticationManager(
         authenticationManagerImpl: AuthenticationManagerImpl
     ): AuthenticationManager

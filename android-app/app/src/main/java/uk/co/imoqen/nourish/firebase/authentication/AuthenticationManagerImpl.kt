@@ -1,30 +1,25 @@
-package uk.co.imoqen.nourish.authentication
+package uk.co.imoqen.nourish.firebase.authentication
 
 import android.app.Activity
 import android.content.Context
-import android.util.Log
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import com.google.firebase.Firebase
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.auth.GetTokenResult
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.OAuthProvider
-import com.google.firebase.auth.auth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.tasks.await
 import uk.co.imoqen.nourish.R
+import uk.co.imoqen.nourish.authentication.AuthenticationState
+import uk.co.imoqen.nourish.firebase.firestore.FirestoreManager
 import java.security.MessageDigest
 import java.util.UUID
 import javax.inject.Inject
@@ -37,12 +32,12 @@ import javax.inject.Singleton
  * Most functions are suspend, which throw up exceptions to the viewmodel. The viewmodel then deals
  * with them appropriately in a runCatching block.
  * @param auth - FirebaseAuth authentication platform holding a list of all users.
- * @param db - FirebaseFirestore database holding user data.
+ * @param firestoreManager - provides access to the FirebaseFirestore database holding user data.
  */
 @Singleton
 class AuthenticationManagerImpl @Inject constructor(
     private val auth: FirebaseAuth,
-    private val db: FirebaseFirestore
+    private val firestoreManager: FirestoreManager
 ): AuthenticationManager {
 
     // State to manage the currently logged in user's uid and state (logged in or logged out)
@@ -58,7 +53,7 @@ class AuthenticationManagerImpl @Inject constructor(
      * Update the logged in status using the setter; to set whether a user is currently logged in,
      * and if so, their uid.
      */
-    override fun updateLoggedInState() {
+    private fun updateLoggedInState() {
         if (isLoggedIn()) {
             setLoginState(true, auth.currentUser!!.uid)
             return
@@ -79,7 +74,7 @@ class AuthenticationManagerImpl @Inject constructor(
     /**
      * Setter for the state: sets the logged in state and uid of logged in user ("" if not logged in).
      */
-    fun setLoginState(loggedInState: Boolean, uid: String = "") {
+    private fun setLoginState(loggedInState: Boolean, uid: String = "") {
         mutableAuthenticationState.update { currentState ->
             currentState.copy(
                 loggedIn = loggedInState,
@@ -132,14 +127,14 @@ class AuthenticationManagerImpl @Inject constructor(
         val request = GetCredentialRequest.Builder()
             .addCredentialOption(googleIdOption)
             .build()
-        val credentialManager = CredentialManager.create(context)
+        val credentialManager = CredentialManager.Companion.create(context)
         val result = credentialManager.getCredential(context = context, request = request)
         val credential = result.credential
 
         if (credential is CustomCredential) {
-            if (credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+            if (credential.type == GoogleIdTokenCredential.Companion.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
                 // Sign in with Google:
-                val googleIdTokenCredential = GoogleIdTokenCredential
+                val googleIdTokenCredential = GoogleIdTokenCredential.Companion
                     .createFrom(credential.data)
                 val firebaseCredential = GoogleAuthProvider.getCredential(
                     googleIdTokenCredential.idToken,
@@ -173,11 +168,7 @@ class AuthenticationManagerImpl @Inject constructor(
             return // early return if not logged in; can't add.
         }
         val user = auth.currentUser!!
-        // Check if document with uid already exists; if not, add.
-        val result = db.collection("users").document(user.uid).get().await()
-        if (!result.exists()) {
-            addUserToFirestore(user)
-        }
+        firestoreManager.addUserToFirestoreIfNotExists(user.uid, user.email!!)
     }
 
     // Methods used in the ProfileViewModel:
@@ -202,7 +193,7 @@ class AuthenticationManagerImpl @Inject constructor(
      * @param password - the password to get the credentials for, using the current email.
      * @returns valid AuthCredentials if password is valid for the email, null otherwise.
      */
-    override suspend fun getCredentials(password: String): AuthCredential? {
+    private fun getCredentials(password: String): AuthCredential? {
         if (!isLoggedIn()) {
             return null // early return if not logged in; no auth credentials.
         }
@@ -246,7 +237,7 @@ class AuthenticationManagerImpl @Inject constructor(
             return // early return if not logged in; no auth credentials.
         }
         val user = auth.currentUser!!
-        deleteAllUserData(user)
+        firestoreManager.deleteAllUserData(user.uid)
         user.delete()
             .addOnSuccessListener {
                 signOut() // sign them out as the account is now deleted
@@ -260,20 +251,21 @@ class AuthenticationManagerImpl @Inject constructor(
      * it requires navigating the user into their web app and following a flow to reauthenticate
      * their Google account. If successful, the account is deleted and the user is logged out.
      * @param activity - the current activity, allowing the web app to be opened for reauthentication
-     * @param provider - the Google OAuthProvider
      */
-    override suspend fun deleteGoogleAccount(activity: Activity, provider: OAuthProvider) {
+    override suspend fun deleteGoogleAccount(activity: Activity) {
         if (!isLoggedIn()) {
             return // early return if not logged in; no auth credentials.
         }
         val user = auth.currentUser!!
+        // Identifies the Google OAuthProvider
+        val provider = OAuthProvider.newBuilder("google.com").build()
         // reauthenticate by opening log in in users browser
         user.startActivityForReauthenticateWithProvider(
             activity,
             provider
         ).await()
         // delete users data on firebase firestore
-        deleteAllUserData(user)
+        firestoreManager.deleteAllUserData(user.uid)
         // delete user from firebase authentication
         user.delete().await()
         // then sign out locally:
@@ -286,14 +278,14 @@ class AuthenticationManagerImpl @Inject constructor(
      * Gets the current token of a user, containing the JWT (Java Web Token) string allowing for
      * authentication.
      * This can be passed into the Bearer Authorization header of API requests to authenticate a user.
-     * @returns the token result if the user is logged in and valid, null otherwise.
+     * @returns the token as a string if the user is logged in and valid, null otherwise.
      */
-    override suspend fun getUserToken(): GetTokenResult? {
+    override suspend fun getUserToken(): String? {
         if (!isLoggedIn()) {
             return null // early return if not logged in; no auth credentials.
         }
         val user = auth.currentUser!!
-        return user.getIdToken(true).await()
+        return user.getIdToken(true).await().token
     }
 
     // Auxiliary functions, thus not declared in the interface
@@ -319,50 +311,10 @@ class AuthenticationManagerImpl @Inject constructor(
     }
 
     /**
-     * Private auxiliary function to deletes all of a user's data from the Firebase Firestore.
-     * This is to be performed when a user's account is deleted.
-     * @param user - the user to delete the data of.
-     */
-    private suspend fun deleteAllUserData(user: FirebaseUser) {
-        val db = Firebase.firestore
-        val userRef = db.collection("users").document(user.uid)
-
-        // Recursively delete all of the user data
-        val tokenUsages = userRef.collection("token-usage").get().await().documents
-        tokenUsages.forEach{ tokenUsage ->
-            tokenUsage.reference.delete().await()
-        }
-        userRef.delete().await()
-    }
-
-    /**
      * Private auxiliary function to determine if a user is currently logged in.
      * @returns true if logged in, false otherwise.
      */
     private fun isLoggedIn(): Boolean {
         return auth.currentUser != null
-    }
-
-    /**
-     * Private auxiliary function to add the user's email to the Firebase Firestore users collection,
-     * in a document titled their uid and containing their email address.
-     * Adding data to firestore: https://firebase.google.com/docs/firestore/quickstart#android
-     * @param user - the user to add to Firestore
-     */
-    private fun addUserToFirestore(user: FirebaseUser) {
-        val userData = hashMapOf(
-            "email" to user.email,
-        )
-
-        // adds the uid to the users and updates if already exists
-        db.collection("users")
-            .document(user.uid) // adds new doc with uid title
-            .set(userData) // sets the email of the user in it
-            .addOnSuccessListener {
-                Log.i("FIRESTORE", "User (${user.email}) with uid ${user.uid} successfully added to Firestore")
-            }
-            .addOnFailureListener { e ->
-                Log.e("FIRESTORE", "User could not be added to Firestore: $e")
-            }
     }
 }

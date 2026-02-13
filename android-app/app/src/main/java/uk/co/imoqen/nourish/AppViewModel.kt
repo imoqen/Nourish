@@ -2,7 +2,7 @@ package uk.co.imoqen.nourish
 
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import uk.co.imoqen.nourish.authentication.AuthenticationManager
+import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import javax.inject.Inject
 
 /**

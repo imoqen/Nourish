@@ -9,7 +9,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import uk.co.imoqen.nourish.constants.ErrorMessage
+import uk.co.imoqen.nourish.common.ErrorMessage
+import uk.co.imoqen.nourish.common.uievent.UiEvent
+import uk.co.imoqen.nourish.common.uievent.UiEventBus
+import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import javax.inject.Inject
 
 /**
@@ -17,10 +20,13 @@ import javax.inject.Inject
  * Dependent on the AuthenticationManager to perform authentication based actions such as
  * sign up, sign in, password change.
  * @param authenticationManager - dependent on the AuthenticationManager
+ * @param uiEventBus - event bus for handling Ui events such as Toasts, shared across the app
+ *
  */
 @HiltViewModel
 class AuthenticationViewModel @Inject constructor(
-    private val authenticationManager: AuthenticationManager
+    private val authenticationManager: AuthenticationManager,
+    private val uiEventBus: UiEventBus
 ): ViewModel() {
     // Purpose: pattern to encapsulate the mutable state to ensure it is not mutable from the viewmodel.
     // pattern taken from advice in: https://medium.com/@rowaido.game/managing-ui-states-in-jetpack-compose-7eb15e4f6931
@@ -126,6 +132,11 @@ class AuthenticationViewModel @Inject constructor(
      */
     fun signInWithEmailAndPassword() {
         viewModelScope.launch() {
+            if (mutableUiState.value.signinEmail == "" || mutableUiState.value.signinPassword == "") {
+                setSigninError(ErrorMessage.INPUT_ERROR_BLANK)
+                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNIN))
+                return@launch
+            }
             // runCatching is used to call a suspend error and handle exceptions appropriately
             // https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/run-catching.html
             runCatching {
@@ -136,8 +147,11 @@ class AuthenticationViewModel @Inject constructor(
                 // then add the user to firestore if they don't already exist in firestore:
                 authenticationManager.addIfNotExists()
             }
+                .onSuccess {
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Sign in successful."))
+                }
                 .onFailure {
-                    setSigninError(ErrorMessage.USER_ERROR_SIGNIN)
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNIN))
                 }
         }
     }
@@ -152,8 +166,11 @@ class AuthenticationViewModel @Inject constructor(
                 // then add the user to firestore if they don't already exist in firestore:
                 authenticationManager.addIfNotExists()
             }
+                .onSuccess {
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Sign in successful."))
+                }
                 .onFailure { e ->
-                    setSigninError(ErrorMessage.USER_ERROR_SIGNIN)
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNIN))
                 }
         }
     }
@@ -161,8 +178,24 @@ class AuthenticationViewModel @Inject constructor(
     /**
      * Sign up with email and password: create a password-provider account.
      */
-    fun signUpWithUsernameAndPassword() {
+    fun signUpWithEmailAndPassword() {
         viewModelScope.launch() {
+            // Blank input fields:
+            if (
+                mutableUiState.value.signupEmail == "" ||
+                mutableUiState.value.signupPassword == "" ||
+                mutableUiState.value.signupPasswordConfirmation == ""
+            ) {
+                setSignupError(ErrorMessage.INPUT_ERROR_BLANK)
+                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNUP))
+                return@launch
+            }
+            // Passwords do not match:
+            if (mutableUiState.value.signupPassword != mutableUiState.value.signupPasswordConfirmation) {
+                setSignupError(ErrorMessage.PASSWORD_ERROR_MATCH)
+                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNUP))
+                return@launch
+            }
             runCatching {
                 authenticationManager.signUpWithEmailAndPassword(
                     mutableUiState.value.signupEmail,
@@ -171,8 +204,11 @@ class AuthenticationViewModel @Inject constructor(
                 // then add the user to firestore if they don't already exist in firestore:
                 authenticationManager.addIfNotExists()
             }
+                .onSuccess {
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Sign up successful. You have now been signed in."))
+                }
                 .onFailure { fail ->
-                    setSignupError(ErrorMessage.USER_ERROR_SIGNUP)
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNUP_EMAIL))
                 }
         }
     }
@@ -200,6 +236,7 @@ class AuthenticationViewModel @Inject constructor(
                 }
                 .onFailure {
                     setPasswordResetStatus(ErrorMessage.USER_ERROR_EMAIL_SEND)
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_EMAIL_SEND))
                 }
         }
     }

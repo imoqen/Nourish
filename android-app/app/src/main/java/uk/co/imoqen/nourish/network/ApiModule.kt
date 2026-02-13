@@ -1,11 +1,14 @@
 package uk.co.imoqen.nourish.network
 
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
+import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManagerImpl
 import javax.inject.Singleton
 
 /**
