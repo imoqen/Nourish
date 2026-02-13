@@ -154,7 +154,10 @@ val exclusions = listOf(
     "**/*Test*.*",
     "**/hilt_aggregated_deps/**",
     "**/dagger/hilt/internal/aggregatedroot/codegen/**",
-    "**/dagger/**"
+    "**/dagger/**",
+    // Exclude files that shouldn't be in instrumented tests, as they are faked instead:
+    "**/firebase/**",
+    "**/network/**"
 )
 
 tasks.withType(Test::class) {

@@ -40,7 +40,14 @@ class FakeAuthenticationManager(): AuthenticationManager {
     }
 
     override suspend fun signUpWithEmailAndPassword(email: String, password: String) {
-        TODO("Not yet implemented")
+        // valid email address
+        if (email == "test@gmail.com") {
+            setLoginState(true, "test_uid")
+        }
+        // otherwise, throw an error as all other email address are invalid.
+        else {
+            throw RuntimeException("Fake sign in failure")
+        }
     }
 
     override suspend fun signInWithEmailAndPassword(email: String, password: String) {
@@ -56,11 +63,15 @@ class FakeAuthenticationManager(): AuthenticationManager {
     }
 
     override suspend fun signInWithGoogle(context: Context) {
-        TODO("Not yet implemented")
+        // simply log in the user
+        setLoginState(true, "test_uid")
     }
 
     override suspend fun passwordResetRequest(email: String) {
-        TODO("Not yet implemented")
+        // Password reset request only works for test@gmail.com
+        if (email != "test@gmail.com") {
+            throw RuntimeException("Fake password reset request failure")
+        }
     }
 
     override suspend fun hasPasswordProvider(): Boolean {
