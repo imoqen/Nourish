@@ -36,6 +36,7 @@ jobs:
     - name: Run Tests
       run: |
         cd android-app
+        chmod +x ./gradlew
         ./gradlew testDebugUnitTest --stacktrace
 
     
