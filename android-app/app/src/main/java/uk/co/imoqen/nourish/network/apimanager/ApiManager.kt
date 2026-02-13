@@ -1,4 +1,6 @@
-package uk.co.imoqen.nourish.network
+package uk.co.imoqen.nourish.network.apimanager
+
+import uk.co.imoqen.nourish.network.LlmRequest
 
 interface ApiManager {
 

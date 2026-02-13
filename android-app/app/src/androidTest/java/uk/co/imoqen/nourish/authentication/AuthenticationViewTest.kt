@@ -26,8 +26,9 @@ import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationModule
 import uk.co.imoqen.nourish.firebase.firestore.FirestoreManager
 import uk.co.imoqen.nourish.network.ApiModule
-import uk.co.imoqen.nourish.network.ApiService
-import co.uk.imoqen.network.FakeApiService
+import co.uk.imoqen.testfixtures.network.FakeApiManager
+import uk.co.imoqen.nourish.network.apimanager.ApiManager
+import uk.co.imoqen.nourish.network.apimanager.ApiManagerModule
 import javax.inject.Inject
 
 // https://developer.android.com/training/dependency-injection/hilt-testing
@@ -35,7 +36,7 @@ import javax.inject.Inject
 
 // https://developer.android.com/training/testing/ui-tests
 // https://dagger.dev/hilt/testing.html
-@UninstallModules(AuthenticationModule::class, FirebaseModule::class, ApiModule::class)
+@UninstallModules(AuthenticationModule::class, FirebaseModule::class, ApiManagerModule::class)
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
 class AuthenticationViewTest {
@@ -54,7 +55,7 @@ class AuthenticationViewTest {
 
     @BindValue
     @JvmField
-    val apiService: ApiService = FakeApiService()
+    val apiManager: ApiManager = FakeApiManager()
 
     @get:Rule(order = 0)
     var hiltRule = HiltAndroidRule(this)

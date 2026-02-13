@@ -1,12 +1,15 @@
-package uk.co.imoqen.nourish.network
+package uk.co.imoqen.nourish.network.apimanager
 
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import com.google.gson.Gson
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import uk.co.imoqen.nourish.common.ErrorMessage
+import uk.co.imoqen.nourish.network.apimanager.ApiManager
+import uk.co.imoqen.nourish.network.ApiService
+import uk.co.imoqen.nourish.network.LlmError
+import uk.co.imoqen.nourish.network.LlmRequest
+import uk.co.imoqen.nourish.network.LlmResponse
 import javax.inject.Inject
 import javax.inject.Singleton
 

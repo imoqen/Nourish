@@ -1,9 +1,11 @@
-package uk.co.imoqen.nourish.network
+package uk.co.imoqen.nourish.network.apimanager
 
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import uk.co.imoqen.nourish.network.apimanager.ApiManager
+import uk.co.imoqen.nourish.network.apimanager.ApiManagerImpl
 import javax.inject.Singleton
 
 /**

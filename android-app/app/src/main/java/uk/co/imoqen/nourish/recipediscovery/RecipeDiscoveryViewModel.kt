@@ -16,7 +16,7 @@ import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.UiEvent
 import uk.co.imoqen.nourish.common.UiEventBus
-import uk.co.imoqen.nourish.network.ApiManager
+import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.LlmError
 import uk.co.imoqen.nourish.network.LlmRequest
