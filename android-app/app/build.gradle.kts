@@ -134,6 +134,11 @@ dependencies {
     // Hilt testing:
     androidTestImplementation("com.google.dagger:hilt-android-testing:2.57.1")
     kspAndroidTest("com.google.dagger:hilt-android-compiler:2.57.1")
+
+    // custom testing fixtures, to place the fakes in and accessible from instrumented and unit tests:
+    testImplementation(project(":test-fixtures"))
+    androidTestImplementation(project(":test-fixtures"))
+
 }
 
 // For generating coverage report: Jacoco

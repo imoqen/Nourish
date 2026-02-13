@@ -2,9 +2,6 @@ package uk.co.imoqen.nourish.firebase.authentication
 
 import android.app.Activity
 import android.content.Context
-import com.google.firebase.auth.AuthCredential
-import com.google.firebase.auth.GetTokenResult
-import com.google.firebase.auth.OAuthProvider
 import kotlinx.coroutines.flow.StateFlow
 import uk.co.imoqen.nourish.authentication.AuthenticationState
 
@@ -18,12 +15,6 @@ interface AuthenticationManager {
      * is always kept up to date with all user data.
      */
     suspend fun addIfNotExists()
-
-    /**
-     * Update the logged in status using the setter; to set whether a user is currently logged in,
-     * and if so, their uid.
-     */
-    fun updateLoggedInState()
 
     /**
      * Sign out the currently signed in user and update login status.
@@ -70,13 +61,6 @@ interface AuthenticationManager {
     suspend fun hasPasswordProvider(): Boolean
 
     /**
-     * Gets the credentials of the current user, for use during reauthentication.
-     * @param password - the password to get the credentials for, using the current email.
-     * @returns valid AuthCredentials if password is valid for the email, null otherwise.
-     */
-    suspend fun getCredentials(password: String): AuthCredential?
-
-    /**
      * Reauthenticates an account. This is required to perform sensitive actions such as
      * password changes and account deletion; required for an extra level of security.
      * Only performed on password-provider accounts (Google accounts must follow an alternative flow).
@@ -102,9 +86,8 @@ interface AuthenticationManager {
      * it requires navigating the user into their web app and following a flow to reauthenticate
      * their Google account. If successful, the account is deleted and the user is logged out.
      * @param activity - the current activity, allowing the web app to be opened for reauthentication
-     * @param provider - the Google OAuthProvider
      */
-    suspend fun deleteGoogleAccount(activity: Activity, provider: OAuthProvider)
+    suspend fun deleteGoogleAccount(activity: Activity)
 
     // Methods used in the RecipeDiscoveryViewModel:
 
@@ -112,7 +95,7 @@ interface AuthenticationManager {
      * Gets the current token of a user, containing the JWT (Java Web Token) string allowing for
      * authentication.
      * This can be passed into the Bearer Authorization header of API requests to authenticate a user.
-     * @returns the token result if the user is logged in and valid, null otherwise.
+     * @returns the token as a string if the user is logged in and valid, null otherwise.
      */
-    suspend fun getUserToken(): GetTokenResult?
+    suspend fun getUserToken(): String?
 }

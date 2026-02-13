@@ -1,6 +1,5 @@
 package uk.co.imoqen.nourish.authentication
 
-import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
@@ -9,33 +8,26 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
-import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.RootMatchers.withDecorView
-import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
-import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
-import org.hamcrest.Matchers.`is`
-import org.hamcrest.Matchers.not
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import uk.co.imoqen.nourish.MainActivity
 import uk.co.imoqen.nourish.common.UiEventBus
-import uk.co.imoqen.nourish.firebase.FakeAuthenticationManager
-import uk.co.imoqen.nourish.firebase.FakeFirestoreManager
+import co.uk.imoqen.testfixtures.firebase.FakeAuthenticationManager
+import co.uk.imoqen.testfixtures.firebase.FakeFirestoreManager
 import uk.co.imoqen.nourish.firebase.FirebaseModule
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationModule
 import uk.co.imoqen.nourish.firebase.firestore.FirestoreManager
 import uk.co.imoqen.nourish.network.ApiModule
 import uk.co.imoqen.nourish.network.ApiService
-import uk.co.imoqen.nourish.network.FakeApiService
+import co.uk.imoqen.network.FakeApiService
 import javax.inject.Inject
 
 // https://developer.android.com/training/dependency-injection/hilt-testing

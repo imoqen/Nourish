@@ -6,6 +6,6 @@ package uk.co.imoqen.nourish.recipediscovery
  */
 data class RecipeDiscoveryUiState(
     val apiResponse: String = "",
-    val apiResponseError: String = "",
-    val userRequest: String = ""
+    val userRequest: String = "",
+    val awaitingResponse: Boolean = false
 )

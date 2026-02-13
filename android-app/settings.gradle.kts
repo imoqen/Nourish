@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Nourish"
 include(":app")
+include(":test-fixtures")

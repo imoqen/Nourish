@@ -1,4 +1,4 @@
-package uk.co.imoqen.nourish.network
+package co.uk.imoqen.network
 
 import retrofit2.Call
 

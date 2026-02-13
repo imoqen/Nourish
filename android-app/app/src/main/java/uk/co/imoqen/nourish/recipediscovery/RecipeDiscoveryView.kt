@@ -2,13 +2,19 @@ package uk.co.imoqen.nourish.recipediscovery
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import uk.co.imoqen.nourish.common.ErrorMessage
 
 /**
@@ -20,6 +26,8 @@ fun RecipeDiscoveryScreen(
     recipeDiscoveryViewModel: RecipeDiscoveryViewModel
 ) {
     val uiState by recipeDiscoveryViewModel.uiState.collectAsState()
+
+    val keyboardFocusManager = LocalFocusManager.current // To close the keyboard once user submits input
 
     Column() {
         OutlinedTextField(
@@ -35,12 +43,8 @@ fun RecipeDiscoveryScreen(
         // Uses the inputted user request to make the LLM call using the ViewModel
         Button(
             onClick = {
-                if (uiState.userRequest == "") {
-                    recipeDiscoveryViewModel.setApiResponseError(ErrorMessage.API_ERROR_BLANK_PROMPT)
-                    recipeDiscoveryViewModel.setApiResponse("")
-                } else {
-                    recipeDiscoveryViewModel.makeLlmApiCall()
-                }
+                keyboardFocusManager.clearFocus()
+                recipeDiscoveryViewModel.makeLlmApiCall()
             }
         ) {
             Text("Discover a recipe")
@@ -50,8 +54,24 @@ fun RecipeDiscoveryScreen(
         if (uiState.apiResponse != "") {
             Text(uiState.apiResponse)
         }
-        else if (uiState.apiResponseError != "") {
-            Text(uiState.apiResponseError)
-        }
+
+        IndeterminateCircularIndicator()
     }
+}
+
+// Progress bar:
+// https://developer.android.com/develop/ui/compose/components/progress
+@Composable
+fun IndeterminateCircularIndicator(
+    recipeDiscoveryViewModel: RecipeDiscoveryViewModel = hiltViewModel()
+) {
+    val uiState by recipeDiscoveryViewModel.uiState.collectAsState()
+
+    if (!uiState.awaitingResponse) return
+
+    CircularProgressIndicator(
+        modifier = Modifier.width(64.dp),
+        color = MaterialTheme.colorScheme.secondary,
+        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+    )
 }

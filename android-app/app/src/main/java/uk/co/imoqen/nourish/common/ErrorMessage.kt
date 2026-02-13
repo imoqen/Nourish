@@ -6,8 +6,8 @@ package uk.co.imoqen.nourish.common
  */
 object ErrorMessage {
     // API errors, relating to LLM requests
-    const val API_ERROR_SERVICE_UNREACHABLE = "An error occurred. Please check your device's internet " +
-            "connection and ensure that the Nourish app has permission to access the internet."
+    const val API_ERROR_SERVICE_UNREACHABLE = "An error occurred. Please check your device's internet connection."
+    const val API_ERROR_FAILED_TO_GEN = "An error occurred. Please try again later."
     const val API_ERROR_BLANK_PROMPT = "Prompt cannot be blank."
 
     // Input errors for input fields

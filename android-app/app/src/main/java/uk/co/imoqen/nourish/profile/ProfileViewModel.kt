@@ -190,11 +190,9 @@ class ProfileViewModel @Inject constructor(
      */
     fun deleteGoogleAccount(activity: Activity?) {
         viewModelScope.launch() {
-            // Identifies the Google OAuthProvider
-            val provider = OAuthProvider.newBuilder("google.com").build()
             if (activity != null) {
                 runCatching {
-                    authenticationManager.deleteGoogleAccount(activity, provider)
+                    authenticationManager.deleteGoogleAccount(activity)
                 }
                     .onSuccess {
                         uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Account successfully deleted."))

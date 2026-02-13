@@ -1,10 +1,7 @@
-package uk.co.imoqen.nourish.firebase
+package co.uk.imoqen.testfixtures.firebase
 
 import android.app.Activity
 import android.content.Context
-import com.google.firebase.auth.AuthCredential
-import com.google.firebase.auth.GetTokenResult
-import com.google.firebase.auth.OAuthProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,10 +17,6 @@ class FakeAuthenticationManager(): AuthenticationManager {
 
     override suspend fun addIfNotExists() {
         // do nothing
-    }
-
-    override fun updateLoggedInState() {
-        setLoginState(false) // logged out by default
     }
 
     fun setLoginState(loggedInState: Boolean, uid: String = "") {
@@ -78,10 +71,6 @@ class FakeAuthenticationManager(): AuthenticationManager {
         TODO("Not yet implemented")
     }
 
-    override suspend fun getCredentials(password: String): AuthCredential? {
-        TODO("Not yet implemented")
-    }
-
     override suspend fun reauthenticate(password: String) {
         TODO("Not yet implemented")
     }
@@ -96,12 +85,11 @@ class FakeAuthenticationManager(): AuthenticationManager {
 
     override suspend fun deleteGoogleAccount(
         activity: Activity,
-        provider: OAuthProvider
     ) {
         TODO("Not yet implemented")
     }
 
-    override suspend fun getUserToken(): GetTokenResult? {
+    override suspend fun getUserToken(): String? {
         TODO("Not yet implemented")
     }
 }
