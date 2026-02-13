@@ -20,7 +20,7 @@ object ErrorMessage {
     const val DELETE_ERROR = "Account could not be deleted."
 
     const val USER_ERROR_SIGNUP = "Your sign up attempt was unsuccessful."
-    const val USER_ERROR_SIGNUP_EMAIL = "Your sign up attempt was unsuccessful. The email address may already be taken."
+    const val USER_ERROR_SIGNUP_EMAIL = "Your sign up attempt was unsuccessful. The email address may be invalid or taken."
 
     const val USER_ERROR_SIGNIN = "Your sign in attempt was unsuccessful."
 

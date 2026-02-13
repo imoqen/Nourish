@@ -29,7 +29,7 @@ class FakeAuthenticationManager(): AuthenticationManager {
     }
 
     override fun signOut() {
-        TODO("Not yet implemented")
+        setLoginState(false)
     }
 
     override suspend fun signUpWithEmailAndPassword(email: String, password: String) {
@@ -57,7 +57,7 @@ class FakeAuthenticationManager(): AuthenticationManager {
 
     override suspend fun signInWithGoogle(context: Context) {
         // simply log in the user
-        setLoginState(true, "test_uid")
+        setLoginState(true, "google_uid")
     }
 
     override suspend fun passwordResetRequest(email: String) {
@@ -67,26 +67,32 @@ class FakeAuthenticationManager(): AuthenticationManager {
         }
     }
 
+    // mocks the password based accounts by setting their uid to "test_uid"
     override suspend fun hasPasswordProvider(): Boolean {
-        TODO("Not yet implemented")
+        return mutableAuthenticationState.value.uid == "test_uid"
     }
 
     override suspend fun reauthenticate(password: String) {
-        TODO("Not yet implemented")
+        // only failure if password is invalid
+        if (password == "invalid") {
+            throw RuntimeException("Fake reauthentication error")
+        }
     }
 
     override suspend fun updatePassword(newPassword: String) {
-        TODO("Not yet implemented")
+        if (newPassword == "incorrect_pw") {
+            throw RuntimeException("Fake password error")
+        }
     }
 
     override suspend fun deletePasswordAccount() {
-        TODO("Not yet implemented")
+        // do nothing to simulate success
     }
 
     override suspend fun deleteGoogleAccount(
         activity: Activity,
     ) {
-        TODO("Not yet implemented")
+        // do nothing to simulate success
     }
 
     override suspend fun getUserToken(): String? {

@@ -202,18 +202,24 @@ tasks.register<JacocoReport>("JacocoInstrumentedCodeCoverage") {
     // Set class directories to compiled Java and Kotlin classes, excluding specified exclusions
     classDirectories.setFrom(
         files(
-        fileTree(layout.buildDirectory.dir("intermediates/javac/")) {
-            exclude(instrumentedTestExclusions)
-        },
-        fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/")) {
-            exclude(instrumentedTestExclusions)
-        }
-    ))
+            fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/debug")) { exclude(instrumentedTestExclusions) },
+            fileTree(layout.buildDirectory.dir("intermediates/javac/debug/classes")) { exclude(instrumentedTestExclusions) }
+        )
+    )
     // Collect execution data from .exec and .ec files generated during test execution
     executionData.setFrom(
-        files(
-        fileTree(layout.buildDirectory) { include(listOf("**/*.exec", "**/*.ec")) }
-    ))
+        fileTree(layout.buildDirectory) {
+            include("**/*.ec")
+            exclude("**/*.exec")
+        }
+    )
+
+    doFirst {
+        println("=== executionData ===")
+        executionData.files.forEach { println(it.absolutePath) }
+        println("=== classDirectories ===")
+        classDirectories.files.forEach { println(it.absolutePath) }
+    }
 }
 
 // UNIT TESTS:

@@ -1,4 +1,4 @@
-package uk.co.imoqen.nourish.authentication
+package uk.co.imoqen.nourish
 
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasClickAction
@@ -9,6 +9,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import co.uk.imoqen.testfixtures.firebase.FakeAuthenticationManager
+import co.uk.imoqen.testfixtures.firebase.FakeFirestoreManager
+import co.uk.imoqen.testfixtures.network.FakeApiManager
 import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -17,22 +20,15 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import uk.co.imoqen.nourish.MainActivity
+import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
-import co.uk.imoqen.testfixtures.firebase.FakeAuthenticationManager
-import co.uk.imoqen.testfixtures.firebase.FakeFirestoreManager
 import uk.co.imoqen.nourish.firebase.FirebaseModule
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationModule
 import uk.co.imoqen.nourish.firebase.firestore.FirestoreManager
-import uk.co.imoqen.nourish.network.ApiModule
-import co.uk.imoqen.testfixtures.network.FakeApiManager
 import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import uk.co.imoqen.nourish.network.apimanager.ApiManagerModule
 import javax.inject.Inject
-
-// https://developer.android.com/training/dependency-injection/hilt-testing
-// https://developer.android.com/develop/ui/compose/testing/testing-cheatsheet
 
 // https://developer.android.com/training/testing/ui-tests
 // https://dagger.dev/hilt/testing.html
@@ -214,7 +210,7 @@ class AuthenticationViewTest {
         ).performClick()
 
         // Sign up fail - error displayed and user remains in sign up screen.
-        composeRule.onAllNodesWithText("Your sign up attempt was unsuccessful.").assertCountEquals(2)
+        composeRule.onNodeWithText(ErrorMessage.USER_ERROR_SIGNUP_EMAIL).assertExists()
         composeRule.onNode(
             hasText("Back to login") and hasClickAction()
         ).assertExists()
