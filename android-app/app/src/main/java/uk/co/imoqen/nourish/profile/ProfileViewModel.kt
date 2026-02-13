@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import uk.co.imoqen.nourish.authentication.AuthenticationManager
+import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.UiEvent
 import uk.co.imoqen.nourish.common.UiEventBus

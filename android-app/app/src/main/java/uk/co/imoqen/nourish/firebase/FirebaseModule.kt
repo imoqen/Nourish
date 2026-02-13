@@ -1,4 +1,4 @@
-package uk.co.imoqen.nourish.authentication
+package uk.co.imoqen.nourish.firebase
 
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -12,7 +12,8 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 /**
- * Module to provide Firebase dependencies to the AuthenticationManager
+ * Module to provide Firebase dependencies.
+ * These are used in the AuthenticationManager and the FirestoreManager.
  */
 @Module
 @InstallIn(SingletonComponent::class)

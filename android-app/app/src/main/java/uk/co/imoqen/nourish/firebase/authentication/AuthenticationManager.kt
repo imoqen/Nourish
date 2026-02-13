@@ -1,4 +1,4 @@
-package uk.co.imoqen.nourish.authentication
+package uk.co.imoqen.nourish.firebase.authentication
 
 import android.app.Activity
 import android.content.Context
@@ -6,6 +6,7 @@ import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.GetTokenResult
 import com.google.firebase.auth.OAuthProvider
 import kotlinx.coroutines.flow.StateFlow
+import uk.co.imoqen.nourish.authentication.AuthenticationState
 
 interface AuthenticationManager {
 

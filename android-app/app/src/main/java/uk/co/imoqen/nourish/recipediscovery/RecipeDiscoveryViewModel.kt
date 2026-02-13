@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import uk.co.imoqen.nourish.authentication.AuthenticationManager
+import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.LlmError

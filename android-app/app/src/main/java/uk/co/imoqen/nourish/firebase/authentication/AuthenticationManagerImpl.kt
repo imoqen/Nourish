@@ -1,8 +1,7 @@
-package uk.co.imoqen.nourish.authentication
+package uk.co.imoqen.nourish.firebase.authentication
 
 import android.app.Activity
 import android.content.Context
-import android.util.Log
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
@@ -16,7 +15,6 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GetTokenResult
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.OAuthProvider
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,6 +22,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.tasks.await
 import uk.co.imoqen.nourish.R
+import uk.co.imoqen.nourish.authentication.AuthenticationState
+import uk.co.imoqen.nourish.firebase.firestore.FirestoreManager
 import java.security.MessageDigest
 import java.util.UUID
 import javax.inject.Inject
@@ -36,12 +36,12 @@ import javax.inject.Singleton
  * Most functions are suspend, which throw up exceptions to the viewmodel. The viewmodel then deals
  * with them appropriately in a runCatching block.
  * @param auth - FirebaseAuth authentication platform holding a list of all users.
- * @param db - FirebaseFirestore database holding user data.
+ * @param firestoreManager - provides access to the FirebaseFirestore database holding user data.
  */
 @Singleton
 class AuthenticationManagerImpl @Inject constructor(
     private val auth: FirebaseAuth,
-    private val db: FirebaseFirestore
+    private val firestoreManager: FirestoreManager
 ): AuthenticationManager {
 
     // State to manage the currently logged in user's uid and state (logged in or logged out)
@@ -131,14 +131,14 @@ class AuthenticationManagerImpl @Inject constructor(
         val request = GetCredentialRequest.Builder()
             .addCredentialOption(googleIdOption)
             .build()
-        val credentialManager = CredentialManager.create(context)
+        val credentialManager = CredentialManager.Companion.create(context)
         val result = credentialManager.getCredential(context = context, request = request)
         val credential = result.credential
 
         if (credential is CustomCredential) {
-            if (credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+            if (credential.type == GoogleIdTokenCredential.Companion.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
                 // Sign in with Google:
-                val googleIdTokenCredential = GoogleIdTokenCredential
+                val googleIdTokenCredential = GoogleIdTokenCredential.Companion
                     .createFrom(credential.data)
                 val firebaseCredential = GoogleAuthProvider.getCredential(
                     googleIdTokenCredential.idToken,
@@ -172,11 +172,7 @@ class AuthenticationManagerImpl @Inject constructor(
             return // early return if not logged in; can't add.
         }
         val user = auth.currentUser!!
-        // Check if document with uid already exists; if not, add.
-        val result = db.collection("users").document(user.uid).get().await()
-        if (!result.exists()) {
-            addUserToFirestore(user)
-        }
+        firestoreManager.addUserToFirestoreIfNotExists(user)
     }
 
     // Methods used in the ProfileViewModel:
@@ -340,28 +336,5 @@ class AuthenticationManagerImpl @Inject constructor(
      */
     private fun isLoggedIn(): Boolean {
         return auth.currentUser != null
-    }
-
-    /**
-     * Private auxiliary function to add the user's email to the Firebase Firestore users collection,
-     * in a document titled their uid and containing their email address.
-     * Adding data to firestore: https://firebase.google.com/docs/firestore/quickstart#android
-     * @param user - the user to add to Firestore
-     */
-    private fun addUserToFirestore(user: FirebaseUser) {
-        val userData = hashMapOf(
-            "email" to user.email,
-        )
-
-        // adds the uid to the users and updates if already exists
-        db.collection("users")
-            .document(user.uid) // adds new doc with uid title
-            .set(userData) // sets the email of the user in it
-            .addOnSuccessListener {
-                Log.i("FIRESTORE", "User (${user.email}) with uid ${user.uid} successfully added to Firestore")
-            }
-            .addOnFailureListener { e ->
-                Log.e("FIRESTORE", "User could not be added to Firestore: $e")
-            }
     }
 }

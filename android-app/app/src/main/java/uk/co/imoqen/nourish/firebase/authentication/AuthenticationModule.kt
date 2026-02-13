@@ -1,4 +1,4 @@
-package uk.co.imoqen.nourish.authentication
+package uk.co.imoqen.nourish.firebase.authentication
 
 import dagger.Binds
 import dagger.Module

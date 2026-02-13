@@ -25,6 +25,12 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import uk.co.imoqen.nourish.MainActivity
 import uk.co.imoqen.nourish.common.UiEventBus
+import uk.co.imoqen.nourish.firebase.FakeAuthenticationManager
+import uk.co.imoqen.nourish.firebase.FakeFirestoreManager
+import uk.co.imoqen.nourish.firebase.FirebaseModule
+import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
+import uk.co.imoqen.nourish.firebase.authentication.AuthenticationModule
+import uk.co.imoqen.nourish.firebase.firestore.FirestoreManager
 import uk.co.imoqen.nourish.network.ApiModule
 import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.FakeApiService
@@ -46,6 +52,10 @@ class AuthenticationViewTest {
     @BindValue
     @JvmField
     val authenticationManager: AuthenticationManager = FakeAuthenticationManager()
+
+    @BindValue
+    @JvmField
+    val firestoreManager: FirestoreManager = FakeFirestoreManager()
 
     @BindValue
     @JvmField

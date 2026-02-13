@@ -1,4 +1,4 @@
-package uk.co.imoqen.nourish.authentication
+package uk.co.imoqen.nourish.firebase
 
 import android.app.Activity
 import android.content.Context
@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import uk.co.imoqen.nourish.authentication.AuthenticationState
+import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 
 class FakeAuthenticationManager(): AuthenticationManager {
 
