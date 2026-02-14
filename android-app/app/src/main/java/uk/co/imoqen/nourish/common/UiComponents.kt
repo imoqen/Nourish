@@ -1,17 +1,22 @@
 package uk.co.imoqen.nourish.common
 
 import android.util.Size
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -27,9 +32,11 @@ import androidx.compose.ui.graphics.RadialGradientShader
 import androidx.compose.ui.graphics.Shader
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import uk.co.imoqen.nourish.R
 
 @Composable
 fun NourishTextField(
@@ -72,7 +79,8 @@ fun NourishTextField(
             unfocusedBorderColor = Color.Transparent,
             disabledBorderColor = Color.Transparent
         ),
-        shape = RoundedCornerShape(24.dp)
+        shape = RoundedCornerShape(24.dp),
+        visualTransformation = visualTransformation
     )
 }
 
@@ -85,11 +93,52 @@ fun NourishButton(
         onClick = {
             onClick()
         },
-        elevation = ButtonDefaults.buttonElevation(
-            defaultElevation = 20.dp
-        )
+        modifier = Modifier.padding(vertical=4.dp).padding(horizontal = 4.dp)
     ) {
         Text(text)
+    }
+}
+
+@Composable
+fun GoogleButton(
+    onClick: () -> Unit,
+) {
+    Button(
+        onClick = {
+            onClick()
+        },
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ),
+        modifier = Modifier.padding(vertical=8.dp)
+    ) {
+        Image(
+            painter = painterResource(R.drawable.google_logo),
+            contentDescription = "Nourish Logo",
+            modifier = Modifier.size(32.dp).padding(end=4.dp)
+        )
+        Text("Sign in with Google")
+    }
+}
+
+@Composable
+fun NourishTextDivider(
+    text: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical=8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        HorizontalDivider(
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 12.dp)
+        )
+        HorizontalDivider(
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 

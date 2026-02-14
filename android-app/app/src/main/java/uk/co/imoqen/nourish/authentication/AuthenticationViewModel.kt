@@ -137,6 +137,7 @@ class AuthenticationViewModel @Inject constructor(
                 uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNIN))
                 return@launch
             }
+            setSigninError("")
             // runCatching is used to call a suspend error and handle exceptions appropriately
             // https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/run-catching.html
             runCatching {

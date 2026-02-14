@@ -39,7 +39,9 @@ private val NourishDarkColorScheme = darkColorScheme(
 
     // for text boxes etc to stand out
     primaryContainer = TextBoxColourDark,
-    onPrimaryContainer = Color.White
+    onPrimaryContainer = Color.White,
+
+    error = ErrorDark
 )
 
 private val NourishLightColorScheme = lightColorScheme(
@@ -59,7 +61,9 @@ private val NourishLightColorScheme = lightColorScheme(
 
     // for text boxes etc to stand out
     primaryContainer = TextBoxColourLight,
-    onPrimaryContainer = Color.Black
+    onPrimaryContainer = Color.Black,
+
+    error = ErrorLight
 
     /* Other default colors to override
     background = Color(0xFFFFFBFE),

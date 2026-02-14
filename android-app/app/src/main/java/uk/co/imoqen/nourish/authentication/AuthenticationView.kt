@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -34,6 +36,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -42,10 +45,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import uk.co.imoqen.nourish.common.GoogleButton
 import uk.co.imoqen.nourish.common.GradientButton
 import uk.co.imoqen.nourish.common.NourishButton
+import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
 
 /**
@@ -70,7 +77,7 @@ fun LoginScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top=72.dp).background(MaterialTheme.colorScheme.surface),
+                .padding(top=84.dp).background(MaterialTheme.colorScheme.surface),
             contentAlignment = Alignment.TopCenter,
 
         ) {
@@ -97,31 +104,36 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .graphicsLayer { clip = false }  // to prevent parent clipping
             ) {
-
-
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
+                        .shadow(
+                            elevation = 28.dp,
+                            shape = RoundedCornerShape(32.dp)
+                        )
                         .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                         .background(MaterialTheme.colorScheme.surface)
-                        .padding(top = 64.dp) // room for logo
+                        .padding(top = 32.dp) // room for logo
                 ) {
 
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(
-                                16.dp,
-                                bottom = 32.dp
-                            ) // extra padding at bottom for the built in mobile navbar
+                            .padding(16.dp,)
+                            .padding(bottom = 40.dp),
+                             // extra padding at bottom for the built in mobile navbar
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Column(
-                            //modifier = modifier.fillMaxSize()
-                        ) {
+
                             // Sign in View:
                             if (uiState.status == AuthenticationUiStatus.SIGNIN) {
-                                Text("Sign in")
+                                Text(
+                                    text = "Sign in",
+                                    fontSize = 32.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(bottom=6.dp)
+                                )
 
                                 // Email:
                                 NourishTextField(
@@ -143,6 +155,13 @@ fun LoginScreen(
                                     visualTransformation = PasswordVisualTransformation()
                                 )
 
+                                if (uiState.signinError != "") {
+                                    Text(
+                                        uiState.signinError,
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+
                                 NourishButton(
                                     onClick = {
                                         keyboardFocusManager.clearFocus()
@@ -151,36 +170,29 @@ fun LoginScreen(
                                     text = "Sign in"
                                 )
 
-                                Text("Don't have an account?")
-                                Button(
-                                    onClick = {
-                                        authenticationViewModel.setStatus(AuthenticationUiStatus.SIGNUP)
-                                    }
-                                ) {
-                                    Text("Sign up")
-                                }
-                                Text("Or:")
+                                NourishTextDivider("or")
 
-                                Button(
-                                    onClick = {
-                                        authenticationViewModel.signInWithGoogle(context)
-                                    }
-                                ) {
-                                    Text("Sign in with Google")
-                                }
+                                GoogleButton(onClick = { authenticationViewModel.signInWithGoogle(context) })
 
-                                if (uiState.signinError != "") {
-                                    Text(uiState.signinError)
+                                NourishTextDivider("Don't have an account yet?")
+
+                                Row() {
+                                    NourishButton(
+                                        text = "Sign Up",
+                                        onClick = {
+                                            authenticationViewModel.setStatus(AuthenticationUiStatus.SIGNUP)
+                                        }
+                                    )
+
+                                    NourishButton(
+                                        text = "Forgot Password",
+                                        onClick = {
+                                            authenticationViewModel.setShowBottomSheet(true)
+                                        }
+                                    )
                                 }
 
                                 val sheetState = rememberModalBottomSheetState()
-                                Button(
-                                    onClick = {
-                                        authenticationViewModel.setShowBottomSheet(true)
-                                    }
-                                ) {
-                                    Text("Forgotten your password?")
-                                }
 
                                 if (uiState.showBottomSheet) {
                                     ModalBottomSheet(
@@ -207,13 +219,12 @@ fun LoginScreen(
                                                 modifier = Modifier.fillMaxWidth()
                                             )
 
-                                            Button(
+                                            NourishButton(
+                                                text = "Reset Password",
                                                 onClick = {
                                                     authenticationViewModel.passwordResetRequest()
                                                 }
-                                            ) {
-                                                Text("Reset password")
-                                            }
+                                            )
 
                                             if (uiState.passwordResetStatus != "") {
                                                 Text(uiState.passwordResetStatus)
@@ -297,7 +308,7 @@ fun LoginScreen(
                                     Text("Sign up")
                                 }
                             }
-                        }
+
                     }
                 }
                 Box(
@@ -307,7 +318,7 @@ fun LoginScreen(
                     Image(
                         painter = painterResource(R.drawable.nourish_icon),
                         contentDescription = "Nourish Logo",
-                        modifier = Modifier.size(128.dp).offset(y = (-84).dp)
+                        modifier = Modifier.size(112.dp).offset(y = (-70).dp)
                     )
                 }
             }

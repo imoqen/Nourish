@@ -19,3 +19,7 @@ val TextBoxColourDark = Color(0xFF393544)
 val NourishGreen = Color(0xFF97D39F)
 val NourishGreenDark = Color(0xFF448354)
 val NourishGreenLight = Color(0xFFE1F0C4)
+
+val ErrorDark = Color(0xFFFFB1CA)
+
+val ErrorLight = Color(0xFFAD2432)
