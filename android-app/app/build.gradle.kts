@@ -164,7 +164,8 @@ val instrumentedTestExclusions = listOf(
     "**/dagger/**",
     // Exclude files that shouldn't be in instrumented tests, as they are faked instead:
     "**/firebase/**",
-    "**/network/**"
+    "**/network/**",
+    "/**/ui/theme/**"
 )
 
 val unitTestInclusions = listOf(
@@ -214,12 +215,12 @@ tasks.register<JacocoReport>("JacocoInstrumentedCodeCoverage") {
         }
     )
 
-    doFirst {
+    /*doFirst {
         println("=== executionData ===")
         executionData.files.forEach { println(it.absolutePath) }
         println("=== classDirectories ===")
         classDirectories.files.forEach { println(it.absolutePath) }
-    }
+    }*/
 }
 
 // UNIT TESTS:

@@ -106,16 +106,6 @@ class AuthenticationViewTest {
         composeRule.onNode(
             hasText("Shopping List")
         ).assertExists()
-
-        // Then sign out:
-        // NOTE put this in the profile view test, not here. because it beyond authentication view
-        /*composeRule.onNode(
-            hasText("Profile")
-        ).performClick()
-        composeRule.onNode(
-            hasText("Sign out") and hasClickAction()
-        ).performClick()
-        composeRule.onNodeWithText("Sign out successful.").assertExists()*/
     }
 
     @Test

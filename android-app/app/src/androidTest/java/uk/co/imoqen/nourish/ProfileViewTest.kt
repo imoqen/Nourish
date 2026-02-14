@@ -166,4 +166,113 @@ class ProfileViewTest {
         ).performClick()
     }
 
+    @Test
+    fun `Update password succeeds for password-provider accounts`() {
+        // Then sign out:
+        composeRule.onNode(
+            hasText("Profile")
+        ).performClick()
+        // have to dismiss the previous snackbar or new one wont show:
+        composeRule.onNode(
+            hasText("Dismiss")
+        ).performClick()
+        composeRule.onNode(
+            hasText("Change password") and hasClickAction()
+        ).performClick()
+
+        composeRule
+            .onNodeWithText("Enter your account's existing password")
+            .performTextInput("password")
+        composeRule
+            .onNodeWithText("Enter a new password for your account")
+            .performTextInput("password2")
+
+        composeRule.onNode(
+            hasText("Update Password") and hasClickAction()
+        ).performClick()
+        composeRule.onAllNodesWithText("Password updated successfully.").assertCountEquals(2)
+    }
+
+    @Test
+    fun `Update password fails for invalid password entered for password-provider accounts`() {
+        // Then sign out:
+        composeRule.onNode(
+            hasText("Profile")
+        ).performClick()
+        // have to dismiss the previous snackbar or new one wont show:
+        composeRule.onNode(
+            hasText("Dismiss")
+        ).performClick()
+        composeRule.onNode(
+            hasText("Change password") and hasClickAction()
+        ).performClick()
+
+        composeRule
+            .onNodeWithText("Enter your account's existing password")
+            .performTextInput("incorrect_pw2")
+        composeRule
+            .onNodeWithText("Enter a new password for your account")
+            .performTextInput("incorrect_pw")
+
+        composeRule.onNode(
+            hasText("Update Password") and hasClickAction()
+        ).performClick()
+        composeRule.onAllNodesWithText(ErrorMessage.PASSWORD_ERROR_CHANGE).assertCountEquals(2)
+
+    }
+
+    @Test
+    fun `Update password fails for blank password entered for password-provider accounts`() {
+        // Then sign out:
+        composeRule.onNode(
+            hasText("Profile")
+        ).performClick()
+        // have to dismiss the previous snackbar or new one wont show:
+        composeRule.onNode(
+            hasText("Dismiss")
+        ).performClick()
+        composeRule.onNode(
+            hasText("Change password") and hasClickAction()
+        ).performClick()
+
+        composeRule
+            .onNodeWithText("Enter your account's existing password")
+            .performTextInput("")
+        composeRule
+            .onNodeWithText("Enter a new password for your account")
+            .performTextInput("password2")
+
+        composeRule.onNode(
+            hasText("Update Password") and hasClickAction()
+        ).performClick()
+        composeRule.onNodeWithText(ErrorMessage.INPUT_ERROR_BLANK).assertExists()
+    }
+
+    @Test
+    fun `Change password option is not provided for Google accounts`() {
+        // First sign out of password-based account:
+        composeRule.onNode(
+            hasText("Profile")
+        ).performClick()
+        composeRule.onNode(
+            hasText("Sign out") and hasClickAction()
+        ).performClick()
+
+        // Sign in with Google account:
+        composeRule.onNode(
+            hasText("Sign in with Google") and hasClickAction()
+        ).performClick()
+
+        composeRule.onNode(
+            hasText("Profile")
+        ).performClick()
+        // have to dismiss the previous snackbar or new one wont show:
+        composeRule.onNode(
+            hasText("Dismiss")
+        ).performClick()
+
+        // no change password option:
+        composeRule.onNodeWithText("Change password").assertDoesNotExist()
+    }
+
 }
