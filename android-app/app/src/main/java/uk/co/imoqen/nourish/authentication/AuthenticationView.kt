@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.sp
 import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.GoogleButton
 import uk.co.imoqen.nourish.common.GradientButton
+import uk.co.imoqen.nourish.common.NourishBottomCard
 import uk.co.imoqen.nourish.common.NourishButton
 import uk.co.imoqen.nourish.common.NourishErrorText
 import uk.co.imoqen.nourish.common.NourishH1
@@ -73,249 +74,192 @@ fun LoginScreen(
     // Ui State:
     val uiState by authenticationViewModel.uiState.collectAsState()
     val context = LocalContext.current // required for Google sign in
-    val keyboardFocusManager = LocalFocusManager.current // To close the keyboard once user submits input
+    val keyboardFocusManager =
+        LocalFocusManager.current // To close the keyboard once user submits input
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top=84.dp).background(MaterialTheme.colorScheme.surface),
-            contentAlignment = Alignment.TopCenter,
+    NourishBottomCard(
+        titleSection = {
 
-        ) {
+            // TITLE:
             Image(
                 painter = painterResource(R.drawable.nourish_title),
-                contentDescription = "Nourish Logo",
+                contentDescription = "Nourish Title Text",
                 modifier = Modifier.height(82.dp).padding(16.dp),
                 colorFilter = ColorFilter.tint(
                     MaterialTheme.colorScheme.onBackground
                 )
             )
-        }
 
-        // ensure bottom box sticks to bottom:
-        Spacer(modifier = Modifier.weight(1f))
+        },
+        cardContents = {
+            // Sign in View:
+            if (uiState.status == AuthenticationUiStatus.SIGNIN) {
+                NourishH1("Sign in")
 
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.BottomCenter
-        ) {
+                // Email:
+                NourishTextField(
+                    value = uiState.signinEmail,
+                    onValueChange = { newEmail ->
+                        authenticationViewModel.setSigninEmail(newEmail)
+                    },
+                    placeholder = "Enter email address",
+                    icon = Icons.Filled.MailOutline
+                )
+                // Password:
+                NourishTextField(
+                    value = uiState.signinPassword,
+                    onValueChange = { newPassword ->
+                        authenticationViewModel.setSigninPassword(newPassword)
+                    },
+                    placeholder = "Enter password",
+                    icon = Icons.Filled.Lock,
+                    visualTransformation = PasswordVisualTransformation()
+                )
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer { clip = false }  // to prevent parent clipping
-            ) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .shadow(
-                            elevation = 28.dp,
-                            shape = RoundedCornerShape(32.dp)
-                        )
-                        .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                        .background(MaterialTheme.colorScheme.surface)
-                        .padding(top = 32.dp) // room for logo
-                ) {
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp,)
-                            .padding(bottom = 40.dp),
-                             // extra padding at bottom for the built in mobile navbar
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-
-                            // Sign in View:
-                            if (uiState.status == AuthenticationUiStatus.SIGNIN) {
-                                NourishH1("Sign in")
-
-                                // Email:
-                                NourishTextField(
-                                    value = uiState.signinEmail,
-                                    onValueChange = { newEmail ->
-                                        authenticationViewModel.setSigninEmail(newEmail)
-                                    },
-                                    placeholder = "Enter email address",
-                                    icon = Icons.Filled.MailOutline
-                                )
-                                // Password:
-                                NourishTextField(
-                                    value = uiState.signinPassword,
-                                    onValueChange = { newPassword ->
-                                        authenticationViewModel.setSigninPassword(newPassword)
-                                    },
-                                    placeholder = "Enter password",
-                                    icon = Icons.Filled.Lock,
-                                    visualTransformation = PasswordVisualTransformation()
-                                )
-
-                                if (uiState.signinError != "") {
-                                    NourishErrorText(uiState.signinError)
-                                }
-
-                                NourishButton(
-                                    onClick = {
-                                        keyboardFocusManager.clearFocus()
-                                        authenticationViewModel.signInWithEmailAndPassword()
-                                    },
-                                    text = "Sign in"
-                                )
-
-                                NourishTextDivider("or")
-
-                                GoogleButton(onClick = { authenticationViewModel.signInWithGoogle(context) })
-
-                                NourishTextDivider("Don't have an account yet?")
-
-                                Row() {
-                                    NourishButton(
-                                        text = "Sign up",
-                                        onClick = {
-                                            authenticationViewModel.setStatus(AuthenticationUiStatus.SIGNUP)
-                                        }
-                                    )
-
-                                    NourishButton(
-                                        text = "Forgot Password",
-                                        onClick = {
-                                            authenticationViewModel.setShowBottomSheet(true)
-                                        }
-                                    )
-                                }
-
-                                val sheetState = rememberModalBottomSheetState()
-
-                                if (uiState.showBottomSheet) {
-                                    ModalBottomSheet(
-                                        onDismissRequest = {
-                                            authenticationViewModel.setShowBottomSheet(false)
-                                        },
-                                        sheetState = sheetState,
-                                    ) {
-                                        Column(
-                                            modifier = Modifier.fillMaxWidth().padding(bottom=12.dp),
-                                            horizontalAlignment = Alignment.CenterHorizontally
-                                        ) {
-                                            NourishTextField(
-                                                value = uiState.emailToResetPassword,
-                                                onValueChange = { newEmail ->
-                                                    authenticationViewModel.setEmailToResetPassword(
-                                                        newEmail
-                                                    )
-                                                },
-                                                placeholder = "Enter account email",
-                                                icon = Icons.Filled.Email
-                                            )
-
-                                            // handle different cases of messages:
-                                            if (uiState.passwordResetStatus == ErrorMessage.INPUT_ERROR_BLANK || uiState.passwordResetStatus == ErrorMessage.USER_ERROR_EMAIL_SEND) {
-                                                NourishErrorText(uiState.passwordResetStatus)
-                                            }
-                                            else if (uiState.passwordResetStatus != "") {
-                                                NourishText(uiState.passwordResetStatus)
-                                            }
-
-                                            NourishButton(
-                                                text = "Reset Password",
-                                                onClick = {
-                                                    keyboardFocusManager.clearFocus()
-                                                    authenticationViewModel.passwordResetRequest()
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-
-                            // Sign up View:
-
-                            else {
-                                BackHandler {
-                                    // handle back button press by going back to login view if on sign up view:
-                                    authenticationViewModel.setStatus(AuthenticationUiStatus.SIGNIN)
-                                }
-
-                                NourishButton(
-                                    text = "Back to Login",
-                                    onClick = {
-                                        keyboardFocusManager.clearFocus()
-                                        authenticationViewModel.setStatus(AuthenticationUiStatus.SIGNIN)
-                                    }
-                                )
-
-                                // Sign up form:
-                                NourishTextField(
-                                    value = uiState.signupEmail,
-                                    onValueChange = { newEmail ->
-                                        authenticationViewModel.setSignupEmail(newEmail)
-                                    },
-                                    placeholder = "Enter email address",
-                                    icon = Icons.Filled.MailOutline
-                                )
-
-                                // Password:
-                                NourishTextField(
-                                    value = uiState.signupPassword,
-                                    onValueChange = { newPassword ->
-                                        authenticationViewModel.setSignupPassword(newPassword)
-                                    },
-                                    placeholder = "Enter password",
-                                    icon = Icons.Filled.Lock,
-                                    visualTransformation = PasswordVisualTransformation()
-                                )
-                                NourishTextField(
-                                    value = uiState.signupPasswordConfirmation,
-                                    onValueChange = { newPassword ->
-                                        authenticationViewModel.setSignupPasswordConfirmation(
-                                            newPassword
-                                        )
-                                    },
-                                    placeholder = "Confirm password",
-                                    icon = Icons.Filled.Lock,
-                                    visualTransformation = PasswordVisualTransformation()
-                                )
-
-                                if (uiState.signupError != "") {
-                                    NourishErrorText(uiState.signupError)
-                                }
-
-                                NourishButton(
-                                    onClick = {
-                                        keyboardFocusManager.clearFocus()
-                                        authenticationViewModel.signUpWithEmailAndPassword()
-                                    },
-                                    text = "Sign up"
-                                )
-                            }
-
-                    }
+                if (uiState.signinError != "") {
+                    NourishErrorText(uiState.signinError)
                 }
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.nourish_icon),
-                        contentDescription = "Nourish Logo",
-                        modifier = Modifier.size(112.dp).offset(y = (-70).dp)
+
+                NourishButton(
+                    onClick = {
+                        keyboardFocusManager.clearFocus()
+                        authenticationViewModel.signInWithEmailAndPassword()
+                    },
+                    text = "Sign in"
+                )
+
+                NourishTextDivider("or")
+
+                GoogleButton(onClick = { authenticationViewModel.signInWithGoogle(context) })
+
+                NourishTextDivider("Don't have an account yet?")
+
+                Row() {
+                    NourishButton(
+                        text = "Sign up",
+                        onClick = {
+                            authenticationViewModel.setStatus(AuthenticationUiStatus.SIGNUP)
+                        }
+                    )
+
+                    NourishButton(
+                        text = "Forgot password",
+                        onClick = {
+                            authenticationViewModel.setShowBottomSheet(true)
+                        }
                     )
                 }
-            }
-        }
-    }
-}
 
-@Composable
-fun BackgroundSquare() {
-    Box(
-        modifier = Modifier
-            .aspectRatio(1f) // Sets a fixed size of 100x100 dp
-            .background(Color.White)
-            .clip(RoundedCornerShape(100.dp))
+                val sheetState = rememberModalBottomSheetState()
+
+                if (uiState.showBottomSheet) {
+                    ModalBottomSheet(
+                        onDismissRequest = {
+                            authenticationViewModel.setShowBottomSheet(false)
+                        },
+                        sheetState = sheetState,
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            NourishTextField(
+                                value = uiState.emailToResetPassword,
+                                onValueChange = { newEmail ->
+                                    authenticationViewModel.setEmailToResetPassword(
+                                        newEmail
+                                    )
+                                },
+                                placeholder = "Enter account email",
+                                icon = Icons.Filled.Email
+                            )
+
+                            // handle different cases of messages:
+                            if (uiState.passwordResetStatus == ErrorMessage.INPUT_ERROR_BLANK || uiState.passwordResetStatus == ErrorMessage.USER_ERROR_EMAIL_SEND) {
+                                NourishErrorText(uiState.passwordResetStatus)
+                            } else if (uiState.passwordResetStatus != "") {
+                                NourishText(uiState.passwordResetStatus)
+                            }
+
+                            NourishButton(
+                                text = "Reset password",
+                                onClick = {
+                                    keyboardFocusManager.clearFocus()
+                                    authenticationViewModel.passwordResetRequest()
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Sign up View:
+
+            else {
+                BackHandler {
+                    // handle back button press by going back to login view if on sign up view:
+                    authenticationViewModel.setStatus(AuthenticationUiStatus.SIGNIN)
+                }
+
+                NourishButton(
+                    text = "Back to Sign in",
+                    onClick = {
+                        keyboardFocusManager.clearFocus()
+                        authenticationViewModel.setStatus(AuthenticationUiStatus.SIGNIN)
+                    }
+                )
+
+                // Sign up form:
+                NourishTextField(
+                    value = uiState.signupEmail,
+                    onValueChange = { newEmail ->
+                        authenticationViewModel.setSignupEmail(newEmail)
+                    },
+                    placeholder = "Enter email address",
+                    icon = Icons.Filled.MailOutline
+                )
+
+                // Password:
+                NourishTextField(
+                    value = uiState.signupPassword,
+                    onValueChange = { newPassword ->
+                        authenticationViewModel.setSignupPassword(newPassword)
+                    },
+                    placeholder = "Enter password",
+                    icon = Icons.Filled.Lock,
+                    visualTransformation = PasswordVisualTransformation()
+                )
+                NourishTextField(
+                    value = uiState.signupPasswordConfirmation,
+                    onValueChange = { newPassword ->
+                        authenticationViewModel.setSignupPasswordConfirmation(
+                            newPassword
+                        )
+                    },
+                    placeholder = "Confirm password",
+                    icon = Icons.Filled.Lock,
+                    visualTransformation = PasswordVisualTransformation()
+                )
+
+                if (uiState.signupError != "") {
+                    NourishErrorText(uiState.signupError)
+                }
+
+                NourishButton(
+                    onClick = {
+                        keyboardFocusManager.clearFocus()
+                        authenticationViewModel.signUpWithEmailAndPassword()
+                    },
+                    text = "Sign up"
+                )
+            }
+        },
+        iconSection = {
+            Image(
+                painter = painterResource(R.drawable.nourish_icon),
+                contentDescription = "Nourish Logo",
+                modifier = Modifier.size(112.dp).offset(y = (-70).dp)
+            )
+        }
     )
 }
