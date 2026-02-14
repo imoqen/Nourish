@@ -98,13 +98,13 @@ class AuthenticationViewTest {
         // Sign in success and user can now see the app contents:
         composeRule.onNodeWithText("Sign in successful.").assertExists()
         composeRule.onNode(
-            hasText("Recipe Finder")
+            hasText("Discover")
         ).assertExists()
         composeRule.onNode(
-            hasText("Recipe Book")
+            hasText("Saved")
         ).assertExists()
         composeRule.onNode(
-            hasText("Shopping List")
+            hasText("Shopping")
         ).assertExists()
     }
 
@@ -230,13 +230,13 @@ class AuthenticationViewTest {
         // Sign up success, user gets signed in and user can now see the app contents:
         composeRule.onNodeWithText("Sign up successful. You have now been signed in.").assertExists()
         composeRule.onNode(
-            hasText("Recipe Finder")
+            hasText("Discover")
         ).assertExists()
         composeRule.onNode(
-            hasText("Recipe Book")
+            hasText("Saved")
         ).assertExists()
         composeRule.onNode(
-            hasText("Shopping List")
+            hasText("Shopping")
         ).assertExists()
     }
 
@@ -267,13 +267,13 @@ class AuthenticationViewTest {
         // User successfully signs in
         composeRule.onNodeWithText("Sign in successful.").assertExists()
         composeRule.onNode(
-            hasText("Recipe Finder")
+            hasText("Discover")
         ).assertExists()
         composeRule.onNode(
-            hasText("Recipe Book")
+            hasText("Saved")
         ).assertExists()
         composeRule.onNode(
-            hasText("Shopping List")
+            hasText("Shopping")
         ).assertExists()
     }
 

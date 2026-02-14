@@ -133,7 +133,7 @@ class ProfileViewModel @Inject constructor(
      * @param onSuccess - used to close the password change modal bottom sheet upon success
      */
     fun updatePassword(
-        onSuccess: () -> Unit
+        onSuccess: () -> Unit = {}
     ) {
         if (mutableUiState.value.oldPassword == "" || mutableUiState.value.newPassword == "") {
             setPasswordChangeStatus(ErrorMessage.INPUT_ERROR_BLANK)
@@ -148,6 +148,7 @@ class ProfileViewModel @Inject constructor(
             }
                 .onSuccess {
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Password updated successfully."))
+                    setPasswordChangeStatus("")
                     onSuccess()
                 }
                 .onFailure { fail ->

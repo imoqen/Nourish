@@ -181,16 +181,16 @@ class ProfileViewTest {
         ).performClick()
 
         composeRule
-            .onNodeWithText("Enter your account's existing password")
+            .onNodeWithText("Enter existing password")
             .performTextInput("password")
         composeRule
-            .onNodeWithText("Enter a new password for your account")
+            .onNodeWithText("Enter a new password")
             .performTextInput("password2")
 
         composeRule.onNode(
             hasText("Update Password") and hasClickAction()
         ).performClick()
-        composeRule.onAllNodesWithText("Password updated successfully.").assertCountEquals(2)
+        composeRule.onNodeWithText("Password updated successfully.").assertExists()
     }
 
     @Test
@@ -208,16 +208,16 @@ class ProfileViewTest {
         ).performClick()
 
         composeRule
-            .onNodeWithText("Enter your account's existing password")
+            .onNodeWithText("Enter existing password")
             .performTextInput("incorrect_pw2")
         composeRule
-            .onNodeWithText("Enter a new password for your account")
+            .onNodeWithText("Enter a new password")
             .performTextInput("incorrect_pw")
 
         composeRule.onNode(
             hasText("Update Password") and hasClickAction()
         ).performClick()
-        composeRule.onAllNodesWithText(ErrorMessage.PASSWORD_ERROR_CHANGE).assertCountEquals(2)
+        composeRule.onNodeWithText(ErrorMessage.PASSWORD_ERROR_CHANGE).assertExists()
 
     }
 
@@ -236,10 +236,10 @@ class ProfileViewTest {
         ).performClick()
 
         composeRule
-            .onNodeWithText("Enter your account's existing password")
+            .onNodeWithText("Enter existing password")
             .performTextInput("")
         composeRule
-            .onNodeWithText("Enter a new password for your account")
+            .onNodeWithText("Enter a new password")
             .performTextInput("password2")
 
         composeRule.onNode(
