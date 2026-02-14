@@ -41,7 +41,8 @@ private val NourishDarkColorScheme = darkColorScheme(
     primaryContainer = TextBoxColourDark,
     onPrimaryContainer = Color.White,
 
-    error = ErrorDark
+    error = ErrorDark,
+    errorContainer = ErrorLight
 )
 
 private val NourishLightColorScheme = lightColorScheme(
@@ -63,7 +64,8 @@ private val NourishLightColorScheme = lightColorScheme(
     primaryContainer = TextBoxColourLight,
     onPrimaryContainer = Color.Black,
 
-    error = ErrorLight
+    error = ErrorLight,
+    errorContainer = ErrorDark
 
     /* Other default colors to override
     background = Color(0xFFFFFBFE),

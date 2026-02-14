@@ -1,8 +1,13 @@
 package uk.co.imoqen.nourish.profile
 
 import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
@@ -14,9 +19,22 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.dp
 import uk.co.imoqen.nourish.common.NourishBottomCard
+import uk.co.imoqen.nourish.common.NourishButton
+import uk.co.imoqen.nourish.common.NourishDangerButton
+import uk.co.imoqen.nourish.common.NourishDivider
+import uk.co.imoqen.nourish.common.NourishErrorText
 import uk.co.imoqen.nourish.common.NourishH1
+import uk.co.imoqen.nourish.common.NourishH2
+import uk.co.imoqen.nourish.common.NourishText
+import uk.co.imoqen.nourish.common.NourishTextField
 
 /**
  * View for Profile, where the user can log out, delete their account and (if their account is
@@ -28,154 +46,170 @@ import uk.co.imoqen.nourish.common.NourishH1
 fun ProfileScreen(
     profileViewModel: ProfileViewModel,
 ) {
-    Column() {
-        Text("Profile")
-        val uiState by profileViewModel.uiState.collectAsState()
+    val uiState by profileViewModel.uiState.collectAsState()
+    val email = profileViewModel.getEmail()
 
-        val passwordChangeSheetState = rememberModalBottomSheetState()
+    val keyboardFocusManager =
+        LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
 
-        NourishBottomCard(
-            cardContents = {
-                // Ensures password reset is only possible for username/password accounts (not Google accounts)
-                if (uiState.hasPasswordProvider) {
-                    Button(
-                        onClick = {
-                            profileViewModel.setShowPasswordChangeBottomSheet(true)
-                        }
-                    ) {
-                        Text("Change password")
-                    }
+    val passwordChangeSheetState = rememberModalBottomSheetState()
 
-                    if (uiState.showPasswordChangeBottomSheet) {
-                        ModalBottomSheet(
-                            onDismissRequest = {
-                                profileViewModel.setShowPasswordChangeBottomSheet(false)
-                            },
-                            sheetState = passwordChangeSheetState
-                        ) {
-                            // Bottom sheet for password change:
-                            Column() {
-                                // Old password, for reauthentication
-                                OutlinedTextField(
-                                    value = uiState.oldPassword,
-                                    onValueChange = { password ->
-                                        profileViewModel.setOldPassword(password)
-                                    },
-                                    placeholder = {
-                                        Text("Enter your account's existing password")
-                                    },
-                                    leadingIcon = {
-                                        Icons.Filled.Lock
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                                // New password, for password change
-                                OutlinedTextField(
-                                    value = uiState.newPassword,
-                                    onValueChange = { updatedPassword ->
-                                        profileViewModel.setNewPassword(updatedPassword)
-                                    },
-                                    placeholder = {
-                                        Text("Enter a new password for your account")
-                                    },
-                                    leadingIcon = {
-                                        Icons.Filled.Lock
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
+    NourishBottomCard(
+        cardContents = {
 
-                                Button(
-                                    onClick = {
-                                        profileViewModel.updatePassword()
-                                    }
-                                ) {
-                                    Text("Update Password")
-                                }
+            NourishH1("Your Profile")
+            if (email != "") {
+                NourishText("Signed in with email:")
+                NourishH2(email)
+            }
 
-                                if (uiState.passwordChangeStatus != "") {
-                                    Text(uiState.passwordChangeStatus)
-                                }
-                            }
-                        }
-                    }
+            NourishDivider()
+
+            // Sign out:
+            Button(
+                onClick = {
+                    profileViewModel.signOut()
                 }
+            ) {
+                Text("Sign out")
+            }
 
-                val deleteAccountSheetState = rememberModalBottomSheetState()
-
+            // Ensures password reset is only possible for username/password accounts (not Google accounts)
+            if (uiState.hasPasswordProvider) {
                 Button(
                     onClick = {
-                        profileViewModel.setShowDeleteAccountBottomSheet(true)
+                        profileViewModel.setShowPasswordChangeBottomSheet(true)
                     }
                 ) {
-                    Text("Delete Account")
+                    Text("Change password")
                 }
 
-                if (uiState.showDeleteAccountBottomSheet) {
+                if (uiState.showPasswordChangeBottomSheet) {
                     ModalBottomSheet(
                         onDismissRequest = {
-                            profileViewModel.setShowDeleteAccountBottomSheet(false)
+                            profileViewModel.setShowPasswordChangeBottomSheet(false)
                         },
-                        sheetState = deleteAccountSheetState
+                        sheetState = passwordChangeSheetState
                     ) {
-                        // Bottom sheet for account deletion:
-                        Column() {
-                            Text("Are you sure you wish to delete your account?")
-                            Text("This will delete all data associated with your account. This action cannot be undone.")
-                            // Case: password-provider account
-                            if (uiState.hasPasswordProvider) {
-                                Text("Please type your password below to confirm.")
-                                // Password for reauthentication
-                                OutlinedTextField(
-                                    value = uiState.deleteAccountPassword,
-                                    onValueChange = { password ->
-                                        profileViewModel.setDeleteAccountPassword(password)
-                                    },
-                                    placeholder = {
-                                        Text("Enter your password")
-                                    },
-                                    leadingIcon = {
-                                        Icons.Filled.Lock
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
+                        // Bottom sheet for password change:
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            // Old password, for reauthentication
+                            NourishTextField(
+                                value = uiState.oldPassword,
+                                onValueChange = { password ->
+                                    profileViewModel.setOldPassword(password)
+                                },
+                                placeholder = "Enter existing password",
+                                icon = Icons.Filled.Lock,
+                                onDone = {
 
-                                Button(
-                                    onClick = {
-                                        profileViewModel.deletePasswordAccount()
-                                    }
-                                ) {
-                                    Text("Confirm and Delete")
-                                }
-                            }
-                            // Case: Google-provider account
-                            else {
-                                Text("Confirm by signing back in to google")
-                                val activity = LocalActivity.current
+                                },
+                                visualTransformation = PasswordVisualTransformation()
+                            )
+                            NourishTextField(
+                                value = uiState.newPassword,
+                                onValueChange = { updatedPassword ->
+                                    profileViewModel.setNewPassword(updatedPassword)
+                                },
+                                placeholder = "Enter a new password",
+                                icon = Icons.Filled.Lock,
+                                onDone = {
+                                    keyboard?.hide()
+                                    keyboardFocusManager.clearFocus(force = true)
+                                },
+                                visualTransformation = PasswordVisualTransformation()
+                            )
 
-                                Button(
-                                    onClick = {
-                                        profileViewModel.deleteGoogleAccount(activity)
-                                    }
-                                ) {
-                                    Text("Confirm and Delete")
-                                }
-                            }
-                            if (uiState.deleteStatus != "") {
-                                Text(uiState.deleteStatus)
+                            NourishButton(
+                                onClick = {
+                                    profileViewModel.updatePassword(
+                                        onSuccess = { profileViewModel.setShowPasswordChangeBottomSheet(false) }
+                                    )
+                                },
+                                text = "Update Password"
+                            )
+
+                            if (uiState.passwordChangeStatus != "") {
+                                NourishErrorText(uiState.passwordChangeStatus)
                             }
                         }
                     }
                 }
+            }
 
-                // Sign out:
-                Button(
-                    onClick = {
-                        profileViewModel.signOut()
-                    }
+            NourishDivider()
+
+            val deleteAccountSheetState = rememberModalBottomSheetState()
+
+            NourishDangerButton(
+                onClick = {
+                    profileViewModel.setShowDeleteAccountBottomSheet(true)
+                },
+                "Delete Account"
+            )
+
+            if (uiState.showDeleteAccountBottomSheet) {
+                ModalBottomSheet(
+                    onDismissRequest = {
+                        profileViewModel.setShowDeleteAccountBottomSheet(false)
+                    },
+                    sheetState = deleteAccountSheetState,
+                    modifier = Modifier.fillMaxSize().padding(bottom = 20.dp)
                 ) {
-                    Text("Sign out")
+                    // Bottom sheet for account deletion:
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        NourishH2("Are you sure?")
+                        NourishText("This will delete all data associated with your account, and cannot be undone.\n")
+                        // Case: password-provider account
+                        if (uiState.hasPasswordProvider) {
+                            NourishText("To confirm, type your password below.")
+                            // Password for reauthentication
+                            NourishTextField(
+                                value = uiState.deleteAccountPassword,
+                                onValueChange = { password ->
+                                    profileViewModel.setDeleteAccountPassword(password)
+                                },
+                                placeholder = "Enter your password",
+                                icon = Icons.Filled.Lock,
+                                visualTransformation = PasswordVisualTransformation(),
+                                onDone = {
+                                    keyboard?.hide()
+                                    keyboardFocusManager.clearFocus(force = true)
+                                }
+                            )
+                            NourishDangerButton(
+                                onClick = {
+                                    profileViewModel.deletePasswordAccount()
+                                },
+                                text = "Confirm and Delete"
+                            )
+                        }
+                        // Case: Google-provider account
+                        else {
+                            NourishText("Confirm by signing back in to google")
+                            val activity = LocalActivity.current
+
+                            NourishDangerButton(
+                                onClick = {
+                                    profileViewModel.deleteGoogleAccount(activity)
+                                },
+                                text = "Confirm and Delete"
+                            )
+                        }
+                        if (uiState.deleteStatus != "") {
+                            NourishErrorText(uiState.deleteStatus)
+                        }
+                    }
                 }
             }
-        )
-    }
+        }
+    )
+
 }

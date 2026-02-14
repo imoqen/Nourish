@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
@@ -47,6 +49,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -60,6 +63,7 @@ fun NourishTextField(
     onValueChange: (String) -> Unit,
     placeholder: String,
     icon: ImageVector,
+    onDone: () -> Unit, // for submitting to make the enter button work. this will close the keyboard.
     visualTransformation: VisualTransformation = VisualTransformation.None //only for password fields
 ) {
     OutlinedTextField(
@@ -96,7 +100,16 @@ fun NourishTextField(
             disabledBorderColor = Color.Transparent
         ),
         shape = RoundedCornerShape(24.dp),
-        visualTransformation = visualTransformation
+        visualTransformation = visualTransformation,
+
+        // binds the enter button to the done action
+        keyboardOptions = KeyboardOptions(
+            imeAction = ImeAction.Done
+        ),
+        // performs done function (closes keyboard)
+        keyboardActions = KeyboardActions(
+            onDone = { onDone() }
+        )
     )
 }
 
@@ -118,7 +131,19 @@ fun NourishH1(
         text = text,
         fontSize = 32.sp,
         fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(bottom=6.dp)
+        modifier = Modifier.padding(bottom=6.dp).padding(horizontal=6.dp)
+    )
+}
+
+@Composable
+fun NourishH2(
+    text: String
+) {
+    Text(
+        text = text,
+        fontSize = 20.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(bottom=6.dp).padding(horizontal=6.dp)
     )
 }
 
@@ -147,6 +172,26 @@ fun NourishButton(
         Text(text)
     }
 }
+
+@Composable
+fun NourishDangerButton(
+    onClick: () -> Unit,
+    text: String
+) {
+    Button(
+        onClick = {
+            onClick()
+        },
+        modifier = Modifier.padding(vertical=4.dp).padding(horizontal = 4.dp),
+
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+        )
+    ) {
+        Text(text)
+    }
+}
+
 
 @Composable
 fun GoogleButton(
@@ -185,6 +230,18 @@ fun NourishTextDivider(
             text = text,
             modifier = Modifier.padding(horizontal = 12.dp)
         )
+        HorizontalDivider(
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+fun NourishDivider() {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         HorizontalDivider(
             modifier = Modifier.weight(1f)
         )

@@ -103,7 +103,8 @@ fun LoginScreen(
                         authenticationViewModel.setSigninEmail(newEmail)
                     },
                     placeholder = "Enter email address",
-                    icon = Icons.Filled.MailOutline
+                    icon = Icons.Filled.MailOutline,
+                    onDone = { keyboardFocusManager.clearFocus() }
                 )
                 // Password:
                 NourishTextField(
@@ -113,7 +114,8 @@ fun LoginScreen(
                     },
                     placeholder = "Enter password",
                     icon = Icons.Filled.Lock,
-                    visualTransformation = PasswordVisualTransformation()
+                    visualTransformation = PasswordVisualTransformation(),
+                    onDone = { keyboardFocusManager.clearFocus() }
                 )
 
                 if (uiState.signinError != "") {
@@ -171,7 +173,8 @@ fun LoginScreen(
                                     )
                                 },
                                 placeholder = "Enter account email",
-                                icon = Icons.Filled.Email
+                                icon = Icons.Filled.Email,
+                                onDone = { keyboardFocusManager.clearFocus(force = true) }
                             )
 
                             // handle different cases of messages:
@@ -184,7 +187,7 @@ fun LoginScreen(
                             NourishButton(
                                 text = "Reset password",
                                 onClick = {
-                                    keyboardFocusManager.clearFocus()
+                                    keyboardFocusManager.clearFocus(force = true)
                                     authenticationViewModel.passwordResetRequest()
                                 }
                             )
@@ -216,7 +219,8 @@ fun LoginScreen(
                         authenticationViewModel.setSignupEmail(newEmail)
                     },
                     placeholder = "Enter email address",
-                    icon = Icons.Filled.MailOutline
+                    icon = Icons.Filled.MailOutline,
+                    onDone = { keyboardFocusManager.clearFocus() }
                 )
 
                 // Password:
@@ -227,7 +231,8 @@ fun LoginScreen(
                     },
                     placeholder = "Enter password",
                     icon = Icons.Filled.Lock,
-                    visualTransformation = PasswordVisualTransformation()
+                    visualTransformation = PasswordVisualTransformation(),
+                    onDone = { keyboardFocusManager.clearFocus() }
                 )
                 NourishTextField(
                     value = uiState.signupPasswordConfirmation,
@@ -238,7 +243,8 @@ fun LoginScreen(
                     },
                     placeholder = "Confirm password",
                     icon = Icons.Filled.Lock,
-                    visualTransformation = PasswordVisualTransformation()
+                    visualTransformation = PasswordVisualTransformation(),
+                    onDone = { keyboardFocusManager.clearFocus() }
                 )
 
                 if (uiState.signupError != "") {
