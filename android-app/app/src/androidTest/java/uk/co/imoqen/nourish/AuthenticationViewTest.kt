@@ -98,13 +98,13 @@ class AuthenticationViewTest {
         // Sign in success and user can now see the app contents:
         composeRule.onNodeWithText("Sign in successful.").assertExists()
         composeRule.onNode(
-            hasText("Recipe Finder")
+            hasText("Discover")
         ).assertExists()
         composeRule.onNode(
-            hasText("Recipe Book")
+            hasText("Saved")
         ).assertExists()
         composeRule.onNode(
-            hasText("Shopping List")
+            hasText("Shopping")
         ).assertExists()
     }
 
@@ -145,7 +145,7 @@ class AuthenticationViewTest {
         composeRule.onNodeWithText("All field(s) must not be blank.").assertExists()
         composeRule.onNodeWithText("Your sign up attempt was unsuccessful.").assertExists()
         composeRule.onNode(
-            hasText("Back to login") and hasClickAction()
+            hasText("Back to Sign in") and hasClickAction()
         ).assertExists()
     }
 
@@ -174,7 +174,7 @@ class AuthenticationViewTest {
         composeRule.onNodeWithText("Passwords do not match.").assertExists()
         composeRule.onNodeWithText("Your sign up attempt was unsuccessful.").assertExists()
         composeRule.onNode(
-            hasText("Back to login") and hasClickAction()
+            hasText("Back to Sign in") and hasClickAction()
         ).assertExists()
     }
 
@@ -202,7 +202,7 @@ class AuthenticationViewTest {
         // Sign up fail - error displayed and user remains in sign up screen.
         composeRule.onNodeWithText(ErrorMessage.USER_ERROR_SIGNUP_EMAIL).assertExists()
         composeRule.onNode(
-            hasText("Back to login") and hasClickAction()
+            hasText("Back to Sign in") and hasClickAction()
         ).assertExists()
     }
 
@@ -230,13 +230,13 @@ class AuthenticationViewTest {
         // Sign up success, user gets signed in and user can now see the app contents:
         composeRule.onNodeWithText("Sign up successful. You have now been signed in.").assertExists()
         composeRule.onNode(
-            hasText("Recipe Finder")
+            hasText("Discover")
         ).assertExists()
         composeRule.onNode(
-            hasText("Recipe Book")
+            hasText("Saved")
         ).assertExists()
         composeRule.onNode(
-            hasText("Shopping List")
+            hasText("Shopping")
         ).assertExists()
     }
 
@@ -252,7 +252,7 @@ class AuthenticationViewTest {
         composeRule.onNodeWithText("Sign up").assertExists()
         // Can navigate back to sign in page
         composeRule.onNode(
-            hasText("Back to login") and hasClickAction()
+            hasText("Back to Sign in") and hasClickAction()
         ).performClick()
         // Back on sign in page
         composeRule.onAllNodesWithText("Sign in").assertCountEquals(2)
@@ -267,20 +267,20 @@ class AuthenticationViewTest {
         // User successfully signs in
         composeRule.onNodeWithText("Sign in successful.").assertExists()
         composeRule.onNode(
-            hasText("Recipe Finder")
+            hasText("Discover")
         ).assertExists()
         composeRule.onNode(
-            hasText("Recipe Book")
+            hasText("Saved")
         ).assertExists()
         composeRule.onNode(
-            hasText("Shopping List")
+            hasText("Shopping")
         ).assertExists()
     }
 
     @Test
     fun `Forgot password flow works correctly when valid email entered`() {
         composeRule.onNode(
-            hasText("Forgotten your password?") and hasClickAction()
+            hasText("Forgot password") and hasClickAction()
         ).performClick()
         composeRule
             .onNodeWithText("Enter account email")
@@ -290,13 +290,16 @@ class AuthenticationViewTest {
         ).performClick()
 
         // Password reset email gets successfully sent:
-        composeRule.onNodeWithText("A password reset email has been sent to test@gmail.com. Please follow the instructions in this email. Can't find the email? Make sure to check your spam folder!").assertExists()
+        composeRule.onNodeWithText("A password reset email has been sent to test@gmail.com.\n" +
+                "Please follow the instructions in this email. \n\n" +
+                "Can't find the email? " +
+                "Please check your spam folder!").assertExists()
     }
 
     @Test
     fun `Forgot password flow works correctly when invalid email entered`() {
         composeRule.onNode(
-            hasText("Forgotten your password?") and hasClickAction()
+            hasText("Forgot password") and hasClickAction()
         ).performClick()
         composeRule
             .onNodeWithText("Enter account email")
@@ -312,7 +315,7 @@ class AuthenticationViewTest {
     @Test
     fun `Forgot password flow works correctly when blank email entered`() {
         composeRule.onNode(
-            hasText("Forgotten your password?") and hasClickAction()
+            hasText("Forgot password") and hasClickAction()
         ).performClick()
         // no email entered.
         composeRule.onNode(

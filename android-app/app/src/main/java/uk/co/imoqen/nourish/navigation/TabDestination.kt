@@ -22,8 +22,8 @@ enum class TabDestination(
     val icon: ImageVector,
     val iconContentDescription: String
 ) {
-    RECIPE_FINDER("f/recipe-finder", "Recipe Finder", Icons.Filled.Create, "Go to find a recipe"),
-    RECIPE_BOOK("b/recipe-book","Recipe Book", Icons.Filled.FavoriteBorder, "Go to view recipes"),
-    SHOPPING_LIST("l/shopping-list", "Shopping List", Icons.AutoMirrored.Filled.List, "Go to shopping list"),
+    RECIPE_FINDER("f/recipe-finder", "Discover", Icons.Filled.Create, "Go to find a recipe"),
+    RECIPE_BOOK("b/recipe-book","Saved", Icons.Filled.FavoriteBorder, "Go to view recipes"),
+    SHOPPING_LIST("l/shopping-list", "Shopping", Icons.AutoMirrored.Filled.List, "Go to shopping list"),
     PROFILE("p/profile", "Profile", Icons.Filled.Person, "Go to profile"),
 }

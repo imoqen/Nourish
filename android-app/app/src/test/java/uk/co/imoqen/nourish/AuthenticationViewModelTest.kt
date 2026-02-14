@@ -181,9 +181,10 @@ class AuthenticationViewModelTest {
         // Error:
         Assert.assertEquals(
             vm.uiState.value.passwordResetStatus,
-            "A password reset email has been sent to test@gmail.com. " +
-                    "Please follow the instructions in this email. Can't find the email? " +
-                    "Make sure to check your spam folder!"
+            "A password reset email has been sent to test@gmail.com.\n" +
+                    "Please follow the instructions in this email. \n\n" +
+                    "Can't find the email? " +
+                    "Please check your spam folder!"
         )
     }
 

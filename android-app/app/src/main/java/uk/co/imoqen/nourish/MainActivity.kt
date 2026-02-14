@@ -5,7 +5,17 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -103,52 +113,63 @@ fun MainContent(
     val appViewModel: AppViewModel = hiltViewModel()
     val authenticationState by appViewModel.authenticationState.collectAsState()
 
-    if (!authenticationState.loggedIn) {
-        // User is not logged in: display login/signup view
-        Scaffold(
-            modifier = modifier,
-            // Display all potential snackbar messages:
-            snackbarHost = {
-                SnackbarHost(hostState = snackbarHostState)
-            }
-        ) { contentPadding ->
-            LoginScreen(modifier = Modifier.padding(contentPadding), authenticationViewModel)
-        }
-    } else {
-        // User is logged in: display app.
-        // Uses key to ensure different ViewModels are instantiated for each user, for clean state between logins.
-        key(authenticationState.uid) {
-            // new nav controller for each logged in user
-            val navController = rememberNavController()
-
-            // The currently selected tab value to display (dynamically determined based on the route
-            // first char of the string x/route),
-            // required as RouteDestinations are within tabs. So must determine which tab to display for each route.
-            val selectedDestinationTab =
-                navController.currentBackStackEntryAsState().value?.destination?.route?.firstOrNull()
-                    ?: startDestination.route[0]
-
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+    AnimatedContent(
+        targetState = authenticationState.loggedIn,
+        label = "auth"
+    ) { loggedIn ->
+        if (!loggedIn) {
+            // User is not logged in: display login/signup view
             Scaffold(
                 modifier = modifier,
                 // Display all potential snackbar messages:
                 snackbarHost = {
                     SnackbarHost(hostState = snackbarHostState)
-                },
-                bottomBar = {
-                    NourishNavigationBar(
-                        TabDestination.entries,
-                        selectedDestinationTab,
-                        navController
-                    )
                 }
             ) { contentPadding ->
-                // Navigation around the app is controlled by the app navigation host
-                AppNavHost(
-                    navController,
-                    startDestination.route,
-                    modifier = Modifier.padding(contentPadding)
-                )
+                LoginScreen(modifier = Modifier.padding(contentPadding), authenticationViewModel)
+            }
+        } else {
+            // User is logged in: display app.
+            // Uses key to ensure different ViewModels are instantiated for each user, for clean state between logins.
+            key(authenticationState.uid) {
+                // new nav controller for each logged in user
+                val navController = rememberNavController()
+
+                // The currently selected tab value to display (dynamically determined based on the route
+                // first char of the string x/route),
+                // required as RouteDestinations are within tabs. So must determine which tab to display for each route.
+                val selectedDestinationTab =
+                    navController.currentBackStackEntryAsState().value?.destination?.route?.firstOrNull()
+                        ?: startDestination.route[0]
+
+                Scaffold(
+                    modifier = modifier,
+                    // Display all potential snackbar messages:
+                    snackbarHost = {
+                        SnackbarHost(hostState = snackbarHostState)
+                    },
+                    bottomBar = {
+                        NourishNavigationBar(
+                            TabDestination.entries,
+                            selectedDestinationTab,
+                            navController
+                        )
+                    }
+                ) { contentPadding ->
+                    // Navigation around the app is controlled by the app navigation host
+                    AppNavHost(
+                        navController,
+                        startDestination.route,
+                        modifier = Modifier.padding(contentPadding)
+                    )
+                }
             }
         }
+    }
     }
 }

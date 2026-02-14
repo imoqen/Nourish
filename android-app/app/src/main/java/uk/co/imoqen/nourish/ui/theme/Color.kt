@@ -1,11 +1,25 @@
 package uk.co.imoqen.nourish.ui.theme
 
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+val Purple80 = Color(0xFFFFFFFF)
+val PurpleGrey80 = Color(0xFFF0F0F5)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+val TextBoxColourLight = Color(0xFFEEEEEE)
+
+val Purple40 = Color(0xFF1A1A21)
+val PurpleGrey40 = Color(0xFF27242F)
+
+val TextBoxColourDark = Color(0xFF393544)
+
+// 0xFF6BAB90
+
+val NourishGreen = Color(0xFF97D39F)
+val NourishGreenDark = Color(0xFF448354)
+val NourishGreenLight = Color(0xFFE1F0C4)
+
+val ErrorDark = Color(0xFFFFB1CA)
+
+val ErrorLight = Color(0xFFAD2432)

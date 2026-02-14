@@ -73,6 +73,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.ui.text)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -141,6 +142,9 @@ dependencies {
 
     // To allow coroutines to run in Unit tests (to allow viewModelScope.launch()
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+
+    // for shapes https://developer.android.com/develop/ui/compose/graphics/draw/shapes
+    implementation("androidx.graphics:graphics-shapes:1.0.1")
 }
 
 // For generating coverage report: Jacoco

@@ -103,6 +103,10 @@ class ProfileViewModel @Inject constructor(
 
     // Functions used within the View to perform actions:
 
+    fun getEmail(): String {
+        return authenticationManager.authenticationState.value.email
+    }
+
     /**
      * Determines whether the currently logged in user has a password-provider.
      * There are two types of provider supported:
@@ -126,8 +130,11 @@ class ProfileViewModel @Inject constructor(
 
     /**
      * Updates the password of a password-provider account. Requires reauthentication beforehand.
+     * @param onSuccess - used to close the password change modal bottom sheet upon success
      */
-    fun updatePassword() {
+    fun updatePassword(
+        onSuccess: () -> Unit = {}
+    ) {
         if (mutableUiState.value.oldPassword == "" || mutableUiState.value.newPassword == "") {
             setPasswordChangeStatus(ErrorMessage.INPUT_ERROR_BLANK)
             return // early return
@@ -140,14 +147,18 @@ class ProfileViewModel @Inject constructor(
                 authenticationManager.updatePassword(mutableUiState.value.newPassword)
             }
                 .onSuccess {
-                    setPasswordChangeStatus("Password updated successfully.")
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Password updated successfully."))
+                    setPasswordChangeStatus("")
+                    onSuccess()
                 }
-                .onFailure {
-                    // Password change error messages are purposefully non-revealing, as revealing
-                    // if the password is correct / incorrect etc could allow for an enumeration attack.
-                    setPasswordChangeStatus(ErrorMessage.PASSWORD_ERROR_CHANGE)
-                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.PASSWORD_ERROR_CHANGE))
+                .onFailure { fail ->
+                    if (fail.message != null && fail.message!!.contains(ErrorMessage.FIREBASE_PASSWORD_ERROR)) {
+                        setPasswordChangeStatus(ErrorMessage.USER_ERROR_WEAK_PASSWORD_CHANGE)
+                    } else {
+                        // Password change error messages are purposefully non-revealing, as revealing
+                        // if the password is correct / incorrect etc could allow for an enumeration attack.
+                        setPasswordChangeStatus(ErrorMessage.PASSWORD_ERROR_CHANGE)
+                    }
                 }
         }
     }

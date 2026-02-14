@@ -55,7 +55,7 @@ class AuthenticationManagerImpl @Inject constructor(
      */
     private fun updateLoggedInState() {
         if (isLoggedIn()) {
-            setLoginState(true, auth.currentUser!!.uid)
+            setLoginState(true, auth.currentUser!!.uid, auth.currentUser!!.email ?: "")
             return
         }
         setLoginState(false)
@@ -74,11 +74,12 @@ class AuthenticationManagerImpl @Inject constructor(
     /**
      * Setter for the state: sets the logged in state and uid of logged in user ("" if not logged in).
      */
-    private fun setLoginState(loggedInState: Boolean, uid: String = "") {
+    private fun setLoginState(loggedInState: Boolean, uid: String = "", email: String = "") {
         mutableAuthenticationState.update { currentState ->
             currentState.copy(
                 loggedIn = loggedInState,
-                uid = uid
+                uid = uid,
+                email = email
             )
         }
     }
@@ -94,7 +95,7 @@ class AuthenticationManagerImpl @Inject constructor(
         auth.createUserWithEmailAndPassword(email, password).await()
         // If success, can now proceed to login:
         if (auth.currentUser != null) {
-            setLoginState(true, auth.currentUser!!.uid) // set logged in if successful
+            setLoginState(true, auth.currentUser!!.uid, auth.currentUser!!.email ?: "")
         }
     }
 
@@ -106,7 +107,7 @@ class AuthenticationManagerImpl @Inject constructor(
     override suspend fun signInWithEmailAndPassword(email: String, password: String) {
         auth.signInWithEmailAndPassword(email, password).await()
         if (auth.currentUser != null) {
-            setLoginState(true, auth.currentUser!!.uid) // set logged in if successful
+            setLoginState(true, auth.currentUser!!.uid, auth.currentUser!!.email ?: "")
         }
     }
 
@@ -144,7 +145,7 @@ class AuthenticationManagerImpl @Inject constructor(
 
                 // Check if validly signed in:
                 if (auth.currentUser != null) {
-                    setLoginState(true, auth.currentUser!!.uid)
+                    setLoginState(true, auth.currentUser!!.uid, auth.currentUser!!.email ?: "")
                 }
             }
         }
@@ -226,7 +227,7 @@ class AuthenticationManagerImpl @Inject constructor(
         if (!isLoggedIn()) {
             return // early return if not logged in; no auth credentials.
         }
-        auth.currentUser!!.updatePassword(newPassword)
+        auth.currentUser!!.updatePassword(newPassword).await()
     }
 
     /**

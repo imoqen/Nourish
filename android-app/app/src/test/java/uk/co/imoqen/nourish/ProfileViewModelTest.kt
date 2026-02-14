@@ -59,7 +59,8 @@ class ProfileViewModelTest {
         vm.setNewPassword("password2")
         vm.setOldPassword("password")
         vm.updatePassword()
-        Assert.assertEquals(vm.uiState.value.passwordChangeStatus, "Password updated successfully.")
+        // no error - success:
+        Assert.assertEquals(vm.uiState.value.passwordChangeStatus, "")
     }
 
     @Test

@@ -1,8 +1,10 @@
 package uk.co.imoqen.nourish.authentication
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -137,6 +139,7 @@ class AuthenticationViewModel @Inject constructor(
                 uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNIN))
                 return@launch
             }
+            setSigninError("")
             // runCatching is used to call a suspend error and handle exceptions appropriately
             // https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/run-catching.html
             runCatching {
@@ -149,6 +152,8 @@ class AuthenticationViewModel @Inject constructor(
             }
                 .onSuccess {
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Sign in successful."))
+                    // reset ui state for sign in:
+                    resetUiState()
                 }
                 .onFailure {
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNIN))
@@ -167,6 +172,7 @@ class AuthenticationViewModel @Inject constructor(
                 authenticationManager.addIfNotExists()
             }
                 .onSuccess {
+                    resetUiState()
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Sign in successful."))
                 }
                 .onFailure { e ->
@@ -205,10 +211,15 @@ class AuthenticationViewModel @Inject constructor(
                 authenticationManager.addIfNotExists()
             }
                 .onSuccess {
+                    resetUiState()
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Sign up successful. You have now been signed in."))
                 }
                 .onFailure { fail ->
-                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNUP_EMAIL))
+                    if (fail.message != null && fail.message!!.contains(ErrorMessage.FIREBASE_PASSWORD_ERROR)) {
+                        setSignupError(ErrorMessage.USER_ERROR_WEAK_PASSWORD)
+                    } else {
+                        uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNUP_EMAIL))
+                    }
                 }
         }
     }
@@ -230,9 +241,10 @@ class AuthenticationViewModel @Inject constructor(
             }
                 .onSuccess {
                     setPasswordResetStatus(
-                        "A password reset email has been sent to ${mutableUiState.value.emailToResetPassword}. " +
-                                "Please follow the instructions in this email. Can't find the email? " +
-                                "Make sure to check your spam folder!")
+                        "A password reset email has been sent to ${mutableUiState.value.emailToResetPassword}.\n" +
+                                "Please follow the instructions in this email. \n\n" +
+                                "Can't find the email? " +
+                                "Please check your spam folder!")
                 }
                 .onFailure {
                     setPasswordResetStatus(ErrorMessage.USER_ERROR_EMAIL_SEND)
@@ -240,4 +252,18 @@ class AuthenticationViewModel @Inject constructor(
                 }
         }
     }
+
+    /**
+     * Auxiliary function to run upon successful sign in / sign up, to clear the state.
+     */
+    private fun resetUiState() {
+        setSigninEmail("")
+        setSigninPassword("")
+        setSignupEmail("")
+        setSignupPassword("")
+        setSignupPasswordConfirmation("")
+        setSigninError("")
+        setSignupError("")
+    }
+
 }
