@@ -10,6 +10,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.OAuthProvider
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -226,7 +227,7 @@ class AuthenticationManagerImpl @Inject constructor(
         if (!isLoggedIn()) {
             return // early return if not logged in; no auth credentials.
         }
-        auth.currentUser!!.updatePassword(newPassword)
+        auth.currentUser!!.updatePassword(newPassword).await()
     }
 
     /**

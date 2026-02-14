@@ -33,9 +33,11 @@ import androidx.compose.ui.graphics.Shader
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import uk.co.imoqen.nourish.R
 
 @Composable
@@ -81,6 +83,39 @@ fun NourishTextField(
         ),
         shape = RoundedCornerShape(24.dp),
         visualTransformation = visualTransformation
+    )
+}
+
+@Composable
+fun NourishText(
+    text: String
+) {
+    Text(
+        text = text,
+        modifier = Modifier.padding(4.dp).padding(horizontal=8.dp)
+    )
+}
+
+@Composable
+fun NourishH1(
+    text: String
+) {
+    Text(
+        text = text,
+        fontSize = 32.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(bottom=6.dp)
+    )
+}
+
+@Composable
+fun NourishErrorText(
+    text: String
+) {
+    Text(
+        text = text,
+        color = MaterialTheme.colorScheme.error,
+        modifier = Modifier.padding(4.dp)
     )
 }
 

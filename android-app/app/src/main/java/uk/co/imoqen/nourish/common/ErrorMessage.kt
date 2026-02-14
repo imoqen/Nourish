@@ -21,8 +21,12 @@ object ErrorMessage {
 
     const val USER_ERROR_SIGNUP = "Your sign up attempt was unsuccessful."
     const val USER_ERROR_SIGNUP_EMAIL = "Your sign up attempt was unsuccessful. The email address may be invalid or taken."
+    const val USER_ERROR_WEAK_PASSWORD = "Sign up unsuccessful. \nYour password must be at least 8 characters long and contain at least one number, upper case character, and lower case character."
+    const val USER_ERROR_WEAK_PASSWORD_CHANGE = "Password not changed. \nYour password must be at least 8 characters long and contain at least one number, upper case character, and lower case character."
 
     const val USER_ERROR_SIGNIN = "Your sign in attempt was unsuccessful."
 
     const val USER_ERROR_EMAIL_SEND = "Password reset email failed to send."
+
+    const val FIREBASE_PASSWORD_ERROR = "PASSWORD_DOES_NOT_MEET_REQUIREMENTS"
 }

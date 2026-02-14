@@ -49,9 +49,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.GoogleButton
 import uk.co.imoqen.nourish.common.GradientButton
 import uk.co.imoqen.nourish.common.NourishButton
+import uk.co.imoqen.nourish.common.NourishErrorText
+import uk.co.imoqen.nourish.common.NourishH1
+import uk.co.imoqen.nourish.common.NourishText
 import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
 
@@ -128,12 +132,7 @@ fun LoginScreen(
 
                             // Sign in View:
                             if (uiState.status == AuthenticationUiStatus.SIGNIN) {
-                                Text(
-                                    text = "Sign in",
-                                    fontSize = 32.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(bottom=6.dp)
-                                )
+                                NourishH1("Sign in")
 
                                 // Email:
                                 NourishTextField(
@@ -156,10 +155,7 @@ fun LoginScreen(
                                 )
 
                                 if (uiState.signinError != "") {
-                                    Text(
-                                        uiState.signinError,
-                                        color = MaterialTheme.colorScheme.error
-                                    )
+                                    NourishErrorText(uiState.signinError)
                                 }
 
                                 NourishButton(
@@ -178,7 +174,7 @@ fun LoginScreen(
 
                                 Row() {
                                     NourishButton(
-                                        text = "Sign Up",
+                                        text = "Sign up",
                                         onClick = {
                                             authenticationViewModel.setStatus(AuthenticationUiStatus.SIGNUP)
                                         }
@@ -199,114 +195,102 @@ fun LoginScreen(
                                         onDismissRequest = {
                                             authenticationViewModel.setShowBottomSheet(false)
                                         },
-                                        sheetState = sheetState
+                                        sheetState = sheetState,
                                     ) {
-                                        Column() {
-                                            // Email for password reset:
-                                            OutlinedTextField(
+                                        Column(
+                                            modifier = Modifier.fillMaxWidth().padding(bottom=12.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            NourishTextField(
                                                 value = uiState.emailToResetPassword,
                                                 onValueChange = { newEmail ->
                                                     authenticationViewModel.setEmailToResetPassword(
                                                         newEmail
                                                     )
                                                 },
-                                                placeholder = {
-                                                    Text("Enter account email")
-                                                },
-                                                leadingIcon = {
-                                                    Icons.Filled.Email
-                                                },
-                                                modifier = Modifier.fillMaxWidth()
+                                                placeholder = "Enter account email",
+                                                icon = Icons.Filled.Email
                                             )
+
+                                            // handle different cases of messages:
+                                            if (uiState.passwordResetStatus == ErrorMessage.INPUT_ERROR_BLANK || uiState.passwordResetStatus == ErrorMessage.USER_ERROR_EMAIL_SEND) {
+                                                NourishErrorText(uiState.passwordResetStatus)
+                                            }
+                                            else if (uiState.passwordResetStatus != "") {
+                                                NourishText(uiState.passwordResetStatus)
+                                            }
 
                                             NourishButton(
                                                 text = "Reset Password",
                                                 onClick = {
+                                                    keyboardFocusManager.clearFocus()
                                                     authenticationViewModel.passwordResetRequest()
                                                 }
                                             )
-
-                                            if (uiState.passwordResetStatus != "") {
-                                                Text(uiState.passwordResetStatus)
-                                            }
                                         }
                                     }
                                 }
                             }
+
                             // Sign up View:
+
                             else {
                                 BackHandler {
                                     // handle back button press by going back to login view if on sign up view:
                                     authenticationViewModel.setStatus(AuthenticationUiStatus.SIGNIN)
                                 }
 
-                                // Back to login?:
-                                Button(
+                                NourishButton(
+                                    text = "Back to Login",
                                     onClick = {
+                                        keyboardFocusManager.clearFocus()
                                         authenticationViewModel.setStatus(AuthenticationUiStatus.SIGNIN)
                                     }
-                                ) {
-                                    Text("Back to login")
-                                }
+                                )
 
                                 // Sign up form:
-                                OutlinedTextField(
+                                NourishTextField(
                                     value = uiState.signupEmail,
                                     onValueChange = { newEmail ->
                                         authenticationViewModel.setSignupEmail(newEmail)
                                     },
-                                    placeholder = {
-                                        Text("Enter email address")
-                                    },
-                                    leadingIcon = {
-                                        Icons.Filled.MailOutline
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
+                                    placeholder = "Enter email address",
+                                    icon = Icons.Filled.MailOutline
                                 )
+
                                 // Password:
-                                OutlinedTextField(
+                                NourishTextField(
                                     value = uiState.signupPassword,
                                     onValueChange = { newPassword ->
                                         authenticationViewModel.setSignupPassword(newPassword)
                                     },
-                                    placeholder = {
-                                        Text("Enter password")
-                                    },
-                                    leadingIcon = {
-                                        Icons.Filled.Lock
-                                    },
-                                    visualTransformation = PasswordVisualTransformation(), // to prevent password from being visible when typed
-                                    modifier = Modifier.fillMaxWidth()
+                                    placeholder = "Enter password",
+                                    icon = Icons.Filled.Lock,
+                                    visualTransformation = PasswordVisualTransformation()
                                 )
-                                OutlinedTextField(
+                                NourishTextField(
                                     value = uiState.signupPasswordConfirmation,
                                     onValueChange = { newPassword ->
                                         authenticationViewModel.setSignupPasswordConfirmation(
                                             newPassword
                                         )
                                     },
-                                    placeholder = {
-                                        Text("Confirm password")
-                                    },
-                                    leadingIcon = {
-                                        Icons.Filled.Lock
-                                    },
-                                    visualTransformation = PasswordVisualTransformation(), // to prevent password from being visible when typed
-                                    modifier = Modifier.fillMaxWidth()
+                                    placeholder = "Confirm password",
+                                    icon = Icons.Filled.Lock,
+                                    visualTransformation = PasswordVisualTransformation()
                                 )
 
                                 if (uiState.signupError != "") {
-                                    Text(uiState.signupError)
+                                    NourishErrorText(uiState.signupError)
                                 }
 
-
-                                Button(
+                                NourishButton(
                                     onClick = {
+                                        keyboardFocusManager.clearFocus()
                                         authenticationViewModel.signUpWithEmailAndPassword()
-                                    }
-                                ) {
-                                    Text("Sign up")
-                                }
+                                    },
+                                    text = "Sign up"
+                                )
                             }
 
                     }
