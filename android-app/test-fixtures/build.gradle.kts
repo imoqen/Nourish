@@ -28,5 +28,5 @@ dependencies {
     implementation(libs.material)
 
     // the app:
-    implementation(project(":app"))
+    compileOnly(project(":app"))
 }
