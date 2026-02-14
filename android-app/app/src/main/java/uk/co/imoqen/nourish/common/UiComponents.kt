@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -277,16 +278,16 @@ fun NourishBottomCard(
                         .fillMaxWidth()
                         .shadow(
                             elevation = 28.dp,
-                            shape = RoundedCornerShape(32.dp)
+                            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
                         )
-                        .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                        .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 0.dp, bottomEnd = 0.dp))
                         .background(MaterialTheme.colorScheme.surface)
                         .padding(top = 32.dp) // room for logo
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp,)
+                            .padding(16.dp)
                             .padding(bottom = 40.dp),
                         // extra padding at bottom for the built in mobile navbar
                         horizontalAlignment = Alignment.CenterHorizontally
