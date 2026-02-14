@@ -9,18 +9,57 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import uk.co.imoqen.nourish.ui.theme.PurpleGrey80
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+// primary: buttons etc
+// onPrimary: on top of primary
+// secondary: accent colour for less important buttons
+// onSecondary: on top of secondary
+// background: screen background
+// surface: cards, sheets, containers, etc
+// onSurface: on the surface
+// error: self explanatory
+
+private val NourishDarkColorScheme = darkColorScheme(
+    primary = NourishGreenDark,
+    secondary = NourishGreen,
+    tertiary = NourishGreenLight,
+
+    background = PurpleGrey40,
+    surface = Purple40,
+    onBackground = Color.White,
+
+    onPrimary = Color.White,
+    onSecondary = Color.White,
+    onTertiary = Color.White,
+
+    // surface variant isu sed by navbar so dont edit it.
+
+    // for text boxes etc to stand out
+    primaryContainer = TextBoxColourDark,
+    onPrimaryContainer = Color.White
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+private val NourishLightColorScheme = lightColorScheme(
+    primary = NourishGreen,
+    secondary = NourishGreenDark,
+    tertiary = NourishGreenLight,
+
+    background = PurpleGrey80,
+    surface = Purple80,
+    onBackground = Color.Black,
+
+    onPrimary = Color.Black,
+    onSecondary = Color.Black,
+    onTertiary = Color.Black,
+
+    // surface variant isu sed by navbar so dont edit it.
+
+    // for text boxes etc to stand out
+    primaryContainer = TextBoxColourLight,
+    onPrimaryContainer = Color.Black
 
     /* Other default colors to override
     background = Color(0xFFFFFBFE),
@@ -37,7 +76,7 @@ private val LightColorScheme = lightColorScheme(
 fun NourishTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // using custom colour scheme rather than dynamic.
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -46,8 +85,8 @@ fun NourishTheme(
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
 
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        darkTheme -> NourishDarkColorScheme
+        else -> NourishLightColorScheme
     }
 
     MaterialTheme(
