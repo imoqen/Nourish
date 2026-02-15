@@ -1,12 +1,19 @@
 const { GoogleGenAI } = require("@google/genai");
 const { ChatVertexAI } = require("@langchain/google-vertexai");
 const express = require("express"); // to handle request/responses
+const multer = require("multer"); // for handling multipart/form-data (images): https://www.npmjs.com/package/multer
 
 const { initializeApp } = require("firebase-admin/app"); // firebase admin sdk
 const { getAuth } = require("firebase-admin/auth"); // auth method from firebase
 const { getFirestore, FieldValue } = require("firebase-admin/firestore"); // firestore
 
 const { z } = require("zod");
+
+// for storing image in memory with 2mb limit
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024 }, // filesize is in bytes
+});
 
 // langchain:
 const { createAgent, providerStrategy, toolStrategy } = require("langchain");
@@ -249,7 +256,132 @@ async function generateContent(
   return result.structuredResponse;
 }
 
+// new stuff for image handling:
+
+async function fromImage(req, res) {
+  try {
+    // Extract and validate the prompt
+    const prompt = req.body?.request;
+    if (!prompt) {
+      console.log("Error: missing or malformed prompt.");
+
+      return res.status(400).json({ error: "Missing or malformed prompt." });
+    }
+
+    // Authenticate the user using the Bearer token in the request
+    const requesterUid = await authenticateUser(req);
+    if (requesterUid == null) {
+      console.log("Error: invalid or non-existent bearer token");
+
+      return res
+        .status(500)
+        .json({ error: "Invalid or non-existent Bearer token" });
+    }
+
+    // Rate limit the user by incrementing their daily token count, ensuring
+    // LLM request cannot be performed if the user has exceeded their rate.
+    if (!(await rateLimitUser(requesterUid))) {
+      console.log("Error: token limit reached. come back tomorrow");
+      return res
+        .status(500)
+        .json({ error: "Token limit reached. Come back tomorrow" });
+    }
+
+    console.log("Received. Calling generateFromImage function...");
+
+    // Perform the LLM request and retrieve the response
+    const recipe = await generateFromImage(
+      GOOGLE_CLOUD_PROJECT,
+      GOOGLE_CLOUD_LOCATION,
+      prompt,
+      req,
+    );
+    res.json(recipe);
+    return res;
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: e.message });
+  }
+}
+
+// to handle rthe multipart data, multer is used:
+// https://medium.com/@muhebollah.diu/understanding-multipart-form-data-the-ultimate-guide-for-beginners-fd039c04553d
+async function generateFromImage(
+  projectId = GOOGLE_CLOUD_PROJECT,
+  location = GOOGLE_CLOUD_LOCATION,
+  prompt,
+  req,
+) {
+  // get the image file:
+  const file = req.file;
+  const filetype = file.mimetype;
+  const base64encoded = file.buffer.toString("base64"); // https://stackoverflow.com/questions/51798811/how-to-encoded-files-in-base64-in-nodejs-after-getting-details-from-client-side
+  const dataUrl = `data:${filetype};base64,${base64encoded}`;
+
+  const contents = [
+    {
+      inlineData: {
+        mimetype: filetype,
+        data: base64encoded,
+      },
+    },
+    { text: "Image of a meal to classify." },
+  ];
+
+  console.log("Sending image to LLM...");
+
+  // tool strategy for formatting output:
+  //https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
+  const RecipeListSchemaZod = z.object({
+    recipes: z
+      .string()
+      .describe("4 possible meals that this image could be an image of."),
+  });
+
+  // https://docs.langchain.com/oss/javascript/integrations/chat/google_vertex_ai
+  const llm = new ChatVertexAI({
+    project: projectId,
+    location: location,
+    model: "gemini-2.0-flash",
+  });
+
+  const agent = createAgent({
+    model: llm,
+    tools: [],
+    responseFormat: toolStrategy(RecipeListSchemaZod),
+  });
+
+  //console.log("Return 4 names of meals which you believe are in the image: " + prompt);
+
+  const result = await agent.invoke({
+    messages: [
+      {
+        role: "system",
+        content:
+          "Return in the required schema, in the recipes field. Write the name of each meal concisely; in less than 20 words per meal.",
+      },
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: "Return 4 names of meals which you believe are in the image.", // put prompt variable in here once set up
+          },
+          { type: "image_url", image_url: { url: dataUrl } },
+        ],
+      },
+    ],
+  });
+
+  // note: this returns the tokens. should use this value to increment the token count instead.
+
+  console.log(result.structuredResponse);
+
+  return result.structuredResponse;
+}
+
 // To run the POST endpoint:
 app.post("/generate", generate);
+app.post("/from-image", upload.single("image"), fromImage);
 const port = process.env.PORT || 8080;
 app.listen(port, () => console.log("Nourish /generate endpoint live."));
