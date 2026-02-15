@@ -3,18 +3,11 @@ package uk.co.imoqen.nourish.recipediscovery
 import android.content.ContentResolver
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.net.Uri
-import android.provider.MediaStore
 import android.util.Log
-import android.widget.Toast
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.android.gms.tasks.OnFailureListener
-import com.google.android.gms.tasks.OnSuccessListener
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +26,9 @@ import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import javax.inject.Inject
+import kotlin.math.floor
+import kotlin.math.round
+import androidx.core.graphics.scale
 
 
 /**
@@ -149,7 +145,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
         var bitmap: Bitmap? = null
 
         // first, resize:
-        
 
         //val bitmap = null
         try {
@@ -168,6 +163,26 @@ class RecipeDiscoveryViewModel @Inject constructor(
         // here we can choose quality factor
         // in third parameter(ex. here it is 25)
         if (bitmap != null) {
+            // first, resize:
+
+            val width = bitmap.width
+            val height = bitmap.height
+            Log.i("PhotoPicker","original width and height: $width, $height")
+
+            val greatestDimension = if (width > height) width else height
+            // only scale down if required
+            // could adopt a mipmapping approach where the smallest is sent to the llm (512kb) and then
+            // larger is displayed to the user (1024+). can write about this in the report.
+            if (greatestDimension > 1024) { // CAN ALTER THIS VALUE IN THE REPORT AND SHOW HOW THE COMPRESSION CHANGES
+                // float vals
+                val scale = 1024f / greatestDimension
+                val newWidth = (width * scale).toInt()
+                val newHeight = (height * scale).toInt()
+                Log.i("PhotoPicker", "resizing down to $newWidth, $newHeight")
+                // resize accordingly
+                bitmap = bitmap.scale(newWidth, newHeight, false)
+            }
+
             bitmap.compress(Bitmap.CompressFormat.JPEG, 25, baos)
 
             val fileInBytes: ByteArray = baos.toByteArray()
