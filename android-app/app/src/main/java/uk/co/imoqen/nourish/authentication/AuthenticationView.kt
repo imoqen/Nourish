@@ -3,9 +3,14 @@ package uk.co.imoqen.nourish.authentication
 import android.util.Log
 import uk.co.imoqen.nourish.R
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -88,8 +93,10 @@ fun LoginScreen(
     val keyboardFocusManager =
         LocalFocusManager.current // To close the keyboard once user submits input
 
-    Box() {
+    Box {
 
+        // Cycles between background images via Crossfade. All images were taken by myself,
+        // of home cooked meals.
         var imageIndex by remember { mutableIntStateOf(0) }
         val images = listOf(
             R.drawable.nourish_salad,
@@ -103,7 +110,6 @@ fun LoginScreen(
             while(true) {
                 delay(5000)
                 imageIndex = if (imageIndex == 5) 0 else imageIndex + 1
-                Log.i("image index: ", "$imageIndex")
             }
         }
         Crossfade(
@@ -135,173 +141,174 @@ fun LoginScreen(
 
             },
             cardContents = {
-                // Sign in View:
-                if (uiState.status == AuthenticationUiStatus.SIGNIN) {
-                    NourishH1("Sign in")
+                    // Sign in View:
+                    if (uiState.status == AuthenticationUiStatus.SIGNIN) {
+                        NourishH1("Sign in")
 
-                    // Email:
-                    NourishTextField(
-                        value = uiState.signinEmail,
-                        onValueChange = { newEmail ->
-                            authenticationViewModel.setSigninEmail(newEmail)
-                        },
-                        placeholder = "Enter email address",
-                        icon = Icons.Filled.MailOutline,
-                        onDone = { keyboardFocusManager.clearFocus() }
-                    )
-                    // Password:
-                    NourishTextField(
-                        value = uiState.signinPassword,
-                        onValueChange = { newPassword ->
-                            authenticationViewModel.setSigninPassword(newPassword)
-                        },
-                        placeholder = "Enter password",
-                        icon = Icons.Filled.Lock,
-                        visualTransformation = PasswordVisualTransformation(),
-                        onDone = { keyboardFocusManager.clearFocus() }
-                    )
-
-                    if (uiState.signinError != "") {
-                        NourishErrorText(uiState.signinError)
-                    }
-
-                    NourishButton(
-                        onClick = {
-                            keyboardFocusManager.clearFocus()
-                            authenticationViewModel.signInWithEmailAndPassword()
-                        },
-                        text = "Sign in"
-                    )
-
-                    NourishTextDivider("or")
-
-                    GoogleButton(onClick = { authenticationViewModel.signInWithGoogle(context) })
-
-                    NourishTextDivider("Don't have an account yet?")
-
-                    Row() {
-                        NourishButton(
-                            text = "Sign up",
-                            onClick = {
-                                authenticationViewModel.setStatus(AuthenticationUiStatus.SIGNUP)
-                            }
-                        )
-
-                        NourishButton(
-                            text = "Forgot password",
-                            onClick = {
-                                authenticationViewModel.setShowBottomSheet(true)
-                            }
-                        )
-                    }
-
-                    val sheetState = rememberModalBottomSheetState()
-
-                    if (uiState.showBottomSheet) {
-                        ModalBottomSheet(
-                            onDismissRequest = {
-                                authenticationViewModel.setShowBottomSheet(false)
+                        // Email:
+                        NourishTextField(
+                            value = uiState.signinEmail,
+                            onValueChange = { newEmail ->
+                                authenticationViewModel.setSigninEmail(newEmail)
                             },
-                            sheetState = sheetState,
-                        ) {
-                            Column(
-                                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                NourishTextField(
-                                    value = uiState.emailToResetPassword,
-                                    onValueChange = { newEmail ->
-                                        authenticationViewModel.setEmailToResetPassword(
-                                            newEmail
-                                        )
-                                    },
-                                    placeholder = "Enter account email",
-                                    icon = Icons.Filled.Email,
-                                    onDone = { keyboardFocusManager.clearFocus(force = true) }
-                                )
+                            placeholder = "Enter email address",
+                            icon = Icons.Filled.MailOutline,
+                            onDone = { keyboardFocusManager.clearFocus() }
+                        )
+                        // Password:
+                        NourishTextField(
+                            value = uiState.signinPassword,
+                            onValueChange = { newPassword ->
+                                authenticationViewModel.setSigninPassword(newPassword)
+                            },
+                            placeholder = "Enter password",
+                            icon = Icons.Filled.Lock,
+                            visualTransformation = PasswordVisualTransformation(),
+                            onDone = { keyboardFocusManager.clearFocus() }
+                        )
 
-                                // handle different cases of messages:
-                                if (uiState.passwordResetStatus == ErrorMessage.INPUT_ERROR_BLANK || uiState.passwordResetStatus == ErrorMessage.USER_ERROR_EMAIL_SEND) {
-                                    NourishErrorText(uiState.passwordResetStatus)
-                                } else if (uiState.passwordResetStatus != "") {
-                                    NourishText(uiState.passwordResetStatus)
+                        if (uiState.signinError != "") {
+                            NourishErrorText(uiState.signinError)
+                        }
+
+                        NourishButton(
+                            onClick = {
+                                keyboardFocusManager.clearFocus()
+                                authenticationViewModel.signInWithEmailAndPassword()
+                            },
+                            text = "Sign in"
+                        )
+
+                        NourishTextDivider("or")
+
+                        GoogleButton(onClick = { authenticationViewModel.signInWithGoogle(context) })
+
+                        NourishTextDivider("Don't have an account yet?")
+
+                        Row() {
+                            NourishButton(
+                                text = "Sign up",
+                                onClick = {
+                                    authenticationViewModel.setStatus(AuthenticationUiStatus.SIGNUP)
                                 }
+                            )
 
-                                NourishButton(
-                                    text = "Reset password",
-                                    onClick = {
-                                        keyboardFocusManager.clearFocus(force = true)
-                                        authenticationViewModel.passwordResetRequest()
+                            NourishButton(
+                                text = "Forgot password",
+                                onClick = {
+                                    authenticationViewModel.setShowBottomSheet(true)
+                                }
+                            )
+                        }
+
+                        val sheetState = rememberModalBottomSheetState()
+
+                        if (uiState.showBottomSheet) {
+                            ModalBottomSheet(
+                                onDismissRequest = {
+                                    authenticationViewModel.setShowBottomSheet(false)
+                                },
+                                sheetState = sheetState,
+                            ) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    NourishTextField(
+                                        value = uiState.emailToResetPassword,
+                                        onValueChange = { newEmail ->
+                                            authenticationViewModel.setEmailToResetPassword(
+                                                newEmail
+                                            )
+                                        },
+                                        placeholder = "Enter account email",
+                                        icon = Icons.Filled.Email,
+                                        onDone = { keyboardFocusManager.clearFocus(force = true) }
+                                    )
+
+                                    // handle different cases of messages:
+                                    if (uiState.passwordResetStatus == ErrorMessage.INPUT_ERROR_BLANK || uiState.passwordResetStatus == ErrorMessage.USER_ERROR_EMAIL_SEND) {
+                                        NourishErrorText(uiState.passwordResetStatus)
+                                    } else if (uiState.passwordResetStatus != "") {
+                                        NourishText(uiState.passwordResetStatus)
                                     }
-                                )
+
+                                    NourishButton(
+                                        text = "Reset password",
+                                        onClick = {
+                                            keyboardFocusManager.clearFocus(force = true)
+                                            authenticationViewModel.passwordResetRequest()
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
-                }
 
-                // Sign up View:
+                    // Sign up View:
 
-                else {
-                    BackHandler {
-                        // handle back button press by going back to login view if on sign up view:
-                        authenticationViewModel.setStatus(AuthenticationUiStatus.SIGNIN)
-                    }
-
-                    NourishButton(
-                        text = "Back to Sign in",
-                        onClick = {
-                            keyboardFocusManager.clearFocus()
+                    else {
+                        BackHandler {
+                            // handle back button press by going back to login view if on sign up view:
                             authenticationViewModel.setStatus(AuthenticationUiStatus.SIGNIN)
                         }
-                    )
 
-                    // Sign up form:
-                    NourishTextField(
-                        value = uiState.signupEmail,
-                        onValueChange = { newEmail ->
-                            authenticationViewModel.setSignupEmail(newEmail)
-                        },
-                        placeholder = "Enter email address",
-                        icon = Icons.Filled.MailOutline,
-                        onDone = { keyboardFocusManager.clearFocus() }
-                    )
+                        NourishButton(
+                            text = "Back to Sign in",
+                            onClick = {
+                                keyboardFocusManager.clearFocus()
+                                authenticationViewModel.setStatus(AuthenticationUiStatus.SIGNIN)
+                            }
+                        )
 
-                    // Password:
-                    NourishTextField(
-                        value = uiState.signupPassword,
-                        onValueChange = { newPassword ->
-                            authenticationViewModel.setSignupPassword(newPassword)
-                        },
-                        placeholder = "Enter password",
-                        icon = Icons.Filled.Lock,
-                        visualTransformation = PasswordVisualTransformation(),
-                        onDone = { keyboardFocusManager.clearFocus() }
-                    )
-                    NourishTextField(
-                        value = uiState.signupPasswordConfirmation,
-                        onValueChange = { newPassword ->
-                            authenticationViewModel.setSignupPasswordConfirmation(
-                                newPassword
-                            )
-                        },
-                        placeholder = "Confirm password",
-                        icon = Icons.Filled.Lock,
-                        visualTransformation = PasswordVisualTransformation(),
-                        onDone = { keyboardFocusManager.clearFocus() }
-                    )
+                        // Sign up form:
+                        NourishTextField(
+                            value = uiState.signupEmail,
+                            onValueChange = { newEmail ->
+                                authenticationViewModel.setSignupEmail(newEmail)
+                            },
+                            placeholder = "Enter email address",
+                            icon = Icons.Filled.MailOutline,
+                            onDone = { keyboardFocusManager.clearFocus() }
+                        )
 
-                    if (uiState.signupError != "") {
-                        NourishErrorText(uiState.signupError)
+                        // Password:
+                        NourishTextField(
+                            value = uiState.signupPassword,
+                            onValueChange = { newPassword ->
+                                authenticationViewModel.setSignupPassword(newPassword)
+                            },
+                            placeholder = "Enter password",
+                            icon = Icons.Filled.Lock,
+                            visualTransformation = PasswordVisualTransformation(),
+                            onDone = { keyboardFocusManager.clearFocus() }
+                        )
+                        NourishTextField(
+                            value = uiState.signupPasswordConfirmation,
+                            onValueChange = { newPassword ->
+                                authenticationViewModel.setSignupPasswordConfirmation(
+                                    newPassword
+                                )
+                            },
+                            placeholder = "Confirm password",
+                            icon = Icons.Filled.Lock,
+                            visualTransformation = PasswordVisualTransformation(),
+                            onDone = { keyboardFocusManager.clearFocus() }
+                        )
+
+                        if (uiState.signupError != "") {
+                            NourishErrorText(uiState.signupError)
+                        }
+
+                        NourishButton(
+                            onClick = {
+                                keyboardFocusManager.clearFocus()
+                                authenticationViewModel.signUpWithEmailAndPassword()
+                            },
+                            text = "Sign up"
+                        )
                     }
-
-                    NourishButton(
-                        onClick = {
-                            keyboardFocusManager.clearFocus()
-                            authenticationViewModel.signUpWithEmailAndPassword()
-                        },
-                        text = "Sign up"
-                    )
-                }
+                
             },
             iconSection = {
                 Image(
