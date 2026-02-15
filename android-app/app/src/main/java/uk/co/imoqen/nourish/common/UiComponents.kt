@@ -307,7 +307,7 @@ fun NourishBottomCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top=84.dp).background(MaterialTheme.colorScheme.surface),
+                    .padding(top = 84.dp),//.background(MaterialTheme.colorScheme.surface),
                 contentAlignment = Alignment.TopCenter,
 
                 ) {
