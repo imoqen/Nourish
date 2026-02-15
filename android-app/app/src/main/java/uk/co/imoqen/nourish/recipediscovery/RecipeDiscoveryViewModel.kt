@@ -1,21 +1,35 @@
 package uk.co.imoqen.nourish.recipediscovery
 
+import android.content.ContentResolver
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.ImageDecoder
+import android.net.Uri
+import android.provider.MediaStore
+import android.widget.Toast
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.tasks.OnFailureListener
+import com.google.android.gms.tasks.OnSuccessListener
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
-import uk.co.imoqen.nourish.network.apimanager.ApiManager
+import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.LlmRequest
+import uk.co.imoqen.nourish.network.apimanager.ApiManager
+import java.io.ByteArrayOutputStream
+import java.io.IOException
 import javax.inject.Inject
+
 
 /**
  * ViewModel for RecipeDiscovery.
@@ -117,6 +131,39 @@ class RecipeDiscoveryViewModel @Inject constructor(
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
                     setAwaitingResponse(false)
                 }
+        }
+    }
+
+    // with help from https://www.geeksforgeeks.org/android/how-to-compress-image-in-android-before-uploading-it-to-firebase-storage/
+    fun compressImage(
+        uri: Uri,
+        contentResolver: ContentResolver
+    ) {
+
+        // images are stored with timestamp as their name
+        val timestamp = "" + System.currentTimeMillis()
+        var bitmap: Bitmap? = null
+
+        //val bitmap = null
+        try {
+            // this is for image bitmap, to display the image - not for compressing it etc.
+            bitmap = ImageDecoder.decodeBitmap(
+                ImageDecoder.createSource(contentResolver, uri))
+                //.asImageBitmap()*/
+            //MediaStore.Images.Media.getBitmap(contentResolver), uri)
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+
+        val baos = ByteArrayOutputStream()
+
+        // here we can choose quality factor
+        // in third parameter(ex. here it is 25)
+        if (bitmap != null) {
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 25, baos)
+
+            val fileInBytes: ByteArray? = baos.toByteArray()
+
         }
     }
 

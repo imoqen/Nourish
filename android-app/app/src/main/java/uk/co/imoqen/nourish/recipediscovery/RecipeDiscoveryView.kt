@@ -1,5 +1,10 @@
 package uk.co.imoqen.nourish.recipediscovery
 
+import android.content.Context
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
@@ -12,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -48,6 +54,25 @@ fun RecipeDiscoveryScreen(
             }
         ) {
             Text("Discover a recipe")
+        }
+
+        val context = LocalContext.current
+
+        // Photo picker: https://developer.android.com/training/data-storage/shared/photo-picker#compose
+        // Registers a photo picker activity launcher in single-select mode.
+        val pickMedia = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+            // Callback is invoked after the user selects a media item or closes the
+            // photo picker.
+            if (uri != null) {
+                Log.d("PhotoPicker", "Selected URI: $uri")
+                recipeDiscoveryViewModel.compressImage(uri, context.contentResolver)
+            } else {
+                Log.d("PhotoPicker", "No media selected")
+            }
+        }
+
+        Button(onClick = { pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))} ) {
+            Text("from photo")
         }
 
         // Outputs the response, or error if occurred.
