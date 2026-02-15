@@ -1,6 +1,8 @@
 package uk.co.imoqen.nourish.network.apimanager
 
+import android.graphics.Bitmap
 import com.google.gson.Gson
+import okhttp3.MultipartBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -64,5 +66,15 @@ class ApiManagerImpl @Inject constructor(
                 throw t
             }
         })
+    }
+
+    override fun handleFromImage(
+        request: LlmRequest,
+        bearerToken: String,
+        image: Bitmap,
+        onResponse: (String?) -> Unit
+    ) {
+        //val multipartBody = MultipartBody.Part.createFormData("image", image)
+       // val call = apiService.generateFromImage(image, request, "Bearer $bearerToken")
     }
 }

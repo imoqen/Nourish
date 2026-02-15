@@ -2,6 +2,7 @@ package uk.co.imoqen.nourish.recipediscovery
 
 import android.content.Context
 import android.util.Log
+import android.webkit.MimeTypeMap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -65,7 +66,19 @@ fun RecipeDiscoveryScreen(
             // photo picker.
             if (uri != null) {
                 Log.d("PhotoPicker", "Selected URI: $uri")
-                recipeDiscoveryViewModel.compressImage(uri, context.contentResolver)
+                // mime type is like image/png etc
+                val mimeType = context.contentResolver.getType(uri)
+                // gets the file type:
+                val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
+                val compressedByteArray = recipeDiscoveryViewModel.compressImage(uri, context.contentResolver)
+                if (compressedByteArray != null) {
+                    val time = System.currentTimeMillis()
+                    recipeDiscoveryViewModel.awaitSave(
+                        compressedByteArray,
+                        "compressed-recipe-image-$time.$extension",
+                        context
+                    )
+                }
             } else {
                 Log.d("PhotoPicker", "No media selected")
             }

@@ -146,6 +146,19 @@ dependencies {
 
     // for shapes https://developer.android.com/develop/ui/compose/graphics/draw/shapes
     implementation("androidx.graphics:graphics-shapes:1.0.1")
+
+    // Room:
+    val room_version = "2.8.4"
+
+    implementation("androidx.room:room-runtime:$room_version")
+
+    // If this project uses any Kotlin source, use Kotlin Symbol Processing (KSP)
+    // See Add the KSP plugin to your project
+    ksp("androidx.room:room-compiler:$room_version")
+
+    // If this project only uses Java source, use the Java annotationProcessor
+    // No additional plugins are necessary
+    annotationProcessor("androidx.room:room-compiler:$room_version")
 }
 
 // For generating coverage report: Jacoco

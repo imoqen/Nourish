@@ -1,11 +1,13 @@
 package uk.co.imoqen.nourish.recipediscovery
 
 import android.content.ContentResolver
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -14,11 +16,13 @@ import androidx.lifecycle.viewModelScope
 import com.google.android.gms.tasks.OnFailureListener
 import com.google.android.gms.tasks.OnSuccessListener
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
@@ -138,11 +142,14 @@ class RecipeDiscoveryViewModel @Inject constructor(
     fun compressImage(
         uri: Uri,
         contentResolver: ContentResolver
-    ) {
+    ): ByteArray? {
 
         // images are stored with timestamp as their name
         val timestamp = "" + System.currentTimeMillis()
         var bitmap: Bitmap? = null
+
+        // first, resize:
+        
 
         //val bitmap = null
         try {
@@ -157,13 +164,48 @@ class RecipeDiscoveryViewModel @Inject constructor(
 
         val baos = ByteArrayOutputStream()
 
+
         // here we can choose quality factor
         // in third parameter(ex. here it is 25)
         if (bitmap != null) {
             bitmap.compress(Bitmap.CompressFormat.JPEG, 25, baos)
 
-            val fileInBytes: ByteArray? = baos.toByteArray()
+            val fileInBytes: ByteArray = baos.toByteArray()
+            return fileInBytes
+        }
+        return null
+    }
 
+    fun awaitSave(
+        bytes: ByteArray,
+        fileName: String,
+        context: Context
+    ) {
+        viewModelScope.launch() {
+            runCatching {
+                saveImage(bytes, fileName, context)
+            }
+                .onSuccess {
+                    Log.i("PhotoPicker", "image saved successfully")
+                }
+                .onFailure { failure ->
+                    Log.i("PhotoPicker", "image not saved :( because: $failure")
+                }
+        }
+    }
+
+    suspend fun saveImage(
+        bytes: ByteArray,
+        fileName: String,
+        context: Context
+    ) {
+        withContext(Dispatchers.IO) {
+            context
+                // save to internal storage
+                .openFileOutput(fileName, Context.MODE_PRIVATE)
+                .use { outputStream ->
+                    outputStream.write(bytes)
+                }
         }
     }
 
