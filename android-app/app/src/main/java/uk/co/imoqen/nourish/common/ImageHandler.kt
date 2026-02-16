@@ -8,9 +8,7 @@ import android.net.Uri
 import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.core.graphics.scale
-import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -18,62 +16,43 @@ import java.io.IOException
 // with help from https://www.geeksforgeeks.org/android/how-to-compress-image-in-android-before-uploading-it-to-firebase-storage/
 // and for saving: https://github.com/philipplackner/ImageCompression/blob/master/app/src/main/java/com/plcoding/imagecompression/FileManager.kt
 
+// compress the image to ensure low file size for sending to cloud run service and LLM
 fun compressImage(
     uri: Uri,
     contentResolver: ContentResolver
 ): ByteArray? {
-
-    // images are stored with timestamp as their name
-    val timestamp = "" + System.currentTimeMillis()
+    // Get the bitmap from the uri of the image:
     var bitmap: Bitmap? = null
-
-    // first, resize:
-
-    //val bitmap = null
     try {
-        // this is for image bitmap, to display the image - not for compressing it etc.
         bitmap = ImageDecoder.decodeBitmap(
             ImageDecoder.createSource(contentResolver, uri))
-        //.asImageBitmap()*/
-        //MediaStore.Images.Media.getBitmap(contentResolver), uri)
     } catch (e: IOException) {
         e.printStackTrace()
     }
-
-    val baos = ByteArrayOutputStream()
-
-
-    // here we can choose quality factor
-    // in third parameter(ex. here it is 25)
+    // Resize the image to have greatest dimension 1024px
     if (bitmap != null) {
-        // first, resize:
-
         val width = bitmap.width
         val height = bitmap.height
-        Log.i("PhotoPicker","original width and height: $width, $height")
-
         val greatestDimension = if (width > height) width else height
-        // only scale down if required
-        // could adopt a mipmapping approach where the smallest is sent to the llm (512kb) and then
+        // todo could adopt a mipmapping approach where the smallest is sent to the llm (512kb) and then
         // larger is displayed to the user (1024+). can write about this in the report.
         if (greatestDimension > 1024) { // CAN ALTER THIS VALUE IN THE REPORT AND SHOW HOW THE COMPRESSION CHANGES
-            // float vals
             val scale = 1024f / greatestDimension
             val newWidth = (width * scale).toInt()
             val newHeight = (height * scale).toInt()
-            Log.i("PhotoPicker", "resizing down to $newWidth, $newHeight")
-            // resize accordingly
+            // Resize accordingly
             bitmap = bitmap.scale(newWidth, newHeight, false)
         }
-
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 25, baos)
-
-        val fileInBytes: ByteArray = baos.toByteArray()
+        // Compress: 2nd param is compression quality 0-100; 25 is highly compressed.
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 25, byteArrayOutputStream)
+        val fileInBytes: ByteArray = byteArrayOutputStream.toByteArray()
         return fileInBytes
     }
     return null
 }
 
+// save the image locally to be used when making the llm call
 suspend fun saveImage(
     uri: Uri?,
     context: Context,

@@ -99,7 +99,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
      * the view.
      * If an error occurs, the error is stored as above and displayed in the view.
      */
-    fun makeLlmApiCall() {
+    /*fun makeLlmApiCall() {
         // The request simply sends the name of the meal, and the Cloud Run service deals with it appropriately.
         setAwaitingResponse(true)
         viewModelScope.launch() {
@@ -151,9 +151,73 @@ class RecipeDiscoveryViewModel @Inject constructor(
                     setAwaitingResponse(false)
                 }
         }
+    }*/
+
+    fun makeLlmApiCall(
+        type: LlmRequestType,
+        imageFilename: String = "", // optional
+        filesDir: File? = null, // optional
+    ) {
+        setAwaitingResponse(true)
+        viewModelScope.launch() {
+            runCatching {
+                // get the user prompt ("what would you like to cook?" field)
+                val userPrompt = mutableUiState.value.userRequest
+
+                // if the user submitted empty string as prompt, and this string is NOT optional for this call type, return error:
+                if (type == LlmRequestType.RECIPE && userPrompt == "") {
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_BLANK_PROMPT))
+                    setAwaitingResponse(false)
+                    return@launch
+                }
+
+                // make it into a request:
+                val request = LlmRequest(userPrompt)
+
+                // validate the user's token:
+                val tokenResult = authenticationManager.getUserToken()
+                if (tokenResult == null) {
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
+                    setAwaitingResponse(false)
+                    return@launch
+                }
+
+                apiManager.makeRetrofitCall(
+                    type,
+                    request,
+                    tokenResult,
+                    imageFilename, // will just be "" and null if not used, so optional in that sense. handled appropriately.
+                    filesDir
+                ) { response ->
+
+                    viewModelScope.launch() {
+                        if (response == null) {
+                            // Error message in Snackbar:
+                            uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
+                            setAwaitingResponse(false)
+                            return@launch
+                        }
+                        if (response.startsWith("An error occurred.") || response.startsWith("Error:")) {
+                            // Response error in Snackbar:
+                            uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(response))
+                            setAwaitingResponse(false)
+                            return@launch
+                        }
+                        // Response is valid - output in a recipe card to the user
+                        setApiResponse(response)
+                        setAwaitingResponse(false)
+                    }
+                }
+            }
+                .onFailure {
+                    // error occurred
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
+                    setAwaitingResponse(false)
+                }
+        }
     }
 
-    fun makeLlmImageApiCall(
+    /*fun makeLlmImageApiCall(
         imageFilename: String,
         filesDir: File
     ) {
@@ -207,7 +271,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 setAwaitingResponse(false)
             }
         }
-    }
+    }*/
 
     fun handleImage(
         uri: Uri?,
@@ -222,7 +286,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
             }
                 .onSuccess {
                     Log.i("PhotoPicker", "image saved successfully")
-                    makeLlmImageApiCall(uiState.value.savedImageFilename, context.filesDir)
+                    makeLlmApiCall(LlmRequestType.DISHES_FROM_IMAGE, uiState.value.savedImageFilename, context.filesDir)
                 }
                 .onFailure { e ->
                     Log.i("PhotoPicker", "image not saved: $e")

@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import uk.co.imoqen.nourish.common.ErrorMessage
+import uk.co.imoqen.nourish.network.request.LlmRequestType
 
 /**
  * View for RecipeDiscovery, where LLM calls can be made and recipes thus generated.
@@ -51,7 +52,7 @@ fun RecipeDiscoveryScreen(
         Button(
             onClick = {
                 keyboardFocusManager.clearFocus()
-                recipeDiscoveryViewModel.makeLlmApiCall()
+                recipeDiscoveryViewModel.makeLlmApiCall(LlmRequestType.RECIPE) // make llm call
             }
         ) {
             Text("Discover a recipe")
