@@ -73,10 +73,11 @@ fun RecipeDiscoveryScreen(
                 val compressedByteArray = recipeDiscoveryViewModel.compressImage(uri, context.contentResolver)
                 if (compressedByteArray != null) {
                     val time = System.currentTimeMillis()
+                    recipeDiscoveryViewModel.setAwaitingImageResponse(true)
                     recipeDiscoveryViewModel.awaitSave(
                         compressedByteArray,
                         "compressed-recipe-image-$time.$extension",
-                        context
+                        context,
                     )
                 }
             } else {
@@ -105,7 +106,8 @@ fun IndeterminateCircularIndicator(
 ) {
     val uiState by recipeDiscoveryViewModel.uiState.collectAsState()
 
-    if (!uiState.awaitingResponse) return
+    // if awaiting anything, need to show the loading screen
+    if (!uiState.awaitingResponse && !uiState.awaitingImageResponse) return
 
     CircularProgressIndicator(
         modifier = Modifier.width(64.dp),

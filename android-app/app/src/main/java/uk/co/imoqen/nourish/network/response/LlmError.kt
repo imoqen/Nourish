@@ -1,4 +1,4 @@
-package uk.co.imoqen.nourish.network
+package uk.co.imoqen.nourish.network.response
 
 /**
  * An error which can occur from calling the API

@@ -1,7 +1,8 @@
 package uk.co.imoqen.nourish.network.apimanager
 
 import android.graphics.Bitmap
-import uk.co.imoqen.nourish.network.LlmRequest
+import uk.co.imoqen.nourish.network.request.LlmRequest
+import java.io.File
 
 interface ApiManager {
 
@@ -14,7 +15,8 @@ interface ApiManager {
     fun handleFromImage(
         request: LlmRequest,
         bearerToken: String,
-        image: Bitmap,
+        imageFilename: String,
+        filesDir: File,
         onResponse: (String?) -> Unit
     )
 

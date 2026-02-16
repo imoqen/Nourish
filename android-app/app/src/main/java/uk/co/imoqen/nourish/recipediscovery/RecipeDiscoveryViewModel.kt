@@ -21,7 +21,7 @@ import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.network.ApiService
-import uk.co.imoqen.nourish.network.LlmRequest
+import uk.co.imoqen.nourish.network.request.LlmRequest
 import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -29,6 +29,7 @@ import javax.inject.Inject
 import kotlin.math.floor
 import kotlin.math.round
 import androidx.core.graphics.scale
+import java.io.File
 
 
 /**
@@ -74,6 +75,14 @@ class RecipeDiscoveryViewModel @Inject constructor(
         mutableUiState.update { currentState ->
             currentState.copy(
                 awaitingResponse = awaitingResponse
+            )
+        }
+    }
+
+    fun setAwaitingImageResponse(awaitingImageResponse: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                awaitingImageResponse = awaitingImageResponse
             )
         }
     }
@@ -134,7 +143,57 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
+    fun makeLlmImageApiCall(
+        imageFilename: String,
+        filesDir: File
+    ) {
+        // file name to use: compressed-recipe-image-$time.$extension, will be passed in from the view
+        viewModelScope.launch() {
+
+            runCatching {
+                val request = LlmRequest(mutableUiState.value.userRequest) // currently the "what would you like to cook" field - change this in the future maybe
+
+                val tokenResult = authenticationManager.getUserToken()
+            if (tokenResult == null) {
+                Log.i("VIEWMODELCALL", "invalid token")
+                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
+                setAwaitingResponse(false)
+                return@launch
+            }
+                Log.i("viewmodelcall", "before")
+            apiManager.handleFromImage(request, tokenResult, imageFilename, filesDir) { response ->
+                Log.i("here", "in here right now")
+                viewModelScope.launch() {
+                    if (response == null) {
+                        Log.i("VIEWMODELCALL", "null response")
+                        // Error message in Snackbar:
+                        uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
+                        setAwaitingResponse(false)
+                        return@launch
+                    }
+                    if (response.startsWith("An error occurred.") || response.startsWith("Internal Server Error:")) {
+                        // Response error in Snackbar:
+                        uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(response))
+                        setAwaitingResponse(false)
+                        return@launch
+                    }
+                    // Response is valid - output in a recipe card to the user
+                    setApiResponse(response)
+                    setAwaitingResponse(false)
+                }
+            }
+        }
+            .onFailure {
+                // error occurred
+                Log.i("VIEWMODELCALL", "an error occurred - on failure")
+                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
+                setAwaitingResponse(false)
+            }
+    }
+    }
+
     // with help from https://www.geeksforgeeks.org/android/how-to-compress-image-in-android-before-uploading-it-to-firebase-storage/
+    // and for saving: https://github.com/philipplackner/ImageCompression/blob/master/app/src/main/java/com/plcoding/imagecompression/FileManager.kt
     fun compressImage(
         uri: Uri,
         contentResolver: ContentResolver
@@ -194,7 +253,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
     fun awaitSave(
         bytes: ByteArray,
         fileName: String,
-        context: Context
+        context: Context,
     ) {
         viewModelScope.launch() {
             runCatching {
@@ -202,6 +261,10 @@ class RecipeDiscoveryViewModel @Inject constructor(
             }
                 .onSuccess {
                     Log.i("PhotoPicker", "image saved successfully")
+                    setAwaitingImageResponse(false)
+                    // then send it now its been saved:
+                    makeLlmImageApiCall(fileName, context.filesDir)
+
                 }
                 .onFailure { failure ->
                     Log.i("PhotoPicker", "image not saved :( because: $failure")

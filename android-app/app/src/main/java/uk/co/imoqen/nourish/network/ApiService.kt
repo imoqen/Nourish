@@ -7,6 +7,9 @@ import retrofit2.http.Header
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
+import uk.co.imoqen.nourish.network.request.LlmRequest
+import uk.co.imoqen.nourish.network.response.LlmRecipe
+import uk.co.imoqen.nourish.network.response.LlmRecipesProposed
 
 /**
  * Retrofit2 API service, this declares the endpoints to the API which can be called.
@@ -19,16 +22,15 @@ interface ApiService {
      */
     @POST("generate") // maybe change to "howtocook"
     fun generateRecipe(
-        @Body()
-        request: LlmRequest,
+        @Body() request: LlmRequest,
         @Header("Authorization") bearer: String
-    ): Call<LlmResponse>
+    ): Call<LlmRecipe>
 
     @Multipart
     @POST("from-image")
     fun generateFromImage(
         @Part image: MultipartBody.Part,
-        @Part request: LlmRequest,
+        @Part("request") request: LlmRequest,
         @Header("Authorization") bearer: String
     ): Call<LlmRecipesProposed>
 
