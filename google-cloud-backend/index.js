@@ -9,6 +9,18 @@ const { getFirestore, FieldValue } = require("firebase-admin/firestore"); // fir
 
 const { z } = require("zod");
 
+// like an enum but in javascript (enums only supported in typescript)
+// https://masteringjs.io/tutorials/fundamentals/enum
+// these are the same as present in the Kotlin app
+const LlmRequestType = {
+  RECIPE: "RECIPE",
+  DISHES_FROM_INGREDIENTS: "DISHES_FROM_INGREDIENTS",
+  DISHES_FROM_IMAGE: "DISHES_FROM_IMAGE",
+  INGREDIENTS_FROM_IMAGE: "INGREDIENTS_FROM_IMAGE",
+  RECIPE_QUERY: "RECIPE_QUERY",
+  RECIPE_ALTERATION: "RECIPE_ALTERATION",
+};
+
 // for storing image in memory with 2mb limit
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -16,7 +28,7 @@ const upload = multer({
 });
 
 // langchain:
-const { createAgent, providerStrategy, toolStrategy } = require("langchain");
+const { createAgent, toolStrategy } = require("langchain");
 
 const GOOGLE_CLOUD_PROJECT = "GOOGLE_CLOUD_PROJECT_NAME";
 const GOOGLE_CLOUD_LOCATION = "GOOGLE_CLOUD_PROJECT_REGION";
@@ -39,45 +51,46 @@ const db = getFirestore();
  *    query is now made at this step, and the result returned.
  * @param req - The request handled by express, to be dealt with
  * @param res - The response handled by express, to be built up
+ * @param requestType - the LlmRequestType, defining the type of request (generate recipe, dishes from image, etc).
+ *                      thus, will be handled accordingly.
  * @returns The response, containing its result and a 500 error with detail if
  *          an error occurred.
  */
-async function generate(req, res) {
+async function generate(req, res, requestType) {
   try {
     // Extract and validate the prompt
-    const prompt = req.body?.prompt;
-    if (!prompt) {
-      console.log("Error: missing or malformed prompt.");
+    const prompt = req.body?.request;
+    console.log(`prompt: ${prompt}`);
+    console.log(`body: ${req.body}`);
+    if (!validateRequest(req, res, prompt, requestType)) return; //ITS NOT RETURNING
 
-      return res.status(400).json({ error: "Missing or malformed prompt." });
+    // Perform the LLM request and retrieve the response, different request depending on the request type
+    let result;
+    switch (requestType) {
+      // Generate a recipe
+      case LlmRequestType.RECIPE:
+        result = await generateRecipe(
+          GOOGLE_CLOUD_PROJECT,
+          GOOGLE_CLOUD_LOCATION,
+          prompt,
+        );
+
+      // Generate dishes from an image
+      case LlmRequestType.DISHES_FROM_IMAGE:
+        result = await generateDishesFromImage(
+          GOOGLE_CLOUD_PROJECT,
+          GOOGLE_CLOUD_LOCATION,
+          prompt,
+          req,
+        );
     }
 
-    // Authenticate the user using the Bearer token in the request
-    const requesterUid = await authenticateUser(req);
-    if (requesterUid == null) {
-      console.log("Error: invalid or non-existent bearer token");
-
-      return res
-        .status(500)
-        .json({ error: "Invalid or non-existent Bearer token" });
+    if (result == null) {
+      console.log("Error: LLM request failed; no result.");
+      return res.status(500).json({ error: "LLM request failed; no result." });
     }
 
-    // Rate limit the user by incrementing their daily token count, ensuring
-    // LLM request cannot be performed if the user has exceeded their rate.
-    if (!(await rateLimitUser(requesterUid))) {
-      console.log("Error: token limit reached. come back tomorrow");
-      return res
-        .status(500)
-        .json({ error: "Token limit reached. Come back tomorrow" });
-    }
-
-    // Perform the LLM request and retrieve the response
-    const recipe = await generateContent(
-      GOOGLE_CLOUD_PROJECT,
-      GOOGLE_CLOUD_LOCATION,
-      prompt,
-    );
-    res.json(recipe);
+    res.json(result);
     return res;
   } catch (e) {
     console.error(e);
@@ -179,7 +192,7 @@ async function updateUserTokenCount(userRef, date, incrementAmount) {
  *                 and user written prompt from the Nourish app.
  * @returns The LLM response.
  */
-async function generateContent(
+async function generateRecipe(
   projectId = GOOGLE_CLOUD_PROJECT,
   location = GOOGLE_CLOUD_LOCATION,
   prompt,
@@ -256,77 +269,50 @@ async function generateContent(
   return result.structuredResponse;
 }
 
-// new stuff for image handling:
-
-async function fromImage(req, res) {
-  try {
-    // Extract and validate the prompt
-    const prompt = req.body?.request;
-    if (!prompt) {
-      console.log("Error: missing or malformed prompt.");
-
-      return res.status(400).json({ error: "Missing or malformed prompt." });
-    }
-
-    // Authenticate the user using the Bearer token in the request
-    const requesterUid = await authenticateUser(req);
-    if (requesterUid == null) {
-      console.log("Error: invalid or non-existent bearer token");
-
-      return res
-        .status(500)
-        .json({ error: "Invalid or non-existent Bearer token" });
-    }
-
-    // Rate limit the user by incrementing their daily token count, ensuring
-    // LLM request cannot be performed if the user has exceeded their rate.
-    if (!(await rateLimitUser(requesterUid))) {
-      console.log("Error: token limit reached. come back tomorrow");
-      return res
-        .status(500)
-        .json({ error: "Token limit reached. Come back tomorrow" });
-    }
-
-    console.log("Received. Calling generateFromImage function...");
-
-    // Perform the LLM request and retrieve the response
-    const recipe = await generateFromImage(
-      GOOGLE_CLOUD_PROJECT,
-      GOOGLE_CLOUD_LOCATION,
-      prompt,
-      req,
-    );
-    res.json(recipe);
-    return res;
-  } catch (e) {
-    console.error(e);
-    return res.status(500).json({ error: e.message });
+async function validateRequest(req, res, prompt, requestType) {
+  // only do this check on things which require a prompt.
+  // so not dishes from image.
+  if (!prompt && requestType == LlmRequestType.RECIPE) {
+    console.log("Error: missing or malformed prompt.");
+    res.status(400).json({ error: "Missing or malformed prompt." });
+    return false;
   }
+
+  // Authenticate the user using the Bearer token in the request
+  const requesterUid = await authenticateUser(req);
+  if (requesterUid == null) {
+    console.log("Error: invalid or non-existent bearer token");
+    res.status(500).json({ error: "Invalid or non-existent Bearer token" });
+    return false;
+  }
+
+  // Rate limit the user by incrementing their daily token count, ensuring
+  // LLM request cannot be performed if the user has exceeded their rate.
+  if (!(await rateLimitUser(requesterUid))) {
+    console.log("Error: token limit reached. come back tomorrow");
+    res.status(500).json({ error: "Token limit reached. Come back tomorrow" });
+    return false;
+  }
+
+  // Otherwise, validated
+  return true;
 }
+
+// new stuff for image handling:
 
 // to handle rthe multipart data, multer is used:
 // https://medium.com/@muhebollah.diu/understanding-multipart-form-data-the-ultimate-guide-for-beginners-fd039c04553d
-async function generateFromImage(
+async function generateDishesFromImage(
   projectId = GOOGLE_CLOUD_PROJECT,
   location = GOOGLE_CLOUD_LOCATION,
-  prompt,
+  prompt, // maybe use in future.
   req,
 ) {
   // get the image file:
   const file = req.file;
   const filetype = file.mimetype;
   const base64encoded = file.buffer.toString("base64"); // https://stackoverflow.com/questions/51798811/how-to-encoded-files-in-base64-in-nodejs-after-getting-details-from-client-side
-  const dataUrl = `data:${filetype};base64,${base64encoded}`;
-
-  const contents = [
-    {
-      inlineData: {
-        mimetype: filetype,
-        data: base64encoded,
-      },
-    },
-    { text: "Image of a meal to classify." },
-  ];
+  const dataUrl = `data:${filetype};base64,${base64encoded}`; // required format for gemini 2.0 flash
 
   console.log("Sending image to LLM...");
 
@@ -381,7 +367,13 @@ async function generateFromImage(
 }
 
 // To run the POST endpoint:
-app.post("/generate", generate);
-app.post("/from-image", upload.single("image"), fromImage);
+app.post("/recipe", async (req, res) => {
+  await generate(req, res, LlmRequestType.RECIPE);
+});
+
+app.post("/from-image", upload.single("image"), async (req, res) => {
+  await generate(req, res, LlmRequestType.DISHES_FROM_IMAGE);
+});
+
 const port = process.env.PORT || 8080;
-app.listen(port, () => console.log("Nourish /generate endpoint live."));
+app.listen(port, () => console.log("Nourish endpoints are now live."));

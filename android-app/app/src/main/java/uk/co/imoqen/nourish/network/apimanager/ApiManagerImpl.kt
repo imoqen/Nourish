@@ -37,6 +37,7 @@ class ApiManagerImpl @Inject constructor(
             when (type) {
                 // generate recipe
                 LlmRequestType.RECIPE -> {
+                    Log.i("calling llm", "pompt: $request")
                     handleCall(
                         apiService.generateRecipe(request, "Bearer $bearerToken"),
                         onResponse

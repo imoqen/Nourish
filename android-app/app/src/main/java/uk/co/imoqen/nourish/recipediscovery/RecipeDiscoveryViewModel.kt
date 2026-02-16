@@ -98,61 +98,8 @@ class RecipeDiscoveryViewModel @Inject constructor(
      * Enqueues the call and when a response is received, stores it in the UiState to display in
      * the view.
      * If an error occurs, the error is stored as above and displayed in the view.
+     * type determines if it should do from image or generate recipe text
      */
-    /*fun makeLlmApiCall() {
-        // The request simply sends the name of the meal, and the Cloud Run service deals with it appropriately.
-        setAwaitingResponse(true)
-        viewModelScope.launch() {
-            // User submitted empty string as prompt; send error.
-            if (mutableUiState.value.userRequest == "") {
-                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_BLANK_PROMPT))
-                setAwaitingResponse(false)
-                return@launch
-            }
-            // Otherwise proceed
-            val request = LlmRequest(mutableUiState.value.userRequest)
-
-            runCatching {
-                val tokenResult = authenticationManager.getUserToken()
-                if (tokenResult == null) {
-                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
-                    setAwaitingResponse(false)
-                    return@launch
-                }
-
-                apiManager.makeRetrofitCall(
-                    LlmRequestType.RECIPE,
-                    request,
-                    tokenResult
-                ) { response ->
-                        viewModelScope.launch() {
-                            if (response == null) {
-                                // Error message in Snackbar:
-                                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
-                                setAwaitingResponse(false)
-                                return@launch
-                            }
-                            if (response.startsWith("An error occurred.") || response.startsWith("Internal Server Error:")) {
-                                // Response error in Snackbar:
-                                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(response))
-                                setAwaitingResponse(false)
-                                return@launch
-                            }
-                            // Response is valid - output in a recipe card to the user
-                            setApiResponse(response)
-                            setAwaitingResponse(false)
-                        }
-                    }
-
-            }
-                .onFailure {
-                    // error occurred
-                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
-                    setAwaitingResponse(false)
-                }
-        }
-    }*/
-
     fun makeLlmApiCall(
         type: LlmRequestType,
         imageFilename: String = "", // optional
@@ -216,62 +163,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 }
         }
     }
-
-    /*fun makeLlmImageApiCall(
-        imageFilename: String,
-        filesDir: File
-    ) {
-        // file name to use: compressed-recipe-image-$time.$extension, will be passed in from the view
-        viewModelScope.launch() {
-
-            runCatching {
-                val request = LlmRequest(mutableUiState.value.userRequest) // currently the "what would you like to cook" field - change this in the future maybe
-
-                val tokenResult = authenticationManager.getUserToken()
-            if (tokenResult == null) {
-                Log.i("VIEWMODELCALL", "invalid token")
-                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
-                setAwaitingResponse(false)
-                return@launch
-            }
-                Log.i("viewmodelcall", "before")
-
-            apiManager.makeRetrofitCall(
-                LlmRequestType.DISHES_FROM_IMAGE,
-                request,
-                tokenResult,
-                imageFilename,
-                filesDir
-            ) { response ->
-                Log.i("here", "in here right now")
-                viewModelScope.launch() {
-                    if (response == null) {
-                        Log.i("VIEWMODELCALL", "null response")
-                        // Error message in Snackbar:
-                        uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
-                        setAwaitingResponse(false)
-                        return@launch
-                    }
-                    if (response.startsWith("An error occurred.") || response.startsWith("Error:")) {
-                        // Response error in Snackbar:
-                        uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(response))
-                        setAwaitingResponse(false)
-                        return@launch
-                    }
-                    // Response is valid - output in a recipe card to the user
-                    setApiResponse(response)
-                    setAwaitingResponse(false)
-                }
-            }
-            }
-            .onFailure {
-                // error occurred
-                Log.i("VIEWMODELCALL", "an error occurred - on failure")
-                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
-                setAwaitingResponse(false)
-            }
-        }
-    }*/
 
     fun handleImage(
         uri: Uri?,

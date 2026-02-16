@@ -20,7 +20,7 @@ interface ApiService {
      * POST /generate endpoint, to generate a recipe for a given meal.
      * This fulfills the requirement "How to cook X?"
      */
-    @POST("generate") // maybe change to "howtocook"
+    @POST("recipe") // maybe change to "howtocook"
     fun generateRecipe(
         @Body() request: LlmRequest,
         @Header("Authorization") bearer: String
