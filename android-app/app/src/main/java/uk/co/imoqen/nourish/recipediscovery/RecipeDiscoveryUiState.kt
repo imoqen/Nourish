@@ -8,5 +8,5 @@ data class RecipeDiscoveryUiState(
     val apiResponse: String = "",
     val userRequest: String = "",
     val awaitingResponse: Boolean = false,
-    val awaitingImageResponse: Boolean = false
+    val savedImageFilename: String = ""
 )

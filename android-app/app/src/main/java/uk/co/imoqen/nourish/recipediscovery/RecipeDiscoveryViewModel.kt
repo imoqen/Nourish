@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.util.Log
+import android.webkit.MimeTypeMap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,8 +30,11 @@ import javax.inject.Inject
 import kotlin.math.floor
 import kotlin.math.round
 import androidx.core.graphics.scale
+import uk.co.imoqen.nourish.common.compressImage
+import uk.co.imoqen.nourish.common.saveImage
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 import java.io.File
+import kotlin.onSuccess
 
 
 /**
@@ -80,10 +84,10 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
-    fun setAwaitingImageResponse(awaitingImageResponse: Boolean) {
+    fun setSavedImageFilename(savedImageFilename: String) {
         mutableUiState.update { currentState ->
             currentState.copy(
-                awaitingImageResponse = awaitingImageResponse
+                savedImageFilename = savedImageFilename
             )
         }
     }
@@ -205,99 +209,26 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
-    // with help from https://www.geeksforgeeks.org/android/how-to-compress-image-in-android-before-uploading-it-to-firebase-storage/
-    // and for saving: https://github.com/philipplackner/ImageCompression/blob/master/app/src/main/java/com/plcoding/imagecompression/FileManager.kt
-    fun compressImage(
-        uri: Uri,
-        contentResolver: ContentResolver
-    ): ByteArray? {
-
-        // images are stored with timestamp as their name
-        val timestamp = "" + System.currentTimeMillis()
-        var bitmap: Bitmap? = null
-
-        // first, resize:
-
-        //val bitmap = null
-        try {
-            // this is for image bitmap, to display the image - not for compressing it etc.
-            bitmap = ImageDecoder.decodeBitmap(
-                ImageDecoder.createSource(contentResolver, uri))
-                //.asImageBitmap()*/
-            //MediaStore.Images.Media.getBitmap(contentResolver), uri)
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-
-        val baos = ByteArrayOutputStream()
-
-
-        // here we can choose quality factor
-        // in third parameter(ex. here it is 25)
-        if (bitmap != null) {
-            // first, resize:
-
-            val width = bitmap.width
-            val height = bitmap.height
-            Log.i("PhotoPicker","original width and height: $width, $height")
-
-            val greatestDimension = if (width > height) width else height
-            // only scale down if required
-            // could adopt a mipmapping approach where the smallest is sent to the llm (512kb) and then
-            // larger is displayed to the user (1024+). can write about this in the report.
-            if (greatestDimension > 1024) { // CAN ALTER THIS VALUE IN THE REPORT AND SHOW HOW THE COMPRESSION CHANGES
-                // float vals
-                val scale = 1024f / greatestDimension
-                val newWidth = (width * scale).toInt()
-                val newHeight = (height * scale).toInt()
-                Log.i("PhotoPicker", "resizing down to $newWidth, $newHeight")
-                // resize accordingly
-                bitmap = bitmap.scale(newWidth, newHeight, false)
-            }
-
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 25, baos)
-
-            val fileInBytes: ByteArray = baos.toByteArray()
-            return fileInBytes
-        }
-        return null
-    }
-
-    fun awaitSave(
-        bytes: ByteArray,
-        fileName: String,
-        context: Context,
+    fun handleImage(
+        uri: Uri?,
+        context: Context
     ) {
         viewModelScope.launch() {
             runCatching {
-                saveImage(bytes, fileName, context)
+                saveImage(
+                    uri,
+                    context
+                ) { filename -> setSavedImageFilename(filename) }
             }
                 .onSuccess {
                     Log.i("PhotoPicker", "image saved successfully")
-                    setAwaitingImageResponse(false)
-                    // then send it now its been saved:
-                    makeLlmImageApiCall(fileName, context.filesDir)
-
+                    makeLlmImageApiCall(uiState.value.savedImageFilename, context.filesDir)
                 }
-                .onFailure { failure ->
-                    Log.i("PhotoPicker", "image not saved :( because: $failure")
+                .onFailure { e ->
+                    Log.i("PhotoPicker", "image not saved: $e")
                 }
         }
-    }
 
-    suspend fun saveImage(
-        bytes: ByteArray,
-        fileName: String,
-        context: Context
-    ) {
-        withContext(Dispatchers.IO) {
-            context
-                // save to internal storage
-                .openFileOutput(fileName, Context.MODE_PRIVATE)
-                .use { outputStream ->
-                    outputStream.write(bytes)
-                }
-        }
     }
 
 }

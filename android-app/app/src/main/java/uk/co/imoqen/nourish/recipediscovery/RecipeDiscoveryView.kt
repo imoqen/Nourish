@@ -64,25 +64,7 @@ fun RecipeDiscoveryScreen(
         val pickMedia = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
             // Callback is invoked after the user selects a media item or closes the
             // photo picker.
-            if (uri != null) {
-                Log.d("PhotoPicker", "Selected URI: $uri")
-                // mime type is like image/png etc
-                val mimeType = context.contentResolver.getType(uri)
-                // gets the file type:
-                val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
-                val compressedByteArray = recipeDiscoveryViewModel.compressImage(uri, context.contentResolver)
-                if (compressedByteArray != null) {
-                    val time = System.currentTimeMillis()
-                    recipeDiscoveryViewModel.setAwaitingImageResponse(true)
-                    recipeDiscoveryViewModel.awaitSave(
-                        compressedByteArray,
-                        "compressed-recipe-image-$time.$extension",
-                        context,
-                    )
-                }
-            } else {
-                Log.d("PhotoPicker", "No media selected")
-            }
+            recipeDiscoveryViewModel.handleImage(uri, context)
         }
 
         Button(onClick = { pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))} ) {
@@ -107,7 +89,7 @@ fun IndeterminateCircularIndicator(
     val uiState by recipeDiscoveryViewModel.uiState.collectAsState()
 
     // if awaiting anything, need to show the loading screen
-    if (!uiState.awaitingResponse && !uiState.awaitingImageResponse) return
+    if (!uiState.awaitingResponse) return
 
     CircularProgressIndicator(
         modifier = Modifier.width(64.dp),

@@ -24,53 +24,6 @@ class ApiManagerImpl @Inject constructor(
     private val apiService: ApiService
 ): ApiManager {
 
-    /*override fun handleRecipeGeneration(
-        request: LlmRequest,
-        bearerToken: String,
-        onResponse: (String?) -> Unit
-    ) {
-        val call = apiService.generateRecipe(request, "Bearer $bearerToken")
-        call.enqueue(object : Callback<LlmRecipe> {
-            // OnResponse occurs when a response has been received from the server. could be error.
-            override fun onResponse(
-                call: Call<LlmRecipe>, response: Response<LlmRecipe>
-            ) {
-                if (response.isSuccessful) {
-                    handleSuccess(response, onResponse)
-                } else {
-                    handleError(response, onResponse)
-                }
-            }
-            // OnFailure occurs when no internet/timeout
-            override fun onFailure(call: Call<LlmRecipe>, t: Throwable) {
-                // handled in the view model
-                throw t
-            }
-        })
-    }*/
-
-    fun <T> handleCall(
-        call: Call<T>,
-        onResponse: (String?) -> Unit
-    ) {
-        call.enqueue(object : Callback<T> {
-            // Response received from the server:
-            override fun onResponse(
-                call: Call<T>, response: Response<T>
-            ) {
-                if (response.isSuccessful) {
-                    handleSuccess(response, onResponse)
-                } else {
-                    handleError(response, onResponse)
-                }
-            }
-            // Timeout or no internet:
-            override fun onFailure(call: Call<T>, t: Throwable) {
-                throw t // Handled in ViewModel
-            }
-        })
-    }
-
     override fun makeRetrofitCall(
         type: LlmRequestType,
         request: LlmRequest,
@@ -126,9 +79,31 @@ class ApiManagerImpl @Inject constructor(
                 }
             }
         } catch(e: Exception) {
-            Log.e("CALL ERROR", "$e")
+            Log.e("CALL ERROR LLM", "$e")
             onResponse("Internal Server Error. Please try again later.")
         }
+    }
+
+    private fun <T> handleCall(
+        call: Call<T>,
+        onResponse: (String?) -> Unit
+    ) {
+        call.enqueue(object : Callback<T> {
+            // Response received from the server:
+            override fun onResponse(
+                call: Call<T>, response: Response<T>
+            ) {
+                if (response.isSuccessful) {
+                    handleSuccess(response, onResponse)
+                } else {
+                    handleError(response, onResponse)
+                }
+            }
+            // Timeout or no internet:
+            override fun onFailure(call: Call<T>, t: Throwable) {
+                throw t // Handled in ViewModel
+            }
+        })
     }
 
     // Extracts the error json from the error string using the LlmError
@@ -144,6 +119,7 @@ class ApiManagerImpl @Inject constructor(
         } catch (e: Exception) {
             // exception thrown if error is already returned as json - in this case,
             // simply return the exception itself.
+            Log.e("SERVER ERROR LLM", "$e")
             onResponse("Error: The service is currently starting. Please try again in a few minutes!")
         }
     }
@@ -174,49 +150,4 @@ class ApiManagerImpl @Inject constructor(
             }
         }
     }
-
-    /**
-     * Sends an image to the LLM and requests 4 potential meals which could be present in the image,
-     * most likely being first.
-     */
-    // with help from https://medium.com/@myofficework000/uploading-files-with-multipart-form-data-in-retrofit-android-f9a4fecba360
-    /*override fun handleFromImage(
-        request: LlmRequest,
-        bearerToken: String,
-        imageFilename: String,
-        filesDir: File,
-        onResponse: (String?) -> Unit
-    ) {
-        // Assembling the request with the compressed image jpg present:
-        val file = File(filesDir, imageFilename)
-        val requestBody = file.asRequestBody("image/jpg".toMediaType())
-        val multipartBody = MultipartBody.Part.createFormData("image", file.name, requestBody)
-
-        // Wrapped in try-catch because multipartBody could be malformed if the user submits
-        // an invalid image.
-        try {
-            val call = apiService.generateFromImage(multipartBody, request, "Bearer $bearerToken")
-            call.enqueue(object : Callback<LlmRecipesProposed> {
-                // OnResponse occurs when a response has been received from the server. could be error.
-                override fun onResponse(
-                    call: Call<LlmRecipesProposed>, response: Response<LlmRecipesProposed>
-                ) {
-                    if (response.isSuccessful) {
-                        handleSuccess(response, onResponse)
-                    } else {
-                        handleError(response, onResponse)
-                    }
-                }
-
-                // OnFailure occurs when no internet/timeout
-                override fun onFailure(call: Call<LlmRecipesProposed>, t: Throwable) {
-                    // handled in the view model
-                    throw t
-                }
-            })
-        } catch (e: Exception) {
-            Log.e("CALL ERROR", "IMAGE INVALID; $e")
-            onResponse("Internal Server Error. Please try again later.")
-        }
-    }*/
 }
