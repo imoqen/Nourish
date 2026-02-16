@@ -29,6 +29,7 @@ import javax.inject.Inject
 import kotlin.math.floor
 import kotlin.math.round
 import androidx.core.graphics.scale
+import uk.co.imoqen.nourish.network.request.LlmRequestType
 import java.io.File
 
 
@@ -115,25 +116,30 @@ class RecipeDiscoveryViewModel @Inject constructor(
                     return@launch
                 }
 
-                apiManager.handleRecipeGeneration(request, tokenResult) { response ->
-                    viewModelScope.launch() {
-                        if (response == null) {
-                            // Error message in Snackbar:
-                            uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
+                apiManager.makeRetrofitCall(
+                    LlmRequestType.RECIPE,
+                    request,
+                    tokenResult
+                ) { response ->
+                        viewModelScope.launch() {
+                            if (response == null) {
+                                // Error message in Snackbar:
+                                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
+                                setAwaitingResponse(false)
+                                return@launch
+                            }
+                            if (response.startsWith("An error occurred.") || response.startsWith("Internal Server Error:")) {
+                                // Response error in Snackbar:
+                                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(response))
+                                setAwaitingResponse(false)
+                                return@launch
+                            }
+                            // Response is valid - output in a recipe card to the user
+                            setApiResponse(response)
                             setAwaitingResponse(false)
-                            return@launch
                         }
-                        if (response.startsWith("An error occurred.") || response.startsWith("Internal Server Error:")) {
-                            // Response error in Snackbar:
-                            uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(response))
-                            setAwaitingResponse(false)
-                            return@launch
-                        }
-                        // Response is valid - output in a recipe card to the user
-                        setApiResponse(response)
-                        setAwaitingResponse(false)
                     }
-                }
+
             }
                 .onFailure {
                     // error occurred
@@ -161,7 +167,14 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 return@launch
             }
                 Log.i("viewmodelcall", "before")
-            apiManager.handleFromImage(request, tokenResult, imageFilename, filesDir) { response ->
+
+            apiManager.makeRetrofitCall(
+                LlmRequestType.DISHES_FROM_IMAGE,
+                request,
+                tokenResult,
+                imageFilename,
+                filesDir
+            ) { response ->
                 Log.i("here", "in here right now")
                 viewModelScope.launch() {
                     if (response == null) {
@@ -171,7 +184,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
                         setAwaitingResponse(false)
                         return@launch
                     }
-                    if (response.startsWith("An error occurred.") || response.startsWith("Internal Server Error:")) {
+                    if (response.startsWith("An error occurred.") || response.startsWith("Error:")) {
                         // Response error in Snackbar:
                         uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(response))
                         setAwaitingResponse(false)
@@ -182,14 +195,14 @@ class RecipeDiscoveryViewModel @Inject constructor(
                     setAwaitingResponse(false)
                 }
             }
-        }
+            }
             .onFailure {
                 // error occurred
                 Log.i("VIEWMODELCALL", "an error occurred - on failure")
                 uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
                 setAwaitingResponse(false)
             }
-    }
+        }
     }
 
     // with help from https://www.geeksforgeeks.org/android/how-to-compress-image-in-android-before-uploading-it-to-firebase-storage/

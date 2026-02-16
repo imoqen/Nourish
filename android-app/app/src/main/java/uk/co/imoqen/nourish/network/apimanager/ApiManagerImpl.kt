@@ -13,8 +13,8 @@ import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.response.LlmError
 import uk.co.imoqen.nourish.network.response.LlmRecipesProposed
 import uk.co.imoqen.nourish.network.request.LlmRequest
+import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.network.response.LlmRecipe
-import uk.co.imoqen.nourish.network.response.LlmResponse
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -24,7 +24,7 @@ class ApiManagerImpl @Inject constructor(
     private val apiService: ApiService
 ): ApiManager {
 
-    override fun handleRecipeGeneration(
+    /*override fun handleRecipeGeneration(
         request: LlmRequest,
         bearerToken: String,
         onResponse: (String?) -> Unit
@@ -47,6 +47,88 @@ class ApiManagerImpl @Inject constructor(
                 throw t
             }
         })
+    }*/
+
+    fun <T> handleCall(
+        call: Call<T>,
+        onResponse: (String?) -> Unit
+    ) {
+        call.enqueue(object : Callback<T> {
+            // Response received from the server:
+            override fun onResponse(
+                call: Call<T>, response: Response<T>
+            ) {
+                if (response.isSuccessful) {
+                    handleSuccess(response, onResponse)
+                } else {
+                    handleError(response, onResponse)
+                }
+            }
+            // Timeout or no internet:
+            override fun onFailure(call: Call<T>, t: Throwable) {
+                throw t // Handled in ViewModel
+            }
+        })
+    }
+
+    override fun makeRetrofitCall(
+        type: LlmRequestType,
+        request: LlmRequest,
+        bearerToken: String,
+        imageFilename: String, // optional; only for generating from image
+        filesDir: File?, // optional; only for generating from image
+        onResponse: (String?) -> Unit
+    ) {
+        // when: the last line of each block is what will be assigned to the call val
+        try {
+            when (type) {
+                // generate recipe
+                LlmRequestType.RECIPE -> {
+                    handleCall(
+                        apiService.generateRecipe(request, "Bearer $bearerToken"),
+                        onResponse
+                    )
+                }
+
+                // generate 4x dishes from ingredients
+                LlmRequestType.DISHES_FROM_INGREDIENTS -> {
+                    //todo
+                }
+
+                // generate 4x dishes from image
+                LlmRequestType.DISHES_FROM_IMAGE -> {
+                    // Assembling the request with the compressed image jpg present:
+                    // if error occurs here, it is handled by the catch block at the end
+
+                    // https://medium.com/@myofficework000/uploading-files-with-multipart-form-data-in-retrofit-android-f9a4fecba360
+                    val file = File(filesDir, imageFilename)
+                    val requestBody = file.asRequestBody("image/jpg".toMediaType())
+                    val multipartBody =
+                        MultipartBody.Part.createFormData("image", file.name, requestBody)
+
+                    handleCall(
+                        apiService.generateFromImage(multipartBody, request, "Bearer $bearerToken"),
+                        onResponse
+                    )
+                }
+
+                // generate ingredients from image
+                LlmRequestType.INGREDIENTS_FROM_IMAGE -> {
+                    //todo
+                }
+                // ask a question about a recipe
+                LlmRequestType.RECIPE_QUERY -> {
+                    //todo
+                }
+                // alter a recipe
+                LlmRequestType.RECIPE_ALTERATION -> {
+                    //todo
+                }
+            }
+        } catch(e: Exception) {
+            Log.e("CALL ERROR", "$e")
+            onResponse("Internal Server Error. Please try again later.")
+        }
     }
 
     // Extracts the error json from the error string using the LlmError
@@ -55,11 +137,18 @@ class ApiManagerImpl @Inject constructor(
         response: Response<T>,
         onResponse: (String?) -> Unit
     ) {
-        val error = response.errorBody()?.string()
-        val errorJson = Gson().fromJson(error, LlmError::class.java)
-        onResponse("Internal Server Error: ${errorJson.error}")
+        try {
+            val error = response.errorBody()?.string()
+            val errorJson = Gson().fromJson(error, LlmError::class.java)
+            onResponse("Error: ${errorJson.error}")
+        } catch (e: Exception) {
+            // exception thrown if error is already returned as json - in this case,
+            // simply return the exception itself.
+            onResponse("Error: The service is currently starting. Please try again in a few minutes!")
+        }
     }
 
+    // handles the error based on the type of response accordingly
     private fun <T> handleSuccess(
         response: Response<T>,
         onResponse: (String?) -> Unit
@@ -91,7 +180,7 @@ class ApiManagerImpl @Inject constructor(
      * most likely being first.
      */
     // with help from https://medium.com/@myofficework000/uploading-files-with-multipart-form-data-in-retrofit-android-f9a4fecba360
-    override fun handleFromImage(
+    /*override fun handleFromImage(
         request: LlmRequest,
         bearerToken: String,
         imageFilename: String,
@@ -129,5 +218,5 @@ class ApiManagerImpl @Inject constructor(
             Log.e("CALL ERROR", "IMAGE INVALID; $e")
             onResponse("Internal Server Error. Please try again later.")
         }
-    }
+    }*/
 }

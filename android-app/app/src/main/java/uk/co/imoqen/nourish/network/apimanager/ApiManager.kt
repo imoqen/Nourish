@@ -1,23 +1,18 @@
 package uk.co.imoqen.nourish.network.apimanager
 
-import android.graphics.Bitmap
 import uk.co.imoqen.nourish.network.request.LlmRequest
+import uk.co.imoqen.nourish.network.request.LlmRequestType
 import java.io.File
 
 interface ApiManager {
 
-    fun handleRecipeGeneration(
+    fun makeRetrofitCall(
+        type: LlmRequestType,
         request: LlmRequest,
         bearerToken: String,
-        onResponse: (String?) -> Unit
-    )
-
-    fun handleFromImage(
-        request: LlmRequest,
-        bearerToken: String,
-        imageFilename: String,
-        filesDir: File,
-        onResponse: (String?) -> Unit
+        imageFilename: String = "", // optional; only for generating from image
+        filesDir: File? = null, // optional; only for generating from image
+        onResponse: (String?) -> Unit,
     )
 
 }
