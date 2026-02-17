@@ -30,7 +30,7 @@ interface ApiService {
     @POST("from-image")
     fun generateFromImage(
         @Part image: MultipartBody.Part,
-        @Part("request") request: LlmRequest,
+        @Part("prompt") request: LlmRequest,
         @Header("Authorization") bearer: String
     ): Call<LlmRecipesProposed>
 

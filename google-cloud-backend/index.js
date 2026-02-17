@@ -58,42 +58,57 @@ const db = getFirestore();
  */
 async function generate(req, res, requestType) {
   try {
+    console.log("within generate function:" + JSON.stringify(req.body));
     // Extract and validate the prompt
-    const prompt = req.body?.request;
-    console.log(`prompt: ${prompt}`);
-    console.log(`body: ${req.body}`);
-    if (!validateRequest(req, res, prompt, requestType)) return; //ITS NOT RETURNING
+    const prompt = req.body?.prompt;
+    //console.log(`prompt: ${prompt}`);
+    //console.log(`body: ${req.body}`);
+
+    console.log("about to validate");
+    const errorMessage = await validateRequest(req, res, prompt, requestType);
+    if (errorMessage != "") {
+      console.log("it is invalid");
+      return res.status(400).json({ error: errorMessage });
+    } else {
+      console.log("it is not invalid");
+    }
 
     // Perform the LLM request and retrieve the response, different request depending on the request type
     let result;
     switch (requestType) {
       // Generate a recipe
-      case LlmRequestType.RECIPE:
+      case LlmRequestType.RECIPE: {
         result = await generateRecipe(
           GOOGLE_CLOUD_PROJECT,
           GOOGLE_CLOUD_LOCATION,
           prompt,
         );
+        break;
+      }
 
       // Generate dishes from an image
-      case LlmRequestType.DISHES_FROM_IMAGE:
+      case LlmRequestType.DISHES_FROM_IMAGE: {
         result = await generateDishesFromImage(
           GOOGLE_CLOUD_PROJECT,
           GOOGLE_CLOUD_LOCATION,
           prompt,
           req,
         );
+        break;
+      }
     }
 
     if (result == null) {
       console.log("Error: LLM request failed; no result.");
-      return res.status(500).json({ error: "LLM request failed; no result." });
+      return res.status(400).json({ error: "LLM request failed; no result." });
     }
 
     res.json(result);
     return res;
   } catch (e) {
+    console.log("error occurred. printed from the generate try-catch");
     console.error(e);
+    // throw 500 error because error happened on the server side (Internal Server Error)
     return res.status(500).json({ error: e.message });
   }
 }
@@ -269,12 +284,18 @@ async function generateRecipe(
   return result.structuredResponse;
 }
 
+// returns 400 errors (Bad Request) to signify error on the client's input;
+// invalid syntax, malformed data, invalid Bearer token
 async function validateRequest(req, res, prompt, requestType) {
   // only do this check on things which require a prompt.
   // so not dishes from image.
+
+  console.log("validate: before ifs");
+
   if (!prompt && requestType == LlmRequestType.RECIPE) {
     console.log("Error: missing or malformed prompt.");
-    res.status(400).json({ error: "Missing or malformed prompt." });
+    return "Missing or malformed prompt.";
+    console.log("validate: after res.status(400) in malformed prompt check");
     return false;
   }
 
@@ -282,7 +303,8 @@ async function validateRequest(req, res, prompt, requestType) {
   const requesterUid = await authenticateUser(req);
   if (requesterUid == null) {
     console.log("Error: invalid or non-existent bearer token");
-    res.status(500).json({ error: "Invalid or non-existent Bearer token" });
+    return "Invalid or non-existent Bearer token";
+    console.log("validate: after res.status(400) in bearer token check");
     return false;
   }
 
@@ -290,12 +312,13 @@ async function validateRequest(req, res, prompt, requestType) {
   // LLM request cannot be performed if the user has exceeded their rate.
   if (!(await rateLimitUser(requesterUid))) {
     console.log("Error: token limit reached. come back tomorrow");
-    res.status(500).json({ error: "Token limit reached. Come back tomorrow" });
+    return "Token limit reached. Come back tomorrow";
+    console.log("validate: after res.status(400) in ratelimit check");
     return false;
   }
 
   // Otherwise, validated
-  return true;
+  return "";
 }
 
 // new stuff for image handling:
@@ -368,11 +391,14 @@ async function generateDishesFromImage(
 
 // To run the POST endpoint:
 app.post("/recipe", async (req, res) => {
-  await generate(req, res, LlmRequestType.RECIPE);
+  console.log("in the post:" + JSON.stringify(req.body));
+  const result = await generate(req, res, LlmRequestType.RECIPE);
+  return result;
 });
 
 app.post("/from-image", upload.single("image"), async (req, res) => {
-  await generate(req, res, LlmRequestType.DISHES_FROM_IMAGE);
+  const result = await generate(req, res, LlmRequestType.DISHES_FROM_IMAGE);
+  return result;
 });
 
 const port = process.env.PORT || 8080;
