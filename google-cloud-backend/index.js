@@ -324,19 +324,36 @@ async function generateDishesFromImage(
   // User can supply further detail if they wish, but this is optional:
   const userDetail = JSON.parse(req.body?.detail).prompt;
   let userPrompt =
-    "Return 4 names of meals which you believe are in the image.";
+    "Return 4 names of dishes which you believe are in the image.";
   if (userDetail != "") {
     userPrompt =
-      "Return 4 names of meals which you believe are in the image. Further detail to assist classification: " +
+      "Return 4 names of dishes which you believe are in the image. Further detail to assist classification: " +
       userDetail;
   }
 
   // tool strategy for formatting output:
   //https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
   const RecipeListSchemaZod = z.object({
-    recipes: z
+    firstMostLikelyDish: z
       .string()
-      .describe("4 possible meals that this image could be an image of."),
+      .describe(
+        "The first most likely dish you believe is present in the image.",
+      ),
+    secondMostLikelyDish: z
+      .string()
+      .describe(
+        "The second most likely dish you believe is present in the image.",
+      ),
+    thirdMostLikelyDish: z
+      .string()
+      .describe(
+        "The third most likely dish you believe is present in the image.",
+      ),
+    fourthMostLikelyDish: z
+      .string()
+      .describe(
+        "The fourth most likely dish you believe is present in the image.",
+      ),
   });
 
   // https://docs.langchain.com/oss/javascript/integrations/chat/google_vertex_ai
@@ -359,7 +376,9 @@ async function generateDishesFromImage(
       {
         role: "system",
         content:
-          "Return in the required schema, in the recipes field. Write the name of each meal concisely; in less than 20 words per meal.",
+          "Return in the required schema, with the dish you believe is most likely depicted in the image in firstMostLikelyDish field " +
+          "and the other fields filled accordingly. Ensure the JSON schema is satisfied and do not include more JSON." +
+          "Write the name of each meal concisely; in less than 20 words per meal.",
       },
       {
         role: "user",
