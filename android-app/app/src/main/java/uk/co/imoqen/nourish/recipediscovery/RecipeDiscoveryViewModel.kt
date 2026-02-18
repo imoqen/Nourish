@@ -1,22 +1,16 @@
 package uk.co.imoqen.nourish.recipediscovery
 
-import android.content.ContentResolver
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.ImageDecoder
 import android.net.Uri
 import android.util.Log
-import android.webkit.MimeTypeMap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
@@ -24,13 +18,7 @@ import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.request.LlmRequest
 import uk.co.imoqen.nourish.network.apimanager.ApiManager
-import java.io.ByteArrayOutputStream
-import java.io.IOException
 import javax.inject.Inject
-import kotlin.math.floor
-import kotlin.math.round
-import androidx.core.graphics.scale
-import uk.co.imoqen.nourish.common.compressImage
 import uk.co.imoqen.nourish.common.saveImage
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 import java.io.File
@@ -177,7 +165,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
             }
                 .onSuccess {
                     Log.i("PhotoPicker", "image saved successfully")
-                    makeLlmApiCall(LlmRequestType.DISHES_FROM_IMAGE, uiState.value.savedImageFilename, context.filesDir)
                 }
                 .onFailure { e ->
                     Log.i("PhotoPicker", "image not saved: $e")

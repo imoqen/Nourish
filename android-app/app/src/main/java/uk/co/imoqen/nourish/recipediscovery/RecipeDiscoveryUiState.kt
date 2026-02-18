@@ -8,5 +8,7 @@ data class RecipeDiscoveryUiState(
     val apiResponse: String = "",
     val userRequest: String = "",
     val awaitingResponse: Boolean = false,
+
+    // the currently uploaded / saved image, most recent one; name of file. can find the file via File(context.filesDir, savedImageFilename):
     val savedImageFilename: String = ""
 )

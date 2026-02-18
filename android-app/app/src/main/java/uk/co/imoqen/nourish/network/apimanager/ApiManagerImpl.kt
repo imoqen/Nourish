@@ -136,11 +136,11 @@ class ApiManagerImpl @Inject constructor(
                 onResponse(
                     "${post.title}:" +
                             "\n\nIngredients: \n${post.ingredients} " +
-                            "\n\nIngredient Amounts: \n${post.ingredient_amounts} " +
-                            "\n\nIngredient Units: \n${post.ingredient_amount_units} " +
+                            "\n\nIngredient Amounts: \n${post.ingredientAmounts} " +
+                            "\n\nIngredient Units: \n${post.ingredientAmountsUnits} " +
                             "\n\nMethod: \n${post.method}" +
                             "\n\nServing Size: \n${post.servings} " +
-                            "\n\nType of Meal: \n${post.meal_type} "
+                            "\n\nType of Meal: \n${post.mealType} "
                 )
             }
             is LlmRecipesProposed -> {
