@@ -60,11 +60,23 @@ fun RecipeDiscoveryScreen(
 
         Button(
             onClick = {
+                recipeDiscoveryViewModel.setRequestType(LlmRequestType.DISHES_FROM_INGREDIENTS)
+                recipeDiscoveryViewModel.setPlaceholderText("Enter your ingredients")
+            }
+        ) {
+            Text("From ingredients")
+        }
+
+        Button(
+            onClick = {
                 keyboardFocusManager.clearFocus()
-                if (uiState.savedImageFilename == "") {
+                if (uiState.savedImageFilename == "" && uiState.requestType == LlmRequestType.RECIPE) {
                     Log.i("recipe", "making recipe")
                     // generate recipe from text
                     recipeDiscoveryViewModel.makeLlmApiCall(LlmRequestType.RECIPE) // make llm call
+                }
+                else if (uiState.savedImageFilename == "" && uiState.requestType == LlmRequestType.DISHES_FROM_INGREDIENTS) {
+                    recipeDiscoveryViewModel.makeLlmApiCall(LlmRequestType.DISHES_FROM_INGREDIENTS)
                 }
                 else {
                     Log.i("recipe", "from image")

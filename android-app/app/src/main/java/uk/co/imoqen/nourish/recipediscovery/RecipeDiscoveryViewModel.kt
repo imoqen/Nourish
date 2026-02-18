@@ -80,6 +80,22 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
+    fun setRequestType(requestType: LlmRequestType) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                requestType = requestType
+            )
+        }
+    }
+
+    fun setPlaceholderText(placeholderText: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                placeholderText = placeholderText
+            )
+        }
+    }
+
     /**
      * Makes the API call by forming the request, getting the user token and ensuring it is valid.
      * Then, placing this token in the Bearer Authorization header and the request in the body.
