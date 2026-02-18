@@ -6,7 +6,7 @@ package uk.co.imoqen.nourish.db.ingredientunit
 // include: metric, uk imperial, us imperial.
 enum class IngredientUnit(
     name: String,
-    pluralName: String // whether an s should be appended if the value is plural
+    pluralName: String // where an s should be appended if the value is plural, or word changes e.g. loaf
 ) {
     // metric:
     ML("ml", "ml"),
@@ -26,28 +26,29 @@ enum class IngredientUnit(
     LB("lb", "lbs"),
 
     // other:
-    CLOVE("clove", "cloves of"),
-    HEAD("head", "heads of"),
-    BUNCH("bunch", "bunches of"),
-    SPRIG("sprig", "sprigs of"),
-    BULB("bulb", "bulbs of"),
-    STALK("stalk", "stalks of"),
-    STICK("stick", "sticks of"),
-    PIECE("piece", "pieces of"),
+    CLOVE("clove of", "cloves of"),
+    HEAD("head of", "heads of"),
+    BUNCH("bunch of", "bunches of"),
+    SPRIG("sprig of", "sprigs of"),
+    BULB("bulb of", "bulbs of"),
+    STALK("stalk of", "stalks of"),
+    STICK("stick of", "sticks of"),
+    PIECE("piece of", "pieces of"),
+    LEAF("leaf of", "leaves of"),
 
     // small amounts of liquids
-    DASH("dash", "dashes of"),
-    DRIZZLE("drizzle", "drizzles of"),
-    PINCH("pinch", "pinches of"),
-    SPLASH("splash", "splashes of"),
-    DROP("drop", "drops of"),
-    HANDFUL("handful", "handful of"),
+    DASH("dash of", "dashes of"),
+    DRIZZLE("drizzle of", "drizzles of"),
+    PINCH("pinch of", "pinches of"),
+    SPLASH("splash of", "splashes of"),
+    DROP("drop of", "drops of"),
+    HANDFUL("handful of", "handfuls of"),
 
     // baking
-    SLICE("slice", "slices of"),
-    LOAF("loaf", "loaves of"),
-    ROLL("roll", "rolls of"),
-    SHEET("sheet", "sheets of"),
-    BLOCK("block", "blocks of"),
-    BAR("bar", "bars of"),
+    SLICE("slice of", "slices of"),
+    LOAF("loaf of", "loaves of"),
+    ROLL("roll of", "rolls of"),
+    SHEET("sheet of", "sheets of"),
+    BLOCK("block of", "blocks of"),
+    BAR("bar of", "bars of"),
 }
