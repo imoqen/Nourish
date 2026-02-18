@@ -244,24 +244,24 @@ async function generateRecipe(
     ingredients: z
       .string()
       .describe(
-        "a list of the ingredients of the recipe, do not include the amounts here; these will go in ingredient_amounts and ingredient_amount_units.",
+        "a list of the ingredients of the recipe, do not include the amounts here; these will go in ingredientAmounts and ingredientAmountsUnits respectively.",
       ),
-    ingredient_amounts: z
+    ingredientAmounts: z
       .string()
       .describe(
         "a list of the amounts of each ingredient to use, given only as integers or floats. must correspond with the ingredient in the ingredients list.",
       ),
-    ingredient_amount_units: z
+    ingredientAmountsUnits: z
       .string()
       .describe(
-        "a list of the ingredient units (UK) of each ingredient amount to use (e.g. tsp). must correspond with the ingredient in the ingredients list and ingredient_amounts list.",
+        "a list of the ingredient units (UK) of each ingredient amount to use (e.g. tsp). must correspond with the ingredient in the ingredients list and ingredientAmounts list.",
       ),
     servings: z
       .string()
       .describe(
-        "the number of servings made of this meal using the amount of ingredients in the ingredient_amounts and ingredient_amount_units list",
+        "the number of servings made of this meal using the amount of ingredients in the ingredientAmounts and ingredientAmountsUnits list",
       ),
-    meal_type: z
+    mealType: z
       .string()
       .describe(
         "the type of meal that this corresponds to (breakfast, lunch, dinner, snack)",
