@@ -16,6 +16,7 @@ import androidx.navigation.compose.composable
 import uk.co.imoqen.nourish.profile.ProfileScreen
 import uk.co.imoqen.nourish.profile.ProfileViewModel
 import uk.co.imoqen.nourish.recipebook.RecipeBookScreen
+import uk.co.imoqen.nourish.recipebook.RecipeBookViewModel
 import uk.co.imoqen.nourish.recipediscovery.RecipeDiscoveryViewModel
 import uk.co.imoqen.nourish.recipediscovery.RecipeDiscoveryScreen
 import uk.co.imoqen.nourish.shoppinglist.ShoppingListScreen
@@ -46,7 +47,10 @@ fun AppNavHost(
             // The composable to display for this tab:
             RecipeDiscoveryScreen(recipeDiscoveryViewModel)
         }
-        composable(TabDestination.RECIPE_BOOK.route) { RecipeBookScreen() }
+        composable(TabDestination.RECIPE_BOOK.route) {
+            val recipeBookViewModel: RecipeBookViewModel = hiltViewModel()
+            RecipeBookScreen(recipeBookViewModel)
+        }
         composable(TabDestination.SHOPPING_LIST.route) { ShoppingListScreen() }
         composable(TabDestination.PROFILE.route) {
             val profileViewModel: ProfileViewModel = hiltViewModel()
