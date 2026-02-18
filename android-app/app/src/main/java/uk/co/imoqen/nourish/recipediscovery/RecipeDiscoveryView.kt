@@ -1,12 +1,15 @@
 package uk.co.imoqen.nourish.recipediscovery
 
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -37,7 +40,11 @@ fun RecipeDiscoveryScreen(
 
     val keyboardFocusManager = LocalFocusManager.current // To close the keyboard once user submits input
 
-    Column() {
+    val scrollState = rememberScrollState()
+
+    Column(
+        Modifier.horizontalScroll(scrollState)
+    ) {
         OutlinedTextField(
             value = uiState.userRequest,
             onValueChange = { request: String ->
@@ -55,10 +62,12 @@ fun RecipeDiscoveryScreen(
             onClick = {
                 keyboardFocusManager.clearFocus()
                 if (uiState.savedImageFilename == "") {
+                    Log.i("recipe", "making recipe")
                     // generate recipe from text
                     recipeDiscoveryViewModel.makeLlmApiCall(LlmRequestType.RECIPE) // make llm call
                 }
                 else {
+                    Log.i("recipe", "from image")
                     // generate recipe from image
                     recipeDiscoveryViewModel.makeLlmApiCall(LlmRequestType.DISHES_FROM_IMAGE, uiState.savedImageFilename, context.filesDir)
                 }
@@ -82,33 +91,36 @@ fun RecipeDiscoveryScreen(
             }
         }
 
-        val imageFile = File(context.filesDir, uiState.savedImageFilename)
-        if (imageFile.exists()) {
-            //Use Coil to display the selected image
-            val painter = rememberAsyncImagePainter(
-                ImageRequest
-                    .Builder(LocalContext.current)
-                    .data(imageFile)
-                    .build()
-            )
-
-            Image(
-                painter = painter,
-                contentDescription = null
-            )
-
-            Button(onClick = { pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
-                Text("Choose a new photo")
-            }
-            Button(onClick = { recipeDiscoveryViewModel.setSavedImageFilename("") }) {
-                Text("Remove photo")
-                // potentially actually delete it from local storage here too
-            }
-        }
-
         // Outputs the response, or error if occurred.
         if (uiState.apiResponse != "") {
+            Log.i("recipe res", "not null")
             Text(uiState.apiResponse)
+        }
+
+        if (uiState.savedImageFilename != "") {
+            val imageFile = File(context.filesDir, uiState.savedImageFilename)
+            if (imageFile.exists()) {
+                //Use Coil to display the selected image
+                val painter = rememberAsyncImagePainter(
+                    ImageRequest
+                        .Builder(LocalContext.current)
+                        .data(imageFile)
+                        .build()
+                )
+
+                Image(
+                    painter = painter,
+                    contentDescription = null
+                )
+
+                Button(onClick = { pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
+                    Text("Choose a new photo")
+                }
+                Button(onClick = { recipeDiscoveryViewModel.setSavedImageFilename("") }) {
+                    Text("Remove photo")
+                    // potentially actually delete it from local storage here too
+                }
+            }
         }
 
         IndeterminateCircularIndicator()
