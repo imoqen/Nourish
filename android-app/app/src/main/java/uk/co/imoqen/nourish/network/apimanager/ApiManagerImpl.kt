@@ -144,7 +144,13 @@ class ApiManagerImpl @Inject constructor(
                 )
             }
             is LlmRecipesProposed -> {
-                onResponse(post.recipes)
+                onResponse("" +
+                        "Dishes in image: " +
+                        "${post.firstMostLikelyDish}, " +
+                        "${post.secondMostLikelyDish}, " +
+                        "${post.thirdMostLikelyDish}, " +
+                        post.fourthMostLikelyDish
+                )
             }
             else -> {
                 onResponse(ErrorMessage.API_ERROR_FAILED_TO_GEN)
