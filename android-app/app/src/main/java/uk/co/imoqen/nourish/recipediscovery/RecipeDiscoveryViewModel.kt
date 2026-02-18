@@ -116,7 +116,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 val userPrompt = mutableUiState.value.userRequest
 
                 // if the user submitted empty string as prompt, and this string is NOT optional for this call type, return error:
-                if (type == LlmRequestType.RECIPE && userPrompt == "") {
+                if ((type == LlmRequestType.RECIPE || type == LlmRequestType.DISHES_FROM_INGREDIENTS) && userPrompt == "") {
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_BLANK_PROMPT))
                     setAwaitingResponse(false)
                     return@launch

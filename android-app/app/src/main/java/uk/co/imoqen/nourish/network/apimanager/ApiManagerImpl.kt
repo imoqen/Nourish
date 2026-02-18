@@ -11,9 +11,9 @@ import retrofit2.Response
 import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.response.LlmError
-import uk.co.imoqen.nourish.network.response.LlmRecipesProposed
 import uk.co.imoqen.nourish.network.request.LlmRequest
 import uk.co.imoqen.nourish.network.request.LlmRequestType
+import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 import java.io.File
 import javax.inject.Inject
@@ -46,7 +46,11 @@ class ApiManagerImpl @Inject constructor(
 
                 // generate 4x dishes from ingredients
                 LlmRequestType.DISHES_FROM_INGREDIENTS -> {
-                    //todo
+                    Log.i("calling llm", "pompt: $request")
+                    handleCall(
+                        apiService.generateDishesFromIngredients(request, "Bearer $bearerToken"),
+                        onResponse
+                    )
                 }
 
                 // generate 4x dishes from image
@@ -61,14 +65,22 @@ class ApiManagerImpl @Inject constructor(
                         MultipartBody.Part.createFormData("image", file.name, requestBody)
 
                     handleCall(
-                        apiService.generateFromImage(multipartBody, request, "Bearer $bearerToken"),
+                        apiService.generateDishesFromImage(multipartBody, request, "Bearer $bearerToken"),
                         onResponse
                     )
                 }
 
-                // generate ingredients from image
-                LlmRequestType.INGREDIENTS_FROM_IMAGE -> {
-                    //todo
+                // generate potential dishes from image of ingredients
+                LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE -> {
+                    val file = File(filesDir, imageFilename)
+                    val requestBody = file.asRequestBody("image/jpg".toMediaType())
+                    val multipartBody =
+                        MultipartBody.Part.createFormData("image", file.name, requestBody)
+
+                    handleCall(
+                        apiService.generateDishesFromIngredientsImage(multipartBody, request, "Bearer $bearerToken"),
+                        onResponse
+                    )
                 }
                 // ask a question about a recipe
                 LlmRequestType.RECIPE_QUERY -> {
@@ -143,13 +155,14 @@ class ApiManagerImpl @Inject constructor(
                             "\n\nType of Meal: \n${post.mealType} "
                 )
             }
-            is LlmRecipesProposed -> {
+            is LlmDishesProposed -> {
                 onResponse("" +
-                        "Dishes in image: " +
-                        "${post.firstMostLikelyDish}, " +
-                        "${post.secondMostLikelyDish}, " +
-                        "${post.thirdMostLikelyDish}, " +
-                        post.fourthMostLikelyDish
+                        "Potential Dishes:\n " +
+                        "${post.firstMostLikelyDish},\n " +
+                        "${post.secondMostLikelyDish},\n " +
+                        "${post.thirdMostLikelyDish},\n " +
+                        "${post.fourthMostLikelyDish} \n" +
+                        "Ingredients Identified: ${post.ingredientsIdentified }"
                 )
             }
             else -> {

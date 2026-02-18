@@ -22,7 +22,7 @@ const LlmRequestType = {
   RECIPE: "RECIPE",
   DISHES_FROM_INGREDIENTS: "DISHES_FROM_INGREDIENTS",
   DISHES_FROM_IMAGE: "DISHES_FROM_IMAGE",
-  INGREDIENTS_FROM_IMAGE: "INGREDIENTS_FROM_IMAGE",
+  DISHES_FROM_INGREDIENTS_IMAGE: "DISHES_FROM_INGREDIENTS_IMAGE",
   RECIPE_QUERY: "RECIPE_QUERY",
   RECIPE_ALTERATION: "RECIPE_ALTERATION",
 };
@@ -77,6 +77,26 @@ async function generate(req, res, requestType) {
           GOOGLE_CLOUD_PROJECT,
           GOOGLE_CLOUD_LOCATION,
           prompt,
+        );
+        break;
+      }
+
+      // Generate dishes from ingredients
+      case LlmRequestType.DISHES_FROM_INGREDIENTS: {
+        result = await generateDishesFromIngredients(
+          GOOGLE_CLOUD_PROJECT,
+          GOOGLE_CLOUD_LOCATION,
+          prompt,
+        );
+        break;
+      }
+
+      // Generate dishes from image of ingredients, e.g. of contents of fridge
+      case LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE: {
+        result = await generateDishesFromIngredientsImage(
+          GOOGLE_CLOUD_PROJECT,
+          GOOGLE_CLOUD_LOCATION,
+          req,
         );
         break;
       }
@@ -308,6 +328,168 @@ async function generateRecipe(
   return result.structuredResponse;
 }
 
+async function generateDishesFromIngredients(
+  projectId = GOOGLE_CLOUD_PROJECT,
+  location = GOOGLE_CLOUD_LOCATION,
+  prompt,
+) {
+  // tool strategy for formatting output:
+  //https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
+  const RecipeListSchemaZod = z.object({
+    firstMostLikelyDish: z
+      .string()
+      .describe(
+        "The first most likely dish you believe is best suited to cook from the ingredients.",
+      ),
+    secondMostLikelyDish: z
+      .string()
+      .describe(
+        "The second most likely dish you believe is best suited to cook from the ingredients.",
+      ),
+    thirdMostLikelyDish: z
+      .string()
+      .describe(
+        "The third most likely dish you believe is best suited to cook from the ingredients.",
+      ),
+    fourthMostLikelyDish: z
+      .string()
+      .describe(
+        "The fourth most likely dish you believe is best suited to cook from the ingredients.",
+      ),
+  });
+
+  // https://docs.langchain.com/oss/javascript/integrations/chat/google_vertex_ai
+  const llm = new ChatVertexAI({
+    project: projectId,
+    location: location,
+    model: "gemini-2.0-flash",
+  });
+
+  const agent = createAgent({
+    model: llm,
+    tools: [],
+    responseFormat: toolStrategy(RecipeListSchemaZod),
+  });
+
+  console.log("Generating dishes for ingredients: " + prompt + ":");
+
+  const result = await agent.invoke({
+    messages: [
+      {
+        role: "system",
+        content:
+          "Return in the required schema, with the best dish you believe can be cooked from only these ingredients in firstMostLikelyDish field " +
+          "and the other fields filled accordingly. Ensure the JSON schema is satisfied and do not include more JSON." +
+          "Write the name of each meal concisely; in less than 20 words per dish.",
+      },
+      {
+        role: "user",
+        content:
+          "Return 4 names of dishes which you believe can be cooked at home using only these ingredients (with the exception of small amounts of salt, pepper and oil): " +
+          prompt,
+      },
+    ],
+  });
+
+  // note: this returns the tokens. should use this value to increment the token count instead.
+
+  console.log(result.structuredResponse);
+  return result.structuredResponse;
+}
+
+async function generateDishesFromIngredientsImage(
+  projectId = GOOGLE_CLOUD_PROJECT,
+  location = GOOGLE_CLOUD_LOCATION,
+  req,
+) {
+  // get the image file:
+  const file = req.file;
+  const filetype = file.mimetype;
+  const base64encoded = file.buffer.toString("base64"); // https://stackoverflow.com/questions/51798811/how-to-encoded-files-in-base64-in-nodejs-after-getting-details-from-client-side
+  const dataUrl = `data:${filetype};base64,${base64encoded}`; // required format for gemini 2.0 flash
+
+  // User can supply further detail if they wish, but this is optional:
+  const userDetail = JSON.parse(req.body?.detail).prompt;
+  let userPrompt =
+    "This is a picture featuring many different cooking ingredients. Return 4 names of dishes which you believe can be cooked using only these ingredients (with the exception of small amounts of salt, pepper and oil).";
+  if (userDetail != "") {
+    userPrompt =
+      "This is a picture featuring many different cooking ingredients. Return 4 names of dishes which you believe can be cooked using only these ingredients (with the exception of small amounts of salt, pepper and oil). Further detail to assist classification: " +
+      userDetail;
+  }
+
+  // tool strategy for formatting output:
+  //https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
+  const RecipeListSchemaZod = z.object({
+    ingredientsIdentified: z
+      .string()
+      .describe("The ingredients you can see which are present in the image."),
+    firstMostLikelyDish: z
+      .string()
+      .describe(
+        "The first most likely dish you believe can be cooked with ingredients present in the image.",
+      ),
+    secondMostLikelyDish: z
+      .string()
+      .describe(
+        "The second most likely dish you believe can be cooked with ingredients present in the image.",
+      ),
+    thirdMostLikelyDish: z
+      .string()
+      .describe(
+        "The third most likely dish you believe can be cooked with ingredients present in the image.",
+      ),
+    fourthMostLikelyDish: z
+      .string()
+      .describe(
+        "The fourth most likely dish you believe can be cooked with ingredients present in the image.",
+      ),
+  });
+
+  // https://docs.langchain.com/oss/javascript/integrations/chat/google_vertex_ai
+  const llm = new ChatVertexAI({
+    project: projectId,
+    location: location,
+    model: "gemini-2.0-flash",
+  });
+
+  const agent = createAgent({
+    model: llm,
+    tools: [],
+    responseFormat: toolStrategy(RecipeListSchemaZod),
+  });
+
+  console.log("Identifying ingredients and potential dishes:");
+
+  const result = await agent.invoke({
+    messages: [
+      {
+        role: "system",
+        content:
+          "Return in the required schema, first with the ingredients that you can see present in the image in the ingredients field, and then " +
+          "the dish you believe is most likely able to be cooked with these ingredients in firstMostLikelyDish field " +
+          "and the other fields filled accordingly. Ensure the JSON schema is satisfied and do not include more JSON." +
+          "Write the name of each meal concisely; in less than 20 words per dish.",
+      },
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: userPrompt,
+          },
+          { type: "image_url", image_url: { url: dataUrl } },
+        ],
+      },
+    ],
+  });
+
+  // note: this returns the tokens. should use this value to increment the token count instead.
+
+  console.log(result.structuredResponse);
+  return result.structuredResponse;
+}
+
 // to handle rthe multipart data, multer is used:
 // https://medium.com/@muhebollah.diu/understanding-multipart-form-data-the-ultimate-guide-for-beginners-fd039c04553d
 async function generateDishesFromImage(
@@ -378,7 +560,7 @@ async function generateDishesFromImage(
         content:
           "Return in the required schema, with the dish you believe is most likely depicted in the image in firstMostLikelyDish field " +
           "and the other fields filled accordingly. Ensure the JSON schema is satisfied and do not include more JSON." +
-          "Write the name of each meal concisely; in less than 20 words per meal.",
+          "Write the name of each meal concisely; in less than 20 words per dish.",
       },
       {
         role: "user",
@@ -404,9 +586,21 @@ app.post("/recipe", async (req, res) => {
   await generate(req, res, LlmRequestType.RECIPE);
 });
 
-app.post("/from-image", upload.single("image"), async (req, res) => {
+app.post("/dishes-from-ingredients", async (req, res) => {
+  await generate(req, res, LlmRequestType.DISHES_FROM_INGREDIENTS);
+});
+
+app.post("/dishes-from-image", upload.single("image"), async (req, res) => {
   await generate(req, res, LlmRequestType.DISHES_FROM_IMAGE);
 });
+
+app.post(
+  "/dishes-from-ingredients-image",
+  upload.single("image"),
+  async (req, res) => {
+    await generate(req, res, LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE);
+  },
+);
 
 const port = process.env.PORT || 8080;
 app.listen(port, () => console.log("Nourish endpoints are now live."));

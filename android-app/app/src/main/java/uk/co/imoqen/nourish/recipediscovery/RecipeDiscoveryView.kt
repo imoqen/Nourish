@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -43,7 +44,7 @@ fun RecipeDiscoveryScreen(
     val scrollState = rememberScrollState()
 
     Column(
-        Modifier.horizontalScroll(scrollState)
+        modifier = Modifier.fillMaxWidth().verticalScroll(scrollState)
     ) {
         OutlinedTextField(
             value = uiState.userRequest,
@@ -51,7 +52,7 @@ fun RecipeDiscoveryScreen(
                 recipeDiscoveryViewModel.setUserRequest(request)
             },
             placeholder = {
-                Text("What would you like to cook?")
+                Text(uiState.placeholderText)
             },
             modifier = Modifier.fillMaxWidth()
         )
@@ -60,7 +61,7 @@ fun RecipeDiscoveryScreen(
 
         Button(
             onClick = {
-                recipeDiscoveryViewModel.setRequestType(LlmRequestType.DISHES_FROM_INGREDIENTS)
+                recipeDiscoveryViewModel.setRequestType(LlmRequestType.DISHES_FROM_INGREDIENTS) // also covers dishes from ingredients image, but have to pass this in when making the llm call as it is different.
                 recipeDiscoveryViewModel.setPlaceholderText("Enter your ingredients")
             }
         ) {
@@ -70,14 +71,21 @@ fun RecipeDiscoveryScreen(
         Button(
             onClick = {
                 keyboardFocusManager.clearFocus()
+                // generate a recipe from text:
                 if (uiState.savedImageFilename == "" && uiState.requestType == LlmRequestType.RECIPE) {
                     Log.i("recipe", "making recipe")
                     // generate recipe from text
                     recipeDiscoveryViewModel.makeLlmApiCall(LlmRequestType.RECIPE) // make llm call
                 }
+                // generate potential dishes from ingredients list:
                 else if (uiState.savedImageFilename == "" && uiState.requestType == LlmRequestType.DISHES_FROM_INGREDIENTS) {
                     recipeDiscoveryViewModel.makeLlmApiCall(LlmRequestType.DISHES_FROM_INGREDIENTS)
                 }
+                // generate potential dishes from image of ingredients, e.g. image of contents of a fridge:
+                else if (uiState.savedImageFilename != "" && uiState.requestType == LlmRequestType.DISHES_FROM_INGREDIENTS) {
+                    recipeDiscoveryViewModel.makeLlmApiCall(LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE, uiState.savedImageFilename, context.filesDir)
+                }
+                // generate potential dishes from an image of a dish, e.g. image of pasta:
                 else {
                     Log.i("recipe", "from image")
                     // generate recipe from image
@@ -106,7 +114,10 @@ fun RecipeDiscoveryScreen(
         // Outputs the response, or error if occurred.
         if (uiState.apiResponse != "") {
             Log.i("recipe res", "not null")
-            Text(uiState.apiResponse)
+            Text(
+                uiState.apiResponse,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
 
         if (uiState.savedImageFilename != "") {
