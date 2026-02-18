@@ -1,3 +1,5 @@
+// to run: gcloud run deploy llm --source . --region GOOGLE_CLOUD_PROJECT_REGION --allow-unauthenticated
+
 const { GoogleGenAI } = require("@google/genai");
 const { ChatVertexAI } = require("@langchain/google-vertexai");
 const express = require("express"); // to handle request/responses
@@ -7,7 +9,11 @@ const { initializeApp } = require("firebase-admin/app"); // firebase admin sdk
 const { getAuth } = require("firebase-admin/auth"); // auth method from firebase
 const { getFirestore, FieldValue } = require("firebase-admin/firestore"); // firestore
 
+// for structuring LangChain outputs:
 const { z } = require("zod");
+
+// LangChain:
+const { createAgent, toolStrategy } = require("langchain");
 
 // like an enum but in javascript (enums only supported in typescript)
 // https://masteringjs.io/tutorials/fundamentals/enum
@@ -21,14 +27,11 @@ const LlmRequestType = {
   RECIPE_ALTERATION: "RECIPE_ALTERATION",
 };
 
-// for storing image in memory with 2mb limit
+// For storing image in memory with 2mb limit:
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 2 * 1024 * 1024 }, // filesize is in bytes
 });
-
-// langchain:
-const { createAgent, toolStrategy } = require("langchain");
 
 const GOOGLE_CLOUD_PROJECT = "GOOGLE_CLOUD_PROJECT_NAME";
 const GOOGLE_CLOUD_LOCATION = "GOOGLE_CLOUD_PROJECT_REGION";
@@ -58,19 +61,11 @@ const db = getFirestore();
  */
 async function generate(req, res, requestType) {
   try {
-    console.log("within generate function:" + JSON.stringify(req.body));
     // Extract and validate the prompt
     const prompt = req.body?.prompt;
-    //console.log(`prompt: ${prompt}`);
-    //console.log(`body: ${req.body}`);
-
-    console.log("about to validate");
     const errorMessage = await validateRequest(req, res, prompt, requestType);
     if (errorMessage != "") {
-      console.log("it is invalid");
       return res.status(400).json({ error: errorMessage });
-    } else {
-      console.log("it is not invalid");
     }
 
     // Perform the LLM request and retrieve the response, different request depending on the request type
@@ -106,7 +101,6 @@ async function generate(req, res, requestType) {
     res.json(result);
     return res;
   } catch (e) {
-    console.log("error occurred. printed from the generate try-catch");
     console.error(e);
     // throw 500 error because error happened on the server side (Internal Server Error)
     return res.status(500).json({ error: e.message });
@@ -179,7 +173,7 @@ async function rateLimitUser(uid) {
     }
     return false;
   } catch (error) {
-    console.log("Rate limit error:" + error);
+    console.error("Rate limit error:" + error);
   }
 }
 
@@ -197,6 +191,38 @@ async function updateUserTokenCount(userRef, date, incrementAmount) {
     .doc(date)
     .set({ amount: inc }, { merge: true });
 }
+
+// ERROR VALIDATION:
+
+// returns 400 errors (Bad Request) to signify error on the client's input;
+// invalid syntax, malformed data, invalid Bearer token
+async function validateRequest(req, res, prompt, requestType) {
+  // only do this check on things which require a prompt.
+  // so not dishes from image.
+  if (!prompt && requestType == LlmRequestType.RECIPE) {
+    console.error("Error: missing or malformed prompt.");
+    return "Missing or malformed prompt.";
+  }
+
+  // Authenticate the user using the Bearer token in the request
+  const requesterUid = await authenticateUser(req);
+  if (requesterUid == null) {
+    console.error("Error: invalid or non-existent bearer token");
+    return "Invalid or non-existent Bearer token";
+  }
+
+  // Rate limit the user by incrementing their daily token count, ensuring
+  // LLM request cannot be performed if the user has exceeded their rate.
+  if (!(await rateLimitUser(requesterUid))) {
+    console.error("Error: token limit reached. come back tomorrow");
+    return "Token limit reached. Come back tomorrow";
+  }
+
+  // Otherwise, validated
+  return "";
+}
+
+// LLM CALLS USING LangChain:
 
 /**
  * Makes the LLM request using Google Vertex AI to call the LLM and retrieve the
@@ -261,7 +287,7 @@ async function generateRecipe(
     responseFormat: toolStrategy(RecipeSchemaZod),
   });
 
-  console.log("Generating recipe for: " + prompt);
+  console.log("Generating recipe for: " + prompt + ":");
 
   const result = await agent.invoke({
     messages: [
@@ -280,48 +306,8 @@ async function generateRecipe(
   // note: this returns the tokens. should use this value to increment the token count instead.
 
   console.log(result.structuredResponse);
-
   return result.structuredResponse;
 }
-
-// returns 400 errors (Bad Request) to signify error on the client's input;
-// invalid syntax, malformed data, invalid Bearer token
-async function validateRequest(req, res, prompt, requestType) {
-  // only do this check on things which require a prompt.
-  // so not dishes from image.
-
-  console.log("validate: before ifs");
-
-  if (!prompt && requestType == LlmRequestType.RECIPE) {
-    console.log("Error: missing or malformed prompt.");
-    return "Missing or malformed prompt.";
-    console.log("validate: after res.status(400) in malformed prompt check");
-    return false;
-  }
-
-  // Authenticate the user using the Bearer token in the request
-  const requesterUid = await authenticateUser(req);
-  if (requesterUid == null) {
-    console.log("Error: invalid or non-existent bearer token");
-    return "Invalid or non-existent Bearer token";
-    console.log("validate: after res.status(400) in bearer token check");
-    return false;
-  }
-
-  // Rate limit the user by incrementing their daily token count, ensuring
-  // LLM request cannot be performed if the user has exceeded their rate.
-  if (!(await rateLimitUser(requesterUid))) {
-    console.log("Error: token limit reached. come back tomorrow");
-    return "Token limit reached. Come back tomorrow";
-    console.log("validate: after res.status(400) in ratelimit check");
-    return false;
-  }
-
-  // Otherwise, validated
-  return "";
-}
-
-// new stuff for image handling:
 
 // to handle rthe multipart data, multer is used:
 // https://medium.com/@muhebollah.diu/understanding-multipart-form-data-the-ultimate-guide-for-beginners-fd039c04553d
@@ -336,8 +322,6 @@ async function generateDishesFromImage(
   const filetype = file.mimetype;
   const base64encoded = file.buffer.toString("base64"); // https://stackoverflow.com/questions/51798811/how-to-encoded-files-in-base64-in-nodejs-after-getting-details-from-client-side
   const dataUrl = `data:${filetype};base64,${base64encoded}`; // required format for gemini 2.0 flash
-
-  console.log("Sending image to LLM...");
 
   // tool strategy for formatting output:
   //https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
@@ -360,7 +344,7 @@ async function generateDishesFromImage(
     responseFormat: toolStrategy(RecipeListSchemaZod),
   });
 
-  //console.log("Return 4 names of meals which you believe are in the image: " + prompt);
+  console.log("Identifying dishes in the image:");
 
   const result = await agent.invoke({
     messages: [
@@ -385,20 +369,16 @@ async function generateDishesFromImage(
   // note: this returns the tokens. should use this value to increment the token count instead.
 
   console.log(result.structuredResponse);
-
   return result.structuredResponse;
 }
 
 // To run the POST endpoint:
 app.post("/recipe", async (req, res) => {
-  console.log("in the post:" + JSON.stringify(req.body));
-  const result = await generate(req, res, LlmRequestType.RECIPE);
-  return result;
+  await generate(req, res, LlmRequestType.RECIPE);
 });
 
 app.post("/from-image", upload.single("image"), async (req, res) => {
-  const result = await generate(req, res, LlmRequestType.DISHES_FROM_IMAGE);
-  return result;
+  await generate(req, res, LlmRequestType.DISHES_FROM_IMAGE);
 });
 
 const port = process.env.PORT || 8080;
