@@ -30,6 +30,7 @@ class ApiManagerImpl @Inject constructor(
         bearerToken: String,
         imageFilename: String, // optional; only for generating from image
         filesDir: File?, // optional; only for generating from image
+        onDishesProposed: (LlmDishesProposed?) -> Unit,
         onResponse: (String?) -> Unit
     ) {
         // when: the last line of each block is what will be assigned to the call val
@@ -40,6 +41,21 @@ class ApiManagerImpl @Inject constructor(
                     Log.i("calling llm", "pompt: $request")
                     handleCall(
                         apiService.generateRecipe(request, "Bearer $bearerToken"),
+                        onDishesProposed,
+                        onResponse
+                    )
+                }
+
+                LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH -> {
+                    Log.i("calling llm", "pompt: $request")
+                    val file = File(filesDir, imageFilename)
+                    val requestBody = file.asRequestBody("image/jpg".toMediaType())
+                    val multipartBody =
+                        MultipartBody.Part.createFormData("image", file.name, requestBody)
+
+                    handleCall(
+                        apiService.generateRecipeFromDishImage(multipartBody, request, "Bearer $bearerToken"),
+                        onDishesProposed,
                         onResponse
                     )
                 }
@@ -49,6 +65,7 @@ class ApiManagerImpl @Inject constructor(
                     Log.i("calling llm", "pompt: $request")
                     handleCall(
                         apiService.generateDishesFromIngredients(request, "Bearer $bearerToken"),
+                        onDishesProposed,
                         onResponse
                     )
                 }
@@ -66,6 +83,7 @@ class ApiManagerImpl @Inject constructor(
 
                     handleCall(
                         apiService.generateDishesFromImage(multipartBody, request, "Bearer $bearerToken"),
+                        onDishesProposed,
                         onResponse
                     )
                 }
@@ -79,6 +97,7 @@ class ApiManagerImpl @Inject constructor(
 
                     handleCall(
                         apiService.generateDishesFromIngredientsImage(multipartBody, request, "Bearer $bearerToken"),
+                        onDishesProposed,
                         onResponse
                     )
                 }
@@ -99,6 +118,7 @@ class ApiManagerImpl @Inject constructor(
 
     private fun <T> handleCall(
         call: Call<T>,
+        onDishesProposed: (LlmDishesProposed?) -> Unit,
         onResponse: (String?) -> Unit
     ) {
         call.enqueue(object : Callback<T> {
@@ -107,14 +127,15 @@ class ApiManagerImpl @Inject constructor(
                 call: Call<T>, response: Response<T>
             ) {
                 if (response.isSuccessful) {
-                    handleSuccess(response, onResponse)
+                    handleSuccess(response, onDishesProposed, onResponse)
                 } else {
                     handleError(response, onResponse)
                 }
             }
             // Timeout or no internet:
             override fun onFailure(call: Call<T>, t: Throwable) {
-                throw t // Handled in ViewModel
+                Log.e("CALL ERROR LLM", "${t.message}")
+                onResponse("Internal Server Error. Please try again later.")
             }
         })
     }
@@ -140,6 +161,7 @@ class ApiManagerImpl @Inject constructor(
     // handles the error based on the type of response accordingly
     private fun <T> handleSuccess(
         response: Response<T>,
+        onDishesProposed: (LlmDishesProposed?) -> Unit,
         onResponse: (String?) -> Unit
     ) {
         val post = response.body()
@@ -156,14 +178,16 @@ class ApiManagerImpl @Inject constructor(
                 )
             }
             is LlmDishesProposed -> {
-                onResponse("" +
+                /*onResponse("" +
                         "Potential Dishes:\n " +
                         "${post.firstMostLikelyDish},\n " +
                         "${post.secondMostLikelyDish},\n " +
                         "${post.thirdMostLikelyDish},\n " +
                         "${post.fourthMostLikelyDish} \n" +
                         "Ingredients Identified: ${post.ingredientsIdentified }"
-                )
+                )*/
+                onDishesProposed(post)
+                onResponse("") // no recipe generated - only dishes. onresponse should still be called for cleanup and validation.
             }
             else -> {
                 onResponse(ErrorMessage.API_ERROR_FAILED_TO_GEN)

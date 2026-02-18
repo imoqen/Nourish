@@ -2,6 +2,7 @@ package uk.co.imoqen.nourish.network.apimanager
 
 import uk.co.imoqen.nourish.network.request.LlmRequest
 import uk.co.imoqen.nourish.network.request.LlmRequestType
+import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import java.io.File
 
 interface ApiManager {
@@ -12,6 +13,7 @@ interface ApiManager {
         bearerToken: String,
         imageFilename: String = "", // optional; only for generating from image
         filesDir: File? = null, // optional; only for generating from image
+        onDishesProposed: (LlmDishesProposed?) -> Unit, // optional; only for when dishes are proposed
         onResponse: (String?) -> Unit,
     )
 

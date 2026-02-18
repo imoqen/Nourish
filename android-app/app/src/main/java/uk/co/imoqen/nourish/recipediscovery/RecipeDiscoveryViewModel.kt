@@ -21,6 +21,7 @@ import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import javax.inject.Inject
 import uk.co.imoqen.nourish.common.saveImage
 import uk.co.imoqen.nourish.network.request.LlmRequestType
+import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import java.io.File
 import kotlin.onSuccess
 
@@ -96,6 +97,14 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
+    fun setDishes(dishes: LlmDishesProposed) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                dishes = dishes
+            )
+        }
+    }
+
     /**
      * Makes the API call by forming the request, getting the user token and ensuring it is valid.
      * Then, placing this token in the Bearer Authorization header and the request in the body.
@@ -116,7 +125,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 val userPrompt = mutableUiState.value.userRequest
 
                 // if the user submitted empty string as prompt, and this string is NOT optional for this call type, return error:
-                if ((type == LlmRequestType.RECIPE || type == LlmRequestType.DISHES_FROM_INGREDIENTS) && userPrompt == "") {
+                if ((type == LlmRequestType.RECIPE || type == LlmRequestType.DISHES_FROM_INGREDIENTS || type == LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH) && userPrompt == "") {
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_BLANK_PROMPT))
                     setAwaitingResponse(false)
                     return@launch
@@ -138,7 +147,21 @@ class RecipeDiscoveryViewModel @Inject constructor(
                     request,
                     tokenResult,
                     imageFilename, // will just be "" and null if not used, so optional in that sense. handled appropriately.
-                    filesDir
+                    filesDir,
+                    onDishesProposed = { dishesJson ->
+                        // safe because only occurs if not null. if it is null, handles by onResponse which is below.
+                        if (dishesJson != null) {
+                            setDishes(
+                                LlmDishesProposed(
+                                    ingredientsIdentified = dishesJson.ingredientsIdentified,
+                                    firstMostLikelyDish = dishesJson.firstMostLikelyDish,
+                                    secondMostLikelyDish = dishesJson.secondMostLikelyDish,
+                                    thirdMostLikelyDish = dishesJson.thirdMostLikelyDish,
+                                    fourthMostLikelyDish = dishesJson.fourthMostLikelyDish,
+                                )
+                            )
+                        }
+                    },
                 ) { response ->
 
                     viewModelScope.launch() {
@@ -156,6 +179,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
                         }
                         // Response is valid - output in a recipe card to the user
                         setApiResponse(response)
+
                         setAwaitingResponse(false)
                     }
                 }

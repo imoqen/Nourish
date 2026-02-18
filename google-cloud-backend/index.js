@@ -20,6 +20,7 @@ const { createAgent, toolStrategy } = require("langchain");
 // these are the same as present in the Kotlin app
 const LlmRequestType = {
   RECIPE: "RECIPE",
+  RECIPE_FROM_IMAGE_AND_DISH: "RECIPE_FROM_IMAGE_AND_DISH",
   DISHES_FROM_INGREDIENTS: "DISHES_FROM_INGREDIENTS",
   DISHES_FROM_IMAGE: "DISHES_FROM_IMAGE",
   DISHES_FROM_INGREDIENTS_IMAGE: "DISHES_FROM_INGREDIENTS_IMAGE",
@@ -77,6 +78,15 @@ async function generate(req, res, requestType) {
           GOOGLE_CLOUD_PROJECT,
           GOOGLE_CLOUD_LOCATION,
           prompt,
+        );
+        break;
+      }
+
+      case LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH: {
+        result = await generateRecipeFromDishImage(
+          GOOGLE_CLOUD_PROJECT,
+          GOOGLE_CLOUD_LOCATION,
+          req,
         );
         break;
       }
@@ -380,13 +390,108 @@ async function generateDishesFromIngredients(
         content:
           "Return in the required schema, with the best dish you believe can be cooked from only these ingredients in firstMostLikelyDish field " +
           "and the other fields filled accordingly. Ensure the JSON schema is satisfied and do not include more JSON." +
-          "Write the name of each meal concisely; in less than 20 words per dish.",
+          "Write the name of each dish concisely; in less than 20 words per dish, but include detail if necessary e.g. flavour, type, characteristics.",
       },
       {
         role: "user",
         content:
           "Return 4 names of dishes which you believe can be cooked at home using only these ingredients (with the exception of small amounts of salt, pepper and oil): " +
           prompt,
+      },
+    ],
+  });
+
+  // note: this returns the tokens. should use this value to increment the token count instead.
+
+  console.log(result.structuredResponse);
+  return result.structuredResponse;
+}
+
+// to handle rthe multipart data, multer is used:
+// https://medium.com/@muhebollah.diu/understanding-multipart-form-data-the-ultimate-guide-for-beginners-fd039c04553d
+async function generateRecipeFromDishImage(
+  projectId = GOOGLE_CLOUD_PROJECT,
+  location = GOOGLE_CLOUD_LOCATION,
+  req,
+) {
+  // get the image file:
+  const file = req.file;
+  const filetype = file.mimetype;
+  const base64encoded = file.buffer.toString("base64"); // https://stackoverflow.com/questions/51798811/how-to-encoded-files-in-base64-in-nodejs-after-getting-details-from-client-side
+  const dataUrl = `data:${filetype};base64,${base64encoded}`; // required format for gemini 2.0 flash
+
+  // User can supply further detail if they wish, but this is optional:
+  const dish = JSON.parse(req.body?.detail).prompt;
+
+  // tool strategy for formatting output:
+  //https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
+  const RecipeSchemaZod = z.object({
+    title: z.string().describe("title of the recipe"),
+    ingredients: z
+      .string()
+      .describe(
+        "a list of the ingredients of the recipe, do not include the amounts here; these will go in ingredientAmounts and ingredientAmountsUnits respectively.",
+      ),
+    ingredientAmounts: z
+      .string()
+      .describe(
+        "a list of the amounts of each ingredient to use, given only as integers or floats. must correspond with the ingredient in the ingredients list.",
+      ),
+    ingredientAmountsUnits: z
+      .string()
+      .describe(
+        "a list of the ingredient units (UK) of each ingredient amount to use (e.g. tsp). must correspond with the ingredient in the ingredients list and ingredientAmounts list.",
+      ),
+    servings: z
+      .string()
+      .describe(
+        "the number of servings made of this meal using the amount of ingredients in the ingredientAmounts and ingredientAmountsUnits list",
+      ),
+    mealType: z
+      .string()
+      .describe(
+        "the type of meal that this corresponds to (breakfast, lunch, dinner, snack)",
+      ),
+    method: z
+      .string()
+      .describe(
+        "numbered list of the recipe's method, in the form \\nX. for all X to ensure each step is on its own line",
+      ),
+  });
+
+  // https://docs.langchain.com/oss/javascript/integrations/chat/google_vertex_ai
+  const llm = new ChatVertexAI({
+    project: projectId,
+    location: location,
+    model: "gemini-2.0-flash",
+  });
+
+  const agent = createAgent({
+    model: llm,
+    tools: [],
+    responseFormat: toolStrategy(RecipeSchemaZod),
+  });
+
+  console.log("Generating recipe for dish using image:");
+
+  const result = await agent.invoke({
+    messages: [
+      {
+        role: "system",
+        content:
+          "Return in the required schema, write in sufficient detail but not too much (keep below 250 words).",
+      },
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text:
+              "Generate a recipe for the following dish, creating the recipe as close to the image provided as possible: " +
+              dish,
+          },
+          { type: "image_url", image_url: { url: dataUrl } },
+        ],
       },
     ],
   });
@@ -469,7 +574,7 @@ async function generateDishesFromIngredientsImage(
           "Return in the required schema, first with the ingredients that you can see present in the image in the ingredients field, and then " +
           "the dish you believe is most likely able to be cooked with these ingredients in firstMostLikelyDish field " +
           "and the other fields filled accordingly. Ensure the JSON schema is satisfied and do not include more JSON." +
-          "Write the name of each meal concisely; in less than 20 words per dish.",
+          "Write the name of each dish concisely; in less than 20 words per dish, but include detail if necessary e.g. flavour, type, characteristics.",
       },
       {
         role: "user",
@@ -560,7 +665,7 @@ async function generateDishesFromImage(
         content:
           "Return in the required schema, with the dish you believe is most likely depicted in the image in firstMostLikelyDish field " +
           "and the other fields filled accordingly. Ensure the JSON schema is satisfied and do not include more JSON." +
-          "Write the name of each meal concisely; in less than 20 words per dish.",
+          "Write the name of each dish concisely; in less than 20 words per dish, but include detail if necessary e.g. flavour, type, characteristics.",
       },
       {
         role: "user",
@@ -599,6 +704,14 @@ app.post(
   upload.single("image"),
   async (req, res) => {
     await generate(req, res, LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE);
+  },
+);
+
+app.post(
+  "/recipe-from-dish-image",
+  upload.single("image"),
+  async (req, res) => {
+    await generate(req, res, LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH);
   },
 );
 

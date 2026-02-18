@@ -70,6 +70,16 @@ fun RecipeDiscoveryScreen(
 
         Button(
             onClick = {
+                recipeDiscoveryViewModel.setRequestType(LlmRequestType.RECIPE) // also covers dishes from ingredients image, but have to pass this in when making the llm call as it is different.
+                recipeDiscoveryViewModel.setPlaceholderText("What would you like to cook?")
+            }
+        ) {
+            Text("Generate recipe")
+        }
+
+
+        Button(
+            onClick = {
                 keyboardFocusManager.clearFocus()
                 // generate a recipe from text:
                 if (uiState.savedImageFilename == "" && uiState.requestType == LlmRequestType.RECIPE) {
@@ -111,6 +121,36 @@ fun RecipeDiscoveryScreen(
             }
         }
 
+        val dishes = uiState.dishes
+        if (dishes != null) {
+            val dishes = uiState.dishes
+            val arrayOfDishes = listOf(dishes!!.firstMostLikelyDish, dishes.secondMostLikelyDish, dishes.thirdMostLikelyDish, dishes.fourthMostLikelyDish)
+            Text("Choose a recipe to generate:")
+            arrayOfDishes.forEach { dish ->
+                Button(onClick={
+                    if (dishes.ingredientsIdentified != null) {
+                        recipeDiscoveryViewModel.setUserRequest(dish + ", using only ingredients: ${dishes.ingredientsIdentified}, salt, pepper, oil")
+                    } else {
+                        recipeDiscoveryViewModel.setUserRequest(dish)
+                    }
+                    if (uiState.savedImageFilename == "") {
+                        // generate without image
+                        Log.i("GENERATING", "generating without image")
+                        recipeDiscoveryViewModel.makeLlmApiCall(LlmRequestType.RECIPE)
+                    } else {
+                        // generate with image
+                        Log.i("GENERATING", "generating with image")
+                        recipeDiscoveryViewModel.makeLlmApiCall(LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH, uiState.savedImageFilename, context.filesDir)
+                    }
+                }){
+                    Text(dish)
+                }
+            }
+            if (dishes.ingredientsIdentified != null) {
+                Text("Ingredients identified: ${dishes.ingredientsIdentified}")
+            }
+        }
+
         // Outputs the response, or error if occurred.
         if (uiState.apiResponse != "") {
             Log.i("recipe res", "not null")
@@ -139,9 +179,8 @@ fun RecipeDiscoveryScreen(
                 Button(onClick = { pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
                     Text("Choose a new photo")
                 }
-                Button(onClick = { recipeDiscoveryViewModel.setSavedImageFilename("") }) {
+                Button(onClick = { imageFile.delete(); recipeDiscoveryViewModel.setSavedImageFilename("") }) {
                     Text("Remove photo")
-                    // potentially actually delete it from local storage here too
                 }
             }
         }

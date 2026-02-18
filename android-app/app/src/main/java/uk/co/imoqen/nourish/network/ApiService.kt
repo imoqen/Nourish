@@ -26,6 +26,14 @@ interface ApiService {
         @Header("Authorization") bearer: String
     ): Call<LlmRecipe>
 
+    @Multipart
+    @POST("recipe-from-dish-image")
+    fun generateRecipeFromDishImage(
+        @Part image: MultipartBody.Part,
+        @Part("detail") request: LlmRequest,
+        @Header("Authorization") bearer: String
+    ): Call<LlmRecipe>
+
     @POST("dishes-from-ingredients")
     fun generateDishesFromIngredients(
         @Body() request: LlmRequest,
