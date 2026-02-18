@@ -14,7 +14,7 @@ import uk.co.imoqen.nourish.db.user.UserDao
 
 @Database(
     entities = [Recipe::class, RecipeIngredient::class, RecipeType::class, User::class, Ingredient::class],
-    version = 2
+    version = 3
 )
 @TypeConverters(Converters::class)
 abstract class NourishDatabase : RoomDatabase() {

@@ -14,6 +14,8 @@ import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
+import uk.co.imoqen.nourish.db.user.User
+import uk.co.imoqen.nourish.db.user.UserRepository
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import javax.inject.Inject
 
@@ -28,7 +30,8 @@ import javax.inject.Inject
 @HiltViewModel
 class AuthenticationViewModel @Inject constructor(
     private val authenticationManager: AuthenticationManager,
-    private val uiEventBus: UiEventBus
+    private val uiEventBus: UiEventBus,
+    private val userRepository: UserRepository,
 ): ViewModel() {
     // Purpose: pattern to encapsulate the mutable state to ensure it is not mutable from the viewmodel.
     // pattern taken from advice in: https://medium.com/@rowaido.game/managing-ui-states-in-jetpack-compose-7eb15e4f6931
@@ -127,6 +130,17 @@ class AuthenticationViewModel @Inject constructor(
         }
     }
 
+    // only add the user if not already in. this conflict is handled by the Dao (onconflict).
+    fun addUserToRoom() {
+        viewModelScope.launch() {
+            val uid = authenticationManager.getUid()
+            val email = authenticationManager.getEmail()
+            if (uid !=null && email != null) {
+                userRepository.insert(User(uid, email))
+            }
+        }
+    }
+
     // Functions used within the View to perform actions:
 
     /**
@@ -149,6 +163,8 @@ class AuthenticationViewModel @Inject constructor(
                 )
                 // then add the user to firestore if they don't already exist in firestore:
                 authenticationManager.addIfNotExists()
+                // then add to local db room:
+                addUserToRoom()
             }
                 .onSuccess {
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Sign in successful."))
@@ -170,6 +186,8 @@ class AuthenticationViewModel @Inject constructor(
                 authenticationManager.signInWithGoogle(context)
                 // then add the user to firestore if they don't already exist in firestore:
                 authenticationManager.addIfNotExists()
+                // then add to local db room:
+                addUserToRoom()
             }
                 .onSuccess {
                     resetUiState()
@@ -209,6 +227,8 @@ class AuthenticationViewModel @Inject constructor(
                 )
                 // then add the user to firestore if they don't already exist in firestore:
                 authenticationManager.addIfNotExists()
+                // then add to local db room:
+                addUserToRoom()
             }
                 .onSuccess {
                     resetUiState()

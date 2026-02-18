@@ -59,7 +59,7 @@ fun ProfileScreen(
         cardContents = {
 
             NourishH1("Your Profile")
-            if (email != "") {
+            if (email != null) {
                 NourishText("Signed in with email:")
                 NourishH2(email)
             }

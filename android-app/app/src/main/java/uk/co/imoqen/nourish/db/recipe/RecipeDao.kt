@@ -22,5 +22,5 @@ interface RecipeDao {
 
     // insert one
     @Insert
-    fun insert(recipe: Recipe)
+    suspend fun insert(recipe: Recipe)
 }

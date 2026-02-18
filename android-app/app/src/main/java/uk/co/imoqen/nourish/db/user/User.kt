@@ -7,6 +7,6 @@ import androidx.room.PrimaryKey
 // password not stored locally - only on firebase.
 @Entity(tableName = "User")
 data class User(
-    @PrimaryKey() val uid: Int,
+    @PrimaryKey() val uid: String,
     @ColumnInfo(name = "email") val email: String
 )
