@@ -63,7 +63,7 @@ async function generate(req, res, requestType) {
   try {
     // Extract and validate the prompt
     const prompt = req.body?.prompt;
-    const errorMessage = await validateRequest(req, res, prompt, requestType);
+    const errorMessage = await validateRequest(req, prompt, requestType);
     if (errorMessage != "") {
       return res.status(400).json({ error: errorMessage });
     }
@@ -86,7 +86,6 @@ async function generate(req, res, requestType) {
         result = await generateDishesFromImage(
           GOOGLE_CLOUD_PROJECT,
           GOOGLE_CLOUD_LOCATION,
-          prompt,
           req,
         );
         break;
@@ -196,7 +195,7 @@ async function updateUserTokenCount(userRef, date, incrementAmount) {
 
 // returns 400 errors (Bad Request) to signify error on the client's input;
 // invalid syntax, malformed data, invalid Bearer token
-async function validateRequest(req, res, prompt, requestType) {
+async function validateRequest(req, prompt, requestType) {
   // only do this check on things which require a prompt.
   // so not dishes from image.
   if (!prompt && requestType == LlmRequestType.RECIPE) {
@@ -314,7 +313,6 @@ async function generateRecipe(
 async function generateDishesFromImage(
   projectId = GOOGLE_CLOUD_PROJECT,
   location = GOOGLE_CLOUD_LOCATION,
-  prompt, // maybe use in future.
   req,
 ) {
   // get the image file:
@@ -322,6 +320,16 @@ async function generateDishesFromImage(
   const filetype = file.mimetype;
   const base64encoded = file.buffer.toString("base64"); // https://stackoverflow.com/questions/51798811/how-to-encoded-files-in-base64-in-nodejs-after-getting-details-from-client-side
   const dataUrl = `data:${filetype};base64,${base64encoded}`; // required format for gemini 2.0 flash
+
+  // User can supply further detail if they wish, but this is optional:
+  const userDetail = JSON.parse(req.body?.detail).prompt;
+  let userPrompt =
+    "Return 4 names of meals which you believe are in the image.";
+  if (userDetail != "") {
+    userPrompt =
+      "Return 4 names of meals which you believe are in the image. Further detail to assist classification: " +
+      userDetail;
+  }
 
   // tool strategy for formatting output:
   //https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
@@ -358,7 +366,7 @@ async function generateDishesFromImage(
         content: [
           {
             type: "text",
-            text: "Return 4 names of meals which you believe are in the image.", // put prompt variable in here once set up
+            text: userPrompt,
           },
           { type: "image_url", image_url: { url: dataUrl } },
         ],
