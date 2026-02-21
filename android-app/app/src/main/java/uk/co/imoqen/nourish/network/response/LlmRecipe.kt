@@ -10,5 +10,6 @@ data class LlmRecipe(
     val ingredientAmountsUnits: String,
     val method: String,
     val ingredients: String,
+    val ingredientPlurals: String,
     val servings: String
 )

@@ -14,5 +14,5 @@ class IngredientRepository @Inject constructor(
     fun getAll(): Flow<List<Ingredient>> = ingredientDao.getAll()
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun getIdByName(name: String): Long? = ingredientDao.getIdByName(name)
+    suspend fun getIdBySingular(singular: String): Long? = ingredientDao.getIdBySingular(singular)
 }

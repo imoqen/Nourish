@@ -267,6 +267,11 @@ async function generateRecipe(
   location = GOOGLE_CLOUD_LOCATION,
   prompt,
 ) {
+
+  // these will be switched dynamically using user preferences
+  const metricUnits = "ML, L, G, KG, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit)"
+  const imperialUnits = "TSP, TBSP, FL_OZ, CUP, PINT, QUART, GALLON, OZ, LB, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit), not something else like None - only UNIT."
+
   // tool strategy for formatting output:
   //https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
   const RecipeSchemaZod = z.object({
@@ -274,17 +279,22 @@ async function generateRecipe(
     ingredients: z
       .string()
       .describe(
-        "a list of the ingredients of the recipe, do not include the amounts here; these will go in ingredientAmounts and ingredientAmountsUnits respectively.",
+        "a list of the ingredients of the recipe, in their singular form. do not include the amounts here; these will go in ingredientAmounts and ingredientAmountsUnits respectively. Simply return as comma-separated list using , character e.g. a, b, c",
       ),
     ingredientAmounts: z
       .string()
       .describe(
-        "a list of the amounts of each ingredient to use, given only as integers or floats. must correspond with the ingredient in the ingredients list.",
+        "a list of the amounts of each ingredient to use, given only as integers or floats. must correspond with the ingredient in the ingredients list and the units given in the ingredientAmountsUnits list. Simply return as comma-separated list using , character e.g. a, b, c",
       ),
     ingredientAmountsUnits: z
       .string()
       .describe(
-        "a list of the ingredient units (UK) of each ingredient amount to use (e.g. tsp). must correspond with the ingredient in the ingredients list and ingredientAmounts list.",
+        "a list of the ingredient units to use. Must correspond with the ingredient in the ingredients list and ingredientAmounts list. Simply return as comma-separated list using , character e.g. a, b, c Return only values from the following list, exactly as they are in the list (as they will be mapped using a predefined enum): " + metricUnits,
+      ),
+    ingredientPlurals: z
+      .string()
+      .describe(
+        "a list of plural forms of the ingredients list, where if the corresponding ingredient in the ingredients list has corresponding ingredientAmountUnit == UNIT then write the plural otherwise write the singular here. For example, egg would have ingredientAmountUnit == UNIT as it has no unit, so write its plural form. Apply this rule accordingly. Simply return as comma-separated list using , character e.g. a, b, c"
       ),
     servings: z
       .string()
@@ -423,6 +433,10 @@ async function generateRecipeFromDishImage(
   // User can supply further detail if they wish, but this is optional:
   const dish = JSON.parse(req.body?.detail).prompt;
 
+  // these will be switched dynamically using user preferences
+  const metricUnits = "ML, L, G, KG, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit)"
+  const imperialUnits = "TSP, TBSP, FL_OZ, CUP, PINT, QUART, GALLON, OZ, LB, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit)"
+
   // tool strategy for formatting output:
   //https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
   const RecipeSchemaZod = z.object({
@@ -435,12 +449,17 @@ async function generateRecipeFromDishImage(
     ingredientAmounts: z
       .string()
       .describe(
-        "a list of the amounts of each ingredient to use, given only as integers or floats. must correspond with the ingredient in the ingredients list.",
+        "a list of the amounts of each ingredient to use, given only as integers or floats. must correspond with the ingredient in the ingredients list and the units given in the ingredientAmountsUnits list.",
       ),
     ingredientAmountsUnits: z
       .string()
       .describe(
-        "a list of the ingredient units (UK) of each ingredient amount to use (e.g. tsp). must correspond with the ingredient in the ingredients list and ingredientAmounts list.",
+        "a list of the ingredient units to use. Must correspond with the ingredient in the ingredients list and ingredientAmounts list. Return only values from the following list, exactly as they are in the list (as they will be mapped using a predefined enum): " + metricUnits,
+      ),
+    ingredientPlurals: z
+      .string()
+      .describe(
+        "a list of plural forms of the ingredients list, where if the corresponding ingredient in the ingredients list has corresponding ingredientAmountUnit == UNIT then write the plural otherwise write the singular here. For example, egg would have ingredientAmountUnit == UNIT as it has no unit, so write its plural form. Apply this rule accordingly. Simply return as comma-separated list using , character e.g. a, b, c"
       ),
     servings: z
       .string()

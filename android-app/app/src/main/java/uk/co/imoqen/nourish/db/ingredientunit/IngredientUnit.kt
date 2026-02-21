@@ -51,4 +51,7 @@ enum class IngredientUnit(
     SHEET("sheet of", "sheets of"),
     BLOCK("block of", "blocks of"),
     BAR("bar of", "bars of"),
+
+    // for item without a prefix e.g. carrot
+    UNIT("", "")
 }

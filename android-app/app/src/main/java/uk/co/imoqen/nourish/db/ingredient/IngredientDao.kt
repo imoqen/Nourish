@@ -16,6 +16,6 @@ interface IngredientDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(ingredient: Ingredient): Long
 
-    @Query("SELECT id FROM ingredient WHERE name = :name LIMIT 1")
-    suspend fun getIdByName(name: String): Long?
+    @Query("SELECT id FROM ingredient WHERE singular = :singular LIMIT 1")
+    suspend fun getIdBySingular(singular: String): Long?
 }
