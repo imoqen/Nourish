@@ -13,6 +13,7 @@ import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.response.LlmError
 import uk.co.imoqen.nourish.network.request.LlmRequest
 import uk.co.imoqen.nourish.network.request.LlmRequestType
+import uk.co.imoqen.nourish.network.response.ApiResponse
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 import java.io.File
@@ -31,7 +32,7 @@ class ApiManagerImpl @Inject constructor(
         imageFilename: String, // optional; only for generating from image
         filesDir: File?, // optional; only for generating from image
         onDishesProposed: (LlmDishesProposed?) -> Unit,
-        onResponse: (String?) -> Unit
+        onResponse: (ApiResponse?) -> Unit
     ) {
         // when: the last line of each block is what will be assigned to the call val
         try {
@@ -112,14 +113,14 @@ class ApiManagerImpl @Inject constructor(
             }
         } catch(e: Exception) {
             Log.e("CALL ERROR LLM", "$e")
-            onResponse("Internal Server Error. Please try again later.")
+            onResponse(ApiResponse(null, "Internal Server Error. Please try again later."))
         }
     }
 
     private fun <T> handleCall(
         call: Call<T>,
         onDishesProposed: (LlmDishesProposed?) -> Unit,
-        onResponse: (String?) -> Unit
+        onResponse: (ApiResponse?) -> Unit
     ) {
         call.enqueue(object : Callback<T> {
             // Response received from the server:
@@ -135,7 +136,7 @@ class ApiManagerImpl @Inject constructor(
             // Timeout or no internet:
             override fun onFailure(call: Call<T>, t: Throwable) {
                 Log.e("CALL ERROR LLM", "${t.message}")
-                onResponse("Internal Server Error. Please try again later.")
+                onResponse(ApiResponse(null,"Internal Server Error. Please try again later."))
             }
         })
     }
@@ -144,17 +145,17 @@ class ApiManagerImpl @Inject constructor(
     // template, to update the UiState when called.
     private fun <T> handleError(
         response: Response<T>,
-        onResponse: (String?) -> Unit
+        onResponse: (ApiResponse?) -> Unit
     ) {
         try {
             val error = response.errorBody()?.string()
             val errorJson = Gson().fromJson(error, LlmError::class.java)
-            onResponse("Error: ${errorJson.error}")
+            onResponse(ApiResponse(null, "Error: ${errorJson.error}"))
         } catch (e: Exception) {
             // exception thrown if error is already returned as json - in this case,
             // simply return the exception itself.
             Log.e("SERVER ERROR LLM", "$e")
-            onResponse("Error: The service is currently starting. Please try again in a few minutes!")
+            onResponse(ApiResponse(null, "Error: The service is currently starting. Please try again in a few minutes!"))
         }
     }
 
@@ -162,19 +163,19 @@ class ApiManagerImpl @Inject constructor(
     private fun <T> handleSuccess(
         response: Response<T>,
         onDishesProposed: (LlmDishesProposed?) -> Unit,
-        onResponse: (String?) -> Unit
+        onResponse: (ApiResponse?) -> Unit
     ) {
         val post = response.body()
         when(post) {
             is LlmRecipe -> {
-                onResponse(
+                onResponse(ApiResponse(post,
                     "${post.title}:" +
                             "\n\nIngredients: \n${post.ingredients} " +
                             "\n\nIngredient Amounts: \n${post.ingredientAmounts} " +
                             "\n\nIngredient Units: \n${post.ingredientAmountsUnits} " +
                             "\n\nMethod: \n${post.method}" +
                             "\n\nServing Size: \n${post.servings} " +
-                            "\n\nType of Meal: \n${post.mealType} "
+                            "\n\nType of Meal: \n${post.mealType} ")
                 )
             }
             is LlmDishesProposed -> {
@@ -187,10 +188,10 @@ class ApiManagerImpl @Inject constructor(
                         "Ingredients Identified: ${post.ingredientsIdentified }"
                 )*/
                 onDishesProposed(post)
-                onResponse("") // no recipe generated - only dishes. onresponse should still be called for cleanup and validation.
+                onResponse(ApiResponse(null, "")) // no recipe generated - only dishes. onresponse should still be called for cleanup and validation.
             }
             else -> {
-                onResponse(ErrorMessage.API_ERROR_FAILED_TO_GEN)
+                onResponse(ApiResponse(null, ErrorMessage.API_ERROR_FAILED_TO_GEN))
             }
         }
     }

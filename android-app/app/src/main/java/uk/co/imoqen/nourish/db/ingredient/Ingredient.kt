@@ -2,11 +2,14 @@ package uk.co.imoqen.nourish.db.ingredient
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "Ingredient")
+@Entity(
+    tableName = "Ingredient",
+    indices = [Index(value = ["name"], unique = true)] // to prevent duplicate ingredients being added
+)
 data class Ingredient(
-    @PrimaryKey val id: Int,
-    @ColumnInfo(name = "ingredientId") val ingredientId: Int, // foreign key for recipe relation
-    @ColumnInfo(name = "name") val name: String, // foreign key for ingredient relation
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @ColumnInfo(name = "name") val name: String,
 )

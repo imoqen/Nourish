@@ -2,11 +2,18 @@ package uk.co.imoqen.nourish.db
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import dagger.internal.Provider
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import uk.co.imoqen.nourish.db.recipe.RecipeType
 import javax.inject.Singleton
 
 // Hilt dependency injection for Room database
@@ -20,18 +27,49 @@ object NourishDatabaseModule {
     @Singleton
     @Provides
     fun provideNourishDatabase(
-        @ApplicationContext app: Context
-    ) = Room.databaseBuilder(
-        app,
-        NourishDatabase::class.java,
-        "nourish_database"
-    ).build()
+        @ApplicationContext app: Context,
+        dbProvider: javax.inject.Provider<NourishDatabase>
+    ): NourishDatabase {
+        return Room.databaseBuilder(
+            app,
+            NourishDatabase::class.java,
+            "nourish_database"
+        )
+            // Seed the database using a callback https://matthiaslischka.at/2019/01/15/seed-room-database/
+            .addCallback(object: RoomDatabase.Callback() {
+                override fun onCreate(db: SupportSQLiteDatabase) {
+                    super.onCreate(db)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val db = dbProvider.get()
+                        val recipeTypeDao = db.recipeTypeDao()
 
-    // Getting DAOs:
+                        // add the recipe types:
+                        recipeTypeDao.insert(RecipeType(title = "Breakfast"))
+                        recipeTypeDao.insert(RecipeType(title = "Lunch"))
+                        recipeTypeDao.insert(RecipeType(title = "Dinner"))
+                        recipeTypeDao.insert(RecipeType(title = "Dessert"))
+                        recipeTypeDao.insert(RecipeType(title = "Side"))
+                        recipeTypeDao.insert(RecipeType(title = "Snack"))
+                    }
+                }
+            })
+            .build()
+    }
+
+
+    // all DAOs provided here to Hilt:
 
     @Singleton
     @Provides
     fun provideRecipeDao(db: NourishDatabase) = db.recipeDao()
+
+    @Singleton
+    @Provides
+    fun provideRecipeIngredientDao(db: NourishDatabase) = db.recipeIngredientDao()
+
+    @Singleton
+    @Provides
+    fun provideRecipeTypeDao(db: NourishDatabase) = db.recipeTypeDao()
 
     @Singleton
     @Provides

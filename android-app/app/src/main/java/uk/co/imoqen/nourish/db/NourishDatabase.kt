@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish.db
 
+import android.content.Context
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
@@ -8,7 +9,9 @@ import uk.co.imoqen.nourish.db.ingredient.IngredientDao
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.RecipeDao
 import uk.co.imoqen.nourish.db.recipe.RecipeIngredient
+import uk.co.imoqen.nourish.db.recipe.RecipeIngredientDao
 import uk.co.imoqen.nourish.db.recipe.RecipeType
+import uk.co.imoqen.nourish.db.recipe.RecipeTypeDao
 import uk.co.imoqen.nourish.db.user.User
 import uk.co.imoqen.nourish.db.user.UserDao
 
@@ -22,5 +25,7 @@ abstract class NourishDatabase : RoomDatabase() {
     abstract fun recipeDao(): RecipeDao
     abstract fun userDao(): UserDao
     abstract fun ingredientDao(): IngredientDao
+    abstract fun recipeTypeDao(): RecipeTypeDao
+    abstract fun recipeIngredientDao(): RecipeIngredientDao
 
 }

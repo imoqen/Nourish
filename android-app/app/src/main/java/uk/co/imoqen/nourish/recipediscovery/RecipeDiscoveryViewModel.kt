@@ -168,21 +168,31 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 ) { response ->
 
                     viewModelScope.launch() {
-                        if (response == null) {
+                        if (response == null || response.llmRecipe == null) {
                             // Error message in Snackbar:
                             uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
                             setAwaitingResponse(false)
                             return@launch
                         }
-                        if (response.startsWith("An error occurred.") || response.startsWith("Error:")) {
+                        if (response.string.startsWith("An error occurred.") || response.string.startsWith("Error:")) {
                             // Response error in Snackbar:
-                            uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(response))
+                            uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(response.string))
                             setAwaitingResponse(false)
                             return@launch
                         }
                         // Response is valid - output in a recipe card to the user
-                        setApiResponse(response)
+                        setApiResponse(response.string)
 
+                        // add recipe to the db:
+                        val uid = authenticationManager.getUid()
+                        if (uid != null) {
+                            recipeRepository.createRecipe(
+                                uid,
+                                response.llmRecipe
+                            )
+                        } else {
+                            Log.i("RECIPE FAIL", "uid is null")
+                        }
                         setAwaitingResponse(false)
                     }
                 }
@@ -214,6 +224,22 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 }
         }
 
+    }
+
+    fun addRecipe(
+        recipe: Recipe
+    ) {
+        viewModelScope.launch() {
+            // recipe is send with fields:
+            // a. title, instructions, num servings, recipe type
+            // then units and ingredients, which are stored in RecipeIngredient
+            // 1. make the recipe type defined in  a. recipe type if it doesnt already exist
+            // 1. now make the Recipe with the things in a. and connect it to the currently logged in user and recipe type
+            // 2. search for the ingredient in Ingredient and add it if it doesnt already exist
+            // 3. now make each RecipeIngredient, connecting it to Recipe and Ingredient (b.)
+
+
+        }
     }
 
 }

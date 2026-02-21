@@ -3,21 +3,19 @@ package uk.co.imoqen.nourish.db.ingredient
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
+import uk.co.imoqen.nourish.db.recipe.RecipeType
 
 @Dao
 interface IngredientDao {
     @Query("SELECT * FROM ingredient")
-    fun getAllIngredients(): Flow<List<Ingredient>>
+    fun getAll(): Flow<List<Ingredient>>
 
-    @Insert
-    fun insertAllIngredients(vararg ingredients: Ingredient)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(ingredient: Ingredient): Long
 
-    // insert one
-    @Insert
-    suspend fun insert(ingredient: Ingredient)
-
-    @Delete
-    fun deleteIngredient(ingredient: Ingredient)
+    @Query("SELECT id FROM ingredient WHERE name = :name LIMIT 1")
+    suspend fun getIdByName(name: String): Long?
 }

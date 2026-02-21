@@ -12,7 +12,7 @@ import uk.co.imoqen.nourish.db.ingredient.Ingredient
 @Dao
 interface RecipeDao {
     @Query("SELECT * FROM recipe")
-    fun getAllRecipes(): Flow<List<Recipe>> // flow is better than normal list for things which should update. as cant access db on main thread
+    fun getAll(): Flow<List<Recipe>> // flow is better than normal list for things which should update. as cant access db on main thread
 
     /*@Insert
     fun insertAllRecipes(vararg recipes: Recipe)
@@ -22,5 +22,5 @@ interface RecipeDao {
 
     // insert one
     @Insert
-    suspend fun insert(recipe: Recipe)
+    suspend fun insert(recipe: Recipe): Long
 }
