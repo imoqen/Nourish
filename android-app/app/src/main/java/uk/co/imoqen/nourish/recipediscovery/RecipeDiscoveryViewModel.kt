@@ -140,7 +140,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 // validate the user's token:
                 val tokenResult = authenticationManager.getUserToken()
                 if (tokenResult == null) {
-                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("1" + ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
                     setAwaitingResponse(false)
                     return@launch
                 }
@@ -154,16 +154,27 @@ class RecipeDiscoveryViewModel @Inject constructor(
                     onDishesProposed = { dishesJson ->
                         // safe because only occurs if not null. if it is null, handles by onResponse which is below.
                         if (dishesJson != null) {
-                            setDishes(
-                                LlmDishesProposed(
-                                    ingredientsIdentified = dishesJson.ingredientsIdentified,
-                                    firstMostLikelyDish = dishesJson.firstMostLikelyDish,
-                                    secondMostLikelyDish = dishesJson.secondMostLikelyDish,
-                                    thirdMostLikelyDish = dishesJson.thirdMostLikelyDish,
-                                    fourthMostLikelyDish = dishesJson.fourthMostLikelyDish,
-                                    dishNotPossible = dishesJson.dishNotPossible
+
+                            viewModelScope.launch() {
+                                if (dishesJson.dishNotPossible) {
+                                    // user inputted invalid prompt / image; recipe cannot be generated.
+                                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Valid dishes could not be generated. Please enter something differents."))
+                                    setAwaitingResponse(false)
+                                    return@launch
+                                }
+
+                                setDishes(
+                                    LlmDishesProposed(
+                                        ingredientsIdentified = dishesJson.ingredientsIdentified,
+                                        firstMostLikelyDish = dishesJson.firstMostLikelyDish,
+                                        secondMostLikelyDish = dishesJson.secondMostLikelyDish,
+                                        thirdMostLikelyDish = dishesJson.thirdMostLikelyDish,
+                                        fourthMostLikelyDish = dishesJson.fourthMostLikelyDish,
+                                        dishNotPossible = false
+                                    )
                                 )
-                            )
+                                setAwaitingResponse(false)
+                            }
                         }
                     },
                 ) { response ->
@@ -171,13 +182,19 @@ class RecipeDiscoveryViewModel @Inject constructor(
                     viewModelScope.launch() {
                         if (response == null || response.llmRecipe == null) {
                             // Error message in Snackbar:
-                            uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
+                            uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("2" + ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
                             setAwaitingResponse(false)
                             return@launch
                         }
                         if (response.string.startsWith("An error occurred.") || response.string.startsWith("Error:")) {
                             // Response error in Snackbar:
                             uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(response.string))
+                            setAwaitingResponse(false)
+                            return@launch
+                        }
+                        if (response.llmRecipe.recipeNotPossible) {
+                            // user inputted invalid prompt / image; recipe cannot be generated.
+                            uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("A valid recipe could not be generated. Please try another dish."))
                             setAwaitingResponse(false)
                             return@launch
                         }
@@ -200,7 +217,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
             }
                 .onFailure {
                     // error occurred
-                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("3" + ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
                     setAwaitingResponse(false)
                 }
         }

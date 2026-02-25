@@ -67,7 +67,8 @@ class ApiManagerImpl @Inject constructor(
                     handleCall(
                         apiService.generateDishesFromIngredients(request, "Bearer $bearerToken"),
                         onDishesProposed,
-                        onResponse
+                        { } // do nothing because we are proposing dishes, not getting recipe response
+
                     )
                 }
 
@@ -85,7 +86,8 @@ class ApiManagerImpl @Inject constructor(
                     handleCall(
                         apiService.generateDishesFromImage(multipartBody, request, "Bearer $bearerToken"),
                         onDishesProposed,
-                        onResponse
+                        { } // do nothing because we are proposing dishes, not getting recipe response
+
                     )
                 }
 
@@ -99,7 +101,8 @@ class ApiManagerImpl @Inject constructor(
                     handleCall(
                         apiService.generateDishesFromIngredientsImage(multipartBody, request, "Bearer $bearerToken"),
                         onDishesProposed,
-                        onResponse
+                        { } // do nothing because we are proposing dishes, not getting recipe response
+
                     )
                 }
                 // ask a question about a recipe

@@ -107,13 +107,13 @@ const RecipeSchemaZod = z.object({
     ),
 
   mealType: z.string().describe(
-    "The type of meal that this corresponds to (breakfast, lunch, dinner, snack)", // need to expand this to include the user's custom meal types
+    "The type of meal that this corresponds to (breakfast, lunch, dinner, snack, dessert)", // need to expand this to include the user's custom meal types
   ),
 
   method: z
     .string()
     .describe(
-      "A numbered list of the recipe's method, in the form \\nX. for all X to ensure each step is on its own line " +
+      "A numbered list of the recipe's method, in the form \\n\\nX. for all X (use two line breaks, not just one, to ensure each step is on its own line separate from all other steps.) " +
         "For step(s) involving heating the oven, ensure you specify Celsius and Farenheit and different oven options (Fan, Gas mark etc) " +
         "When writing the units e.g. ML, ensure they correspond with those you wrote in ingredientAmountsUnits, but write them in the human-readable form (e.g. ML -> ml, DASH -> dash) ",
       "For the final step, include a nice, upbeat happy step such as 'Enjoy your homemade ...'",
