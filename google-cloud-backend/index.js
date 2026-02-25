@@ -46,7 +46,7 @@ const db = getFirestore();
 // Units:
 // these will be switched dynamically using user preferences
 const metricUnits =
-  "ML, L, G, KG, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit)";
+  "TSP, TBSP, ML, L, G, KG, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit)";
 const imperialUnits =
   "TSP, TBSP, FL_OZ, CUP, PINT, QUART, GALLON, OZ, LB, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit)";
 
@@ -58,6 +58,7 @@ const IngredientSchemaZod = z.object({
     .describe(
       "An ingredient required for this recipeSection, in its singular form. Do not specify details such as size; simply give the ingredient " +
         "(type should be specified only if necessary, e.g. brown sugar vs granulated sugar). " +
+        "If the ingredient is 'garlic', only write 'garlic', not 'garlic clove' as this will be covered by the ingredientAmountUnit (CLOVE). Apply this rule to other ingredients where you see fit. " +
         "Do not include the amount or unit here; this will go in ingredientAmount and ingredientAmountsUnit, respectively. ",
     ),
   ingredientPlural: z
@@ -97,15 +98,18 @@ const RecipeSchemaZod = z.object({
       ingredients: z.array(IngredientSchemaZod),
     }),
   ),
+
   servings: z
     .string()
     .describe(
       "The number of servings (not pieces) made of this meal using the amount of ingredients in the ingredientAmounts and ingredientAmountsUnits list. " +
         "Given as an integer.",
     ),
+
   mealType: z.string().describe(
     "The type of meal that this corresponds to (breakfast, lunch, dinner, snack)", // need to expand this to include the user's custom meal types
   ),
+
   method: z
     .string()
     .describe(
@@ -114,6 +118,7 @@ const RecipeSchemaZod = z.object({
         "When writing the units e.g. ML, ensure they correspond with those you wrote in ingredientAmountsUnits, but write them in the human-readable form (e.g. ML -> ml, DASH -> dash) ",
       "For the final step, include a nice, upbeat happy step such as 'Enjoy your homemade ...'",
     ),
+
   tags: z.array(z.string()).describe(
     "Fill this in once the recipe has been generated, do not fill this in first and then fill in the recipe based on it: " +
       "A list of 'tags' which apply to this recipe, as a comma separated list e.g. 'a, b, c' " +
@@ -121,11 +126,118 @@ const RecipeSchemaZod = z.object({
       "VEGAN, VEGETARIAN, GLUTEN-FREE, DAIRY-FREE, NUT-FREE, SOY-FREE, EGG-FREE, LACTOSE-FREE, WHEAT-FREE" + // dietary requirements
       "FREEZER-FRIENDLY, UPF-FREE" + // misc
       "HIGH-PROTEIN, LOW-FAT, LOW-CALORIE, RICH-IN-VITAMINS-MINERALS, LOW-CARB, HIGH-FIBRE, NO-ADDED-SUGAR", // nutrients
+    // need to put all user specified tags here in the future
   ),
+
   storage: z
     .string()
     .describe(
       "A brief sentence describing how to best store the food once cooked, to maximise its shelf life. If it is freezer friendly, state this too. State how to safely reheat (and defrost if applicable, even if eaten cold) the food, if applicable.",
+    ),
+
+  recipeNotPossible: z
+    .boolean()
+    .describe(
+      "If the provided prompt is invalid for generating a human-edible recipe, " +
+        "such as something which is inedible, " +
+        "return 'true' here and fill in every other required field with an empty string, " +
+        "otherwise return 'false' and generate the recipe accordingly.",
+    ),
+});
+
+// tool strategy for formatting output:
+//https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
+const RecipeListFromIngredientsSchemaZod = z.object({
+  firstMostLikelyDish: z
+    .string()
+    .describe(
+      "The first most likely dish you believe is best suited to cook from the ingredients.",
+    ),
+  secondMostLikelyDish: z
+    .string()
+    .describe(
+      "The second most likely dish you believe is best suited to cook from the ingredients.",
+    ),
+  thirdMostLikelyDish: z
+    .string()
+    .describe(
+      "The third most likely dish you believe is best suited to cook from the ingredients.",
+    ),
+  fourthMostLikelyDish: z
+    .string()
+    .describe(
+      "The fourth most likely dish you believe is best suited to cook from the ingredients.",
+    ),
+  dishNotPossible: z
+    .boolean()
+    .describe(
+      "If the provided ingredients are invalid for generating a human-edible recipe, such as something which is inedible, " +
+        "return 'true' here and fill in every other required field with an empty string, otherwise return 'false' and generate the dishes accordingly.",
+    ),
+});
+
+// tool strategy for formatting output:
+//https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
+const RecipeListFromImageIngredientsSchemaZod = z.object({
+  ingredientsIdentified: z
+    .string()
+    .describe("The ingredients you can see which are present in the image."),
+  firstMostLikelyDish: z
+    .string()
+    .describe(
+      "The first most likely dish you believe can be cooked with ingredients present in the image.",
+    ),
+  secondMostLikelyDish: z
+    .string()
+    .describe(
+      "The second most likely dish you believe can be cooked with ingredients present in the image.",
+    ),
+  thirdMostLikelyDish: z
+    .string()
+    .describe(
+      "The third most likely dish you believe can be cooked with ingredients present in the image.",
+    ),
+  fourthMostLikelyDish: z
+    .string()
+    .describe(
+      "The fourth most likely dish you believe can be cooked with ingredients present in the image.",
+    ),
+  dishNotPossible: z
+    .boolean()
+    .describe(
+      "If the provided ingredients in the image are invalid for generating a human-edible recipe, such as something which is inedible, " +
+        "return 'true' here and fill in every other required field with an empty string, otherwise return 'false' and generate the dishes accordingly.",
+    ),
+});
+
+// tool strategy for formatting output:
+//https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
+const RecipeListFromImageSchemaZod = z.object({
+  firstMostLikelyDish: z
+    .string()
+    .describe(
+      "The first most likely dish you believe is present in the image.",
+    ),
+  secondMostLikelyDish: z
+    .string()
+    .describe(
+      "The second most likely dish you believe is present in the image.",
+    ),
+  thirdMostLikelyDish: z
+    .string()
+    .describe(
+      "The third most likely dish you believe is present in the image.",
+    ),
+  fourthMostLikelyDish: z
+    .string()
+    .describe(
+      "The fourth most likely dish you believe is present in the image.",
+    ),
+  dishNotPossible: z
+    .boolean()
+    .describe(
+      "If the provided image does not contain a valid dish, and thus invalid for generating a human-edible recipe, such as something which is inedible, " +
+        "return 'true' here and fill in every other required field with an empty string, otherwise return 'false' and generate the dishes accordingly.",
     ),
 });
 
@@ -402,31 +514,6 @@ async function generateDishesFromIngredients(
   location = GOOGLE_CLOUD_LOCATION,
   prompt,
 ) {
-  // tool strategy for formatting output:
-  //https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
-  const RecipeListSchemaZod = z.object({
-    firstMostLikelyDish: z
-      .string()
-      .describe(
-        "The first most likely dish you believe is best suited to cook from the ingredients.",
-      ),
-    secondMostLikelyDish: z
-      .string()
-      .describe(
-        "The second most likely dish you believe is best suited to cook from the ingredients.",
-      ),
-    thirdMostLikelyDish: z
-      .string()
-      .describe(
-        "The third most likely dish you believe is best suited to cook from the ingredients.",
-      ),
-    fourthMostLikelyDish: z
-      .string()
-      .describe(
-        "The fourth most likely dish you believe is best suited to cook from the ingredients.",
-      ),
-  });
-
   // https://docs.langchain.com/oss/javascript/integrations/chat/google_vertex_ai
   const llm = new ChatVertexAI({
     project: projectId,
@@ -437,7 +524,7 @@ async function generateDishesFromIngredients(
   const agent = createAgent({
     model: llm,
     tools: [],
-    responseFormat: toolStrategy(RecipeListSchemaZod),
+    responseFormat: toolStrategy(RecipeListFromIngredientsSchemaZod),
   });
 
   console.log("Generating dishes for ingredients: " + prompt + ":");
@@ -546,34 +633,6 @@ async function generateDishesFromIngredientsImage(
       userDetail;
   }
 
-  // tool strategy for formatting output:
-  //https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
-  const RecipeListSchemaZod = z.object({
-    ingredientsIdentified: z
-      .string()
-      .describe("The ingredients you can see which are present in the image."),
-    firstMostLikelyDish: z
-      .string()
-      .describe(
-        "The first most likely dish you believe can be cooked with ingredients present in the image.",
-      ),
-    secondMostLikelyDish: z
-      .string()
-      .describe(
-        "The second most likely dish you believe can be cooked with ingredients present in the image.",
-      ),
-    thirdMostLikelyDish: z
-      .string()
-      .describe(
-        "The third most likely dish you believe can be cooked with ingredients present in the image.",
-      ),
-    fourthMostLikelyDish: z
-      .string()
-      .describe(
-        "The fourth most likely dish you believe can be cooked with ingredients present in the image.",
-      ),
-  });
-
   // https://docs.langchain.com/oss/javascript/integrations/chat/google_vertex_ai
   const llm = new ChatVertexAI({
     project: projectId,
@@ -584,7 +643,7 @@ async function generateDishesFromIngredientsImage(
   const agent = createAgent({
     model: llm,
     tools: [],
-    responseFormat: toolStrategy(RecipeListSchemaZod),
+    responseFormat: toolStrategy(RecipeListFromIngredientsImageSchemaZod),
   });
 
   console.log("Identifying ingredients and potential dishes:");
@@ -641,31 +700,6 @@ async function generateDishesFromImage(
       userDetail;
   }
 
-  // tool strategy for formatting output:
-  //https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
-  const RecipeListSchemaZod = z.object({
-    firstMostLikelyDish: z
-      .string()
-      .describe(
-        "The first most likely dish you believe is present in the image.",
-      ),
-    secondMostLikelyDish: z
-      .string()
-      .describe(
-        "The second most likely dish you believe is present in the image.",
-      ),
-    thirdMostLikelyDish: z
-      .string()
-      .describe(
-        "The third most likely dish you believe is present in the image.",
-      ),
-    fourthMostLikelyDish: z
-      .string()
-      .describe(
-        "The fourth most likely dish you believe is present in the image.",
-      ),
-  });
-
   // https://docs.langchain.com/oss/javascript/integrations/chat/google_vertex_ai
   const llm = new ChatVertexAI({
     project: projectId,
@@ -676,7 +710,7 @@ async function generateDishesFromImage(
   const agent = createAgent({
     model: llm,
     tools: [],
-    responseFormat: toolStrategy(RecipeListSchemaZod),
+    responseFormat: toolStrategy(RecipeListFromImageSchemaZod),
   });
 
   console.log("Identifying dishes in the image:");
