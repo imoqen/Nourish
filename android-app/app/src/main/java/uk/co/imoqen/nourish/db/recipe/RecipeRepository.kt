@@ -10,6 +10,7 @@ import uk.co.imoqen.nourish.db.ingredient.IngredientRepository
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeIngredient
 import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeIngredientDao
+import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeWithRecipeIngredients
 import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSection
 import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSectionDao
 import uk.co.imoqen.nourish.db.recipe.recipetag.RecipeTag
@@ -39,6 +40,9 @@ class RecipeRepository @Inject constructor(
     // get all recipes: (not suspend)
     fun getAllRecipes(uid: String): Flow<List<Recipe>> = recipeDao.getAll(uid)
     suspend fun insertRecipe(recipe: Recipe): Long = recipeDao.insert(recipe)
+    //fun getRecipeWithIngredients(recipeId: Long): Flow<RecipeWithIngredients> = recipeDao.getRecipeWithIngredients(recipeId)
+    fun getRecipeWithRecipeIngredients(recipeId: Long): Flow<RecipeWithRecipeIngredients> = recipeDao.getRecipeWithRecipeIngredients(recipeId)
+
 
     // RECIPE TYPE LOGIC:
     fun getAllRecipeTypes(): Flow<List<RecipeType>> = recipeTypeDao.getAll()

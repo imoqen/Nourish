@@ -5,8 +5,8 @@ package uk.co.imoqen.nourish.db.ingredientunit
 // so llm can return more easily then we just search for the id.
 // include: metric, uk imperial, us imperial.
 enum class IngredientUnit(
-    name: String,
-    pluralName: String // where an s should be appended if the value is plural, or word changes e.g. loaf
+    val singularName: String,
+    val pluralName: String // where an s should be appended if the value is plural, or word changes e.g. loaf
 ) {
     // metric:
     ML("ml", "ml"),

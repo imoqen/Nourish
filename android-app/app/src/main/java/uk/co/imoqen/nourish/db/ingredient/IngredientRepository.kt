@@ -13,6 +13,9 @@ class IngredientRepository @Inject constructor(
     @Query("SELECT * FROM ingredient")
     fun getAll(): Flow<List<Ingredient>> = ingredientDao.getAll()
 
+    @Query("SELECT * FROM ingredient WHERE id = :id")
+    fun getById(id: Long): Flow<Ingredient?> = ingredientDao.getById(id)
+
     @Insert
     suspend fun insert(ingredient: Ingredient): Long = ingredientDao.insert(ingredient)
 

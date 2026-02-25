@@ -13,4 +13,5 @@ interface RecipeIngredientSectionDao {
     // insert one
     @Insert
     suspend fun insert(recipeIngredientSection: RecipeIngredientSection): Long
+
 }
