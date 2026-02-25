@@ -53,10 +53,34 @@ const imperialUnits =
 // Schemas:
 // ingredients put together:
 const IngredientSchemaZod = z.object({
-  ingredientSingular: z.string().describe(""),
-  ingredientPlural: z.string().describe(""),
-  ingredientAmount: z.string().describe(""),
-  ingredientAmountUnit: z.string().describe(""),
+  ingredientSingular: z
+    .string()
+    .describe(
+      "An ingredient required for this recipeSection, in its singular form. Do not specify details such as size; simply give the ingredient " +
+        "(type should be specified only if necessary, e.g. brown sugar vs granulated sugar). " +
+        "Do not include the amount or unit here; this will go in ingredientAmount and ingredientAmountsUnit, respectively. ",
+    ),
+  ingredientPlural: z
+    .string()
+    .describe(
+      "The ingredient corresponding to ingredientSingular, in its correct English plural form, as would appear in a recipe. For example, egg -> eggs, flour -> flour " +
+        "Do not include the amount or unit here; this will go in ingredientAmount and ingredientAmountsUnit, respectively.",
+    ),
+  ingredientAmount: z
+    .string()
+    .describe(
+      "The amount of the ingredient corresponding to ingredientSingular, given only as an integer or float. " +
+        "Furthermore, it must correspond with the unit given in the ingredientAmountUnit.",
+    ),
+  ingredientAmountUnit: z
+    .string()
+    .describe(
+      "The unit of the ingredient corresponding to ingredientSingular, and the amount given in ingredientAmount. " +
+        "Ensure that the unit makes sense, for example only use an approximate unit (such as splash, sprinkle, dash, etc) if the corresponding amount itself is a whole number - otherwise use a unit reflective of the precision (e.g. tsp, tbsp, ml)" +
+        "Return only a value from the following list, exactly as it is in the list (as it will be mapped using a predefined enum): " +
+        metricUnits +
+        " Only use UNIT if the ingredient has no measurement; it is a piece itself (e.g. egg, whole fruit, whole vegetable). In particular, if it is a spice, baking agent or herb, do not use UNIT.",
+    ),
 });
 
 // recipe generation:
@@ -70,39 +94,7 @@ const RecipeSchemaZod = z.object({
         .describe(
           "A heading for this list of ingredients, for example 'For the ...' e.g. 'For the filling'",
         ),
-      ingredientsSingular: z
-        .array(z.string())
-        .describe(
-          "A list of ingredients for this recipeSection, in their singular form. Do not specify details such as size; simply give the ingredient " +
-            "(type should be specified only if necessary, e.g. brown sugar vs granulated sugar). " +
-            "Do not include the amounts here; these will go in ingredientAmounts and ingredientAmountsUnits, respectively. " +
-            "Simply return as comma-separated list using , character e.g. a, b, c." +
-            "ENSURE that the length of ingredientsSingular = the length of corresponding ingredientAmounts, ingredientsPlural and ingredientAmountsUnits",
-        ),
-      ingredientsPlural: z
-        .array(z.string())
-        .describe(
-          "A list of ingredients for this recipeSection, in their English correct plural form, as would appear in a recipe. For example, egg -> eggs, flour -> flour " +
-            "Do not include the amounts here; these will go in ingredientAmounts and ingredientAmountsUnits, respectively. " +
-            "Simply return as comma-separated list using , character e.g. a, b, c",
-        ),
-      ingredientAmounts: z
-        .array(z.string())
-        .describe(
-          "A list of the amounts of each ingredient to use, given only as integers or floats. " +
-            "It must correspond with the ingredient in the ingredients list and the units given in the ingredientAmountsUnits list. " +
-            "Simply return as comma-separated list using , character e.g. a, b, c",
-        ),
-      ingredientAmountsUnits: z
-        .array(z.string())
-        .describe(
-          "A list of the ingredient units to use. Must correspond with the ingredient in the ingredients list and ingredientAmounts list. " +
-            "Simply return as comma-separated list using , character e.g. a, b, c " +
-            "Ensure that the unit makes sense, for example only use an approximate unit (such as splash, sprinkle, dash, etc) if the corresponding amount itself is a whole number - otherwise use a unit reflective of the precision (e.g. tsp, tbsp, ml)" +
-            "Return only values from the following list, exactly as they are in the list (as they will be mapped using a predefined enum): " +
-            metricUnits +
-            " Only use UNIT if the ingredient has no measurement; it is a piece itself (e.g. egg, whole fruit, whole vegetable). In particular, if it is a spice, baking agent or herb, do not use UNIT.",
-        ),
+      ingredients: z.array(IngredientSchemaZod),
     }),
   ),
   servings: z
@@ -119,8 +111,21 @@ const RecipeSchemaZod = z.object({
     .describe(
       "A numbered list of the recipe's method, in the form \\nX. for all X to ensure each step is on its own line " +
         "For step(s) involving heating the oven, ensure you specify Celsius and Farenheit and different oven options (Fan, Gas mark etc) " +
-        "When writing the units e.g. ML, ensure they correspond with those you wrote in ingredientAmountsUnits, but write them in the human-readable form (e.g. ML -> ml) ",
+        "When writing the units e.g. ML, ensure they correspond with those you wrote in ingredientAmountsUnits, but write them in the human-readable form (e.g. ML -> ml, DASH -> dash) ",
       "For the final step, include a nice, upbeat happy step such as 'Enjoy your homemade ...'",
+    ),
+  tags: z.array(z.string()).describe(
+    "Fill this in once the recipe has been generated, do not fill this in first and then fill in the recipe based on it: " +
+      "A list of 'tags' which apply to this recipe, as a comma separated list e.g. 'a, b, c' " +
+      "Each tag must be from the following list, do not include more (Be strict with this; e.g. it is only NO-ADDED-SUGAR if no extra sugar has been added - sugar sources such as maple syrup, honey etc still count as added sugar.): " +
+      "VEGAN, VEGETARIAN, GLUTEN-FREE, DAIRY-FREE, NUT-FREE, SOY-FREE, EGG-FREE, LACTOSE-FREE, WHEAT-FREE" + // dietary requirements
+      "FREEZER-FRIENDLY, UPF-FREE" + // misc
+      "HIGH-PROTEIN, LOW-FAT, LOW-CALORIE, RICH-IN-VITAMINS-MINERALS, LOW-CARB, HIGH-FIBRE, NO-ADDED-SUGAR", // nutrients
+  ),
+  storage: z
+    .string()
+    .describe(
+      "A brief sentence describing how to best store the food once cooked, to maximise its shelf life. If it is freezer friendly, state this too. State how to safely reheat (and defrost if applicable, even if eaten cold) the food, if applicable.",
     ),
 });
 
