@@ -23,8 +23,11 @@ import uk.co.imoqen.nourish.common.saveImage
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.network.request.LlmRequestType
+import uk.co.imoqen.nourish.network.response.ApiResponse
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
+import uk.co.imoqen.nourish.network.response.LlmRecipe
 import java.io.File
+import java.lang.NullPointerException
 import kotlin.onSuccess
 
 
@@ -200,17 +203,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
                         }
                         // Response is valid - output in a recipe card to the user
                         setApiResponse(response.string)
-
-                        // add recipe to the db:
-                        val uid = authenticationManager.getUid()
-                        if (uid != null) {
-                            recipeRepository.createRecipe(
-                                uid,
-                                response.llmRecipe
-                            )
-                        } else {
-                            Log.i("RECIPE FAIL", "uid is null")
-                        }
+                        addRecipe(response.llmRecipe)
                         setAwaitingResponse(false)
                     }
                 }
@@ -244,19 +237,24 @@ class RecipeDiscoveryViewModel @Inject constructor(
 
     }
 
-    fun addRecipe(
-        recipe: Recipe
-    ) {
+    fun addRecipe(llmRecipe: LlmRecipe) {
         viewModelScope.launch() {
-            // recipe is send with fields:
-            // a. title, instructions, num servings, recipe type
-            // then units and ingredients, which are stored in RecipeIngredient
-            // 1. make the recipe type defined in  a. recipe type if it doesnt already exist
-            // 1. now make the Recipe with the things in a. and connect it to the currently logged in user and recipe type
-            // 2. search for the ingredient in Ingredient and add it if it doesnt already exist
-            // 3. now make each RecipeIngredient, connecting it to Recipe and Ingredient (b.)
-
-
+            try {
+                // Check that user is logged in validly
+                val uid = authenticationManager.getUid()
+                if (uid == null) { throw NullPointerException() } // user is null; throw to be handled appropriately
+                // Add the recipe to the database:
+                recipeRepository.createRecipe(
+                    uid,
+                    llmRecipe
+                )
+                // If an error occurs, it is caught below:
+            } catch (e: Exception) {
+                Log.i("RECIPE SAVE", "ERROR: $e")
+                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
+                    "The recipe could not be saved. Please try again, or generate a new recipe."
+                ))
+            }
         }
     }
 

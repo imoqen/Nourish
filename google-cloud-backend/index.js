@@ -52,36 +52,38 @@ const imperialUnits =
 
 // Schemas:
 // ingredients put together:
+// order is attempted to ensure that the result makes the most logical sense; e.g. LLM does not first fill in the amount as 1 (to use cups) but then realises cup is not an option.
 const IngredientSchemaZod = z.object({
   ingredientSingular: z
     .string()
     .describe(
-      "An ingredient required for this recipeSection, in its singular form. Do not specify details such as size; simply give the ingredient " +
-        "(type should be specified only if necessary, e.g. brown sugar vs granulated sugar). " +
+      "Fill this in first. An ingredient required for this recipeSection, in its singular form. Do not specify details such as size; simply give the ingredient " +
+        "(type should be specified only if necessary, e.g. brown sugar vs granulated sugar). Also be careful if adding baking soda; ensure it is not too much and use baking powder instead if appropriate. " +
         "If the ingredient is 'garlic', only write 'garlic', not 'garlic clove' as this will be covered by the ingredientAmountUnit (CLOVE). Apply this rule to other ingredients where you see fit. " +
         "Do not include the amount or unit here; this will go in ingredientAmount and ingredientAmountsUnit, respectively. ",
     ),
   ingredientPlural: z
     .string()
     .describe(
-      "The ingredient corresponding to ingredientSingular, in its correct English plural form, as would appear in a recipe. For example, egg -> eggs, flour -> flour " +
+      "Fill this in second. The ingredient corresponding to ingredientSingular, in its correct English plural form, as would appear in a recipe. For example, egg -> eggs, flour -> flour, powder -> powder " +
         "Do not include the amount or unit here; this will go in ingredientAmount and ingredientAmountsUnit, respectively.",
-    ),
-  ingredientAmount: z
-    .string()
-    .describe(
-      "The amount of the ingredient corresponding to ingredientSingular, given only as an integer or float. " +
-        "Furthermore, it must correspond with the unit given in the ingredientAmountUnit.",
     ),
   ingredientAmountUnit: z
     .string()
     .describe(
-      "The unit of the ingredient corresponding to ingredientSingular, and the amount given in ingredientAmount. " +
+      "Fill this in third. The unit of the ingredient corresponding to ingredientSingular, and the amount given in ingredientAmount. " +
         "Ensure that the unit makes sense, for example only use an approximate unit (such as splash, sprinkle, dash, etc) if the corresponding amount itself is a whole number - otherwise use a unit reflective of the precision (e.g. tsp, tbsp, ml)" +
         "Return only a value from the following list, exactly as it is in the list (as it will be mapped using a predefined enum): " +
         metricUnits +
+        "If you think that an imperial unit would be required, then give its value in g/kg instead (e.g. rather than using cup, as this is not used in Europe/UK). " +
         " Only use UNIT if the ingredient has no measurement; it is a piece itself (e.g. egg, whole fruit, whole vegetable). In particular, if it is a spice, baking agent or herb, do not use UNIT.",
     ),
+  ingredientAmount: z
+  .string()
+  .describe(
+    "Fill this in last. The amount of the ingredient corresponding to ingredientSingular, given only as an integer or float. " +
+      "Furthermore, it must correspond with the unit given in the ingredientAmountUnit.",
+  ),
 });
 
 // recipe generation:
@@ -113,7 +115,7 @@ const RecipeSchemaZod = z.object({
   method: z
     .string()
     .describe(
-      "A numbered list of the recipe's method, in the form \\n\\nX. for all X (use two line breaks, not just one, to ensure each step is on its own line separate from all other steps.) " +
+      "A numbered list of the recipe's method, in the form \\n\\nX. for all X (use two line breaks BEFORE the step number, not just one, to ensure each step is on its own line separate from all other steps. Ensure the step number is on the same line as the description of that step) " +
         "For step(s) involving heating the oven, ensure you specify Celsius and Farenheit and different oven options (Fan, Gas mark etc) " +
         "When writing the units e.g. ML, ensure they correspond with those you wrote in ingredientAmountsUnits, but write them in the human-readable form (e.g. ML -> ml, DASH -> dash) ",
       "For the final step, include a nice, upbeat happy step such as 'Enjoy your homemade ...'",

@@ -129,7 +129,7 @@ fun RecipeDiscoveryScreen(
             arrayOfDishes.forEach { dish ->
                 Button(onClick={
                     if (dishes.ingredientsIdentified != null) {
-                        recipeDiscoveryViewModel.setUserRequest(dish + ", using only ingredients: ${dishes.ingredientsIdentified}, salt, pepper, oil")
+                        recipeDiscoveryViewModel.setUserRequest(dish + ", using only ingredients: ${dishes.ingredientsIdentified}")
                     } else {
                         recipeDiscoveryViewModel.setUserRequest(dish)
                     }
