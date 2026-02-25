@@ -51,9 +51,24 @@ fun RecipeCard(
         Text("Ingredients:")
         if (recipeIngredients != null) {
             recipeIngredients.ingredients.forEach { ingredient ->
+
+                // determine pluralities
+                val ingredientAmount = ingredient.amount
+                val ingredientUnit = ingredient.ingredientUnit
+                val unit = if (determineUnitPlurality(ingredientAmount)) {ingredientUnit.pluralName} else {ingredientUnit.singularName}
                 val ingredientName = recipeBookViewModel.getIngredientById(ingredient.ingredientId).collectAsState(initial = null).value
+
+
                 if (ingredientName != null) {
-                    Text("${ingredient.amount} ${ingredient.ingredientUnit.singularName} ${ingredientName.singular}")
+
+                    val ingredientPluralisedName = if (determineIngredientPlurality(ingredientAmount, ingredientUnit)) {ingredientName.plural} else {ingredientName.singular}
+
+                    if (unit != "") {
+                        Text("${formatIngredientAmount(ingredientAmount)} $unit $ingredientPluralisedName")
+                    }
+                    else {
+                        Text("${formatIngredientAmount(ingredientAmount)} $ingredientPluralisedName")
+                    }
                 }
             }
         } else {
@@ -61,5 +76,39 @@ fun RecipeCard(
         }
         Text("Method: ${recipe.method}")
     }
+}
+
+// shaves off the decimal if it is .0, otherwise keeps it.
+// e.g. 5.0 -> 5 but 5.5 remains -> 5.5
+fun formatIngredientAmount(
+    ingredientAmount: Double
+): String {
+    if (ingredientAmount % 1.0 == 0.0) {
+        return ingredientAmount.toInt().toString()
+    }
+    return ingredientAmount.toString()
+}
+
+// determine if plural form should be used or not
+// true if plural, false if singular
+fun determineUnitPlurality(
+    ingredientAmount: Double,
+): Boolean {
+    // plural form should be used in most cases; just a few cases where it shouldn't.
+    return ingredientAmount != 1.0 // if only 1, should always be singular.
+}
+
+fun determineIngredientPlurality(
+    ingredientAmount: Double,
+    ingredientUnit: IngredientUnit
+): Boolean {
+    if (ingredientAmount == 1.0) {
+        // e.g. 1 strawberry = singular
+        // but 1 cup strawberry should be plural: 1 cup strawberries
+        if (ingredientUnit.useSingularForOne) {
+            return false // use singular
+        }
+    }
+    return true
 }
 
