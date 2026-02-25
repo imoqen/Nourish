@@ -1,6 +1,5 @@
 package uk.co.imoqen.nourish.db.ingredientunit
 
-// also need to tell llm to use celsius / farenheit, not included in units.
 // if hard to search for these from llm input, could potentially add ids to them and feed this into llm
 // so llm can return more easily then we just search for the id.
 // include: metric, uk imperial, us imperial.

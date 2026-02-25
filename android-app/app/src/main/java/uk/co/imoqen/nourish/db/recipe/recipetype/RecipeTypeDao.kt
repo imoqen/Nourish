@@ -5,7 +5,6 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
-import uk.co.imoqen.nourish.db.ingredient.Ingredient
 
 @Dao
 interface RecipeTypeDao {

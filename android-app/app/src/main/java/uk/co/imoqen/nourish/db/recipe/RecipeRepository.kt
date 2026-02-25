@@ -5,7 +5,6 @@ import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
 import uk.co.imoqen.nourish.db.NourishDatabase
 import uk.co.imoqen.nourish.db.ingredient.Ingredient
-import uk.co.imoqen.nourish.db.ingredient.IngredientDao
 import uk.co.imoqen.nourish.db.ingredient.IngredientRepository
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeIngredient
@@ -59,6 +58,7 @@ class RecipeRepository @Inject constructor(
     // RECIPE INGREDIENT SECTION LOGIC:
     fun getAllRecipeIngredientSections(): Flow<List<RecipeIngredientSection>> = recipeIngredientSectionDao.getAll()
     suspend fun insertRecipeIngredientSection(recipeIngredientSection: RecipeIngredientSection): Long = recipeIngredientSectionDao.insert(recipeIngredientSection)
+    fun getRecipeSectionById(id: Long): Flow<RecipeIngredientSection?> = recipeIngredientSectionDao.getById(id)
 
     // RECIPE TAG LOGIC:
     fun getAllRecipeTags(): Flow<List<RecipeTag>> = recipeTagDao.getAll()

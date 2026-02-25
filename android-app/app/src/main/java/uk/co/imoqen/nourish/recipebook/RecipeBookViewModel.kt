@@ -11,6 +11,7 @@ import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.recipe.RecipeWithRecipeTags
 import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeWithRecipeIngredients
+import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSection
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.db.tag.TagRepository
@@ -61,6 +62,10 @@ class RecipeBookViewModel @Inject constructor(
 
     fun getTagByTagId(tagId: Long): Flow<Tag?> {
         return tagRepository.getById(tagId)
+    }
+
+    fun getSectionById(sectionId: Long): Flow<RecipeIngredientSection?> {
+        return recipeRepository.getRecipeSectionById(sectionId)
     }
 
 }

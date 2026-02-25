@@ -4,7 +4,6 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
-import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeIngredient
 import javax.inject.Inject
 
 class IngredientRepository @Inject constructor(

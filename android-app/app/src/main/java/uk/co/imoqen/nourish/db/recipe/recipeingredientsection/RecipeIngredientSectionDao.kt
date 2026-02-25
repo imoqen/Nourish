@@ -14,4 +14,7 @@ interface RecipeIngredientSectionDao {
     @Insert
     suspend fun insert(recipeIngredientSection: RecipeIngredientSection): Long
 
+    @Query("SELECT * FROM RecipeIngredientSection WHERE id = :id LIMIT 1")
+    fun getById(id: Long): Flow<RecipeIngredientSection?>
+
 }

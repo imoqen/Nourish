@@ -49,7 +49,15 @@ fun RecipeCard(
         Text("Title: ${recipe.title}")
         Text("Ingredients:")
         if (recipeIngredients != null) {
+            // map with key sectionTitle and value of list of pair of ingredient string and ingredient id (so it can be referenced in future)
+            val sectionsWithIngredients: MutableMap<String, MutableList<Pair<String, Long>>> = mutableMapOf()
+
+            // first bundle them all by section
             recipeIngredients.ingredients.forEach { ingredient ->
+
+                // title of the section:
+                val sectionId = ingredient.sectionId
+                val sectionTitle = recipeBookViewModel.getSectionById(sectionId).collectAsState(initial = null).value?.title
 
                 // determine pluralities
                 val ingredientAmount = ingredient.amount
@@ -58,18 +66,39 @@ fun RecipeCard(
                 val ingredientName = recipeBookViewModel.getIngredientById(ingredient.ingredientId).collectAsState(initial = null).value
 
 
-                if (ingredientName != null) {
+                if (ingredientName != null && sectionTitle != null) {
 
                     val ingredientPluralisedName = if (determineIngredientPlurality(ingredientAmount, ingredientUnit)) {ingredientName.plural} else {ingredientName.singular}
 
-                    if (unit != "") {
-                        Text("${formatIngredientAmount(ingredientAmount)} $unit $ingredientPluralisedName")
+                    var ingredientText = ""
+                    ingredientText = if (unit != "") {
+                        ("${formatIngredientAmount(ingredientAmount)} $unit $ingredientPluralisedName")
+                    } else {
+                        ("${formatIngredientAmount(ingredientAmount)} $ingredientPluralisedName")
                     }
-                    else {
-                        Text("${formatIngredientAmount(ingredientAmount)} $ingredientPluralisedName")
+
+                    sectionsWithIngredients.getOrPut(sectionTitle) { mutableListOf() }.add(ingredientText to ingredient.ingredientId)
+
+                }
+            }
+
+            // then output the ingredients by section
+            sectionsWithIngredients.forEach { (section, ingredients) ->
+                Column(
+                    modifier = Modifier.padding(vertical = 8.dp)
+                ) {
+                    // only output name of section if there is more than 1 section, otherwise it is irrelevant
+                    if (sectionsWithIngredients.size > 1) {
+                        Text(section)
+                    }
+
+                    // id can be used if user wishes to add to shopping list
+                    ingredients.forEach { (ingredient, id) ->
+                        Text(ingredient)
                     }
                 }
             }
+
         } else {
             Text("None")
         }
