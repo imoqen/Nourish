@@ -17,4 +17,8 @@ class TagRepository @Inject constructor(
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun getIdByIdentifier(identifier: String): Long? = tagDao.getIdByIdentifier(identifier)
+
+    @Query("SELECT * FROM Tag WHERE id = :id")
+    fun getById(id: Long): Flow<Tag?> = tagDao.getById(id)
+
 }

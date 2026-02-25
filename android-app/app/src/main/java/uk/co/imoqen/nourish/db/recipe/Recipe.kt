@@ -7,6 +7,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.Relation
+import uk.co.imoqen.nourish.db.recipe.recipetag.RecipeTag
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.user.User
 
@@ -55,7 +56,7 @@ data class UserWithRecipes(
     val recipes: List<Recipe>, // entity has field ownerUid
 )
 
-// all recipes of a recipe type
+// all recipes of a recipe type. not sure if this wil work
 data class RecipeTypeWithRecipes(
     @Embedded val recipeType: RecipeType, // parent
     @Relation(
@@ -63,4 +64,14 @@ data class RecipeTypeWithRecipes(
         entityColumn = "recipeTypeId"
     )
     val recipesOfType: List<Recipe>, // entity
+)
+
+// all types for a recipe
+data class RecipeWithRecipeTags(
+    @Embedded val recipe: Recipe, // parent
+    @Relation(
+        parentColumn = "id", // the primary key of the parent (Recipe)
+        entityColumn = "recipeId" // the foreign key in RecipeTag referencing it
+    )
+    val recipeTags: List<RecipeTag>, // entity
 )

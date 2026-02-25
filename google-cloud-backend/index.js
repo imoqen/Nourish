@@ -541,7 +541,7 @@ async function generateDishesFromIngredients(
       {
         role: "user",
         content:
-          "Return 4 names of dishes which you believe can be cooked at home using only these ingredients (with the exception of small amounts of salt, pepper and oil): " +
+          "Return 4 names of dishes which you believe can be cooked at home using only these ingredients (with the exception of cooking ingredients which are almost always present - small amounts of salt, pepper and oil. With that being said, though, do not include the salt/pepper/oil if it is not relevant to the recipe): " +
           prompt,
       },
     ],
@@ -589,7 +589,9 @@ async function generateRecipeFromDishImage(
       {
         role: "system",
         content:
-          "Return in the required schema, write in sufficient detail but not too much (keep below 250 words).",
+          "Return in the required schema, write in sufficient detail but not too much (keep below 250 words)." +
+          "Furthermore, a list of ingredients is supplied. The recipe must be created using only these ingredients, but the recipe does not need to " +
+          "use all of these - they are simply what the user has access to and can use for the recipe. So do not use ingredients if they are not needed for the recipe.",
       },
       {
         role: "user",
@@ -643,7 +645,7 @@ async function generateDishesFromIngredientsImage(
   const agent = createAgent({
     model: llm,
     tools: [],
-    responseFormat: toolStrategy(RecipeListFromIngredientsImageSchemaZod),
+    responseFormat: toolStrategy(RecipeListFromImageIngredientsSchemaZod),
   });
 
   console.log("Identifying ingredients and potential dishes:");

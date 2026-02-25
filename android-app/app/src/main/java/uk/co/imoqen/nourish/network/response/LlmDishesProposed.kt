@@ -5,5 +5,6 @@ data class LlmDishesProposed(
     val firstMostLikelyDish: String,
     val secondMostLikelyDish: String,
     val thirdMostLikelyDish: String,
-    val fourthMostLikelyDish: String
+    val fourthMostLikelyDish: String,
+    val dishNotPossible: Boolean
 )

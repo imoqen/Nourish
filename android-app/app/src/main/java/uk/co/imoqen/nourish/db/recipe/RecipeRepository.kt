@@ -42,12 +42,15 @@ class RecipeRepository @Inject constructor(
     suspend fun insertRecipe(recipe: Recipe): Long = recipeDao.insert(recipe)
     //fun getRecipeWithIngredients(recipeId: Long): Flow<RecipeWithIngredients> = recipeDao.getRecipeWithIngredients(recipeId)
     fun getRecipeWithRecipeIngredients(recipeId: Long): Flow<RecipeWithRecipeIngredients> = recipeDao.getRecipeWithRecipeIngredients(recipeId)
+    fun getRecipeWithRecipeTypes(recipeId: Long): Flow<RecipeWithRecipeTags> = recipeDao.getRecipeWithRecipeTags(recipeId)
 
 
     // RECIPE TYPE LOGIC:
     fun getAllRecipeTypes(): Flow<List<RecipeType>> = recipeTypeDao.getAll()
+    fun getRecipeTypeById(id: Long): Flow<RecipeType?> = recipeTypeDao.getById(id)
     suspend fun insertRecipeType(recipeType: RecipeType): Long = recipeTypeDao.insert(recipeType)
     suspend fun getIdByTitle(title: String): Long? = recipeTypeDao.getIdByTitle(title)
+
 
     // RECIPE INGREDIENT LOGIC:
     fun getAllRecipeIngredients(): Flow<List<RecipeIngredient>> = recipeIngredientDao.getAll()
@@ -79,7 +82,7 @@ class RecipeRepository @Inject constructor(
                 // 1. make or get the recipe type
                 var recipeTypeId = getIdByTitle(llmRecipe.mealType)
                 if (recipeTypeId == null) {
-                    recipeTypeId = insertRecipeType(RecipeType(title = llmRecipe.title))
+                    recipeTypeId = insertRecipeType(RecipeType(title = llmRecipe.mealType))
                 }
 
                 val recipe = Recipe(

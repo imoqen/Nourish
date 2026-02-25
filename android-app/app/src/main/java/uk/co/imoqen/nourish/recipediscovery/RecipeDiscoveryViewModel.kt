@@ -161,6 +161,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
                                     secondMostLikelyDish = dishesJson.secondMostLikelyDish,
                                     thirdMostLikelyDish = dishesJson.thirdMostLikelyDish,
                                     fourthMostLikelyDish = dishesJson.fourthMostLikelyDish,
+                                    dishNotPossible = dishesJson.dishNotPossible
                                 )
                             )
                         }

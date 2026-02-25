@@ -43,15 +43,6 @@ data class RecipeTag(
     @ColumnInfo(name = "tagId") val tagId: Long, // corresponding tag
 )
 
-data class RecipeWithRecipeTags(
-    @Embedded val recipe: Recipe, // parent
-    @Relation(
-        parentColumn = "id", // the primary key of the parent (Recipe)
-        entityColumn = "recipeId" // the foreign key in RecipeTag referencing it
-    )
-    val collections: List<RecipeTag>, // entity
-)
-
 data class TagWithRecipeTags(
     @Embedded val tag: Tag, // parent
     @Relation(

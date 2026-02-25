@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -75,6 +74,23 @@ fun RecipeCard(
             Text("None")
         }
         Text("Method: ${recipe.method}")
+        Text("Serves: ${recipe.numberOfServings}")
+
+        val recipeTypeId = recipe.recipeTypeId
+        val recipeType = recipeBookViewModel.getRecipeTypeById(recipeTypeId).collectAsState(initial = null)
+        Text("Recipe type: ${recipeType.value?.title}")
+
+        val tags = recipeBookViewModel.getRecipeTagsForRecipe(recipe.id).collectAsState(initial = null).value
+        if (tags != null) {
+            Text("Tags:")
+            tags.recipeTags.forEach{ tag ->
+                val tagValue = recipeBookViewModel.getTagByTagId(tag.tagId).collectAsState(initial = null)
+                Text("${tagValue.value?.identifier}")
+            }
+        }
+
+        Text("Storage guidance: ${recipe.storageInstructions}")
+
     }
 }
 
