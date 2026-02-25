@@ -43,6 +43,87 @@ app.use(express.json());
 initializeApp(); // admin sdk initialised, uses application default credentials
 const db = getFirestore();
 
+// Units:
+// these will be switched dynamically using user preferences
+const metricUnits =
+  "ML, L, G, KG, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit)";
+const imperialUnits =
+  "TSP, TBSP, FL_OZ, CUP, PINT, QUART, GALLON, OZ, LB, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit)";
+
+// Schemas:
+// ingredients put together:
+const IngredientSchemaZod = z.object({
+  ingredientSingular: z.string().describe(""),
+  ingredientPlural: z.string().describe(""),
+  ingredientAmount: z.string().describe(""),
+  ingredientAmountUnit: z.string().describe(""),
+});
+
+// recipe generation:
+const RecipeSchemaZod = z.object({
+  title: z.string().describe("title of the recipe"),
+
+  ingredients: z.array(
+    z.object({
+      recipeSection: z
+        .string()
+        .describe(
+          "A heading for this list of ingredients, for example 'For the ...' e.g. 'For the filling'",
+        ),
+      ingredientsSingular: z
+        .array(z.string())
+        .describe(
+          "A list of ingredients for this recipeSection, in their singular form. Do not specify details such as size; simply give the ingredient " +
+            "(type should be specified only if necessary, e.g. brown sugar vs granulated sugar). " +
+            "Do not include the amounts here; these will go in ingredientAmounts and ingredientAmountsUnits, respectively. " +
+            "Simply return as comma-separated list using , character e.g. a, b, c." +
+            "ENSURE that the length of ingredientsSingular = the length of corresponding ingredientAmounts, ingredientsPlural and ingredientAmountsUnits",
+        ),
+      ingredientsPlural: z
+        .array(z.string())
+        .describe(
+          "A list of ingredients for this recipeSection, in their English correct plural form, as would appear in a recipe. For example, egg -> eggs, flour -> flour " +
+            "Do not include the amounts here; these will go in ingredientAmounts and ingredientAmountsUnits, respectively. " +
+            "Simply return as comma-separated list using , character e.g. a, b, c",
+        ),
+      ingredientAmounts: z
+        .array(z.string())
+        .describe(
+          "A list of the amounts of each ingredient to use, given only as integers or floats. " +
+            "It must correspond with the ingredient in the ingredients list and the units given in the ingredientAmountsUnits list. " +
+            "Simply return as comma-separated list using , character e.g. a, b, c",
+        ),
+      ingredientAmountsUnits: z
+        .array(z.string())
+        .describe(
+          "A list of the ingredient units to use. Must correspond with the ingredient in the ingredients list and ingredientAmounts list. " +
+            "Simply return as comma-separated list using , character e.g. a, b, c " +
+            "Ensure that the unit makes sense, for example only use an approximate unit (such as splash, sprinkle, dash, etc) if the corresponding amount itself is a whole number - otherwise use a unit reflective of the precision (e.g. tsp, tbsp, ml)" +
+            "Return only values from the following list, exactly as they are in the list (as they will be mapped using a predefined enum): " +
+            metricUnits +
+            " Only use UNIT if the ingredient has no measurement; it is a piece itself (e.g. egg, whole fruit, whole vegetable). In particular, if it is a spice, baking agent or herb, do not use UNIT.",
+        ),
+    }),
+  ),
+  servings: z
+    .string()
+    .describe(
+      "The number of servings (not pieces) made of this meal using the amount of ingredients in the ingredientAmounts and ingredientAmountsUnits list. " +
+        "Given as an integer.",
+    ),
+  mealType: z.string().describe(
+    "The type of meal that this corresponds to (breakfast, lunch, dinner, snack)", // need to expand this to include the user's custom meal types
+  ),
+  method: z
+    .string()
+    .describe(
+      "A numbered list of the recipe's method, in the form \\nX. for all X to ensure each step is on its own line " +
+        "For step(s) involving heating the oven, ensure you specify Celsius and Farenheit and different oven options (Fan, Gas mark etc) " +
+        "When writing the units e.g. ML, ensure they correspond with those you wrote in ingredientAmountsUnits, but write them in the human-readable form (e.g. ML -> ml) ",
+      "For the final step, include a nice, upbeat happy step such as 'Enjoy your homemade ...'",
+    ),
+});
+
 /**
  * Receives the request send from the Nourish app and builds the response accordingly.
  * 1. checks if the prompt is present in the request
@@ -267,57 +348,20 @@ async function generateRecipe(
   location = GOOGLE_CLOUD_LOCATION,
   prompt,
 ) {
-
   // these will be switched dynamically using user preferences
-  const metricUnits = "ML, L, G, KG, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit)"
-  const imperialUnits = "TSP, TBSP, FL_OZ, CUP, PINT, QUART, GALLON, OZ, LB, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit), not something else like None - only UNIT."
+  const metricUnits =
+    "ML, L, G, KG, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit)";
+  const imperialUnits =
+    "TSP, TBSP, FL_OZ, CUP, PINT, QUART, GALLON, OZ, LB, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit), not something else like None - only UNIT.";
 
   // tool strategy for formatting output:
   //https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
-  const RecipeSchemaZod = z.object({
-    title: z.string().describe("title of the recipe"),
-    ingredients: z
-      .string()
-      .describe(
-        "a list of the ingredients of the recipe, in their singular form. do not include the amounts here; these will go in ingredientAmounts and ingredientAmountsUnits respectively. Simply return as comma-separated list using , character e.g. a, b, c",
-      ),
-    ingredientAmounts: z
-      .string()
-      .describe(
-        "a list of the amounts of each ingredient to use, given only as integers or floats. must correspond with the ingredient in the ingredients list and the units given in the ingredientAmountsUnits list. Simply return as comma-separated list using , character e.g. a, b, c",
-      ),
-    ingredientAmountsUnits: z
-      .string()
-      .describe(
-        "a list of the ingredient units to use. Must correspond with the ingredient in the ingredients list and ingredientAmounts list. Simply return as comma-separated list using , character e.g. a, b, c Return only values from the following list, exactly as they are in the list (as they will be mapped using a predefined enum): " + metricUnits,
-      ),
-    ingredientPlurals: z
-      .string()
-      .describe(
-        "a list of plural forms of the ingredients list, where if the corresponding ingredient in the ingredients list has corresponding ingredientAmountUnit == UNIT then write the plural otherwise write the singular here. For example, egg would have ingredientAmountUnit == UNIT as it has no unit, so write its plural form. Apply this rule accordingly. Simply return as comma-separated list using , character e.g. a, b, c"
-      ),
-    servings: z
-      .string()
-      .describe(
-        "the number of servings made of this meal using the amount of ingredients in the ingredientAmounts and ingredientAmountsUnits list",
-      ),
-    mealType: z
-      .string()
-      .describe(
-        "the type of meal that this corresponds to (breakfast, lunch, dinner, snack)",
-      ),
-    method: z
-      .string()
-      .describe(
-        "numbered list of the recipe's method, in the form \\nX. for all X to ensure each step is on its own line",
-      ),
-  });
 
   // https://docs.langchain.com/oss/javascript/integrations/chat/google_vertex_ai
   const llm = new ChatVertexAI({
     project: projectId,
     location: location,
-    model: "gemini-2.0-flash",
+    model: "gemini-2.5-flash",
   });
 
   const agent = createAgent({
@@ -343,8 +387,8 @@ async function generateRecipe(
   });
 
   // note: this returns the tokens. should use this value to increment the token count instead.
-
-  console.log(result.structuredResponse);
+  0;
+  console.log(JSON.stringify(result.structuredResponse));
   return result.structuredResponse;
 }
 
@@ -382,7 +426,7 @@ async function generateDishesFromIngredients(
   const llm = new ChatVertexAI({
     project: projectId,
     location: location,
-    model: "gemini-2.0-flash",
+    model: "gemini-2.5-flash",
   });
 
   const agent = createAgent({
@@ -433,56 +477,11 @@ async function generateRecipeFromDishImage(
   // User can supply further detail if they wish, but this is optional:
   const dish = JSON.parse(req.body?.detail).prompt;
 
-  // these will be switched dynamically using user preferences
-  const metricUnits = "ML, L, G, KG, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit)"
-  const imperialUnits = "TSP, TBSP, FL_OZ, CUP, PINT, QUART, GALLON, OZ, LB, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit)"
-
-  // tool strategy for formatting output:
-  //https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
-  const RecipeSchemaZod = z.object({
-    title: z.string().describe("title of the recipe"),
-    ingredients: z
-      .string()
-      .describe(
-        "a list of the ingredients of the recipe, do not include the amounts here; these will go in ingredientAmounts and ingredientAmountsUnits respectively.",
-      ),
-    ingredientAmounts: z
-      .string()
-      .describe(
-        "a list of the amounts of each ingredient to use, given only as integers or floats. must correspond with the ingredient in the ingredients list and the units given in the ingredientAmountsUnits list.",
-      ),
-    ingredientAmountsUnits: z
-      .string()
-      .describe(
-        "a list of the ingredient units to use. Must correspond with the ingredient in the ingredients list and ingredientAmounts list. Return only values from the following list, exactly as they are in the list (as they will be mapped using a predefined enum): " + metricUnits,
-      ),
-    ingredientPlurals: z
-      .string()
-      .describe(
-        "a list of plural forms of the ingredients list, where if the corresponding ingredient in the ingredients list has corresponding ingredientAmountUnit == UNIT then write the plural otherwise write the singular here. For example, egg would have ingredientAmountUnit == UNIT as it has no unit, so write its plural form. Apply this rule accordingly. Simply return as comma-separated list using , character e.g. a, b, c"
-      ),
-    servings: z
-      .string()
-      .describe(
-        "the number of servings made of this meal using the amount of ingredients in the ingredientAmounts and ingredientAmountsUnits list",
-      ),
-    mealType: z
-      .string()
-      .describe(
-        "the type of meal that this corresponds to (breakfast, lunch, dinner, snack)",
-      ),
-    method: z
-      .string()
-      .describe(
-        "numbered list of the recipe's method, in the form \\nX. for all X to ensure each step is on its own line",
-      ),
-  });
-
   // https://docs.langchain.com/oss/javascript/integrations/chat/google_vertex_ai
   const llm = new ChatVertexAI({
     project: projectId,
     location: location,
-    model: "gemini-2.0-flash",
+    model: "gemini-2.5-flash",
   });
 
   const agent = createAgent({
@@ -517,7 +516,7 @@ async function generateRecipeFromDishImage(
 
   // note: this returns the tokens. should use this value to increment the token count instead.
 
-  console.log(result.structuredResponse);
+  console.log(JSON.stringify(result.structuredResponse));
   return result.structuredResponse;
 }
 
@@ -574,7 +573,7 @@ async function generateDishesFromIngredientsImage(
   const llm = new ChatVertexAI({
     project: projectId,
     location: location,
-    model: "gemini-2.0-flash",
+    model: "gemini-2.5-flash",
   });
 
   const agent = createAgent({
@@ -666,7 +665,7 @@ async function generateDishesFromImage(
   const llm = new ChatVertexAI({
     project: projectId,
     location: location,
-    model: "gemini-2.0-flash",
+    model: "gemini-2.5-flash",
   });
 
   const agent = createAgent({
