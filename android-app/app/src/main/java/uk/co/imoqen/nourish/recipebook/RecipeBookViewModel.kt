@@ -3,6 +3,7 @@ package uk.co.imoqen.nourish.recipebook
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
@@ -19,7 +20,12 @@ class RecipeBookViewModel @Inject constructor(
     private val uiEventBus: UiEventBus,
     private val recipeRepository: RecipeRepository
 ): ViewModel() {
-    fun getData(): Flow<List<Recipe>> {
-        return recipeRepository.getAllRecipes()
+
+    // gets all recipes for the currently logged in user. ensures that if user not logged in, empty list returned.
+    fun getAllRecipes(): Flow<List<Recipe>> {
+        val uid = authenticationManager.getUid()
+        if (uid == null) return flowOf(emptyList())
+        return recipeRepository.getAllRecipes(uid)
     }
+
 }

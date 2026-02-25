@@ -9,11 +9,10 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import dagger.internal.Provider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import uk.co.imoqen.nourish.db.recipe.RecipeType
+import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import javax.inject.Singleton
 
 // Hilt dependency injection for Room database
@@ -50,6 +49,7 @@ object NourishDatabaseModule {
                         recipeTypeDao.insert(RecipeType(title = "Dessert"))
                         recipeTypeDao.insert(RecipeType(title = "Side"))
                         recipeTypeDao.insert(RecipeType(title = "Snack"))
+                        recipeTypeDao.insert(RecipeType(title = "Drink"))
                     }
                 }
             })
@@ -78,4 +78,17 @@ object NourishDatabaseModule {
     @Singleton
     @Provides
     fun provideIngredientDao(db: NourishDatabase) = db.ingredientDao()
+
+    @Singleton
+    @Provides
+    fun provideRecipeIngredientSectionDao(db: NourishDatabase) = db.recipeIngredientSectionDao()
+
+    @Singleton
+    @Provides
+    fun provideRecipeTagDao(db: NourishDatabase) = db.recipeTagDao()
+
+    @Singleton
+    @Provides
+    fun provideTagDao(db: NourishDatabase) = db.tagDao()
+
 }

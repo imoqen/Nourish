@@ -36,13 +36,14 @@ enum class IngredientUnit(
     PIECE("piece of", "pieces of"),
     LEAF("leaf of", "leaves of"),
 
-    // small amounts of liquids
+    // small amounts of liquids / herbs etc
     DASH("dash of", "dashes of"),
     DRIZZLE("drizzle of", "drizzles of"),
     PINCH("pinch of", "pinches of"),
     SPLASH("splash of", "splashes of"),
     DROP("drop of", "drops of"),
     HANDFUL("handful of", "handfuls of"),
+    SPRINKLE("sprinkle of", "sprinkles of"),
 
     // baking
     SLICE("slice of", "slices of"),

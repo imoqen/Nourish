@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
+import uk.co.imoqen.nourish.db.recipe.Recipe
 
 /**
  * Recipe Book view
@@ -23,8 +24,18 @@ fun RecipeBookScreen(
         modifier = Modifier.fillMaxWidth().verticalScroll(scrollState)
     ) {
 
-        val allrecipes = recipeBookViewModel.getData().collectAsState(initial = emptyList())
+        val allrecipes = recipeBookViewModel.getAllRecipes().collectAsState(initial = emptyList())
         Text("Recipe Book Screen")
         Text("all recipes: ${allrecipes.value}")
     }
 }
+
+@Composable
+fun RecipeCard(
+    recipe: Recipe
+) {
+    Column() {
+        Text()
+    }
+}
+

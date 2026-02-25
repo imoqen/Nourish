@@ -88,9 +88,9 @@ const IngredientSchemaZod = z.object({
 const RecipeSchemaZod = z.object({
   title: z.string().describe("title of the recipe"),
 
-  ingredients: z.array(
+  sectionIngredients: z.array(
     z.object({
-      recipeSection: z
+      section: z
         .string()
         .describe(
           "A heading for this list of ingredients, for example 'For the ...' e.g. 'For the filling'",

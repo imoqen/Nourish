@@ -11,8 +11,8 @@ import uk.co.imoqen.nourish.db.ingredient.Ingredient
 
 @Dao
 interface RecipeDao {
-    @Query("SELECT * FROM recipe")
-    fun getAll(): Flow<List<Recipe>> // flow is better than normal list for things which should update. as cant access db on main thread
+    @Query("SELECT * FROM recipe WHERE ownerUid = :uid")
+    fun getAll(uid: String): Flow<List<Recipe>> // flow is better than normal list for things which should update. as cant access db on main thread
 
     /*@Insert
     fun insertAllRecipes(vararg recipes: Recipe)

@@ -1,4 +1,4 @@
-package uk.co.imoqen.nourish.db.recipe
+package uk.co.imoqen.nourish.db.recipe.recipetype
 
 import androidx.room.Dao
 import androidx.room.Insert
@@ -12,9 +12,10 @@ interface RecipeTypeDao {
     fun getAll(): Flow<List<RecipeType>> // flow is better than normal list for things which should update. as cant access db on main thread
 
     // insert one
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.Companion.IGNORE)
     suspend fun insert(recipeType: RecipeType): Long
 
-    @Query("SELECT id FROM recipeType WHERE title = :title LIMIT 1")
+    // is not case sensitive via COLLATE NOCASE
+    @Query("SELECT id FROM recipeType WHERE title = :title LIMIT 1 COLLATE NOCASE")
     suspend fun getIdByTitle(title: String): Long?
 }

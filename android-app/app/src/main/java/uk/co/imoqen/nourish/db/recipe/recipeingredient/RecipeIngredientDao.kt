@@ -1,4 +1,4 @@
-package uk.co.imoqen.nourish.db.recipe
+package uk.co.imoqen.nourish.db.recipe.recipeingredient
 
 import androidx.room.Dao
 import androidx.room.Insert
