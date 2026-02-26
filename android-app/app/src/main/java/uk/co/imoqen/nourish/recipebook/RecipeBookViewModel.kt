@@ -19,9 +19,11 @@ import uk.co.imoqen.nourish.db.ingredient.IngredientRepository
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
+import uk.co.imoqen.nourish.db.recipe.RecipeWithRecipeSteps
 import uk.co.imoqen.nourish.db.recipe.RecipeWithRecipeTags
 import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeWithRecipeIngredients
 import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSection
+import uk.co.imoqen.nourish.db.recipe.recipestep.RecipeStep
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.db.tag.TagRepository
@@ -49,6 +51,14 @@ class RecipeBookViewModel @Inject constructor(
         mutableUiState.update { currentState ->
             currentState.copy(
                 selectedRecipeCard = selectedRecipeCard
+            )
+        }
+    }
+
+    fun setSelectedRecipe(selectedRecipe: Recipe) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                selectedRecipe = selectedRecipe
             )
         }
     }
@@ -90,15 +100,37 @@ class RecipeBookViewModel @Inject constructor(
         return recipeRepository.getRecipeSectionById(sectionId)
     }
 
-    fun buildRecipeCard(
-        recipe: Recipe
-    ) {
+    fun getRecipeStepsForRecipe(recipeId: Long): Flow<RecipeWithRecipeSteps> {
+        return recipeRepository.getRecipeWithRecipeSteps(recipeId)
+    }
+
+    fun markStepAsComplete(recipeStepId: Long, complete: Boolean) {
         viewModelScope.launch() {
+            runCatching {
+                recipeRepository.updateStepCompleteness(recipeStepId, complete)
+            }
+                .onSuccess {
+                    // rebuild the recipe card to update it in the ui
+                    buildRecipeCard()
+                }
+                .onFailure { e ->
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("The step could not be marked as complete. Please try again later."))
+                    Log.i("step check", "failed: $e")
+                }
+        }
+    }
+
+    fun buildRecipeCard() {
+        val recipe = mutableUiState.value.selectedRecipe
+        viewModelScope.launch() {
+            if (recipe == null) {
+                return@launch
+            }
             runCatching {
                 val title = recipe.title
                 val ingredientsMap =
                     buildIngredientsMap(getRecipeIngredientsForRecipe(recipe.id).first())
-                val method = recipe.method
+                val method = buildRecipeSteps(recipe.id)
                 val serves = recipe.numberOfServings
                 val recipeType = findRecipeType(recipe.recipeTypeId)
                 val recipeTags = buildRecipeTags(recipe.id)
@@ -111,7 +143,7 @@ class RecipeBookViewModel @Inject constructor(
 
                 val recipeCard = RecipeCard(
                     title, ingredientsMap, method, serves, recipeType,
-                    recipeTags, storageInstructions
+                    recipeTags, storageInstructions, recipe.id
                 )
 
                 setRecipeCard(recipeCard)
@@ -131,22 +163,31 @@ class RecipeBookViewModel @Inject constructor(
     ): MutableList<String> {
         val tagsList: MutableList<String> = mutableListOf()
         val tags = getRecipeTagsForRecipe(recipeId).first()
-            tags.recipeTags.forEach{ tag ->
-                val tagIdentifier = getTagByTagId(tag.tagId).first()?.identifier
-                // delegate up to deal with error
-                if (tagIdentifier == null) {
-                    throw NullPointerException()
-                }
-                tagsList.add(tagIdentifier)
+        tags.recipeTags.forEach{ recipeTag ->
+            val tagIdentifier = getTagByTagId(recipeTag.tagId).first()?.identifier
+            // delegate up to deal with error
+            if (tagIdentifier == null) {
+                throw NullPointerException()
             }
+            tagsList.add(tagIdentifier)
+        }
         return tagsList
+    }
+
+    suspend fun buildRecipeSteps(
+        recipeId: Long
+    ): MutableList<Triple<String, Boolean, Long>> {
+        val recipeStepsList: MutableList<Triple<String, Boolean, Long>> = mutableListOf()
+        getRecipeStepsForRecipe(recipeId).first().recipeSteps.forEach{ step ->
+            recipeStepsList.add(Triple(step.instruction, step.complete, step.id))
+        }
+        return recipeStepsList
     }
 
     suspend fun findRecipeType(
         recipeTypeId: Long
     ): String? {
             return getRecipeTypeById(recipeTypeId).first()?.title
-
     }
 
     suspend fun buildIngredientsMap(
@@ -176,30 +217,23 @@ class RecipeBookViewModel @Inject constructor(
 
 
                 if (ingredientName != null && sectionTitle != null) {
-
                     val ingredientPluralisedName =
                         if (determineIngredientPlurality(ingredientAmount, ingredientUnit)) {
                             ingredientName.plural
                         } else {
                             ingredientName.singular
                         }
-
                     var ingredientText = ""
                     ingredientText = if (unit != "") {
                         ("$unit $ingredientPluralisedName")
                     } else {
                         (ingredientPluralisedName)
                     }
-
                     sectionsWithIngredients.getOrPut(sectionTitle) { mutableListOf() }
                         .add(Triple(ingredientText, ingredientAmount, ingredient.ingredientId))
-
                 }
             }
-
-
         return sectionsWithIngredients
-
     }
 
     // determine if plural form should be used or not

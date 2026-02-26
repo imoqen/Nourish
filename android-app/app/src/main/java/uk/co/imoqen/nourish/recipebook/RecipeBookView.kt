@@ -5,10 +5,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.Recipe
@@ -37,17 +39,18 @@ fun RecipeBookScreen(
 
         // currently only outputs the first recipe; only one recipe will be shown at once.
         if (allRecipes.value.isNotEmpty()) {
-            RecipeCard(allRecipes.value.last(), recipeBookViewModel)
+            recipeBookViewModel.setSelectedRecipe(allRecipes.value.last())
+            RecipeCard(recipeBookViewModel)
         }
     }
 }
 
 @Composable
 fun RecipeCard(
-    recipe: Recipe,
     recipeBookViewModel: RecipeBookViewModel
 ) {
-    recipeBookViewModel.buildRecipeCard(recipe)
+    val recipe = recipeBookViewModel.uiState.collectAsState().value.selectedRecipe
+    recipeBookViewModel.buildRecipeCard()
     val recipeCard = recipeBookViewModel.uiState.collectAsState().value.selectedRecipeCard
 
     if (recipeCard != null) {
@@ -73,7 +76,22 @@ fun RecipeCard(
             }
         }
 
-        Text("Method: ${recipeCard.method}")
+        // in future, id here can be used to edit the complete status of the recipe.
+        Text("Method:")
+        recipeCard.method.forEachIndexed{ i, (instruction, complete, id) ->
+            Text(
+                text = "Step ${i+1}. $instruction",
+                textDecoration = if (complete) { TextDecoration.LineThrough} else TextDecoration.None
+            )
+            Button(
+                onClick = {
+                    recipeBookViewModel.markStepAsComplete(id, !complete)
+                }
+            ) {
+                Text("Mark as complete")
+            }
+        }
+
         Text("Serves: ${recipeCard.serves}")
         Text("Recipe type: ${recipeCard.recipeType}")
         if (recipeCard.recipeTags.isNotEmpty()) {

@@ -79,11 +79,11 @@ const IngredientSchemaZod = z.object({
         " Only use UNIT if the ingredient has no measurement; it is a piece itself (e.g. egg, whole fruit, whole vegetable). In particular, if it is a spice, baking agent or herb, do not use UNIT.",
     ),
   ingredientAmount: z
-  .string()
-  .describe(
-    "Fill this in last. The amount of the ingredient corresponding to ingredientSingular, given only as an integer or float. " +
-      "Furthermore, it must correspond with the unit given in the ingredientAmountUnit.",
-  ),
+    .string()
+    .describe(
+      "Fill this in last. The amount of the ingredient corresponding to ingredientSingular, given only as an integer or float. " +
+        "Furthermore, it must correspond with the unit given in the ingredientAmountUnit.",
+    ),
 });
 
 // recipe generation:
@@ -113,12 +113,12 @@ const RecipeSchemaZod = z.object({
   ),
 
   method: z
-    .string()
+    .array(z.string())
     .describe(
-      "A numbered list of the recipe's method, in the form \\n\\nX. for all X (use two line breaks BEFORE the step number, not just one, to ensure each step is on its own line separate from all other steps. Ensure the step number is on the same line as the description of that step) " +
+      "An array of the recipe's method, each array element being an individual step. Ensure that the array is ordered from first to last step, and do not include step numbers. " +
         "For step(s) involving heating the oven, ensure you specify Celsius and Farenheit and different oven options (Fan, Gas mark etc) " +
-        "When writing the units e.g. ML, ensure they correspond with those you wrote in ingredientAmountsUnits, but write them in the human-readable form (e.g. ML -> ml, DASH -> dash) ",
-      "For the final step, include a nice, upbeat happy step such as 'Enjoy your homemade ...'",
+        "When writing the units e.g. ML, ensure they correspond with those you wrote in the sectionIngredients array, but write them in the human-readable form (e.g. ML -> ml, DASH -> dash) " +
+        "For the final step, include a nice, upbeat happy step such as 'Enjoy your homemade ...'",
     ),
 
   tags: z.array(z.string()).describe(

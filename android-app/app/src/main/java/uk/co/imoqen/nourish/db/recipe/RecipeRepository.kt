@@ -12,6 +12,8 @@ import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeIngredientDao
 import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeWithRecipeIngredients
 import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSection
 import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSectionDao
+import uk.co.imoqen.nourish.db.recipe.recipestep.RecipeStep
+import uk.co.imoqen.nourish.db.recipe.recipestep.RecipeStepDao
 import uk.co.imoqen.nourish.db.recipe.recipetag.RecipeTag
 import uk.co.imoqen.nourish.db.recipe.recipetag.RecipeTagDao
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
@@ -30,6 +32,7 @@ class RecipeRepository @Inject constructor(
     private val recipeIngredientDao: RecipeIngredientDao,
     private val recipeIngredientSectionDao: RecipeIngredientSectionDao,
     private val recipeTagDao: RecipeTagDao,
+    private val recipeStepDao: RecipeStepDao,
 
     // external therefore use Repositories:
     private val ingredientRepository: IngredientRepository,
@@ -42,6 +45,8 @@ class RecipeRepository @Inject constructor(
     //fun getRecipeWithIngredients(recipeId: Long): Flow<RecipeWithIngredients> = recipeDao.getRecipeWithIngredients(recipeId)
     fun getRecipeWithRecipeIngredients(recipeId: Long): Flow<RecipeWithRecipeIngredients> = recipeDao.getRecipeWithRecipeIngredients(recipeId)
     fun getRecipeWithRecipeTypes(recipeId: Long): Flow<RecipeWithRecipeTags> = recipeDao.getRecipeWithRecipeTags(recipeId)
+    fun getRecipeWithRecipeSteps(recipeId: Long): Flow<RecipeWithRecipeSteps> = recipeDao.getRecipeWithRecipeSteps(recipeId)
+
 
 
     // RECIPE TYPE LOGIC:
@@ -59,6 +64,11 @@ class RecipeRepository @Inject constructor(
     fun getAllRecipeIngredientSections(): Flow<List<RecipeIngredientSection>> = recipeIngredientSectionDao.getAll()
     suspend fun insertRecipeIngredientSection(recipeIngredientSection: RecipeIngredientSection): Long = recipeIngredientSectionDao.insert(recipeIngredientSection)
     fun getRecipeSectionById(id: Long): Flow<RecipeIngredientSection?> = recipeIngredientSectionDao.getById(id)
+
+    // RECIPE STEP LOGIC:
+    fun getAllRecipeSteps(): Flow<List<RecipeStep>> = recipeStepDao.getAll()
+    suspend fun insertRecipeStep(recipeStep: RecipeStep): Long = recipeStepDao.insert(recipeStep)
+    suspend fun updateStepCompleteness(recipeStepId: Long, complete: Boolean) = recipeStepDao.updateStepCompleteness(recipeStepId, complete)
 
     // RECIPE TAG LOGIC:
     fun getAllRecipeTags(): Flow<List<RecipeTag>> = recipeTagDao.getAll()
@@ -88,7 +98,6 @@ class RecipeRepository @Inject constructor(
             val recipe = Recipe(
                 authorUid = uid,
                 title = llmRecipe.title,
-                method = llmRecipe.method,
                 numberOfServings = llmRecipe.servings.toInt(),
                 colour = "todo",
                 generated = true,
@@ -138,7 +147,20 @@ class RecipeRepository @Inject constructor(
                 }
             }
 
-            // 3. add tags
+            // 3. add recipe steps
+            val steps = llmRecipe.method
+            steps.forEachIndexed{ i, step ->
+                recipeStepDao.insert(
+                    RecipeStep(
+                        recipeId = recipeId,
+                        index = i+1, // +1 so its human readable (i.e. step 0 -> step 1)
+                        instruction = step,
+                        complete = false // auto set to false as user must not have started recipe
+                    )
+                )
+            }
+
+            // 4. add tags
             // first add them to tag table if they dont already exist
             // then make the connection between each to the recipe via RecipeTag
             llmRecipe.tags.forEach { tagIdentifier ->

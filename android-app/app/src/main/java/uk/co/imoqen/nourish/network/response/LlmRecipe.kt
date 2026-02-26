@@ -8,7 +8,7 @@ data class LlmRecipe(
     val sectionIngredients: List<LlmIngredientSection>,
     val servings: String,
     val mealType: String,
-    val method: String,
+    val method: List<String>,
     val tags: List<String>,
     val storage: String,
     val recipeNotPossible: Boolean
