@@ -1,24 +1,13 @@
 package uk.co.imoqen.nourish.db.tag
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
+
 import kotlinx.coroutines.flow.Flow
-import uk.co.imoqen.nourish.db.ingredient.Ingredient
-import javax.inject.Inject
 
-class TagRepository @Inject constructor(
-    private val tagDao: TagDao
-){
-    @Query("SELECT * FROM Tag")
-    fun getAll(): Flow<List<Tag>> = tagDao.getAll()
+interface TagRepository {
+    fun getAll(): Flow<List<Tag>>
 
-    @Insert
-    suspend fun insert(tag: Tag): Long = tagDao.insert(tag)
+    suspend fun insert(tag: Tag): Long
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun getIdByIdentifier(identifier: String): Long? = tagDao.getIdByIdentifier(identifier)
+    suspend fun getIdByIdentifier(identifier: String): Long?
 
-    @Query("SELECT * FROM Tag WHERE id = :id")
-    fun getById(id: Long): Flow<Tag?> = tagDao.getById(id)
-
+    fun getById(id: Long): Flow<Tag?>
 }

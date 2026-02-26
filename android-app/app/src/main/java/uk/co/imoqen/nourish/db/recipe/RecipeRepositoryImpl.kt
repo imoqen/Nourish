@@ -18,7 +18,7 @@ import uk.co.imoqen.nourish.db.recipe.recipetag.RecipeTagDao
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeTypeDao
 import uk.co.imoqen.nourish.db.tag.Tag
-import uk.co.imoqen.nourish.db.tag.TagRepository
+import uk.co.imoqen.nourish.db.tag.TagRepositoryImpl
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 import javax.inject.Inject
 
@@ -35,7 +35,7 @@ class RecipeRepositoryImpl @Inject constructor(
 
     // external therefore use Repositories:
     private val ingredientRepository: IngredientRepositoryImpl,
-    private val tagRepository: TagRepository,
+    private val tagRepository: TagRepositoryImpl,
 ): RecipeRepository {
     // RECIPE LOGIC:
     // get all recipes: (not suspend)

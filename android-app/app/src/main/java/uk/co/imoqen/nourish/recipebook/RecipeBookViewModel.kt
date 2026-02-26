@@ -25,7 +25,7 @@ import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeWithRecipeIngredien
 import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSection
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.tag.Tag
-import uk.co.imoqen.nourish.db.tag.TagRepository
+import uk.co.imoqen.nourish.db.tag.TagRepositoryImpl
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.apimanager.ApiManager
@@ -39,7 +39,7 @@ class RecipeBookViewModel @Inject constructor(
     private val uiEventBus: UiEventBus,
     private val recipeRepository: RecipeRepositoryImpl,
     private val ingredientRepository: IngredientRepositoryImpl,
-    private val tagRepository: TagRepository
+    private val tagRepository: TagRepositoryImpl
 ): ViewModel() {
 
     private val mutableUiState = MutableStateFlow(RecipeBookUiState())

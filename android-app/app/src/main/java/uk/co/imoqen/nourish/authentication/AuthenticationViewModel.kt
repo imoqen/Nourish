@@ -1,10 +1,8 @@
 package uk.co.imoqen.nourish.authentication
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,7 +13,7 @@ import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.db.user.User
-import uk.co.imoqen.nourish.db.user.UserRepository
+import uk.co.imoqen.nourish.db.user.UserRepositoryImpl
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import javax.inject.Inject
 
@@ -31,7 +29,7 @@ import javax.inject.Inject
 class AuthenticationViewModel @Inject constructor(
     private val authenticationManager: AuthenticationManager,
     private val uiEventBus: UiEventBus,
-    private val userRepository: UserRepository,
+    private val userRepository: UserRepositoryImpl,
 ): ViewModel() {
     // Purpose: pattern to encapsulate the mutable state to ensure it is not mutable from the viewmodel.
     // pattern taken from advice in: https://medium.com/@rowaido.game/managing-ui-states-in-jetpack-compose-7eb15e4f6931

@@ -1,7 +1,6 @@
 package co.uk.imoqen.testfixtures.repository
 
-import uk.co.imoqen.nourish.db.user.UserRepository
-import uk.co.imoqen.nourish.network.apimanager.ApiManager
+import uk.co.imoqen.nourish.db.user.UserRepositoryImpl
 
-class FakeUserRepository(): UserRepository {
+class FakeUserRepository(): UserRepositoryImpl {
 }
