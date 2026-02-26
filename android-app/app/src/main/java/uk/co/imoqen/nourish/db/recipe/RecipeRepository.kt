@@ -74,80 +74,60 @@ class RecipeRepository @Inject constructor(
     fun getAllRecipeTags(): Flow<List<RecipeTag>> = recipeTagDao.getAll()
     suspend fun insertRecipeTag(recipeTag: RecipeTag): Long = recipeTagDao.insert(recipeTag)
 
-    // RECIPE CREATION to call in viewmodel:
+    /**
+     * Creates a recipe in the database and its corresponding entitites
+     */
     suspend fun createRecipe(
         uid: String,
         llmRecipe: LlmRecipe
     ) {
         // if throws, it is handled accordingly where it is called.
         db.withTransaction {
-            // recipe is send with fields:
-            // a. title, instructions, num servings, recipe type
-            // then units and ingredients, which are stored in RecipeIngredient
-            // 1. make the recipe type defined in  a. recipe type if it doesnt already exist
-            // 1. now make the Recipe with the things in a. and connect it to the currently logged in user and recipe type
-            // 2. search for the ingredient in Ingredient and add it if it doesnt already exist
-            // 3. now make each RecipeIngredient, connecting it to Recipe and Ingredient (b.)
-
-            // 1. make or get the recipe type
+            // 1. Create or get the recipe type
             var recipeTypeId = getIdByTitle(llmRecipe.mealType)
             if (recipeTypeId == null) {
                 recipeTypeId = insertRecipeType(RecipeType(title = llmRecipe.mealType))
             }
 
+            // 2. Create the recipe and add it to the database
             val recipe = Recipe(
-                authorUid = uid,
-                title = llmRecipe.title,
-                numberOfServings = llmRecipe.servings.toInt(),
-                colour = "todo",
-                generated = true,
-                image = null,
-                archived = false,
-                storageInstructions = llmRecipe.storage,
-                recipeTypeId = recipeTypeId,
+                authorUid = uid, title = llmRecipe.title, numberOfServings = llmRecipe.servings.toInt(),
+                colour = "todo", generated = true, image = null, archived = false,
+                storageInstructions = llmRecipe.storage, recipeTypeId = recipeTypeId,
             )
-
-            // add the recipe to the db:
             val recipeId = recipeDao.insert(recipe)
 
-            // 2. search for each ingredient and add it if it doesnt already exist:
+            // 3. Search for each Ingredient and create it if it doesn't already exist:
             llmRecipe.sectionIngredients.forEach{sectionIngredient ->
                 val section = sectionIngredient.section
                 val ingredients = sectionIngredient.ingredients
-
                 // add the section:
                 val sectionId = recipeIngredientSectionDao.insert(RecipeIngredientSection(title = section))
-
-                // for each ingredient in the section:
+                // for each Ingredient in the section:
                 ingredients.forEach{ingredient ->
                     val singular = ingredient.ingredientSingular
                     val plural = ingredient.ingredientPlural
                     val amount = ingredient.ingredientAmount
                     val unit = ingredient.ingredientAmountUnit
-
                     // add it to ingredient table if doesn't already exist in its singular form:
                     var ingredientId = ingredientRepository.getIdBySingular(singular)
                     if (ingredientId == null) {
                         ingredientId = ingredientRepository.insert(Ingredient(singular = singular, plural = plural))
                     }
-
-                    // ingredient unit: find the corresponding unit in the enum
+                    // Ingredient unit: find the corresponding unit in the enum
                     val ingredientUnit = IngredientUnit.valueOf(unit)
-
-                    // then add to recipe ingredient with the recipe and the newly added section:
+                    // Then create a RecipeIngredient with the Recipe, Ingredient and the newly added RecipeSection:
                     recipeIngredientDao.insert(
                         RecipeIngredient(
-                            recipeId = recipeId,
-                            ingredientId = ingredientId,
-                            ingredientUnit = ingredientUnit,
-                            amount = amount.toDouble(),
+                            recipeId = recipeId, ingredientId = ingredientId,
+                            ingredientUnit = ingredientUnit, amount = amount.toDouble(),
                             sectionId = sectionId
                         )
                     )
                 }
             }
 
-            // 3. add recipe steps
+            // 4. Create recipe steps
             val steps = llmRecipe.method
             steps.forEachIndexed{ i, step ->
                 recipeStepDao.insert(
@@ -160,9 +140,7 @@ class RecipeRepository @Inject constructor(
                 )
             }
 
-            // 4. add tags
-            // first add them to tag table if they dont already exist
-            // then make the connection between each to the recipe via RecipeTag
+            // 5. Create tags
             llmRecipe.tags.forEach { tagIdentifier ->
                 var tagId = tagRepository.getIdByIdentifier(tagIdentifier)
                 if (tagId == null) {
@@ -172,14 +150,10 @@ class RecipeRepository @Inject constructor(
                         )
                     )
                 }
-                // then add the recipetag:
                 recipeTagDao.insert(
                     RecipeTag(recipeId = recipeId, tagId = tagId)
                 )
             }
-
-            Log.i("DB DONE", "added recipe to db with id: $recipeId")
-
         }
     }
 }

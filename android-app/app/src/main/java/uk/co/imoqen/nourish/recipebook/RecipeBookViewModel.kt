@@ -70,11 +70,6 @@ class RecipeBookViewModel @Inject constructor(
         return recipeRepository.getAllRecipes(uid)
     }
 
-    // not sure if this is needed
-    /*fun getIngredientsForRecipe(recipeId: Long): Flow<RecipeWithIngredients> {
-        return recipeRepository.getRecipeWithIngredients(recipeId)
-    }*/
-
     // use instead
     fun getRecipeIngredientsForRecipe(recipeId: Long): Flow<RecipeWithRecipeIngredients> {
         return recipeRepository.getRecipeWithRecipeIngredients(recipeId)
