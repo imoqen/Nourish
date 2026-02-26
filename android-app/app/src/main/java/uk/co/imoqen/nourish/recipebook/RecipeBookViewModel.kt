@@ -15,17 +15,17 @@ import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.db.ingredient.Ingredient
-import uk.co.imoqen.nourish.db.ingredient.IngredientRepositoryImpl
+import uk.co.imoqen.nourish.db.ingredient.IngredientRepository
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.Recipe
-import uk.co.imoqen.nourish.db.recipe.RecipeRepositoryImpl
+import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.recipe.RecipeWithRecipeSteps
 import uk.co.imoqen.nourish.db.recipe.RecipeWithRecipeTags
 import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeWithRecipeIngredients
 import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSection
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.tag.Tag
-import uk.co.imoqen.nourish.db.tag.TagRepositoryImpl
+import uk.co.imoqen.nourish.db.tag.TagRepository
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.apimanager.ApiManager
@@ -37,9 +37,9 @@ class RecipeBookViewModel @Inject constructor(
     private val authenticationManager: AuthenticationManager,
     private val apiManager: ApiManager,
     private val uiEventBus: UiEventBus,
-    private val recipeRepository: RecipeRepositoryImpl,
-    private val ingredientRepository: IngredientRepositoryImpl,
-    private val tagRepository: TagRepositoryImpl
+    private val recipeRepository: RecipeRepository,
+    private val ingredientRepository: IngredientRepository,
+    private val tagRepository: TagRepository
 ): ViewModel() {
 
     private val mutableUiState = MutableStateFlow(RecipeBookUiState())

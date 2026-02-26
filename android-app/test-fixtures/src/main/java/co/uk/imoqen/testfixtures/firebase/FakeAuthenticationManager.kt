@@ -100,10 +100,10 @@ class FakeAuthenticationManager(): AuthenticationManager {
     }
 
     override fun getUid(): String? {
-        TODO("Not yet implemented")
+        return "test_uid"
     }
 
     override fun getEmail(): String? {
-        TODO("Not yet implemented")
+        return "test@gmail.com"
     }
 }

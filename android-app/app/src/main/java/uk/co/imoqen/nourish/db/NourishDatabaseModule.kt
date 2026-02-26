@@ -60,7 +60,7 @@ object NourishDatabaseModule {
     // all DAOs provided here to Hilt:
 
     @Singleton
-    @Provides
+    @Provides // provides as the object is constructed
     fun provideRecipeDao(db: NourishDatabase) = db.recipeDao()
 
     @Singleton

@@ -20,7 +20,7 @@ import uk.co.imoqen.nourish.network.request.LlmRequest
 import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import javax.inject.Inject
 import uk.co.imoqen.nourish.common.saveImage
-import uk.co.imoqen.nourish.db.recipe.RecipeRepositoryImpl
+import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import uk.co.imoqen.nourish.network.response.LlmRecipe
@@ -47,7 +47,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
     private val authenticationManager: AuthenticationManager,
     private val apiManager: ApiManager,
     private val uiEventBus: UiEventBus,
-    private val recipeRepository: RecipeRepositoryImpl
+    private val recipeRepository: RecipeRepository
 ): ViewModel() {
     private val mutableUiState = MutableStateFlow(RecipeDiscoveryUiState())
     val uiState: StateFlow<RecipeDiscoveryUiState> = mutableUiState.asStateFlow()
