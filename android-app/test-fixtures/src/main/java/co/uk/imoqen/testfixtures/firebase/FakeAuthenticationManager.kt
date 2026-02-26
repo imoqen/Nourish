@@ -98,4 +98,12 @@ class FakeAuthenticationManager(): AuthenticationManager {
     override suspend fun getUserToken(): String? {
         TODO("Not yet implemented")
     }
+
+    override fun getUid(): String? {
+        return "test_uid"
+    }
+
+    override fun getEmail(): String? {
+        return "test@gmail.com"
+    }
 }

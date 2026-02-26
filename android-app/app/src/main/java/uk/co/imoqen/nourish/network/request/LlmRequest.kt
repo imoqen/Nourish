@@ -1,4 +1,4 @@
-package uk.co.imoqen.nourish.network
+package uk.co.imoqen.nourish.network.request
 
 /**
  * The Api Request sends a single prompt containing the recipe that the user wishes to cook.

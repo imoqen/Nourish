@@ -103,8 +103,8 @@ class ProfileViewModel @Inject constructor(
 
     // Functions used within the View to perform actions:
 
-    fun getEmail(): String {
-        return authenticationManager.authenticationState.value.email
+    fun getEmail(): String? {
+        return authenticationManager.getEmail()
     }
 
     /**

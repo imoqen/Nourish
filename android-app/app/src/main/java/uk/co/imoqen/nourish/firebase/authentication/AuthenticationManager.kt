@@ -98,4 +98,8 @@ interface AuthenticationManager {
      * @returns the token as a string if the user is logged in and valid, null otherwise.
      */
     suspend fun getUserToken(): String?
+
+    // required for adding the user to room db:
+    fun getUid(): String?
+    fun getEmail(): String?
 }
