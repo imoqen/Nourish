@@ -44,7 +44,8 @@ data class Recipe(
     @ColumnInfo(name = "imagePath") val image: String?, // optional. only one image per recipe, so fine.
     @ColumnInfo(name = "archived") val archived: Boolean,
     @ColumnInfo(name = "storageInstructions") val storageInstructions: String,
-    @ColumnInfo(name = "recipeTypeId") val recipeTypeId: Long
+    @ColumnInfo(name = "recipeTypeId") val recipeTypeId: Long,
+    @ColumnInfo(name = "emoji") val emoji: String
 )
 
 data class UserWithRecipes(

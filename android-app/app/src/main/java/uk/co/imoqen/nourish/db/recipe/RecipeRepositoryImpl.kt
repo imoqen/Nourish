@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish.db.recipe
 
+import android.util.Log
 import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
 import uk.co.imoqen.nourish.db.NourishDatabase
@@ -82,17 +83,19 @@ class RecipeRepositoryImpl @Inject constructor(
     ) {
         // if throws, it is handled accordingly where it is called.
         db.withTransaction {
-            // 1. Create or get the recipe type
-            var recipeTypeId = getIdByTitle(llmRecipe.mealType)
+            // 1. Create or get the recipe type, only add in form where first char is capital
+            // (i.e. dinner -> Dinner) to ensure no dupes
+            val mealTypeFormatted = (llmRecipe.mealType).lowercase().replaceFirstChar { it.uppercase() }
+            var recipeTypeId = getIdByTitle(mealTypeFormatted)
             if (recipeTypeId == null) {
-                recipeTypeId = insertRecipeType(RecipeType(title = llmRecipe.mealType))
+                recipeTypeId = insertRecipeType(RecipeType(title = mealTypeFormatted))
             }
 
             // 2. Create the recipe and add it to the database
             val recipe = Recipe(
                 authorUid = uid, title = llmRecipe.title, numberOfServings = llmRecipe.servings.toInt(),
                 colour = "todo", generated = true, image = null, archived = false,
-                storageInstructions = llmRecipe.storage, recipeTypeId = recipeTypeId,
+                storageInstructions = llmRecipe.storage, recipeTypeId = recipeTypeId, emoji = llmRecipe.emoji
             )
             val recipeId = recipeDao.insert(recipe)
 

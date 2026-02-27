@@ -1,8 +1,10 @@
 package uk.co.imoqen.nourish.recipebook
 
 import uk.co.imoqen.nourish.db.recipe.Recipe
+import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 
 data class RecipeBookUiState(
+    val recipeBookMap: MutableMap<RecipeType, MutableList<Recipe>>? = null,
     val selectedRecipe: Recipe? = null,
     val selectedRecipeCard: RecipeCard? = null
 )

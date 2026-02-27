@@ -48,7 +48,7 @@ object NourishDatabaseModule {
                         recipeTypeDao.insert(RecipeType(title = "Dinner"))
                         recipeTypeDao.insert(RecipeType(title = "Dessert"))
                         recipeTypeDao.insert(RecipeType(title = "Side"))
-                        recipeTypeDao.insert(RecipeType(title = "Snack"))
+                        //recipeTypeDao.insert(RecipeType(title = "Snack"))
                         recipeTypeDao.insert(RecipeType(title = "Drink"))
                     }
                 }

@@ -109,7 +109,7 @@ const RecipeSchemaZod = z.object({
     ),
 
   mealType: z.string().describe(
-    "The type of meal that this corresponds to (breakfast, lunch, dinner, snack, dessert)", // need to expand this to include the user's custom meal types
+    "The type of meal that this corresponds to, returned exactly and with the same capitalisation as ONE element from the following list: Breakfast, Lunch, Dinner, Dessert, Side, Drink", // need to expand this to include the user's custom meal types
   ),
 
   method: z
@@ -145,6 +145,8 @@ const RecipeSchemaZod = z.object({
         "return 'true' here and fill in every other required field with an empty string, " +
         "otherwise return 'false' and generate the recipe accordingly.",
     ),
+
+  emoji: z.string().describe("A single emoji which best describes this dish."),
 });
 
 // tool strategy for formatting output:

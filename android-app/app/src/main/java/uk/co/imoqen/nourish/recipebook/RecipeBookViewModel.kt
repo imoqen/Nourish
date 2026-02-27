@@ -30,6 +30,7 @@ import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import javax.inject.Inject
+import kotlin.collections.getOrPut
 
 @HiltViewModel
 class RecipeBookViewModel @Inject constructor(
@@ -58,6 +59,14 @@ class RecipeBookViewModel @Inject constructor(
         mutableUiState.update { currentState ->
             currentState.copy(
                 selectedRecipe = selectedRecipe
+            )
+        }
+    }
+
+    fun setRecipeBookMap(recipeBookMap: MutableMap<RecipeType, MutableList<Recipe>>) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                recipeBookMap = recipeBookMap
             )
         }
     }
@@ -251,6 +260,29 @@ class RecipeBookViewModel @Inject constructor(
             }
         }
         return true
+    }
+
+    fun getRecipeBookMap() {
+        viewModelScope.launch() {
+            runCatching {
+                val allRecipes = getAllRecipes().first()
+                val recipeBookMap: MutableMap<RecipeType, MutableList<Recipe>> = mutableMapOf()
+                allRecipes.forEach { recipe ->
+                    val type = recipeRepository.getRecipeTypeById(recipe.recipeTypeId).first()
+                    if (type == null) {
+                        throw NullPointerException()
+                    }
+                    recipeBookMap.getOrPut(type) { mutableListOf() }
+                        .add(recipe)
+                }
+                setRecipeBookMap(recipeBookMap)
+            }
+                .onSuccess {  }
+                .onFailure { e ->
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Couldn't fetch recipes. Please try again later."))
+                    Log.i("recipe book", "failed: $e")
+                }
+        }
     }
 
 
