@@ -145,15 +145,11 @@ class RecipeRepositoryImpl @Inject constructor(
 
             // 5. Create tags
             llmRecipe.tags.forEach { tagIdentifier ->
-                var tagId = tagRepository.getIdByIdentifier(tagIdentifier)
+                val tagId = tagRepository.getIdByIdentifier(tagIdentifier)
+                // must already exist; llm has to choose from predefined (not make own). only users can add more.
+
                 if (tagId == null) {
-                    tagId = tagRepository.insert(
-                        Tag(
-                            identifier = tagIdentifier,
-                            displayName = "Test",
-                            colour = "Test"
-                        )
-                    )
+                    throw NullPointerException()
                 }
                 recipeTagDao.insert(
                     RecipeTag(recipeId = recipeId, tagId = tagId)

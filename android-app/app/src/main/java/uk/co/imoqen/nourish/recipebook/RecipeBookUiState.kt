@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish.recipebook
 
+import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 
@@ -15,7 +16,7 @@ data class RecipeCardExpanded(
     val method: MutableList<Triple<String, Boolean, Long>>, // step, complete or not, id
     val serves: Int,
     val recipeType: String,
-    val recipeTags: MutableList<String>,
+    val recipeTags: MutableList<Pair<String, NourishColour>>,
     val storageInstructions: String,
     val recipeId: Long // to recover the corresponding recipe card if needed
 )
@@ -25,7 +26,7 @@ data class RecipeCardExpanded(
 // potentially could add ingredients list here to enable searching by ingredient.
 data class RecipeCardUnexpanded(
     val title: String,
-    val recipeTags: MutableList<String>,
+    val recipeTags: MutableList<Pair<String, NourishColour>>,
     val imagePath: String,
     val emoji: String,
     val recipeId: Long

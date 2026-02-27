@@ -88,7 +88,9 @@ const IngredientSchemaZod = z.object({
 
 // recipe generation:
 const RecipeSchemaZod = z.object({
-  title: z.string().describe("title of the recipe"),
+  title: z
+    .string()
+    .describe("Title of the recipe, must be 42 characters or less."),
 
   sectionIngredients: z.array(
     z.object({

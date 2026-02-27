@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.db.ingredient.Ingredient
@@ -163,16 +164,16 @@ class RecipeBookViewModel @Inject constructor(
 
     suspend fun buildRecipeTags(
         recipeId: Long
-    ): MutableList<String> {
-        val tagsList: MutableList<String> = mutableListOf()
+    ): MutableList<Pair<String, NourishColour>> {
+        val tagsList: MutableList<Pair<String, NourishColour>> = mutableListOf()
         val tags = getRecipeTagsForRecipe(recipeId).first()
         tags.recipeTags.forEach{ recipeTag ->
-            val tagIdentifier = getTagByTagId(recipeTag.tagId).first()?.identifier
+            val tag = getTagByTagId(recipeTag.tagId).first()
             // delegate up to deal with error
-            if (tagIdentifier == null) {
+            if (tag == null) {
                 throw NullPointerException()
             }
-            tagsList.add(tagIdentifier)
+            tagsList.add(Pair(tag.displayName, enumValueOf<NourishColour>(tag.colour)))
         }
         return tagsList
     }

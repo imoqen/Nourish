@@ -3,10 +3,12 @@ package uk.co.imoqen.nourish.recipebook
 import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -21,6 +23,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -42,17 +45,22 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.sp
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
+import uk.co.imoqen.nourish.common.NourishColour
+import uk.co.imoqen.nourish.common.backgroundColour
+import uk.co.imoqen.nourish.common.onBackgroundColour
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import java.io.File
 import kotlin.collections.emptyList
+
 
 /**
  * Recipe Book view
@@ -110,8 +118,8 @@ fun RecipeList(
             items(recipeCardsUnexpanded) { recipeCardUnexpanded ->
                 Card(
                     modifier = Modifier
-                        .width(200.dp)
-                        .height(200.dp)
+                        .width(240.dp)
+                        .height(210.dp)
                 ) {
                     Box(Modifier.fillMaxSize()) {
                         Column(
@@ -119,8 +127,8 @@ fun RecipeList(
                         ) {
                             Box(
                                 modifier = Modifier
-                                .width(200.dp) // matches the card width
-                                .height(115.dp)
+                                .width(240.dp) // matches the card width
+                                .height(if (recipeCardUnexpanded.imagePath != "") {115.dp} else {100.dp})
                             ) {
                                 // Image:
                                 val imageFile = File(context.filesDir, recipeCardUnexpanded.imagePath)
@@ -139,13 +147,13 @@ fun RecipeList(
                                         painter = painter,
                                         contentDescription = null,
                                         modifier = Modifier
-                                            .width(200.dp) // matches the card width
+                                            .width(240.dp) // matches the card width
                                             .height(100.dp), // 2/3 of the card height - maybe use consts for this in future to ensure they match upon changes
                                         contentScale = ContentScale.Crop
                                     )
                                 } else {
                                     Box(
-                                        modifier = Modifier.width(200.dp) // matches the card width
+                                        modifier = Modifier.width(240.dp) // matches the card width
                                             .height(100.dp)
                                             .background(MaterialTheme.colorScheme.error) // put the chosen colour
                                     )
@@ -166,16 +174,70 @@ fun RecipeList(
                                 )
                             }
                             Column(
-                                modifier = Modifier.fillMaxSize(),
+                                modifier = Modifier.fillMaxWidth(),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
                             ) {
                                 Text(
                                     text = recipeCardUnexpanded.title,
+                                    textAlign = TextAlign.Center,
                                     modifier = Modifier.padding(4.dp)
                                 )
-                                recipeCardUnexpanded.recipeTags.forEach { recipeTag ->
-                                    Text(recipeTag)
+                            }
+                            Box(
+                                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                FlowRow(
+                                    modifier = Modifier.padding(2.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                                ) {
+                                    // only display max 3 then ... if there are more than 3.
+                                    // can fit 24px max before going on next line, so need to constrain this.
+
+                                    // IMPORTANT: one tag cannot be more than 27 chars long - need to confine this when user inputs it.
+                                    val tags: List<Pair<String, NourishColour>>
+                                    val lengthOfThreeTags =  (recipeCardUnexpanded.recipeTags.take(3).sumOf { (tag, colour) ->
+                                        tag.length
+                                        })
+                                    tags = if (lengthOfThreeTags > 27) {
+                                        if((recipeCardUnexpanded.recipeTags.take(2).sumOf { (tag, colour) ->
+                                                tag.length
+                                            }) > 27) {
+                                            recipeCardUnexpanded.recipeTags.take(1)
+                                        } else {
+                                            recipeCardUnexpanded.recipeTags.take(2)
+                                        }
+                                    } else {
+                                        recipeCardUnexpanded.recipeTags.take(3)
+                                    }
+                                    tags
+                                        .forEach { (tag, colour) ->
+                                            // alternate colour of tag depending on dark / light mode
+                                            Text(
+                                                text = tag,
+                                                fontSize = 14.sp,
+                                                modifier = Modifier
+                                                    .background(
+                                                        shape = RoundedCornerShape(12.dp),
+                                                        color = if (isSystemInDarkTheme()) {
+                                                            colour.onBackgroundColour()
+                                                        } else {
+                                                            colour.backgroundColour()
+                                                        }
+                                                    )
+                                                    .padding(horizontal = 4.dp),
+                                                color = if (isSystemInDarkTheme()) {
+                                                    colour.backgroundColour()
+                                                } else {
+                                                    colour.onBackgroundColour()
+                                                }
+                                            )
+                                        }
+                                    if (recipeCardUnexpanded.recipeTags.size > tags.size) {
+                                        Text("...")
+                                    }
                                 }
                             }
                         }
@@ -238,8 +300,11 @@ fun RecipeCard(
         Text("Recipe type: ${recipeCard.recipeType}")
         if (recipeCard.recipeTags.isNotEmpty()) {
             Text("Tags:")
-            recipeCard.recipeTags.forEach { tag ->
-                Text(tag)
+            recipeCard.recipeTags.forEach { (tag, colour) ->
+                Text(
+                    text = tag,
+                    color = colour.onBackgroundColour()
+                )
             }
         }
 
