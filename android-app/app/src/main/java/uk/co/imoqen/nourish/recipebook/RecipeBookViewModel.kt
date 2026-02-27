@@ -100,6 +100,10 @@ class RecipeBookViewModel @Inject constructor(
         return tagRepository.getById(tagId)
     }
 
+    fun getRecipeById(recipeId: Long): Flow<Recipe?> {
+        return recipeRepository.getRecipeById(recipeId)
+    }
+
     fun getSectionById(sectionId: Long): Flow<RecipeIngredientSection?> {
         return recipeRepository.getRecipeSectionById(sectionId)
     }

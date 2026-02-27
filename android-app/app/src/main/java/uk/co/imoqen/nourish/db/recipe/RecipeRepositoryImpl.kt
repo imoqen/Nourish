@@ -41,6 +41,7 @@ class RecipeRepositoryImpl @Inject constructor(
     // RECIPE LOGIC:
     // get all recipes: (not suspend)
     override fun getAllRecipes(uid: String): Flow<List<Recipe>> = recipeDao.getAll(uid)
+    override fun getRecipeById(recipeId: Long): Flow<Recipe?> = recipeDao.getById(recipeId)
     override suspend fun insertRecipe(recipe: Recipe): Long = recipeDao.insert(recipe)
     //fun getRecipeWithIngredients(recipeId: Long): Flow<RecipeWithIngredients> = recipeDao.getRecipeWithIngredients(recipeId)
     override fun getRecipeWithRecipeIngredients(recipeId: Long): Flow<RecipeWithRecipeIngredients> = recipeDao.getRecipeWithRecipeIngredients(recipeId)

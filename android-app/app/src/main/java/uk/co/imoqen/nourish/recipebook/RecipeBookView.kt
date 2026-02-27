@@ -3,6 +3,7 @@ package uk.co.imoqen.nourish.recipebook
 import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -67,7 +68,8 @@ import kotlin.collections.emptyList
  */
 @Composable
 fun RecipeBookScreen(
-    recipeBookViewModel: RecipeBookViewModel
+    recipeBookViewModel: RecipeBookViewModel,
+    onViewRecipeCard: (Long) -> Unit
 ) {
 
     val scrollState = rememberScrollState()
@@ -84,7 +86,7 @@ fun RecipeBookScreen(
         //}
 
         val recipes = recipeBookViewModel.getRecipeBookMap()
-        RecipeList(recipeBookViewModel)
+        RecipeList(recipeBookViewModel, onViewRecipeCard)
 
         // currently only outputs the first recipe; only one recipe will be shown at once.
         /*if (allRecipes.value.isNotEmpty()) {
@@ -98,7 +100,8 @@ fun RecipeBookScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeList(
-    recipeBookViewModel: RecipeBookViewModel
+    recipeBookViewModel: RecipeBookViewModel,
+    onViewRecipeCard: (Long) -> Unit
 ) {
 
 
@@ -121,7 +124,12 @@ fun RecipeList(
                         .width(240.dp)
                         .height(210.dp)
                 ) {
-                    Box(Modifier.fillMaxSize()) {
+                    Box(
+                        Modifier.fillMaxSize()
+                            .clickable {
+                                onViewRecipeCard(recipeCardUnexpanded.recipeId)
+                            }
+                    ) {
                         Column(
                             modifier = Modifier.fillMaxSize()
                         ) {
@@ -247,80 +255,4 @@ fun RecipeList(
         }
     }
 
-}
-
-@Composable
-fun RecipeCard(
-    recipeBookViewModel: RecipeBookViewModel
-) {
-    val recipe = recipeBookViewModel.uiState.collectAsState().value.selectedRecipe
-    recipeBookViewModel.buildRecipeCard()
-    val recipeCard = recipeBookViewModel.uiState.collectAsState().value.selectedRecipeCard
-
-    if (recipeCard != null) {
-    Column(
-        modifier = Modifier.padding(vertical=8.dp)
-    ) {
-        Text("Title: ${recipeCard.title}")
-        Text("Ingredients:")
-        // then output the ingredients by section
-        recipeCard.sectionsWithIngredients.forEach { (section, ingredients) ->
-            Column(
-                modifier = Modifier.padding(vertical = 8.dp)
-            ) {
-                // only output name of section if there is more than 1 section, otherwise it is irrelevant
-                if (recipeCard.sectionsWithIngredients.size > 1) {
-                    Text(section)
-                }
-
-                // id can be used if user wishes to add to shopping list
-                ingredients.forEach { (ingredient, amount, id) ->
-                    Text("${formatIngredientAmount(amount)} $ingredient")
-                }
-            }
-        }
-
-        // in future, id here can be used to edit the complete status of the recipe.
-        Text("Method:")
-        recipeCard.method.forEachIndexed{ i, (instruction, complete, id) ->
-            Text(
-                text = "Step ${i+1}. $instruction",
-                textDecoration = if (complete) { TextDecoration.LineThrough} else TextDecoration.None
-            )
-            Button(
-                onClick = {
-                    recipeBookViewModel.markStepAsComplete(id, !complete)
-                }
-            ) {
-                Text("Mark as complete")
-            }
-        }
-
-        Text("Serves: ${recipeCard.serves}")
-        Text("Recipe type: ${recipeCard.recipeType}")
-        if (recipeCard.recipeTags.isNotEmpty()) {
-            Text("Tags:")
-            recipeCard.recipeTags.forEach { (tag, colour) ->
-                Text(
-                    text = tag,
-                    color = colour.onBackgroundColour()
-                )
-            }
-        }
-
-        Text("Storage guidance: ${recipeCard.storageInstructions}")
-
-        }
-    }
-}
-
-// shaves off the decimal if it is .0, otherwise keeps it.
-// e.g. 5.0 -> 5 but 5.5 remains -> 5.5
-fun formatIngredientAmount(
-    ingredientAmount: Double
-): String {
-    if (ingredientAmount % 1.0 == 0.0) {
-        return ingredientAmount.toInt().toString()
-    }
-    return ingredientAmount.toString()
 }
