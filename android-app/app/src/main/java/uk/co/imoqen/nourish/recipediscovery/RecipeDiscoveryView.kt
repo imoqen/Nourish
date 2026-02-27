@@ -180,7 +180,7 @@ fun RecipeDiscoveryScreen(
                     Text("Choose a new photo")
                 }
                 Button(onClick = { imageFile.delete(); recipeDiscoveryViewModel.setSavedImageFilename("") }) {
-                    Text("Remove photo")
+                    Text("Remove photo") // NOTE: this deletes the image file so if a recipe has been generated using this image, it will be deleted.
                 }
             }
         }

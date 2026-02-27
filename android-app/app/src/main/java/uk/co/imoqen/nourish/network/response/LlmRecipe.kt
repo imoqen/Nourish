@@ -6,7 +6,7 @@ package uk.co.imoqen.nourish.network.response
 data class LlmRecipe(
     val title: String,
     val sectionIngredients: List<LlmIngredientSection>,
-    val servings: String,
+    val servings: Int,
     val mealType: String,
     val method: List<String>,
     val tags: List<String>,

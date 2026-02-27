@@ -45,5 +45,5 @@ interface RecipeRepository {
     /**
      * Creates a recipe in the database and its corresponding entities
      */
-    suspend fun createRecipe(uid: String, llmRecipe: LlmRecipe)
+    suspend fun createRecipe(uid: String, llmRecipe: LlmRecipe, imagePath: String)
 }

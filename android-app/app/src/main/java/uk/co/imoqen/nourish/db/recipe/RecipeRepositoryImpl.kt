@@ -79,7 +79,8 @@ class RecipeRepositoryImpl @Inject constructor(
      */
     override suspend fun createRecipe(
         uid: String,
-        llmRecipe: LlmRecipe
+        llmRecipe: LlmRecipe,
+        imagePath: String // just set to "" if none, which is fine.
     ) {
         // if throws, it is handled accordingly where it is called.
         db.withTransaction {
@@ -94,7 +95,7 @@ class RecipeRepositoryImpl @Inject constructor(
             // 2. Create the recipe and add it to the database
             val recipe = Recipe(
                 authorUid = uid, title = llmRecipe.title, numberOfServings = llmRecipe.servings.toInt(),
-                colour = "todo", generated = true, image = null, archived = false,
+                colour = "todo", generated = true, imagePath = imagePath, archived = false,
                 storageInstructions = llmRecipe.storage, recipeTypeId = recipeTypeId, emoji = llmRecipe.emoji
             )
             val recipeId = recipeDao.insert(recipe)
@@ -122,7 +123,7 @@ class RecipeRepositoryImpl @Inject constructor(
                     recipeIngredientDao.insert(
                         RecipeIngredient(
                             recipeId = recipeId, ingredientId = ingredientId,
-                            ingredientUnit = ingredientUnit, amount = amount.toDouble(),
+                            ingredientUnit = ingredientUnit, amount = amount,
                             sectionId = sectionId
                         )
                     )
@@ -149,6 +150,8 @@ class RecipeRepositoryImpl @Inject constructor(
                     tagId = tagRepository.insert(
                         Tag(
                             identifier = tagIdentifier,
+                            displayName = "Test",
+                            colour = "Test"
                         )
                     )
                 }

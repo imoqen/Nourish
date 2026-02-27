@@ -47,7 +47,7 @@ class RecipeBookViewModel @Inject constructor(
     val uiState: StateFlow<RecipeBookUiState> = mutableUiState.asStateFlow()
 
     // Setters for Ui State values:
-    fun setRecipeCard(selectedRecipeCard: RecipeCard) {
+    fun setRecipeCard(selectedRecipeCard: RecipeCardExpanded) {
         mutableUiState.update { currentState ->
             currentState.copy(
                 selectedRecipeCard = selectedRecipeCard
@@ -63,7 +63,7 @@ class RecipeBookViewModel @Inject constructor(
         }
     }
 
-    fun setRecipeBookMap(recipeBookMap: MutableMap<RecipeType, MutableList<Recipe>>) {
+    fun setRecipeBookMap(recipeBookMap: MutableMap<RecipeType, MutableList<RecipeCardUnexpanded>>) {
         mutableUiState.update { currentState ->
             currentState.copy(
                 recipeBookMap = recipeBookMap
@@ -144,7 +144,7 @@ class RecipeBookViewModel @Inject constructor(
                     return@launch
                 }
 
-                val recipeCard = RecipeCard(
+                val recipeCard = RecipeCardExpanded(
                     title, ingredientsMap, method, serves, recipeType,
                     recipeTags, storageInstructions, recipe.id
                 )
@@ -201,41 +201,41 @@ class RecipeBookViewModel @Inject constructor(
         // map with key sectionTitle and value of list of pair of ingredient string and ingredient id (so it can be referenced in future)
         val sectionsWithIngredients: MutableMap<String, MutableList<Triple<String, Double, Long>>> = mutableMapOf()
 
-            // first bundle them all by section
-            recipeIngredients.ingredients.forEach { ingredient ->
+        // first bundle them all by section
+        recipeIngredients.ingredients.forEach { ingredient ->
 
-                // title of the section:
-                val sectionId = ingredient.sectionId
-                val sectionTitle = getSectionById(sectionId).first()?.title // this may fail if the values stored in the db update while user is looking at it. for this, would need to use .collect(). consider this if issues occur in future.
+            // title of the section:
+            val sectionId = ingredient.sectionId
+            val sectionTitle = getSectionById(sectionId).first()?.title // this may fail if the values stored in the db update while user is looking at it. for this, would need to use .collect(). consider this if issues occur in future.
 
-                // determine pluralities
-                val ingredientAmount = ingredient.amount
-                val ingredientUnit = ingredient.ingredientUnit
-                val unit = if (determineUnitPlurality(ingredientAmount)) {
-                    ingredientUnit.pluralName
-                } else {
-                    ingredientUnit.singularName
-                }
-                val ingredientName = getIngredientById(ingredient.ingredientId).first()
-
-
-                if (ingredientName != null && sectionTitle != null) {
-                    val ingredientPluralisedName =
-                        if (determineIngredientPlurality(ingredientAmount, ingredientUnit)) {
-                            ingredientName.plural
-                        } else {
-                            ingredientName.singular
-                        }
-                    var ingredientText = ""
-                    ingredientText = if (unit != "") {
-                        ("$unit $ingredientPluralisedName")
-                    } else {
-                        (ingredientPluralisedName)
-                    }
-                    sectionsWithIngredients.getOrPut(sectionTitle) { mutableListOf() }
-                        .add(Triple(ingredientText, ingredientAmount, ingredient.ingredientId))
-                }
+            // determine pluralities
+            val ingredientAmount = ingredient.amount
+            val ingredientUnit = ingredient.ingredientUnit
+            val unit = if (determineUnitPlurality(ingredientAmount)) {
+                ingredientUnit.pluralName
+            } else {
+                ingredientUnit.singularName
             }
+            val ingredientName = getIngredientById(ingredient.ingredientId).first()
+
+
+            if (ingredientName != null && sectionTitle != null) {
+                val ingredientPluralisedName =
+                    if (determineIngredientPlurality(ingredientAmount, ingredientUnit)) {
+                        ingredientName.plural
+                    } else {
+                        ingredientName.singular
+                    }
+                var ingredientText = ""
+                ingredientText = if (unit != "") {
+                    ("$unit $ingredientPluralisedName")
+                } else {
+                    (ingredientPluralisedName)
+                }
+                sectionsWithIngredients.getOrPut(sectionTitle) { mutableListOf() }
+                    .add(Triple(ingredientText, ingredientAmount, ingredient.ingredientId))
+            }
+        }
         return sectionsWithIngredients
     }
 
@@ -266,14 +266,24 @@ class RecipeBookViewModel @Inject constructor(
         viewModelScope.launch() {
             runCatching {
                 val allRecipes = getAllRecipes().first()
-                val recipeBookMap: MutableMap<RecipeType, MutableList<Recipe>> = mutableMapOf()
+                val recipeBookMap: MutableMap<RecipeType, MutableList<RecipeCardUnexpanded>> = mutableMapOf()
                 allRecipes.forEach { recipe ->
                     val type = recipeRepository.getRecipeTypeById(recipe.recipeTypeId).first()
+
+                    // build the unexpanded recipe card:
+                    val recipeCardUnexpanded = RecipeCardUnexpanded(
+                        title = recipe.title,
+                        recipeTags = buildRecipeTags(recipe.id),
+                        imagePath = recipe.imagePath,
+                        emoji = recipe.emoji,
+                        recipeId = recipe.id
+                    )
+
                     if (type == null) {
                         throw NullPointerException()
                     }
                     recipeBookMap.getOrPut(type) { mutableListOf() }
-                        .add(recipe)
+                        .add(recipeCardUnexpanded)
                 }
                 setRecipeBookMap(recipeBookMap)
             }

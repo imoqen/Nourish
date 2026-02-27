@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.IOException
+import java.util.UUID
 
 // with help from https://www.geeksforgeeks.org/android/how-to-compress-image-in-android-before-uploading-it-to-firebase-storage/
 // and for saving: https://github.com/philipplackner/ImageCompression/blob/master/app/src/main/java/com/plcoding/imagecompression/FileManager.kt
@@ -70,8 +71,9 @@ suspend fun saveImage(
 
         if (compressedByteArray != null) {
             val time = System.currentTimeMillis()
-            val filename = "compressed-recipe-image-$time.$extension"
+            val filename = "compressed-recipe-image-$time-${UUID.randomUUID()}.$extension"
             withContext(Dispatchers.IO) {
+                Log.d("IMG", "Saving $filename exists=${context.getFileStreamPath(filename).exists()}")
                 context
                     // save to internal storage
                     // filename, context mode, then writes to the byte array

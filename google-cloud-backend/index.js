@@ -79,7 +79,7 @@ const IngredientSchemaZod = z.object({
         " Only use UNIT if the ingredient has no measurement; it is a piece itself (e.g. egg, whole fruit, whole vegetable). In particular, if it is a spice, baking agent or herb, do not use UNIT.",
     ),
   ingredientAmount: z
-    .string()
+    .number()
     .describe(
       "Fill this in last. The amount of the ingredient corresponding to ingredientSingular, given only as an integer or float. " +
         "Furthermore, it must correspond with the unit given in the ingredientAmountUnit.",
@@ -102,7 +102,8 @@ const RecipeSchemaZod = z.object({
   ),
 
   servings: z
-    .string()
+    .number()
+    .int()
     .describe(
       "The number of servings (not pieces) made of this meal using the amount of ingredients in the ingredientAmounts and ingredientAmountsUnits list. " +
         "Given as an integer.",

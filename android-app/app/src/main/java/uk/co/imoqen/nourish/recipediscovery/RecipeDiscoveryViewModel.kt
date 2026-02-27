@@ -244,7 +244,8 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 // Add the recipe to the database:
                 recipeRepository.createRecipe(
                     uid,
-                    llmRecipe
+                    llmRecipe,
+                    mutableUiState.value.savedImageFilename
                 )
                 // If an error occurs, it is caught below:
             } catch (e: Exception) {

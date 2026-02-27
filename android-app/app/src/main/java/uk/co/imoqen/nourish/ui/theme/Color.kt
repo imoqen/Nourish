@@ -23,3 +23,8 @@ val NourishGreenLight = Color(0xFFE1F0C4)
 val ErrorDark = Color(0xFFFFB1CA)
 
 val ErrorLight = Color(0xFFAD2432)
+
+// tags / meal background colours:
+
+
+// tags / meal text colours (onBackground):
