@@ -4,10 +4,12 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
@@ -275,10 +277,17 @@ class RecipeBookViewModel @Inject constructor(
         return true
     }
 
+    @OptIn(FlowPreview::class)
     fun getRecipeBookMap() {
         viewModelScope.launch() {
             runCatching {
-                val allRecipes = getAllRecipes().first()
+                var allRecipes = getAllRecipes().debounce(300).first() // get all recipes. debouncing is added to provide smoothness
+                // Filter to search term if search has been made:
+                /*if (mutableUiState.value.searchTerm != "") {
+                    allRecipes = allRecipes.filter { recipe ->
+                        recipe.title.contains(mutableUiState.value.searchTerm, true) // ignore case
+                    }
+                }*/
                 val recipeBookMap: MutableMap<RecipeType, MutableList<RecipeCardUnexpanded>> = mutableMapOf()
                 allRecipes.forEach { recipe ->
                     val type = recipeRepository.getRecipeTypeById(recipe.recipeTypeId).first()
