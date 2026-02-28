@@ -82,6 +82,14 @@ class RecipeBookViewModel @Inject constructor(
         }
     }
 
+    fun setDisplayDropdownFilter(displayDropdownFilter: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                displayDropdownFilter = displayDropdownFilter
+            )
+        }
+    }
+
     // gets all recipes for the currently logged in user. ensures that if user not logged in, empty list returned.
     fun getAllRecipes(): Flow<List<Recipe>> {
         val uid = authenticationManager.getUid()
@@ -204,8 +212,12 @@ class RecipeBookViewModel @Inject constructor(
 
     suspend fun findRecipeType(
         recipeTypeId: Long
-    ): String? {
-            return getRecipeTypeById(recipeTypeId).first()?.title
+    ): Pair<String, Int>? {
+        val recipeType = getRecipeTypeById(recipeTypeId).first()
+        if (recipeType == null) {
+            return recipeType
+        }
+        return Pair(recipeType.title, recipeType.ordinal)
     }
 
     suspend fun buildIngredientsMap(
@@ -281,7 +293,7 @@ class RecipeBookViewModel @Inject constructor(
     fun getRecipeBookMap() {
         viewModelScope.launch() {
             runCatching {
-                var allRecipes = getAllRecipes().debounce(300).first() // get all recipes. debouncing is added to provide smoothness
+                val allRecipes = getAllRecipes().debounce(300).first() // get all recipes. debouncing is added to provide smoothness
                 // Filter to search term if search has been made:
                 /*if (mutableUiState.value.searchTerm != "") {
                     allRecipes = allRecipes.filter { recipe ->
@@ -307,7 +319,10 @@ class RecipeBookViewModel @Inject constructor(
                     recipeBookMap.getOrPut(type) { mutableListOf() }
                         .add(recipeCardUnexpanded)
                 }
-                setRecipeBookMap(recipeBookMap)
+                // to ensure recipes are printed: Breakfast -> Lunch -> Dinner -> Dessert -> Side -> Drink
+                val sorted = recipeBookMap.toSortedMap(compareBy { it.ordinal }) // sort by ordinal values of the recipeType.
+                setRecipeBookMap(sorted)
+                Log.i("sorted", "done")
             }
                 .onSuccess {  }
                 .onFailure { e ->

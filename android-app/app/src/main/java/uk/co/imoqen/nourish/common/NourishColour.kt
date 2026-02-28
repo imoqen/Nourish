@@ -29,6 +29,18 @@ fun NourishColour.backgroundColour(): Color = when (this) {
     NourishColour.GREY -> Color(0xFFCCCCCC)
 }
 
+@Composable
+fun NourishColour.dimmedBackgroundColour(): Color = when (this) {
+    NourishColour.RED -> Color(0xFFF8BCBC)
+    NourishColour.PINK -> Color(0xFFF0BEF6)
+    NourishColour.ORANGE -> Color(0xFFF3CBAE)
+    NourishColour.YELLOW -> Color(0xFFF2F3B7)
+    NourishColour.GREEN -> Color(0xFFB8EFAF)
+    NourishColour.BLUE -> Color(0xFFB3EFED)
+    NourishColour.PURPLE -> Color(0xFFC0B4EF)
+    NourishColour.GREY -> Color(0xFFCCCCCC)
+}
+
 // Background colour:
 @Composable
 fun NourishColour.onBackgroundColour(): Color = when (this) {

@@ -11,5 +11,6 @@ import androidx.room.PrimaryKey
 )
 data class RecipeType(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    @ColumnInfo(name = "title") val title: String
+    @ColumnInfo(name = "title") val title: String,
+    @ColumnInfo(name = "ordinal") val ordinal: Int // for ordering
 )

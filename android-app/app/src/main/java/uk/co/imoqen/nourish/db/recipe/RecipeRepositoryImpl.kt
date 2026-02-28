@@ -88,9 +88,10 @@ class RecipeRepositoryImpl @Inject constructor(
             // 1. Create or get the recipe type, only add in form where first char is capital
             // (i.e. dinner -> Dinner) to ensure no dupes
             val mealTypeFormatted = (llmRecipe.mealType).lowercase().replaceFirstChar { it.uppercase() }
-            var recipeTypeId = getIdByTitle(mealTypeFormatted)
+            val recipeTypeId = getIdByTitle(mealTypeFormatted)
+            // must already exist; llm has to choose it from given list. if wrong, throw error.
             if (recipeTypeId == null) {
-                recipeTypeId = insertRecipeType(RecipeType(title = mealTypeFormatted))
+                throw NullPointerException()
             }
 
             // 2. Create the recipe and add it to the database

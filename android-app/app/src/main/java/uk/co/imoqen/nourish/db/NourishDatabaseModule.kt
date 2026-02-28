@@ -45,12 +45,12 @@ object NourishDatabaseModule {
                         val tagDao = db.tagDao()
 
                         // add the recipe types:
-                        recipeTypeDao.insert(RecipeType(title = "Breakfast"))
-                        recipeTypeDao.insert(RecipeType(title = "Lunch"))
-                        recipeTypeDao.insert(RecipeType(title = "Dinner"))
-                        recipeTypeDao.insert(RecipeType(title = "Dessert"))
-                        recipeTypeDao.insert(RecipeType(title = "Side"))
-                        recipeTypeDao.insert(RecipeType(title = "Drink"))
+                        recipeTypeDao.insert(RecipeType(title = "Breakfast", ordinal=0))
+                        recipeTypeDao.insert(RecipeType(title = "Lunch", ordinal=1))
+                        recipeTypeDao.insert(RecipeType(title = "Dinner", ordinal=2))
+                        recipeTypeDao.insert(RecipeType(title = "Dessert", ordinal=3))
+                        recipeTypeDao.insert(RecipeType(title = "Side", ordinal=4))
+                        recipeTypeDao.insert(RecipeType(title = "Drink", ordinal=5))
 
                         // add the recipe tags:
                         // dietary requirements:

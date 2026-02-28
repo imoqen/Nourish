@@ -1,5 +1,7 @@
 package uk.co.imoqen.nourish.recipebook
 
+import uk.co.imoqen.nourish.R
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -14,10 +16,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -26,9 +31,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,7 +55,9 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -54,6 +66,7 @@ import coil3.request.ImageRequest
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.common.backgroundColour
+import uk.co.imoqen.nourish.common.dimmedBackgroundColour
 import uk.co.imoqen.nourish.common.onBackgroundColour
 import java.io.File
 
@@ -69,7 +82,6 @@ fun RecipeBookScreen(
 ) {
 
     val scrollState = rememberScrollState()
-    var expanded by rememberSaveable { mutableStateOf(false) }
     val uiState = recipeBookViewModel.uiState.collectAsState().value
     val keyboardFocusManager =
         LocalFocusManager.current // To close the keyboard once user submits input
@@ -77,17 +89,55 @@ fun RecipeBookScreen(
     Column() {
         // search bar: https://developer.android.com/develop/ui/compose/components/search-bar
 
-        NourishTextField(
-            value = uiState.searchTerm,
-            onValueChange = { newSearchTerm ->
-                recipeBookViewModel.setSearchTerm(newSearchTerm)
-            },
-            placeholder = "Search for a recipe",
-            icon = Icons.Filled.Search,
-            onDone = { keyboardFocusManager.clearFocus() },
-            trailingIcon = Icons.Filled.Clear,
-            onValueReset = { recipeBookViewModel.setSearchTerm("") }
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal=8.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box (
+                contentAlignment = Alignment.Center
+            ) {
+                NourishTextField(
+                    value = uiState.searchTerm,
+                    onValueChange = { newSearchTerm ->
+                        recipeBookViewModel.setSearchTerm(newSearchTerm)
+                    },
+                    placeholder = "Search for a recipe",
+                    icon = Icons.Filled.Search,
+                    onDone = { keyboardFocusManager.clearFocus() },
+                    trailingIcon = Icons.Filled.Clear,
+                    onValueReset = { recipeBookViewModel.setSearchTerm("") }
+                )
+            }
+
+            // filter button:
+            Box(
+                modifier = Modifier
+                    .height(48.dp) // height of nourishTextField = 54+8 = 64 (the 8 bits are for padding)
+                    .padding(top = 8.dp)
+                    .padding(horizontal = 6.dp)
+                    .background(
+                        shape = RoundedCornerShape(24.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                IconButton(onClick = { recipeBookViewModel.setDisplayDropdownFilter(!uiState.displayDropdownFilter) }) {
+                    Icon(
+                        painter = painterResource(R.drawable.filter_icon),
+                        contentDescription = "Filter",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                    )
+                }
+                DropdownMenu(
+                    expanded = uiState.displayDropdownFilter,
+                    onDismissRequest = { recipeBookViewModel.setDisplayDropdownFilter(false) }
+                ) {
+                    // put contents of the dropwodn menu here
+                    Text("hello world!")
+                }
+            }
+        }
 
         Column(
             modifier = Modifier.fillMaxWidth().verticalScroll(scrollState)
@@ -137,11 +187,6 @@ fun RecipeList(
                             modifier = Modifier
                                 .width(240.dp)
                                 .height(210.dp)
-                            /*.animateItem(
-                                fadeInSpec = tween(150),
-                                fadeOutSpec = tween(150),
-                                placementSpec = spring()
-                            )*/
                         ) {
                             Box(
                                 Modifier.fillMaxSize()
@@ -219,7 +264,8 @@ fun RecipeList(
                                         Text(
                                             text = recipeCardUnexpanded.title,
                                             textAlign = TextAlign.Center,
-                                            modifier = Modifier.padding(4.dp)
+                                            modifier = Modifier.padding(4.dp),
+                                            fontWeight = FontWeight.Bold,
                                         )
                                     }
                                     Box(
@@ -232,29 +278,10 @@ fun RecipeList(
                                             horizontalArrangement = Arrangement.spacedBy(2.dp),
                                             verticalArrangement = Arrangement.spacedBy(2.dp),
                                         ) {
-                                            // only display max 3 then ... if there are more than 3.
-                                            // can fit 24px max before going on next line, so need to constrain this.
 
-                                            // IMPORTANT: one tag cannot be more than 27 chars long - need to confine this when user inputs it.
-                                            val tags: List<Pair<String, NourishColour>>
-                                            val lengthOfThreeTags =
-                                                (recipeCardUnexpanded.recipeTags.take(3)
-                                                    .sumOf { (tag, colour) ->
-                                                        tag.length
-                                                    })
-                                            tags = if (lengthOfThreeTags > 27) {
-                                                if ((recipeCardUnexpanded.recipeTags.take(2)
-                                                        .sumOf { (tag, colour) ->
-                                                            tag.length
-                                                        }) > 27
-                                                ) {
-                                                    recipeCardUnexpanded.recipeTags.take(1)
-                                                } else {
-                                                    recipeCardUnexpanded.recipeTags.take(2)
-                                                }
-                                            } else {
-                                                recipeCardUnexpanded.recipeTags.take(3)
-                                            }
+                                            val toTake = determineSpaceAvailable(recipeCardUnexpanded)
+                                            val tags = recipeCardUnexpanded.recipeTags.take(toTake)
+
                                             tags
                                                 .forEach { (tag, colour) ->
                                                     // alternate colour of tag depending on dark / light mode
@@ -267,7 +294,7 @@ fun RecipeList(
                                                                 color = if (isSystemInDarkTheme()) {
                                                                     colour.onBackgroundColour()
                                                                 } else {
-                                                                    colour.backgroundColour()
+                                                                    colour.dimmedBackgroundColour()
                                                                 }
                                                             )
                                                             .padding(horizontal = 4.dp),
@@ -292,4 +319,27 @@ fun RecipeList(
         }
     }
 
+}
+
+// determines if the length of the Tags belonging to a recipe can fit into one line (27 chars) or two lines (54 chars)
+fun determineSpaceAvailable(
+    recipeCardUnexpanded: RecipeCardUnexpanded,
+): Int {
+    // determine the amount of space available:
+    var spaceAvailable = 54 // 2 lines of space available
+    if (recipeCardUnexpanded.title.length > 27) {
+        spaceAvailable = 27 // 1 line of space available
+    }
+    // then determine which tags to put:
+    var fits = false
+    var amountOfTagsToDisplay = recipeCardUnexpanded.recipeTags.size // begin with all tags, try to fit them all in
+    while (!fits && amountOfTagsToDisplay > 0) {
+        fits = ((recipeCardUnexpanded.recipeTags.take(amountOfTagsToDisplay).sumOf { (tag, _) ->
+            tag.length
+        }) <= spaceAvailable)
+        if (!fits) {
+            amountOfTagsToDisplay--
+        }
+    }
+    return amountOfTagsToDisplay
 }

@@ -46,9 +46,9 @@ const db = getFirestore();
 // Units:
 // these will be switched dynamically using user preferences
 const metricUnits =
-  "TSP, TBSP, ML, L, G, KG, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit)";
+  "TSP, TBSP, ML, L, G, KG, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, CM, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit)";
 const imperialUnits =
-  "TSP, TBSP, FL_OZ, CUP, PINT, QUART, GALLON, OZ, LB, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit)";
+  "TSP, TBSP, FL_OZ, CUP, PINT, QUART, GALLON, OZ, LB, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, CM, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit)";
 
 // Schemas:
 // ingredients put together:
@@ -73,7 +73,7 @@ const IngredientSchemaZod = z.object({
     .describe(
       "Fill this in third. The unit of the ingredient corresponding to ingredientSingular, and the amount given in ingredientAmount. " +
         "Ensure that the unit makes sense, for example only use an approximate unit (such as splash, sprinkle, dash, etc) if the corresponding amount itself is a whole number - otherwise use a unit reflective of the precision (e.g. tsp, tbsp, ml)" +
-        "Return only a value from the following list, exactly as it is in the list (as it will be mapped using a predefined enum): " +
+        "Return only a value from the following list, exactly as it is in the list (as it will be mapped using a predefined enum); the value you return MUST be in the following list: " +
         metricUnits +
         "If you think that an imperial unit would be required, then give its value in g/kg instead (e.g. rather than using cup, as this is not used in Europe/UK). " +
         " Only use UNIT if the ingredient has no measurement; it is a piece itself (e.g. egg, whole fruit, whole vegetable). In particular, if it is a spice, baking agent or herb, do not use UNIT.",

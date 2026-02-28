@@ -35,6 +35,7 @@ enum class IngredientUnit(
     STICK("stick of", "sticks of", true),
     PIECE("piece of", "pieces of", true),
     LEAF("leaf of", "leaves of", true),
+    CM("cm of", "cms of", true),
 
     // small amounts of liquids / herbs etc
     DASH("dash of", "dashes of", false),

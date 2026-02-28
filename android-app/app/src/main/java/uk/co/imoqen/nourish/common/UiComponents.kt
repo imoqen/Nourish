@@ -115,6 +115,7 @@ fun NourishTextField(
         keyboardActions = KeyboardActions(
             onDone = { onDone() }
         ),
+
         trailingIcon = { if (trailingIcon != null && value != "") // trailing icon is only displayed if it is not null and the text entered is not empty (so there is something to remove.)
             {
                 IconButton(

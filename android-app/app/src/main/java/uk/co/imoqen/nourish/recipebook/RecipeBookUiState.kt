@@ -8,7 +8,8 @@ data class RecipeBookUiState(
     val recipeBookMap: MutableMap<RecipeType, MutableList<RecipeCardUnexpanded>>? = null,
     val selectedRecipe: Recipe? = null,
     val selectedRecipeCard: RecipeCardExpanded? = null,
-    val searchTerm: String = ""
+    val searchTerm: String = "",
+    val displayDropdownFilter: Boolean = false
 )
 
 data class RecipeCardExpanded(
@@ -16,7 +17,7 @@ data class RecipeCardExpanded(
     val sectionsWithIngredients: MutableMap<String, MutableList<Triple<String, Double, Long>>>, // ingredient name+unit, amount, id
     val method: MutableList<Triple<String, Boolean, Long>>, // step, complete or not, id
     val serves: Int,
-    val recipeType: String,
+    val recipeType: Pair<String, Int>,
     val recipeTags: MutableList<Pair<String, NourishColour>>,
     val storageInstructions: String,
     val recipeId: Long // to recover the corresponding recipe card if needed
