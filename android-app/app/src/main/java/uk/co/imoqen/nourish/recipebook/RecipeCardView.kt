@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -82,112 +83,199 @@ fun RecipeCard(
         val imagePath = recipeCard.imagePath
         Card(
 
-
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(if (imagePath != "") { 320.dp } else { 160.dp })
+            Column(
+                modifier = Modifier.fillMaxSize()
             ) {
-
-                // image:
-                val imagePath = recipeCard.imagePath
-                val context = LocalContext.current
-
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-                ) {
-                    // Image:
-                    val imageFile =
-                        File(
-                            context.filesDir,
-                            imagePath
+                        .height(
+                            if (imagePath != "") {
+                                320.dp + 32.dp
+                            } else {
+                                160.dp + 32.dp
+                            }
                         )
+                ) {
+
+                    // image:
+                    val imagePath = recipeCard.imagePath
                     var displayImage = false
-                    if (imageFile.exists() && imagePath != "") {
-                        displayImage = true
-                        //Use Coil to display the selected image
-                        val painter = rememberAsyncImagePainter(
-                            ImageRequest
-                                .Builder(LocalContext.current)
-                                .data(imageFile)
-                                .build()
+                    val context = LocalContext.current
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.Center)
+                    ) {
+                        // Image:
+                        val imageFile =
+                            File(
+                                context.filesDir,
+                                imagePath
+                            )
+                        if (imageFile.exists() && imagePath != "") {
+                            displayImage = true
+                            //Use Coil to display the selected image
+                            val painter = rememberAsyncImagePainter(
+                                ImageRequest
+                                    .Builder(LocalContext.current)
+                                    .data(imageFile)
+                                    .build()
+                            )
+
+                            Image(
+                                painter = painter,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .height(320.dp - 84.dp + 64.dp+32.dp) // total size of card - size of text bit (200 - 84) + extra for the rounded corner shape (32.dp)
+                                    .fillMaxWidth(), // 2/3 of the card height - maybe use consts for this in future to ensure they match upon changes
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier.fillMaxWidth() // matches the card width
+                                    .height(160.dp - 84.dp + 64.dp+32.dp) // takes up much less space because no image
+                                    .background(MaterialTheme.colorScheme.error) // put the chosen colour
+                            )
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(84.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceContainer,
+                                // bottom corners are rounded, top are not:
+                                shape = RoundedCornerShape(
+                                    bottomStart = 32.dp,
+                                    bottomEnd = 32.dp
+                                )
+                            )
+                            .padding(vertical = 16.dp)
+                        //contentAlignment = Alignment.Center
+                    ) {
+                        NourishH2(
+                            recipeCard.title,
+                            modifier = Modifier.align(Alignment.Center).fillMaxWidth(0.8f)
                         )
 
-                        Image(
-                            painter = painter,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .height(320.dp-84.dp+32.dp) // total size of card - size of text bit (200 - 84) + extra for the rounded corner shape (32.dp)
-                                .fillMaxWidth(), // 2/3 of the card height - maybe use consts for this in future to ensure they match upon changes
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier.fillMaxWidth() // matches the card width
-                                .height(160.dp-84.dp+32.dp) // takes up much less space because no image
-                                .background(MaterialTheme.colorScheme.error) // put the chosen colour
-                        )
+                        // back button:
+                        IconButton(
+                            onClick = { },
+                            modifier = Modifier.align(Alignment.CenterStart)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.KeyboardArrowLeft,
+                                contentDescription = null
+                            )
+                        }
                     }
-                    // Emoji:
-                    Text(
-                        text = recipeCard.emoji,
-                        fontSize = 56.sp,
-                        // center emoji if no image, otherwise put at bottom center
-                        modifier = if (displayImage) {
-                            Modifier.align(Alignment.BottomCenter).offset(y = 24.dp) // offsets are added to account for the img displayed for the rounded corner shape
-                        } else {
-                            Modifier.align(Alignment.Center).offset(y = 14.dp) // offsets are added to account for the bg displayed for the rounded corner shape
-                        },
-                        style = TextStyle(
-                            shadow = Shadow(
-                                color = Color.Black,
-                                offset = Offset(4f, 4f),
-                                blurRadius = 4f
+
+                    // simply the bottom bit which overlays the image to add the rounded corner style
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(32.dp)
+                            .align(Alignment.BottomCenter)
+                            .background(
+                                color = MaterialTheme.colorScheme.background,
+                                // bottom corners are rounded, top are not:
+                                shape = RoundedCornerShape(
+                                    topStart = 32.dp,
+                                    topEnd = 32.dp
+                                )
+                            )
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth().fillMaxHeight()
+                    ) {
+                        // Emoji:
+                        Text(
+                            text = recipeCard.emoji,
+                            fontSize = 56.sp,
+                            // center emoji if no image, otherwise put at bottom center
+                            modifier = if (displayImage) {
+                                Modifier.align(Alignment.BottomCenter)
+                                    .offset(y = (-2).dp) // offsets are added to account for the img displayed for the rounded corner shape
+                            } else {
+                                Modifier.align(Alignment.Center)
+                                    .offset(y = (24).dp) // offsets are added to account for the bg displayed for the rounded corner shape
+                            },
+                            style = TextStyle(
+                                shadow = Shadow(
+                                    color = Color.Black,
+                                    offset = Offset(4f, 4f),
+                                    blurRadius = 4f
+                                )
                             )
                         )
-                    )
+                    }
+
                 }
 
-                Box(
+                /*Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(84.dp)
                         .background(
-                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            color = MaterialTheme.colorScheme.primaryContainer,
                             // bottom corners are rounded, top are not:
                             shape = RoundedCornerShape(
-                                bottomStart = 32.dp,
-                                bottomEnd = 32.dp
+                                topStart = 32.dp,
+                                topEnd = 32.dp
+                            )
+                        )
+                        .align(Alignment.End)
+                ) {
+                    Text("hello world")
+                }*/
+
+
+                /*Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            // bottom corners are rounded, top are not:
+                            shape = RoundedCornerShape(
+                                topStart = 32.dp,
+                                topEnd = 32.dp
                             )
                         )
                         .padding(vertical = 16.dp)
                     //contentAlignment = Alignment.Center
                 ) {
-                    NourishH2(recipeCard.title,
-                        modifier = Modifier.align(Alignment.Center).fillMaxWidth(0.8f)
-                    )
+                    Text("Ingredients")
+                    // then output the ingredients by section
+                    recipeCard.sectionsWithIngredients.forEach { (section, ingredients) ->
+                        Column(
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        ) {
+                            // only output name of section if there is more than 1 section, otherwise it is irrelevant
+                            if (recipeCard.sectionsWithIngredients.size > 1) {
+                                Text(section)
+                            }
 
-                    // back button:
-                    IconButton(
-                        onClick = { },
-                        modifier = Modifier.align(Alignment.CenterStart)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.KeyboardArrowLeft,
-                            contentDescription = null
-                        )
+                            // id can be used if user wishes to add to shopping list
+                            ingredients.forEach { (ingredient, amount, id) ->
+                                Text("${formatIngredientAmount(amount)} $ingredient")
+                            }
+                        }
                     }
-                }
-
+                }*/
 
             }
-            
+
+
+
+
 
             // in future, id here can be used to edit the complete status of the recipe.
-            Text("Method:")
+            /*Text("Method:")
             recipeCard.method.forEachIndexed{ i, (instruction, complete, id) ->
                 Text(
                     text = "Step ${i+1}. $instruction",
@@ -215,7 +303,7 @@ fun RecipeCard(
             }
 
             Text("Storage guidance: ${recipeCard.storageInstructions}")
-
+*/
         }
     }
 }
