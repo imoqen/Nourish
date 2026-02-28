@@ -73,6 +73,7 @@ import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.common.backgroundColour
 import uk.co.imoqen.nourish.common.dimmedBackgroundColour
 import uk.co.imoqen.nourish.common.onBackgroundColour
+import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.tag.Tag
 import java.io.File
 import kotlin.enumValueOf
@@ -153,6 +154,7 @@ fun RecipeBookScreen(
 
                         TagsDisplayForFiltering(recipeBookViewModel)
                         NourishTextDivider("Filter by type(s)")
+                        TypesDisplayForFiltering(recipeBookViewModel)
                     }
                 }
             }
@@ -165,6 +167,8 @@ fun RecipeBookScreen(
             recipeBookViewModel.getRecipeBookMap()
             // set all tags for the dropdown
             recipeBookViewModel.getAllTagsForUser()
+
+            recipeBookViewModel.setAllRecipeTypes()
 
             // then filter if a search has been made
             /*if (uiState.searchTerm != "") {
@@ -353,6 +357,57 @@ fun TagsDisplay(
                 colour.onBackgroundColour()
             }
         )
+    }
+}
+
+@Composable
+fun TypesDisplayForFiltering(
+    recipeBookViewModel: RecipeBookViewModel,
+) {
+    val types = recipeBookViewModel.uiState.collectAsState().value.recipeTypes
+    FlowRow(
+        modifier = Modifier.padding(2.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        types?.forEach { (type, selected) ->
+            Box(
+                modifier = Modifier.padding(2.dp).clip(RoundedCornerShape(12.dp))
+            ) {
+                Text(
+                    text = type.title,
+                    fontSize = 14.sp,
+                    modifier = Modifier
+                        .background(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        .clickable {
+                            recipeBookViewModel.updateSelectedType(
+                                type,
+                                !selected
+                            ) // do the selection
+                        }
+                        .then(
+                            if (selected) {
+                                Modifier.border(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.error,
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                            } else {
+                                Modifier
+                            }
+                        )
+                        .then(
+                            Modifier.padding(4.dp).padding(horizontal = 2.dp)
+                        ),
+                    color = MaterialTheme.colorScheme.background
+
+                )
+
+            }
+        }
     }
 }
 

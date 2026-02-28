@@ -98,6 +98,14 @@ class RecipeBookViewModel @Inject constructor(
         }
     }
 
+    fun setRecipeTypes(recipeTypes: List<TypeSelection>) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                recipeTypes = recipeTypes
+            )
+        }
+    }
+
     // gets all tags
     fun getAllTagsForUser() {
         viewModelScope.launch() {
@@ -123,6 +131,8 @@ class RecipeBookViewModel @Inject constructor(
         }
     }
 
+    // IN FUTURE, REFACTOR THE FOLLOWING TWO METHODS TO USE SAME METHOD as they are similar.
+
     // update the tag to show as selected when pressed.
     fun updateSelectedTag(tag: Tag, status: Boolean) {
         viewModelScope.launch() {
@@ -143,6 +153,30 @@ class RecipeBookViewModel @Inject constructor(
                 .onFailure { e ->
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("The tag could not be selected. Please try again later."))
                     Log.i("tag select", "failed: $e")
+                }
+        }
+    }
+
+    // update the type to show as selected when pressed.
+    fun updateSelectedType(type: RecipeType, status: Boolean) {
+        viewModelScope.launch() {
+            runCatching {
+                Log.i("updating","updating type: ${type.title}")
+                val recipeTypes = mutableUiState.value.recipeTypes
+                if (recipeTypes == null) {
+                    throw NullPointerException()
+                }
+                setRecipeTypes(recipeTypes.map { recipeSelection ->
+                    if (type == recipeSelection.type) {
+                        recipeSelection.copy(selected = status)
+                    } else {
+                        recipeSelection
+                    }
+                })
+            }
+                .onFailure { e ->
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("The type could not be selected. Please try again later."))
+                    Log.i("type select", "failed: $e")
                 }
         }
     }
@@ -344,6 +378,29 @@ class RecipeBookViewModel @Inject constructor(
             }
         }
         return true
+    }
+
+    fun setAllRecipeTypes() {
+        viewModelScope.launch() {
+            runCatching {
+                val originalTypes = uiState.value.recipeTypes
+                val updatedTypes = recipeRepository.getAllRecipeTypes().first()
+                // only set if not already set or value updated:
+                if (originalTypes == null || updatedTypes.size != originalTypes.size) {
+                    setRecipeTypes(recipeRepository.getAllRecipeTypes().first().map { type ->
+                        TypeSelection(
+                            type,
+                            false
+                        ) // set all recipe types to not be selected currently
+                    })
+                }
+            }
+                .onSuccess {  }
+                .onFailure { e ->
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Couldn't fetch recipe types. Please try again later."))
+                    Log.i("recipe types", "failed: $e")
+                }
+        }
     }
 
     @OptIn(FlowPreview::class)

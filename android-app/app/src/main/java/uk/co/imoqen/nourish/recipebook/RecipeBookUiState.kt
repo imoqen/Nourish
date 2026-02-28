@@ -11,11 +11,17 @@ data class RecipeBookUiState(
     val selectedRecipeCard: RecipeCardExpanded? = null,
     val searchTerm: String = "",
     val displayDropdownFilter: Boolean = false,
-    val allTags: List<TagSelection>? = null
+    val allTags: List<TagSelection>? = null,
+    val recipeTypes: List<TypeSelection>? = null
 )
 
 data class TagSelection(
     val tag: Tag,
+    val selected: Boolean
+)
+
+data class TypeSelection(
+    val type: RecipeType,
     val selected: Boolean
 )
 
