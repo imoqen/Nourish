@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -270,7 +271,7 @@ fun RecipeCard(
                             color = MaterialTheme.colorScheme.surfaceContainer,
                             shape = RoundedCornerShape(16.dp)
                         )
-                        .fillMaxWidth(0.9f),
+                        .fillMaxWidth(0.85f),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
@@ -299,29 +300,57 @@ fun RecipeCard(
                         }
                     }
                 }
-            }
 
-
-
-
-
-
-
-            // in future, id here can be used to edit the complete status of the recipe.
-            /*Text("Method:")
-            recipeCard.method.forEachIndexed{ i, (instruction, complete, id) ->
-                Text(
-                    text = "Step ${i+1}. $instruction",
-                    textDecoration = if (complete) { TextDecoration.LineThrough} else TextDecoration.None
-                )
-                Button(
-                    onClick = {
-                        recipeBookViewModel.markStepAsComplete(id, !complete)
-                    }
+                Column(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                        .fillMaxWidth(0.95f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Text("Mark as complete")
+                    Column(
+                        modifier = Modifier.padding(8.dp) // for inner padding of the total item
+                    ) {
+                        NourishH2("Method")
+                        recipeCard.method.forEachIndexed { i, (instruction, complete, id) ->
+                            Row(
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Checkbox(
+                                    modifier = Modifier.padding(0.dp),
+                                    checked = complete,
+                                    onCheckedChange = { recipeBookViewModel.markStepAsComplete(id, !complete) }
+                                )
+                                Text(
+                                    fontSize = 18.sp,
+                                    text = "Step ${i + 1}.",
+                                    fontWeight = FontWeight.Bold,
+                                    //modifier = Modifier.padding(top=10.dp)
+                                )
+                            }
+                            Text(
+                                text = instruction,
+                                textDecoration = if (complete) {
+                                    TextDecoration.LineThrough
+                                } else TextDecoration.None
+                            )
+                        }
+                    }
                 }
             }
+
+
+
+
+
+
+
+           /*
 
             Text("Serves: ${recipeCard.serves}")
             Text("Recipe type: ${recipeCard.recipeType}")
