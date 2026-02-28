@@ -53,6 +53,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import uk.co.imoqen.nourish.R
@@ -160,15 +161,16 @@ fun NourishH1(
 
 @Composable
 fun NourishH2(
-    text: String
+    text: String, modifier: Modifier = Modifier
 ) {
     Text(
         text = text,
         fontSize = 20.sp,
         fontWeight = FontWeight.Bold,
-        modifier = Modifier
+        modifier = modifier
             .padding(bottom = 6.dp)
-            .padding(horizontal = 6.dp)
+            .padding(horizontal = 6.dp),
+        textAlign = TextAlign.Center
     )
 }
 

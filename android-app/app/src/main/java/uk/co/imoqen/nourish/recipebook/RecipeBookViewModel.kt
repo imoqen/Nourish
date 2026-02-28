@@ -260,7 +260,7 @@ class RecipeBookViewModel @Inject constructor(
 
                 val recipeCard = RecipeCardExpanded(
                     title, ingredientsMap, method, serves, recipeType,
-                    recipeTags, storageInstructions, recipe.id
+                    recipeTags, storageInstructions, recipe.id, recipe.imagePath, recipe.emoji
                 )
 
                 setRecipeCard(recipeCard)

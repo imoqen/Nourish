@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish.recipebook
 
+import coil3.Image
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
@@ -33,7 +34,9 @@ data class RecipeCardExpanded(
     val recipeType: Pair<String, Int>,
     val recipeTags: MutableList<Pair<String, NourishColour>>,
     val storageInstructions: String,
-    val recipeId: Long // to recover the corresponding recipe card if needed
+    val recipeId: Long, // to recover the corresponding recipe card if needed
+    val imagePath: String,
+    val emoji: String
 )
 
 // condensed version of RecipeCardExpanded, so only the data that's necessary to display on the
