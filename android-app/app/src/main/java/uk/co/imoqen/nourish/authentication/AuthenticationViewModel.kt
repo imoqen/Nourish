@@ -12,6 +12,8 @@ import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
+import uk.co.imoqen.nourish.db.tag.Tag
+import uk.co.imoqen.nourish.db.tag.TagRepositoryImpl
 import uk.co.imoqen.nourish.db.user.User
 import uk.co.imoqen.nourish.db.user.UserRepository
 import uk.co.imoqen.nourish.db.user.UserRepositoryImpl
@@ -31,6 +33,7 @@ class AuthenticationViewModel @Inject constructor(
     private val authenticationManager: AuthenticationManager,
     private val uiEventBus: UiEventBus,
     private val userRepository: UserRepository,
+    private val tagRepository: TagRepositoryImpl
 ): ViewModel() {
     // Purpose: pattern to encapsulate the mutable state to ensure it is not mutable from the viewmodel.
     // pattern taken from advice in: https://medium.com/@rowaido.game/managing-ui-states-in-jetpack-compose-7eb15e4f6931
@@ -140,6 +143,40 @@ class AuthenticationViewModel @Inject constructor(
         }
     }
 
+    fun populateDbWithTags() {
+        // add the recipe tags if they are not already in the DB:
+        viewModelScope.launch() {
+            val uid = authenticationManager.getUid()
+            if (uid == null) {
+                return@launch
+            }
+
+            val recipeTags = listOf(
+                Tag(identifier = "VEGAN", displayName = "Vegan", colour = "GREEN", authorId = uid),
+                Tag(identifier = "VEGETARIAN", displayName = "Vegetarian", colour = "YELLOW", authorId = uid),
+                Tag(identifier = "GLUTEN-FREE", displayName = "Gluten-free", colour = "ORANGE", authorId = uid),
+                Tag(identifier = "NUT-FREE", displayName = "Nut-free", colour = "RED", authorId = uid),
+                Tag(identifier = "DAIRY-FREE", displayName = "Dairy-free", colour = "BLUE", authorId = uid),
+                Tag(identifier = "SOY-FREE", displayName = "Soy-free", colour = "PINK", authorId = uid),
+                Tag(identifier = "EGG-FREE", displayName = "Egg-free", colour = "ORANGE", authorId = uid),
+                Tag(identifier = "LACTOSE-FREE", displayName = "Lactose-free", colour = "GREY", authorId = uid),
+                Tag(identifier = "WHEAT-FREE", displayName = "Wheat-free", colour = "YELLOW", authorId = uid),
+                Tag(identifier = "FREEZER-FRIENDLY", displayName = "Freezer-friendly", colour = "BLUE", authorId = uid),
+                Tag(identifier = "UPF-FREE", displayName = "UPF-free", colour = "GREEN", authorId = uid),
+                Tag(identifier = "HIGH-PROTEIN", displayName = "High protein", colour = "PURPLE", authorId = uid),
+                Tag(identifier = "LOW-FAT", displayName = "Low fat", colour = "GREEN", authorId = uid),
+                Tag(identifier = "LOW-CALORIE", displayName = "Low calorie", colour = "PINK", authorId = uid),
+                Tag(identifier = "RICH-IN-VITAMINS-MINERALS", displayName = "Vitamins & Minerals", colour = "RED", authorId = uid),
+                Tag(identifier = "LOW-CARB", displayName = "Low carb", colour = "YELLOW", authorId = uid),
+                Tag(identifier = "HIGH-FIBRE", displayName = "High fibre", colour = "ORANGE", authorId = uid),
+                Tag(identifier = "NO-ADDED-SUGAR", displayName = "No added sugar", colour = "GREY", authorId = uid),
+            )
+            recipeTags.forEach { recipeTag ->
+                tagRepository.insert(recipeTag)
+            }
+        }
+    }
+
     // Functions used within the View to perform actions:
 
     /**
@@ -167,6 +204,8 @@ class AuthenticationViewModel @Inject constructor(
             }
                 .onSuccess {
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Sign in successful."))
+                    // add tags if not already added:
+                    populateDbWithTags()
                     // reset ui state for sign in:
                     resetUiState()
                 }
@@ -189,6 +228,9 @@ class AuthenticationViewModel @Inject constructor(
                 addUserToRoom()
             }
                 .onSuccess {
+                    // add tags if not already added:
+                    populateDbWithTags()
+                    // reset ui state for sign in:
                     resetUiState()
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Sign in successful."))
                 }
@@ -230,6 +272,9 @@ class AuthenticationViewModel @Inject constructor(
                 addUserToRoom()
             }
                 .onSuccess {
+                    // add tags if not already added:
+                    populateDbWithTags()
+                    // reset state as now signed in
                     resetUiState()
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Sign up successful. You have now been signed in."))
                 }

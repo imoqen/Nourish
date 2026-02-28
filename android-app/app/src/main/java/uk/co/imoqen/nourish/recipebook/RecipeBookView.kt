@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -49,12 +50,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -64,11 +68,14 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import uk.co.imoqen.nourish.common.NourishColour
+import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.common.backgroundColour
 import uk.co.imoqen.nourish.common.dimmedBackgroundColour
 import uk.co.imoqen.nourish.common.onBackgroundColour
+import uk.co.imoqen.nourish.db.tag.Tag
 import java.io.File
+import kotlin.enumValueOf
 
 
 /**
@@ -129,12 +136,24 @@ fun RecipeBookScreen(
                         tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                     )
                 }
+
                 DropdownMenu(
                     expanded = uiState.displayDropdownFilter,
+                    shape = RoundedCornerShape(24.dp),
+                    modifier = Modifier.fillMaxWidth(0.8f),
                     onDismissRequest = { recipeBookViewModel.setDisplayDropdownFilter(false) }
                 ) {
-                    // put contents of the dropwodn menu here
-                    Text("hello world!")
+                    // Dropdown menu:
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        NourishTextDivider("Filter by tag(s)")
+
+
+                        TagsDisplayForFiltering(recipeBookViewModel)
+                        NourishTextDivider("Filter by type(s)")
+                    }
                 }
             }
         }
@@ -142,8 +161,11 @@ fun RecipeBookScreen(
         Column(
             modifier = Modifier.fillMaxWidth().verticalScroll(scrollState)
         ) {
-            // get all recipes
+            // set all recipes
             recipeBookViewModel.getRecipeBookMap()
+            // set all tags for the dropdown
+            recipeBookViewModel.getAllTagsForUser()
+
             // then filter if a search has been made
             /*if (uiState.searchTerm != "") {
                 recipeBookViewModel.filterRecipeBookMapByTitle()
@@ -171,12 +193,19 @@ fun RecipeList(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 16.dp),
-            //contentPadding = PaddingValues(horizontal = 8.dp),
+            //contentPadding = PaddingValues(rhorizontal = 8.dp),
             //horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            val list: MutableList<Pair<String, NourishColour>> = mutableListOf()
+                //uiState.allTags!!.map { tag -> Pair(tag.tag.displayName, enumValueOf<NourishColour>(tag.tag.colour))}.toMutableList()
+            uiState.allTags!!.forEach { tagSelection ->
+                if (tagSelection.selected) {
+                    list.add(Pair(tagSelection.tag.displayName, enumValueOf<NourishColour>(tagSelection.tag.colour)))
+                }
+            }
             items(recipeCardsUnexpanded, key = {it.recipeId} ) { recipeCardUnexpanded ->
                 AnimatedVisibility(
-                    visible = recipeCardUnexpanded.title.contains(uiState.searchTerm, true),
+                    visible = (recipeCardUnexpanded.title.contains(uiState.searchTerm, true) && recipeCardUnexpanded.recipeTags.containsAll(list)),
                     enter = fadeIn(tween(300)),
                     exit = fadeOut(tween(300))
                 ) {
@@ -282,29 +311,7 @@ fun RecipeList(
                                             val toTake = determineSpaceAvailable(recipeCardUnexpanded)
                                             val tags = recipeCardUnexpanded.recipeTags.take(toTake)
 
-                                            tags
-                                                .forEach { (tag, colour) ->
-                                                    // alternate colour of tag depending on dark / light mode
-                                                    Text(
-                                                        text = tag,
-                                                        fontSize = 14.sp,
-                                                        modifier = Modifier
-                                                            .background(
-                                                                shape = RoundedCornerShape(12.dp),
-                                                                color = if (isSystemInDarkTheme()) {
-                                                                    colour.onBackgroundColour()
-                                                                } else {
-                                                                    colour.dimmedBackgroundColour()
-                                                                }
-                                                            )
-                                                            .padding(horizontal = 4.dp),
-                                                        color = if (isSystemInDarkTheme()) {
-                                                            colour.backgroundColour()
-                                                        } else {
-                                                            colour.onBackgroundColour()
-                                                        }
-                                                    )
-                                                }
+                                            TagsDisplay(tags)
                                             if (recipeCardUnexpanded.recipeTags.size > tags.size) {
                                                 Text("...")
                                             }
@@ -319,6 +326,95 @@ fun RecipeList(
         }
     }
 
+}
+
+@Composable
+fun TagsDisplay(
+    tags: List<Pair<String, NourishColour>>
+) {
+    tags.forEach { (tag, colour) ->
+        // alternate colour of tag depending on dark / light mode
+        Text(
+            text = tag,
+            fontSize = 14.sp,
+            modifier = Modifier
+                .background(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isSystemInDarkTheme()) {
+                        colour.onBackgroundColour()
+                    } else {
+                        colour.dimmedBackgroundColour()
+                    }
+                )
+                .padding(horizontal = 4.dp),
+            color = if (isSystemInDarkTheme()) {
+                colour.backgroundColour()
+            } else {
+                colour.onBackgroundColour()
+            }
+        )
+    }
+}
+
+@Composable
+fun TagsDisplayForFiltering(
+    recipeBookViewModel: RecipeBookViewModel
+) {
+    val tags = recipeBookViewModel.uiState.collectAsState().value.allTags
+    FlowRow(
+        modifier = Modifier.padding(2.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        tags?.forEach { (tag, selected) ->
+            // alternate colour of tag depending on dark / light mode
+            val colour = enumValueOf<NourishColour>(tag.colour)
+
+            Box(
+                modifier = Modifier.padding(2.dp).clip(RoundedCornerShape(12.dp))
+            ) {
+                Text(
+                    text = tag.displayName,
+                    fontSize = 14.sp,
+                    modifier = Modifier
+                        .background(
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (isSystemInDarkTheme()) {
+                                colour.onBackgroundColour()
+                            } else {
+                                colour.dimmedBackgroundColour()
+                            }
+                        )
+                        .clickable {
+                            recipeBookViewModel.updateSelectedTag(
+                                tag,
+                                !selected
+                            ) // do the selection
+                        }
+                        .then(
+                            if (selected) {
+                                Modifier.border(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                            } else {
+                                Modifier
+                            }
+                        )
+                        .then(
+                            Modifier.padding(4.dp).padding(horizontal=2.dp)
+                        ),
+                    color = if (isSystemInDarkTheme()) {
+                        colour.backgroundColour()
+                    } else {
+                        colour.onBackgroundColour()
+                    }
+                )
+
+            }
+        }
+    }
 }
 
 // determines if the length of the Tags belonging to a recipe can fit into one line (27 chars) or two lines (54 chars)

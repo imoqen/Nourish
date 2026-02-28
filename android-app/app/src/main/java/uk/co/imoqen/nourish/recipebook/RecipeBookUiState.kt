@@ -3,13 +3,20 @@ package uk.co.imoqen.nourish.recipebook
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
+import uk.co.imoqen.nourish.db.tag.Tag
 
 data class RecipeBookUiState(
     val recipeBookMap: MutableMap<RecipeType, MutableList<RecipeCardUnexpanded>>? = null,
     val selectedRecipe: Recipe? = null,
     val selectedRecipeCard: RecipeCardExpanded? = null,
     val searchTerm: String = "",
-    val displayDropdownFilter: Boolean = false
+    val displayDropdownFilter: Boolean = false,
+    val allTags: List<TagSelection>? = null
+)
+
+data class TagSelection(
+    val tag: Tag,
+    val selected: Boolean
 )
 
 data class RecipeCardExpanded(

@@ -2,16 +2,17 @@ package uk.co.imoqen.nourish.db.tag
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TagDao {
-    @Query("SELECT * FROM Tag")
-    fun getAll(): Flow<List<Tag>> // flow is better than normal list for things which should update. as cant access db on main thread
+    @Query("SELECT * FROM Tag WHERE authorId = :uid")
+    fun getAllForUser(uid: String): Flow<List<Tag>> // flow is better than normal list for things which should update. as cant access db on main thread
 
     // insert one
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.ABORT) // dont replace
     suspend fun insert(tag: Tag): Long
 
     @Query("SELECT id FROM tag WHERE identifier = :identifier LIMIT 1")

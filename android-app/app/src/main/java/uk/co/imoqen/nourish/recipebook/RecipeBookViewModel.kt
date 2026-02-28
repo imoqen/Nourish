@@ -90,6 +90,63 @@ class RecipeBookViewModel @Inject constructor(
         }
     }
 
+    fun setAllTags(allTags: List<TagSelection>) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                allTags = allTags
+            )
+        }
+    }
+
+    // gets all tags
+    fun getAllTagsForUser() {
+        viewModelScope.launch() {
+            runCatching {
+                Log.i("setting","setting all tags")
+                val uid = authenticationManager.getUid()
+                if (uid == null) {
+                    throw NullPointerException()
+                }
+                // only update if an update has been made to the list of tags, or no tags have been obtained yet:
+                val allTags = mutableUiState.value.allTags
+                val allTagsUpdated = tagRepository.getAllForUser(uid).first()
+                if (allTags == null || allTags.size != allTagsUpdated.size) {
+                    setAllTags((tagRepository.getAllForUser(uid).first()).map { tag ->
+                        TagSelection(tag, false) // set all to not be checked initially
+                    })
+                }
+            }
+                .onFailure { e ->
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("The tags could not be obtained. Please try again later."))
+                    Log.i("tag obtaining", "failed: $e")
+                }
+        }
+    }
+
+    // update the tag to show as selected when pressed.
+    fun updateSelectedTag(tag: Tag, status: Boolean) {
+        viewModelScope.launch() {
+            runCatching {
+                Log.i("updating","updating tag: ${tag.displayName}")
+                val allTags = mutableUiState.value.allTags
+                if (allTags == null) {
+                    throw NullPointerException()
+                }
+                setAllTags(allTags.map { tagSelection ->
+                    if (tag == tagSelection.tag) {
+                        tagSelection.copy(selected = status)
+                    } else {
+                        tagSelection
+                    }
+                })
+            }
+                .onFailure { e ->
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("The tag could not be selected. Please try again later."))
+                    Log.i("tag select", "failed: $e")
+                }
+        }
+    }
+
     // gets all recipes for the currently logged in user. ensures that if user not logged in, empty list returned.
     fun getAllRecipes(): Flow<List<Recipe>> {
         val uid = authenticationManager.getUid()

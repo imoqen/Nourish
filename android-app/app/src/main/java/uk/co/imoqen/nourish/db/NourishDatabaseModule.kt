@@ -51,32 +51,6 @@ object NourishDatabaseModule {
                         recipeTypeDao.insert(RecipeType(title = "Dessert", ordinal=3))
                         recipeTypeDao.insert(RecipeType(title = "Side", ordinal=4))
                         recipeTypeDao.insert(RecipeType(title = "Drink", ordinal=5))
-
-                        // add the recipe tags:
-                        // dietary requirements:
-                        tagDao.insert(Tag(identifier = "VEGAN", displayName = "Vegan", colour = "GREEN"))
-                        tagDao.insert(Tag(identifier = "VEGETARIAN", displayName = "Vegetarian", colour = "YELLOW"))
-                        tagDao.insert(Tag(identifier = "GLUTEN-FREE", displayName = "Gluten-free", colour = "ORANGE"))
-                        tagDao.insert(Tag(identifier = "NUT-FREE", displayName = "Nut-free", colour = "RED"))
-                        tagDao.insert(Tag(identifier = "DAIRY-FREE", displayName = "Dairy-free", colour = "BLUE"))
-                        tagDao.insert(Tag(identifier = "SOY-FREE", displayName = "Soy-free", colour = "PINK"))
-                        tagDao.insert(Tag(identifier = "EGG-FREE", displayName = "Egg-free", colour = "ORANGE"))
-                        tagDao.insert(Tag(identifier = "LACTOSE-FREE", displayName = "Lactose-free", colour = "GREY"))
-                        tagDao.insert(Tag(identifier = "WHEAT-FREE", displayName = "Wheat-free", colour = "YELLOW"))
-
-                        // misc:
-                        tagDao.insert(Tag(identifier = "FREEZER-FRIENDLY", displayName = "Freezer-friendly", colour = "BLUE"))
-                        tagDao.insert(Tag(identifier = "UPF-FREE", displayName = "UPF-free", colour = "GREEN"))
-
-                        // diet / macros:
-                        tagDao.insert(Tag(identifier = "HIGH-PROTEIN", displayName = "High protein", colour = "PURPLE"))
-                        tagDao.insert(Tag(identifier = "LOW-FAT", displayName = "Low fat", colour = "GREEN"))
-                        tagDao.insert(Tag(identifier = "LOW-CALORIE", displayName = "Low calorie", colour = "PINK"))
-                        tagDao.insert(Tag(identifier = "RICH-IN-VITAMINS-MINERALS", displayName = "Vitamins & Minerals", colour = "RED"))
-                        tagDao.insert(Tag(identifier = "LOW-CARB", displayName = "Low carb", colour = "YELLOW"))
-                        tagDao.insert(Tag(identifier = "HIGH-FIBRE", displayName = "High fibre", colour = "ORANGE"))
-                        tagDao.insert(Tag(identifier = "NO-ADDED-SUGAR", displayName = "No added sugar", colour = "GREY"))
-
                     }
                 }
             })
