@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,6 +37,7 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -85,7 +87,9 @@ fun RecipeCard(
 
         ) {
             Column(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize().background(color = MaterialTheme.colorScheme.background),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(
                     modifier = Modifier
@@ -215,60 +219,89 @@ fun RecipeCard(
                             )
                         )
                     }
-
                 }
 
-                /*Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            // bottom corners are rounded, top are not:
-                            shape = RoundedCornerShape(
-                                topStart = 32.dp,
-                                topEnd = 32.dp
-                            )
-                        )
-                        .align(Alignment.End)
+                Row(
+                    modifier = Modifier.fillMaxWidth(0.95f)
                 ) {
-                    Text("hello world")
-                }*/
-
-
-                /*Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            // bottom corners are rounded, top are not:
-                            shape = RoundedCornerShape(
-                                topStart = 32.dp,
-                                topEnd = 32.dp
+                    Column(
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceContainer,
+                                shape = RoundedCornerShape(16.dp)
                             )
-                        )
-                        .padding(vertical = 16.dp)
-                    //contentAlignment = Alignment.Center
-                ) {
-                    Text("Ingredients")
-                    // then output the ingredients by section
-                    recipeCard.sectionsWithIngredients.forEach { (section, ingredients) ->
+                            .fillMaxWidth(0.7f)
+                    ) {
                         Column(
-                            modifier = Modifier.padding(vertical = 8.dp)
+                            modifier = Modifier.padding(8.dp) // for inner padding of the total item
                         ) {
-                            // only output name of section if there is more than 1 section, otherwise it is irrelevant
-                            if (recipeCard.sectionsWithIngredients.size > 1) {
-                                Text(section)
-                            }
-
-                            // id can be used if user wishes to add to shopping list
-                            ingredients.forEach { (ingredient, amount, id) ->
-                                Text("${formatIngredientAmount(amount)} $ingredient")
+                            FlowRow(
+                                modifier = Modifier.padding(2.dp),
+                                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                verticalArrangement = Arrangement.spacedBy(2.dp),
+                            ) {
+                                TagsDisplay(recipeCard.recipeTags)
                             }
                         }
                     }
-                }*/
 
+                    Column(
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceContainer,
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                            //.fillMaxWidth(0.3f)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(8.dp) // for inner padding of the total item
+                        ) {
+                            Text("Serves ${recipeCard.serves}")
+                        }
+                    }
+                }
+
+                Column(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                        .fillMaxWidth(0.9f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Column(
+                        modifier = Modifier.padding(8.dp) // for inner padding of the total item
+                    ) {
+                        NourishH2("Ingredients")
+                        // then output the ingredients by section
+                        recipeCard.sectionsWithIngredients.forEach { (section, ingredients) ->
+                            Column(
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            ) {
+                                // only output name of section if there is more than 1 section, otherwise it is irrelevant
+                                if (recipeCard.sectionsWithIngredients.size > 1) {
+                                    Text(
+                                        text = section,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+
+                                // id can be used if user wishes to add to shopping list
+                                ingredients.forEach { (ingredient, amount, id) ->
+                                    Text("${formatIngredientAmount(amount)} $ingredient")
+                                }
+                            }
+                        }
+                    }
+                }
             }
+
+
 
 
 
