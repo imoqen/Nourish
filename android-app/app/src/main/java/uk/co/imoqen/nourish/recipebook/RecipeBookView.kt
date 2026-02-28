@@ -26,17 +26,26 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SearchBar
+import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
 import androidx.compose.material3.carousel.HorizontalUncontainedCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -45,6 +54,9 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -54,6 +66,7 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import uk.co.imoqen.nourish.common.NourishColour
+import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.common.backgroundColour
 import uk.co.imoqen.nourish.common.onBackgroundColour
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
@@ -66,6 +79,7 @@ import kotlin.collections.emptyList
 /**
  * Recipe Book view
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeBookScreen(
     recipeBookViewModel: RecipeBookViewModel,
@@ -73,20 +87,41 @@ fun RecipeBookScreen(
 ) {
 
     val scrollState = rememberScrollState()
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    val uiState = recipeBookViewModel.uiState.collectAsState().value
+    val keyboardFocusManager =
+        LocalFocusManager.current // To close the keyboard once user submits input
 
-    Column(
-        modifier = Modifier.fillMaxWidth().verticalScroll(scrollState)
-    ) {
+    Column() {
+        // search bar: https://developer.android.com/develop/ui/compose/components/search-bar
 
-        val allRecipes = recipeBookViewModel.getAllRecipes().collectAsState(initial = emptyList())
-        Text("Recipe Book Screen")
+        NourishTextField(
+            value = uiState.searchTerm,
+            onValueChange = { newSearchTerm ->
+                recipeBookViewModel.setSearchTerm(newSearchTerm)
+            },
+            placeholder = "Search for a recipe",
+            icon = Icons.Filled.Search,
+            onDone = { keyboardFocusManager.clearFocus() },
+            trailingIcon = Icons.Filled.Clear,
+            onValueReset = { recipeBookViewModel.setSearchTerm("") }
+        )
 
-        //allRecipes.value.forEach{ recipe ->
-        //    RecipeCard(recipe, recipeBookViewModel)
-        //}
+        Column(
+            modifier = Modifier.fillMaxWidth().verticalScroll(scrollState)
+        ) {
+            val allRecipes = recipeBookViewModel.getAllRecipes().collectAsState(initial = emptyList())
 
-        val recipes = recipeBookViewModel.getRecipeBookMap()
-        RecipeList(recipeBookViewModel, onViewRecipeCard)
+            Text("Recipe Book Screen")
+
+            //allRecipes.value.forEach{ recipe ->
+            //    RecipeCard(recipe, recipeBookViewModel)
+            //}
+
+            val recipes = recipeBookViewModel.getRecipeBookMap()
+
+            RecipeList(recipeBookViewModel, onViewRecipeCard)
+        }
 
         // currently only outputs the first recipe; only one recipe will be shown at once.
         /*if (allRecipes.value.isNotEmpty()) {
@@ -172,7 +207,7 @@ fun RecipeList(
                                     fontSize = 32.sp,
                                     // center emoji if no image, otherwise put at bottom center
                                             modifier = if (displayImage) {Modifier.align(Alignment.BottomCenter)}
-                                            else {Modifier.align(Alignment.Center).offset(y = (-10).dp)}, // go -15 which is 115 - 100 (total box - image) to ensure centred plus a bit less for looking good
+                                            else {Modifier.align(Alignment.Center)},
                                     style = TextStyle(
                                                     shadow = Shadow(
                                                         color = Color.Black,

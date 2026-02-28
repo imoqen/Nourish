@@ -72,6 +72,14 @@ class RecipeBookViewModel @Inject constructor(
         }
     }
 
+    fun setSearchTerm(searchTerm: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                searchTerm = searchTerm
+            )
+        }
+    }
+
     // gets all recipes for the currently logged in user. ensures that if user not logged in, empty list returned.
     fun getAllRecipes(): Flow<List<Recipe>> {
         val uid = authenticationManager.getUid()

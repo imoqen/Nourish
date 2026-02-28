@@ -7,7 +7,8 @@ import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 data class RecipeBookUiState(
     val recipeBookMap: MutableMap<RecipeType, MutableList<RecipeCardUnexpanded>>? = null,
     val selectedRecipe: Recipe? = null,
-    val selectedRecipeCard: RecipeCardExpanded? = null
+    val selectedRecipeCard: RecipeCardExpanded? = null,
+    val searchTerm: String = ""
 )
 
 data class RecipeCardExpanded(
