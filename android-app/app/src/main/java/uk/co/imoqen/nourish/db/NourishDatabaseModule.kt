@@ -13,6 +13,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
+import uk.co.imoqen.nourish.db.tag.Tag
 import javax.inject.Singleton
 
 // Hilt dependency injection for Room database
@@ -41,15 +42,15 @@ object NourishDatabaseModule {
                     CoroutineScope(Dispatchers.IO).launch {
                         val db = dbProvider.get()
                         val recipeTypeDao = db.recipeTypeDao()
+                        val tagDao = db.tagDao()
 
                         // add the recipe types:
-                        recipeTypeDao.insert(RecipeType(title = "Breakfast"))
-                        recipeTypeDao.insert(RecipeType(title = "Lunch"))
-                        recipeTypeDao.insert(RecipeType(title = "Dinner"))
-                        recipeTypeDao.insert(RecipeType(title = "Dessert"))
-                        recipeTypeDao.insert(RecipeType(title = "Side"))
-                        recipeTypeDao.insert(RecipeType(title = "Snack"))
-                        recipeTypeDao.insert(RecipeType(title = "Drink"))
+                        recipeTypeDao.insert(RecipeType(title = "Breakfast", ordinal=0))
+                        recipeTypeDao.insert(RecipeType(title = "Lunch", ordinal=1))
+                        recipeTypeDao.insert(RecipeType(title = "Dinner", ordinal=2))
+                        recipeTypeDao.insert(RecipeType(title = "Dessert", ordinal=3))
+                        recipeTypeDao.insert(RecipeType(title = "Side", ordinal=4))
+                        recipeTypeDao.insert(RecipeType(title = "Drink", ordinal=5))
                     }
                 }
             })

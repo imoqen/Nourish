@@ -11,12 +11,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import uk.co.imoqen.nourish.profile.ProfileScreen
 import uk.co.imoqen.nourish.profile.ProfileViewModel
 import uk.co.imoqen.nourish.recipebook.RecipeBookScreen
 import uk.co.imoqen.nourish.recipebook.RecipeBookViewModel
+import uk.co.imoqen.nourish.recipebook.RecipeCardScreen
 import uk.co.imoqen.nourish.recipediscovery.RecipeDiscoveryViewModel
 import uk.co.imoqen.nourish.recipediscovery.RecipeDiscoveryScreen
 import uk.co.imoqen.nourish.shoppinglist.ShoppingListScreen
@@ -49,12 +52,22 @@ fun AppNavHost(
         }
         composable(TabDestination.RECIPE_BOOK.route) {
             val recipeBookViewModel: RecipeBookViewModel = hiltViewModel()
-            RecipeBookScreen(recipeBookViewModel)
+            RecipeBookScreen(recipeBookViewModel, onViewRecipeCard = { id -> navController.navigate("recipe-card/$id") })
         }
         composable(TabDestination.SHOPPING_LIST.route) { ShoppingListScreen() }
         composable(TabDestination.PROFILE.route) {
             val profileViewModel: ProfileViewModel = hiltViewModel()
             ProfileScreen(profileViewModel)
+        }
+
+        // within the Recipe Book, can navigate to a specific Recipe Card:
+        composable(
+            route = "recipe-card/{id}",
+            arguments = listOf(navArgument("id") { type = NavType.LongType }) // the recipeId to display the recipe card of
+        ) { backStackEntry ->
+            val recipeId = backStackEntry.arguments?.getLong("id")!!
+            val recipeBookViewModel: RecipeBookViewModel = hiltViewModel()
+            RecipeCardScreen(recipeBookViewModel, recipeId) //TODO onEdit = { }) to move to edit page when editing recipe
         }
         // Can add Route destinations too (those not from tabs)
         // can add here. then can add params to them as shown in this video: https://www.youtube.com/watch?v=wJKwsI5WUI4
@@ -84,7 +97,7 @@ fun NourishNavigationBar(
                         launchSingleTop = true // ensures destinations are not duplicated
                         // the following 4 lines are to prevent previous destinations from being destroyed and recreated
                         // from android docs https://developer.android.com/guide/navigation/backstack/multi-back-stacks
-                        restoreState = false // to reset view models as user has changed
+                        restoreState = true // to reset view models as user has changed
                         popUpTo(navController.graph.findStartDestination().id) {
                             saveState = true
                         }

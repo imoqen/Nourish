@@ -13,6 +13,8 @@ interface RecipeRepository {
 
     // RECIPE LOGIC:
     fun getAllRecipes(uid: String): Flow<List<Recipe>>
+
+    fun getRecipeById(recipeId: Long): Flow<Recipe?>
     suspend fun insertRecipe(recipe: Recipe): Long
     fun getRecipeWithRecipeIngredients(recipeId: Long): Flow<RecipeWithRecipeIngredients>
     fun getRecipeWithRecipeTypes(recipeId: Long): Flow<RecipeWithRecipeTags>
@@ -45,5 +47,5 @@ interface RecipeRepository {
     /**
      * Creates a recipe in the database and its corresponding entities
      */
-    suspend fun createRecipe(uid: String, llmRecipe: LlmRecipe)
+    suspend fun createRecipe(uid: String, llmRecipe: LlmRecipe, imagePath: String)
 }

@@ -2,6 +2,7 @@ package uk.co.imoqen.nourish
 
 import co.uk.imoqen.testfixtures.common.FakeUiEventBus
 import co.uk.imoqen.testfixtures.firebase.FakeAuthenticationManager
+import co.uk.imoqen.testfixtures.repository.FakeTagRepository
 import co.uk.imoqen.testfixtures.repository.FakeUserRepository
 import org.junit.Assert
 import org.junit.Before
@@ -18,13 +19,14 @@ class AuthenticationViewModelTest {
     lateinit var fakeUiEventBus: FakeUiEventBus
     // fake repositories:
     val fakeUserRepository = FakeUserRepository()
+    val fakeTagRepository = FakeTagRepository()
 
     lateinit var vm: AuthenticationViewModel
 
     @Before
     fun init() {
         fakeUiEventBus = FakeUiEventBus()
-        vm = AuthenticationViewModel(fakeAuthenticationManager, fakeUiEventBus, fakeUserRepository)
+        vm = AuthenticationViewModel(fakeAuthenticationManager, fakeUiEventBus, fakeUserRepository, fakeTagRepository)
     }
 
     @get:Rule

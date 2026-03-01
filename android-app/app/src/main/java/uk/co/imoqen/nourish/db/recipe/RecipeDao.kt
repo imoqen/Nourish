@@ -14,6 +14,9 @@ interface RecipeDao {
     @Query("SELECT * FROM recipe WHERE ownerUid = :uid")
     fun getAll(uid: String): Flow<List<Recipe>> // flow is better than normal list for things which should update. as cant access db on main thread
 
+    @Query("SELECT * FROM recipe WHERE id = :id LIMIT 1")
+    fun getById(id: Long): Flow<Recipe?>
+
     /*@Insert
     fun insertAllRecipes(vararg recipes: Recipe)
 

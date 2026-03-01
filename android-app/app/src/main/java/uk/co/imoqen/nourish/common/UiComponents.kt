@@ -27,6 +27,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -52,6 +53,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import uk.co.imoqen.nourish.R
@@ -64,7 +66,9 @@ fun NourishTextField(
     placeholder: String,
     icon: ImageVector,
     onDone: () -> Unit, // for submitting to make the enter button work. this will close the keyboard.
-    visualTransformation: VisualTransformation = VisualTransformation.None //only for password fields
+    visualTransformation: VisualTransformation = VisualTransformation.None, //only for password fields
+    onValueReset: () -> Unit = {}, // optional: for clearing input
+    trailingIcon: ImageVector? = null // optional: for clearing input
 ) {
     OutlinedTextField(
         value = value,
@@ -79,7 +83,9 @@ fun NourishTextField(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         },
-        modifier = Modifier.fillMaxWidth(0.9f).padding(top=8.dp),
+        modifier = Modifier
+            .fillMaxWidth(0.9f)
+            .padding(top = 8.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
             unfocusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -109,7 +115,21 @@ fun NourishTextField(
         // performs done function (closes keyboard)
         keyboardActions = KeyboardActions(
             onDone = { onDone() }
-        )
+        ),
+
+        trailingIcon = { if (trailingIcon != null && value != "") // trailing icon is only displayed if it is not null and the text entered is not empty (so there is something to remove.)
+            {
+                IconButton(
+                    onClick = onValueReset
+                ) {
+                    Icon(
+                        imageVector = trailingIcon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
     )
 }
 
@@ -119,7 +139,9 @@ fun NourishText(
 ) {
     Text(
         text = text,
-        modifier = Modifier.padding(4.dp).padding(horizontal=8.dp)
+        modifier = Modifier
+            .padding(4.dp)
+            .padding(horizontal = 8.dp)
     )
 }
 
@@ -131,19 +153,24 @@ fun NourishH1(
         text = text,
         fontSize = 32.sp,
         fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(bottom=6.dp).padding(horizontal=6.dp)
+        modifier = Modifier
+            .padding(bottom = 6.dp)
+            .padding(horizontal = 6.dp)
     )
 }
 
 @Composable
 fun NourishH2(
-    text: String
+    text: String, modifier: Modifier = Modifier
 ) {
     Text(
         text = text,
         fontSize = 20.sp,
         fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(bottom=6.dp).padding(horizontal=6.dp)
+        modifier = modifier
+            .padding(bottom = 6.dp)
+            .padding(horizontal = 6.dp),
+        textAlign = TextAlign.Center
     )
 }
 
@@ -167,7 +194,9 @@ fun NourishButton(
         onClick = {
             onClick()
         },
-        modifier = Modifier.padding(vertical=4.dp).padding(horizontal = 4.dp)
+        modifier = Modifier
+            .padding(vertical = 4.dp)
+            .padding(horizontal = 4.dp)
     ) {
         Text(text)
     }
@@ -182,7 +211,9 @@ fun NourishDangerButton(
         onClick = {
             onClick()
         },
-        modifier = Modifier.padding(vertical=4.dp).padding(horizontal = 4.dp),
+        modifier = Modifier
+            .padding(vertical = 4.dp)
+            .padding(horizontal = 4.dp),
 
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.errorContainer
@@ -209,7 +240,9 @@ fun GoogleButton(
         Image(
             painter = painterResource(R.drawable.google_logo),
             contentDescription = "Nourish Logo",
-            modifier = Modifier.size(32.dp).padding(end=4.dp)
+            modifier = Modifier
+                .size(32.dp)
+                .padding(end = 4.dp)
         )
         Text("Sign in with Google")
     }
@@ -220,7 +253,9 @@ fun NourishTextDivider(
     text: String
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical=8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         HorizontalDivider(
@@ -239,7 +274,9 @@ fun NourishTextDivider(
 @Composable
 fun NourishDivider() {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         HorizontalDivider(
@@ -335,9 +372,21 @@ fun NourishBottomCard(
                         .fillMaxWidth()
                         .shadow(
                             elevation = 28.dp,
-                            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
+                            shape = RoundedCornerShape(
+                                topStart = 24.dp,
+                                topEnd = 24.dp,
+                                bottomStart = 0.dp,
+                                bottomEnd = 0.dp
+                            )
                         )
-                        .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 0.dp, bottomEnd = 0.dp))
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = 24.dp,
+                                topEnd = 24.dp,
+                                bottomStart = 0.dp,
+                                bottomEnd = 0.dp
+                            )
+                        )
                         .background(MaterialTheme.colorScheme.surface)
                         .padding(top = 32.dp) // room for logo
                 ) {

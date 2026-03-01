@@ -50,7 +50,7 @@ private val NourishLightColorScheme = lightColorScheme(
     secondary = NourishGreenDark,
     tertiary = NourishGreenLight,
 
-    background = PurpleGrey80,
+    background = Color.White,
     surface = Purple80,
     onBackground = Color.Black,
 
@@ -65,7 +65,9 @@ private val NourishLightColorScheme = lightColorScheme(
     onPrimaryContainer = Color.Black,
 
     error = ErrorLight,
-    errorContainer = ErrorDark
+    errorContainer = ErrorDark,
+
+    surfaceContainer = PurpleGrey120
 
     /* Other default colors to override
     background = Color(0xFFFFFBFE),

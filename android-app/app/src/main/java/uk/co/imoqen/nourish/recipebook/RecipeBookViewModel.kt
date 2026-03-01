@@ -4,14 +4,17 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.db.ingredient.Ingredient
@@ -30,6 +33,7 @@ import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import javax.inject.Inject
+import kotlin.collections.getOrPut
 
 @HiltViewModel
 class RecipeBookViewModel @Inject constructor(
@@ -46,7 +50,7 @@ class RecipeBookViewModel @Inject constructor(
     val uiState: StateFlow<RecipeBookUiState> = mutableUiState.asStateFlow()
 
     // Setters for Ui State values:
-    fun setRecipeCard(selectedRecipeCard: RecipeCard) {
+    fun setRecipeCard(selectedRecipeCard: RecipeCardExpanded) {
         mutableUiState.update { currentState ->
             currentState.copy(
                 selectedRecipeCard = selectedRecipeCard
@@ -59,6 +63,121 @@ class RecipeBookViewModel @Inject constructor(
             currentState.copy(
                 selectedRecipe = selectedRecipe
             )
+        }
+    }
+
+    fun setRecipeBookMap(recipeBookMap: MutableMap<RecipeType, MutableList<RecipeCardUnexpanded>>) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                recipeBookMap = recipeBookMap
+            )
+        }
+    }
+
+    fun setSearchTerm(searchTerm: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                searchTerm = searchTerm
+            )
+        }
+    }
+
+    fun setDisplayDropdownFilter(displayDropdownFilter: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                displayDropdownFilter = displayDropdownFilter
+            )
+        }
+    }
+
+    fun setAllTags(allTags: List<TagSelection>) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                allTags = allTags
+            )
+        }
+    }
+
+    fun setRecipeTypes(recipeTypes: List<TypeSelection>) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                recipeTypes = recipeTypes
+            )
+        }
+    }
+
+    // gets all tags
+    fun getAllTagsForUser() {
+        viewModelScope.launch() {
+            runCatching {
+                Log.i("setting","setting all tags")
+                val uid = authenticationManager.getUid()
+                if (uid == null) {
+                    throw NullPointerException()
+                }
+                // only update if an update has been made to the list of tags, or no tags have been obtained yet:
+                val allTags = mutableUiState.value.allTags
+                val allTagsUpdated = tagRepository.getAllForUser(uid).first()
+                if (allTags == null || allTags.size != allTagsUpdated.size) {
+                    setAllTags((tagRepository.getAllForUser(uid).first()).map { tag ->
+                        TagSelection(tag, false) // set all to not be checked initially
+                    })
+                }
+            }
+                .onFailure { e ->
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("The tags could not be obtained. Please try again later."))
+                    Log.i("tag obtaining", "failed: $e")
+                }
+        }
+    }
+
+    // IN FUTURE, REFACTOR THE FOLLOWING TWO METHODS TO USE SAME METHOD as they are similar.
+
+    // update the tag to show as selected when pressed.
+    fun updateSelectedTag(tag: Tag, status: Boolean) {
+        viewModelScope.launch() {
+            runCatching {
+                Log.i("updating","updating tag: ${tag.displayName}")
+                val allTags = mutableUiState.value.allTags
+                if (allTags == null) {
+                    throw NullPointerException()
+                }
+                setAllTags(allTags.map { tagSelection ->
+                    if (tag == tagSelection.tag) {
+                        tagSelection.copy(selected = status)
+                    } else {
+                        tagSelection
+                    }
+                })
+            }
+                .onFailure { e ->
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("The tag could not be selected. Please try again later."))
+                    Log.i("tag select", "failed: $e")
+                }
+        }
+    }
+
+    // update the type to show as selected when pressed.
+    fun updateSelectedType(type: RecipeType, status: Boolean) {
+        viewModelScope.launch() {
+            runCatching {
+                Log.i("updating","updating type: ${type.title}")
+                val recipeTypes = mutableUiState.value.recipeTypes
+                if (recipeTypes == null) {
+                    throw NullPointerException()
+                }
+                setRecipeTypes(recipeTypes.map { recipeSelection ->
+                    if (type == recipeSelection.type) {
+                        recipeSelection.copy(selected = status)
+                    } else {
+                        recipeSelection
+                    }
+                })
+            }
+                .onFailure { e ->
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("The type could not be selected. Please try again later."))
+                    Log.i("type select", "failed: $e")
+                }
         }
     }
 
@@ -88,6 +207,10 @@ class RecipeBookViewModel @Inject constructor(
 
     fun getTagByTagId(tagId: Long): Flow<Tag?> {
         return tagRepository.getById(tagId)
+    }
+
+    fun getRecipeById(recipeId: Long): Flow<Recipe?> {
+        return recipeRepository.getRecipeById(recipeId)
     }
 
     fun getSectionById(sectionId: Long): Flow<RecipeIngredientSection?> {
@@ -135,9 +258,9 @@ class RecipeBookViewModel @Inject constructor(
                     return@launch
                 }
 
-                val recipeCard = RecipeCard(
+                val recipeCard = RecipeCardExpanded(
                     title, ingredientsMap, method, serves, recipeType,
-                    recipeTags, storageInstructions, recipe.id
+                    recipeTags, storageInstructions, recipe.id, recipe.imagePath, recipe.emoji
                 )
 
                 setRecipeCard(recipeCard)
@@ -154,16 +277,16 @@ class RecipeBookViewModel @Inject constructor(
 
     suspend fun buildRecipeTags(
         recipeId: Long
-    ): MutableList<String> {
-        val tagsList: MutableList<String> = mutableListOf()
+    ): MutableList<Pair<String, NourishColour>> {
+        val tagsList: MutableList<Pair<String, NourishColour>> = mutableListOf()
         val tags = getRecipeTagsForRecipe(recipeId).first()
         tags.recipeTags.forEach{ recipeTag ->
-            val tagIdentifier = getTagByTagId(recipeTag.tagId).first()?.identifier
+            val tag = getTagByTagId(recipeTag.tagId).first()
             // delegate up to deal with error
-            if (tagIdentifier == null) {
+            if (tag == null) {
                 throw NullPointerException()
             }
-            tagsList.add(tagIdentifier)
+            tagsList.add(Pair(tag.displayName, enumValueOf<NourishColour>(tag.colour)))
         }
         return tagsList
     }
@@ -180,8 +303,12 @@ class RecipeBookViewModel @Inject constructor(
 
     suspend fun findRecipeType(
         recipeTypeId: Long
-    ): String? {
-            return getRecipeTypeById(recipeTypeId).first()?.title
+    ): Pair<String, Int>? {
+        val recipeType = getRecipeTypeById(recipeTypeId).first()
+        if (recipeType == null) {
+            return recipeType
+        }
+        return Pair(recipeType.title, recipeType.ordinal)
     }
 
     suspend fun buildIngredientsMap(
@@ -192,41 +319,41 @@ class RecipeBookViewModel @Inject constructor(
         // map with key sectionTitle and value of list of pair of ingredient string and ingredient id (so it can be referenced in future)
         val sectionsWithIngredients: MutableMap<String, MutableList<Triple<String, Double, Long>>> = mutableMapOf()
 
-            // first bundle them all by section
-            recipeIngredients.ingredients.forEach { ingredient ->
+        // first bundle them all by section
+        recipeIngredients.ingredients.forEach { ingredient ->
 
-                // title of the section:
-                val sectionId = ingredient.sectionId
-                val sectionTitle = getSectionById(sectionId).first()?.title // this may fail if the values stored in the db update while user is looking at it. for this, would need to use .collect(). consider this if issues occur in future.
+            // title of the section:
+            val sectionId = ingredient.sectionId
+            val sectionTitle = getSectionById(sectionId).first()?.title // this may fail if the values stored in the db update while user is looking at it. for this, would need to use .collect(). consider this if issues occur in future.
 
-                // determine pluralities
-                val ingredientAmount = ingredient.amount
-                val ingredientUnit = ingredient.ingredientUnit
-                val unit = if (determineUnitPlurality(ingredientAmount)) {
-                    ingredientUnit.pluralName
-                } else {
-                    ingredientUnit.singularName
-                }
-                val ingredientName = getIngredientById(ingredient.ingredientId).first()
-
-
-                if (ingredientName != null && sectionTitle != null) {
-                    val ingredientPluralisedName =
-                        if (determineIngredientPlurality(ingredientAmount, ingredientUnit)) {
-                            ingredientName.plural
-                        } else {
-                            ingredientName.singular
-                        }
-                    var ingredientText = ""
-                    ingredientText = if (unit != "") {
-                        ("$unit $ingredientPluralisedName")
-                    } else {
-                        (ingredientPluralisedName)
-                    }
-                    sectionsWithIngredients.getOrPut(sectionTitle) { mutableListOf() }
-                        .add(Triple(ingredientText, ingredientAmount, ingredient.ingredientId))
-                }
+            // determine pluralities
+            val ingredientAmount = ingredient.amount
+            val ingredientUnit = ingredient.ingredientUnit
+            val unit = if (determineUnitPlurality(ingredientAmount)) {
+                ingredientUnit.pluralName
+            } else {
+                ingredientUnit.singularName
             }
+            val ingredientName = getIngredientById(ingredient.ingredientId).first()
+
+
+            if (ingredientName != null && sectionTitle != null) {
+                val ingredientPluralisedName =
+                    if (determineIngredientPlurality(ingredientAmount, ingredientUnit)) {
+                        ingredientName.plural
+                    } else {
+                        ingredientName.singular
+                    }
+                var ingredientText = ""
+                ingredientText = if (unit != "") {
+                    ("$unit $ingredientPluralisedName")
+                } else {
+                    (ingredientPluralisedName)
+                }
+                sectionsWithIngredients.getOrPut(sectionTitle) { mutableListOf() }
+                    .add(Triple(ingredientText, ingredientAmount, ingredient.ingredientId))
+            }
+        }
         return sectionsWithIngredients
     }
 
@@ -251,6 +378,72 @@ class RecipeBookViewModel @Inject constructor(
             }
         }
         return true
+    }
+
+    fun setAllRecipeTypes() {
+        viewModelScope.launch() {
+            runCatching {
+                val originalTypes = uiState.value.recipeTypes
+                val updatedTypes = recipeRepository.getAllRecipeTypes().first()
+                // only set if not already set or value updated:
+                if (originalTypes == null || updatedTypes.size != originalTypes.size) {
+                    setRecipeTypes(recipeRepository.getAllRecipeTypes().first().map { type ->
+                        TypeSelection(
+                            type,
+                            false
+                        ) // set all recipe types to not be selected currently
+                    })
+                }
+            }
+                .onSuccess {  }
+                .onFailure { e ->
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Couldn't fetch recipe types. Please try again later."))
+                    Log.i("recipe types", "failed: $e")
+                }
+        }
+    }
+
+    @OptIn(FlowPreview::class)
+    fun getRecipeBookMap() {
+        viewModelScope.launch() {
+            runCatching {
+                val allRecipes = getAllRecipes().debounce(300).first() // get all recipes. debouncing is added to provide smoothness
+                // Filter to search term if search has been made:
+                /*if (mutableUiState.value.searchTerm != "") {
+                    allRecipes = allRecipes.filter { recipe ->
+                        recipe.title.contains(mutableUiState.value.searchTerm, true) // ignore case
+                    }
+                }*/
+                val recipeBookMap: MutableMap<RecipeType, MutableList<RecipeCardUnexpanded>> = mutableMapOf()
+                allRecipes.forEach { recipe ->
+                    val type = recipeRepository.getRecipeTypeById(recipe.recipeTypeId).first()
+
+                    // build the unexpanded recipe card:
+                    val recipeCardUnexpanded = RecipeCardUnexpanded(
+                        title = recipe.title,
+                        recipeTags = buildRecipeTags(recipe.id),
+                        imagePath = recipe.imagePath,
+                        emoji = recipe.emoji,
+                        recipeId = recipe.id
+                    )
+
+                    if (type == null) {
+                        throw NullPointerException()
+                    }
+                    recipeBookMap.getOrPut(type) { mutableListOf() }
+                        .add(recipeCardUnexpanded)
+                }
+                // to ensure recipes are printed: Breakfast -> Lunch -> Dinner -> Dessert -> Side -> Drink
+                val sorted = recipeBookMap.toSortedMap(compareBy { it.ordinal }) // sort by ordinal values of the recipeType.
+                setRecipeBookMap(sorted)
+                Log.i("sorted", "done")
+            }
+                .onSuccess {  }
+                .onFailure { e ->
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Couldn't fetch recipes. Please try again later."))
+                    Log.i("recipe book", "failed: $e")
+                }
+        }
     }
 
 

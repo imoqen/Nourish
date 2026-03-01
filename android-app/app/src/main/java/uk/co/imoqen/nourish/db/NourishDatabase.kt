@@ -28,7 +28,7 @@ import uk.co.imoqen.nourish.db.user.UserDao
         Recipe::class, RecipeIngredient::class, RecipeType::class, RecipeTag::class, RecipeIngredientSection::class, RecipeStep::class,
         // other classes:
         User::class, Ingredient::class, Tag::class],
-    version = 7
+    version = 11
 )
 @TypeConverters(Converters::class)
 abstract class NourishDatabase : RoomDatabase() {

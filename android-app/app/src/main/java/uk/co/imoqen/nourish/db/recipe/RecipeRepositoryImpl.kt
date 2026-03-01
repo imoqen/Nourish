@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish.db.recipe
 
+import android.util.Log
 import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
 import uk.co.imoqen.nourish.db.NourishDatabase
@@ -40,6 +41,7 @@ class RecipeRepositoryImpl @Inject constructor(
     // RECIPE LOGIC:
     // get all recipes: (not suspend)
     override fun getAllRecipes(uid: String): Flow<List<Recipe>> = recipeDao.getAll(uid)
+    override fun getRecipeById(recipeId: Long): Flow<Recipe?> = recipeDao.getById(recipeId)
     override suspend fun insertRecipe(recipe: Recipe): Long = recipeDao.insert(recipe)
     //fun getRecipeWithIngredients(recipeId: Long): Flow<RecipeWithIngredients> = recipeDao.getRecipeWithIngredients(recipeId)
     override fun getRecipeWithRecipeIngredients(recipeId: Long): Flow<RecipeWithRecipeIngredients> = recipeDao.getRecipeWithRecipeIngredients(recipeId)
@@ -78,21 +80,25 @@ class RecipeRepositoryImpl @Inject constructor(
      */
     override suspend fun createRecipe(
         uid: String,
-        llmRecipe: LlmRecipe
+        llmRecipe: LlmRecipe,
+        imagePath: String // just set to "" if none, which is fine.
     ) {
         // if throws, it is handled accordingly where it is called.
         db.withTransaction {
-            // 1. Create or get the recipe type
-            var recipeTypeId = getIdByTitle(llmRecipe.mealType)
+            // 1. Create or get the recipe type, only add in form where first char is capital
+            // (i.e. dinner -> Dinner) to ensure no dupes
+            val mealTypeFormatted = (llmRecipe.mealType).lowercase().replaceFirstChar { it.uppercase() }
+            val recipeTypeId = getIdByTitle(mealTypeFormatted)
+            // must already exist; llm has to choose it from given list. if wrong, throw error.
             if (recipeTypeId == null) {
-                recipeTypeId = insertRecipeType(RecipeType(title = llmRecipe.mealType))
+                throw NullPointerException()
             }
 
             // 2. Create the recipe and add it to the database
             val recipe = Recipe(
                 authorUid = uid, title = llmRecipe.title, numberOfServings = llmRecipe.servings.toInt(),
-                colour = "todo", generated = true, image = null, archived = false,
-                storageInstructions = llmRecipe.storage, recipeTypeId = recipeTypeId,
+                colour = "todo", generated = true, imagePath = imagePath, archived = false,
+                storageInstructions = llmRecipe.storage, recipeTypeId = recipeTypeId, emoji = llmRecipe.emoji
             )
             val recipeId = recipeDao.insert(recipe)
 
@@ -119,7 +125,7 @@ class RecipeRepositoryImpl @Inject constructor(
                     recipeIngredientDao.insert(
                         RecipeIngredient(
                             recipeId = recipeId, ingredientId = ingredientId,
-                            ingredientUnit = ingredientUnit, amount = amount.toDouble(),
+                            ingredientUnit = ingredientUnit, amount = amount,
                             sectionId = sectionId
                         )
                     )
@@ -141,13 +147,11 @@ class RecipeRepositoryImpl @Inject constructor(
 
             // 5. Create tags
             llmRecipe.tags.forEach { tagIdentifier ->
-                var tagId = tagRepository.getIdByIdentifier(tagIdentifier)
+                val tagId = tagRepository.getIdByIdentifier(tagIdentifier)
+                // must already exist; llm has to choose from predefined (not make own). only users can add more.
+
                 if (tagId == null) {
-                    tagId = tagRepository.insert(
-                        Tag(
-                            identifier = tagIdentifier,
-                        )
-                    )
+                    throw NullPointerException()
                 }
                 recipeTagDao.insert(
                     RecipeTag(recipeId = recipeId, tagId = tagId)
