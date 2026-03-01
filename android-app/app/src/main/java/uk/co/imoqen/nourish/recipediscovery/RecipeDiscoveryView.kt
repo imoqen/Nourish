@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -26,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
+import uk.co.imoqen.nourish.common.NourishTextMessage
+import uk.co.imoqen.nourish.common.TextSender
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 import java.io.File
 
@@ -77,6 +80,21 @@ fun RecipeDiscoveryScreen(
             Text("Generate recipe")
         }
 
+        Column(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            NourishTextMessage(
+                TextSender.LLM,
+                "hello world!",
+                Modifier.align(Alignment.Start)
+            )
+
+            NourishTextMessage(
+                TextSender.USER,
+                "hello llm!",
+                Modifier.align(Alignment.End)
+            )
+        }
 
         Button(
             onClick = {

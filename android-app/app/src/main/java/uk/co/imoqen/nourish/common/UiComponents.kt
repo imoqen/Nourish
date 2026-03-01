@@ -415,3 +415,36 @@ fun NourishBottomCard(
         }
     }
 }
+
+// text message box
+@Composable
+fun NourishTextMessage(
+    textSender: TextSender,
+    textMessage: String,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth(0.7f)
+            .padding(8.dp)
+            .background(
+                color = if (textSender == TextSender.LLM) { MaterialTheme.colorScheme.surface } else { MaterialTheme.colorScheme.surfaceContainer },
+                shape = RoundedCornerShape(
+                    topStart = 16.dp,
+                    topEnd = 16.dp,
+                    bottomStart = if (textSender == TextSender.LLM) { 0.dp } else { 16.dp },
+                    bottomEnd = if (textSender == TextSender.USER) { 0.dp } else { 16.dp },
+                )
+            )
+    ) {
+        Text(
+            text = textMessage,
+            modifier = Modifier.padding(12.dp)
+        )
+    }
+}
+
+enum class TextSender {
+    LLM,
+    USER
+}
