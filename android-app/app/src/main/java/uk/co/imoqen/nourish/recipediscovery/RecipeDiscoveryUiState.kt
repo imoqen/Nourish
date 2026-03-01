@@ -16,6 +16,8 @@ data class RecipeDiscoveryUiState(
 
     val dishes: LlmDishesProposed? = null,
 
+    val displayImage: Boolean = false,
+
     // the currently uploaded / saved image, most recent one; name of file. can find the file via File(context.filesDir, savedImageFilename):
     val savedImageFilename: String = "",
 
