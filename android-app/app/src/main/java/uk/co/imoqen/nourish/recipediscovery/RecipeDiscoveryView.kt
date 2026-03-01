@@ -250,6 +250,10 @@ fun RecipeDiscoveryScreen(
                             // Callback is invoked after the user selects a media item or closes the
                             // photo picker.
                             recipeDiscoveryViewModel.handleImage(uri, context)
+                            // update llm to work with dishes from ingredients image:
+                            if (uiState.userChoice == LlmMode.FROM_INGREDIENTS) {
+                                recipeDiscoveryViewModel.setRequestType(LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE)
+                            }
                         }
 
                     Column() {
@@ -303,8 +307,12 @@ fun RecipeDiscoveryScreen(
                                     NourishIconButton(
                                         onClick = {
                                             imageFile.delete(); recipeDiscoveryViewModel.setSavedImageFilename(
-                                            ""
-                                        )
+                                                ""
+                                            )
+                                            // revert back to normal ingredient mode if in ingredient mode:
+                                            if (uiState.userChoice == LlmMode.FROM_INGREDIENTS) {
+                                                recipeDiscoveryViewModel.setRequestType(LlmRequestType.DISHES_FROM_INGREDIENTS)
+                                            }
                                         },
                                         painter = painterResource(R.drawable.delete),
                                         modifier = Modifier.align(
@@ -357,7 +365,7 @@ fun RecipeDiscoveryScreen(
                                         recipeDiscoveryViewModel.makeLlmApiCall(LlmRequestType.DISHES_FROM_INGREDIENTS)
                                     }
                                     // generate potential dishes from image of ingredients, e.g. image of contents of a fridge:
-                                    else if (uiState.savedImageFilename != "" && uiState.requestType == LlmRequestType.DISHES_FROM_INGREDIENTS) {
+                                    else if (uiState.savedImageFilename != "" && uiState.requestType == LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE) {
                                         recipeDiscoveryViewModel.makeLlmApiCall(
                                             LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE,
                                             uiState.savedImageFilename,
@@ -396,6 +404,51 @@ fun RecipeDiscoveryScreen(
 
                 }
             }
+
+            // result from LLM:
+            val context = LocalContext.current
+            val dishes = uiState.dishes
+            if (dishes != null) {
+                val dishes = uiState.dishes
+                val arrayOfDishes = listOf(dishes!!.firstMostLikelyDish, dishes.secondMostLikelyDish, dishes.thirdMostLikelyDish, dishes.fourthMostLikelyDish)
+                Text("Choose a recipe to generate:")
+                arrayOfDishes.forEach { dish ->
+                    Button(onClick={
+                        if (dishes.ingredientsIdentified != null) {
+                            recipeDiscoveryViewModel.setUserRequest(dish + ", using only ingredients: ${dishes.ingredientsIdentified}")
+                        } else {
+                            recipeDiscoveryViewModel.setUserRequest(dish)
+                        }
+                        if (uiState.savedImageFilename == "") {
+                            // generate without image
+                            Log.i("GENERATING", "generating without image")
+                            recipeDiscoveryViewModel.makeLlmApiCall(LlmRequestType.RECIPE)
+                        } else {
+                            // generate with image
+                            Log.i("GENERATING", "generating with image")
+                            recipeDiscoveryViewModel.makeLlmApiCall(LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH, uiState.savedImageFilename, context.filesDir)
+                        }
+                    }){
+                        Text(dish)
+                    }
+                }
+                if (dishes.ingredientsIdentified != null) {
+                    Text("Ingredients identified: ${dishes.ingredientsIdentified}")
+                }
+            }
+
+            // Outputs the response, or error if occurred.
+            if (uiState.apiResponse != "") {
+                Log.i("recipe res", "not null")
+                Text(
+                    uiState.apiResponse,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+
+
+            IndeterminateCircularIndicator()
         }
 
         if (uiState.displayImage) {
