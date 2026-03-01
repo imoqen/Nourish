@@ -1,7 +1,5 @@
 package uk.co.imoqen.nourish.common
 
-import android.util.Size
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -11,53 +9,42 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.center
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RadialGradientShader
 import androidx.compose.ui.graphics.Shader
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import uk.co.imoqen.nourish.R
-import uk.co.imoqen.nourish.authentication.AuthenticationUiStatus
 
 @Composable
 fun NourishTextField(
@@ -66,9 +53,11 @@ fun NourishTextField(
     placeholder: String,
     icon: ImageVector,
     onDone: () -> Unit, // for submitting to make the enter button work. this will close the keyboard.
+    modifier: Modifier = Modifier,
     visualTransformation: VisualTransformation = VisualTransformation.None, //only for password fields
-    onValueReset: () -> Unit = {}, // optional: for clearing input
-    trailingIcon: ImageVector? = null // optional: for clearing input
+    trailingIcon: ImageVector? = null, // optional: for clearing input
+    onTrailingIconPress: () -> Unit = {}, // optional: for clearing input
+    alwaysDisplayTrailingIcon: Boolean = false,
 ) {
     OutlinedTextField(
         value = value,
@@ -83,7 +72,7 @@ fun NourishTextField(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         },
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth(0.9f)
             .padding(top = 8.dp),
         colors = OutlinedTextFieldDefaults.colors(
@@ -117,10 +106,10 @@ fun NourishTextField(
             onDone = { onDone() }
         ),
 
-        trailingIcon = { if (trailingIcon != null && value != "") // trailing icon is only displayed if it is not null and the text entered is not empty (so there is something to remove.)
+        trailingIcon = { if (trailingIcon != null && (value != "" || alwaysDisplayTrailingIcon)) // trailing icon is only displayed if it is not null and the text entered is not empty (so there is something to remove.)
             {
                 IconButton(
-                    onClick = onValueReset
+                    onClick = onTrailingIconPress
                 ) {
                     Icon(
                         imageVector = trailingIcon,
@@ -168,8 +157,35 @@ fun NourishH2(
         fontSize = 20.sp,
         fontWeight = FontWeight.Bold,
         modifier = modifier
-            .padding(bottom = 6.dp)
-            .padding(horizontal = 6.dp),
+            .padding(6.dp),
+        textAlign = TextAlign.Center
+    )
+}
+
+@Composable
+fun NourishH3(
+    text: String, modifier: Modifier = Modifier
+) {
+    Text(
+        text = text,
+        fontSize = 18.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = modifier
+            .padding(6.dp),
+        textAlign = TextAlign.Center
+    )
+}
+
+@Composable
+fun NourishH4(
+    text: String, modifier: Modifier = Modifier
+) {
+    Text(
+        text = text,
+        fontSize = 16.sp,
+        fontWeight = FontWeight.SemiBold,
+        modifier = modifier
+            .padding(6.dp),
         textAlign = TextAlign.Center
     )
 }
@@ -223,6 +239,65 @@ fun NourishDangerButton(
     }
 }
 
+// also suports without text, just put "" and will scale accordingly.
+@Composable
+fun NourishIconTextButton(
+    onClick: () -> Unit,
+    painter: Painter,
+    description: String,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = {
+            onClick()
+        },
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ),
+        modifier = modifier
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                painter = painter,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier
+                    .size(32.dp)
+            )
+            if (description != "") {
+                Text(
+                    text = description,
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun NourishIconButton(
+    onClick: () -> Unit,
+    painter: Painter,
+    modifier: Modifier = Modifier
+) {
+    IconButton(
+        onClick = {
+            onClick()
+        },
+        colors = IconButtonDefaults.iconButtonColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ),
+        modifier = modifier
+    ) {
+        Icon(
+            painter = painter,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
+    }
+}
 
 @Composable
 fun GoogleButton(
@@ -420,27 +495,24 @@ fun NourishBottomCard(
 @Composable
 fun NourishTextMessage(
     textSender: TextSender,
-    textMessage: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    textMessage: @Composable () -> Unit
 ) {
     Box(
         modifier = modifier
-            .fillMaxWidth(0.7f)
+            .fillMaxWidth(0.95f)
             .padding(8.dp)
             .background(
                 color = if (textSender == TextSender.LLM) { MaterialTheme.colorScheme.surface } else { MaterialTheme.colorScheme.surfaceContainer },
                 shape = RoundedCornerShape(
-                    topStart = 16.dp,
-                    topEnd = 16.dp,
-                    bottomStart = if (textSender == TextSender.LLM) { 0.dp } else { 16.dp },
-                    bottomEnd = if (textSender == TextSender.USER) { 0.dp } else { 16.dp },
+                    topStart = 32.dp,
+                    topEnd = 32.dp,
+                    bottomStart = if (textSender == TextSender.LLM) { 0.dp } else { 32.dp },
+                    bottomEnd = if (textSender == TextSender.USER) { 0.dp } else { 32.dp },
                 )
             )
     ) {
-        Text(
-            text = textMessage,
-            modifier = Modifier.padding(12.dp)
-        )
+        textMessage()
     }
 }
 

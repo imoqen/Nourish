@@ -85,6 +85,14 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
+    fun setUserChoice(userChoice: LlmMode) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                userChoice = userChoice
+            )
+        }
+    }
+
     fun setRequestType(requestType: LlmRequestType) {
         mutableUiState.update { currentState ->
             currentState.copy(

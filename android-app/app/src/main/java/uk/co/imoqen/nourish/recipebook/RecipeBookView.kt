@@ -116,7 +116,7 @@ fun RecipeBookScreen(
                     icon = Icons.Filled.Search,
                     onDone = { keyboardFocusManager.clearFocus() },
                     trailingIcon = Icons.Filled.Clear,
-                    onValueReset = { recipeBookViewModel.setSearchTerm("") }
+                    onTrailingIconPress = { recipeBookViewModel.setSearchTerm("") }
                 )
             }
 

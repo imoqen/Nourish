@@ -12,6 +12,8 @@ data class RecipeDiscoveryUiState(
     val userRequest: String = "",
     val awaitingResponse: Boolean = false,
 
+    val userChoice: LlmMode? = null,
+
     val dishes: LlmDishesProposed? = null,
 
     // the currently uploaded / saved image, most recent one; name of file. can find the file via File(context.filesDir, savedImageFilename):
@@ -21,3 +23,9 @@ data class RecipeDiscoveryUiState(
 
     val placeholderText: String = "What would you like to cook?"
 )
+
+enum class LlmMode {
+    FROM_DESCRIPTION,
+    FROM_IMAGE,
+    FROM_INGREDIENTS
+}
