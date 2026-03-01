@@ -19,7 +19,7 @@ import uk.co.imoqen.nourish.db.user.User
         ),
     ],
     indices = [
-        Index("authorId"),
+        Index(value = ["authorId", "displayName"], unique = true), // authorId and displayName combination are unique; ensures no dupe tags are added.
     ]
 )
 data class Tag(

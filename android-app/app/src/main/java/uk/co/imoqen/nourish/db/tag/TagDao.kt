@@ -12,7 +12,7 @@ interface TagDao {
     fun getAllForUser(uid: String): Flow<List<Tag>> // flow is better than normal list for things which should update. as cant access db on main thread
 
     // insert one
-    @Insert(onConflict = OnConflictStrategy.ABORT) // dont replace
+    @Insert(onConflict = OnConflictStrategy.IGNORE) // will ignore if tag already exists which has the authorId (uid) and displayName combination. due to the index defined in Tag
     suspend fun insert(tag: Tag): Long
 
     @Query("SELECT id FROM tag WHERE identifier = :identifier LIMIT 1")

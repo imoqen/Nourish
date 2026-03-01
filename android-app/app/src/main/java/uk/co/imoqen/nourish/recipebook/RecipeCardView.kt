@@ -343,29 +343,7 @@ fun RecipeCard(
                     }
                 }
             }
-
-
-
-
-
-
-
-           /*
-
-            Text("Serves: ${recipeCard.serves}")
-            Text("Recipe type: ${recipeCard.recipeType}")
-            if (recipeCard.recipeTags.isNotEmpty()) {
-                Text("Tags:")
-                recipeCard.recipeTags.forEach { (tag, colour) ->
-                    Text(
-                        text = tag,
-                        color = colour.onBackgroundColour()
-                    )
-                }
-            }
-
             Text("Storage guidance: ${recipeCard.storageInstructions}")
-*/
         }
     }
 }

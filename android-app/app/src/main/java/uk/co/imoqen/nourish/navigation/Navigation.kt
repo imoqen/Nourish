@@ -97,7 +97,7 @@ fun NourishNavigationBar(
                         launchSingleTop = true // ensures destinations are not duplicated
                         // the following 4 lines are to prevent previous destinations from being destroyed and recreated
                         // from android docs https://developer.android.com/guide/navigation/backstack/multi-back-stacks
-                        restoreState = false // to reset view models as user has changed
+                        restoreState = true // to reset view models as user has changed
                         popUpTo(navController.graph.findStartDestination().id) {
                             saveState = true
                         }
