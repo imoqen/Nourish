@@ -18,6 +18,10 @@ class FakeRecipeRepository(): RecipeRepository {
         TODO("Not yet implemented")
     }
 
+    override fun getRecipeById(recipeId: Long): Flow<Recipe?> {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun insertRecipe(recipe: Recipe): Long {
         TODO("Not yet implemented")
     }
@@ -95,7 +99,8 @@ class FakeRecipeRepository(): RecipeRepository {
 
     override suspend fun createRecipe(
         uid: String,
-        llmRecipe: LlmRecipe
+        llmRecipe: LlmRecipe,
+        imagePath: String
     ) {
         TODO("Not yet implemented")
     }

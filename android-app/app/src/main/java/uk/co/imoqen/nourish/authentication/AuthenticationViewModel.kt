@@ -13,6 +13,7 @@ import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.db.tag.Tag
+import uk.co.imoqen.nourish.db.tag.TagRepository
 import uk.co.imoqen.nourish.db.tag.TagRepositoryImpl
 import uk.co.imoqen.nourish.db.user.User
 import uk.co.imoqen.nourish.db.user.UserRepository
@@ -33,7 +34,7 @@ class AuthenticationViewModel @Inject constructor(
     private val authenticationManager: AuthenticationManager,
     private val uiEventBus: UiEventBus,
     private val userRepository: UserRepository,
-    private val tagRepository: TagRepositoryImpl
+    private val tagRepository: TagRepository
 ): ViewModel() {
     // Purpose: pattern to encapsulate the mutable state to ensure it is not mutable from the viewmodel.
     // pattern taken from advice in: https://medium.com/@rowaido.game/managing-ui-states-in-jetpack-compose-7eb15e4f6931

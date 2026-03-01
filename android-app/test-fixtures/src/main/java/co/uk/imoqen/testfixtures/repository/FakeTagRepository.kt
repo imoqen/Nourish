@@ -5,7 +5,8 @@ import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.db.tag.TagRepository
 
 class FakeTagRepository(): TagRepository {
-    override fun getAll(): Flow<List<Tag>> {
+
+    override fun getAllForUser(uid: String): Flow<List<Tag>> {
         TODO("Not yet implemented")
     }
 
