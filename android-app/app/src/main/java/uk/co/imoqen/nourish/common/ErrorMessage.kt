@@ -8,7 +8,7 @@ object ErrorMessage {
     // API errors, relating to LLM requests
     const val API_ERROR_SERVICE_UNREACHABLE = "An error occurred. Please check your device's internet connection."
     const val API_ERROR_FAILED_TO_GEN = "An error occurred. Please try again later."
-    const val API_ERROR_BLANK_PROMPT = "Prompt cannot be blank."
+    const val API_ERROR_BLANK_PROMPT = "Input cannot be blank."
 
     // Input errors for input fields
     const val INPUT_ERROR_BLANK = "All field(s) must not be blank."
