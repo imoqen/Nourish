@@ -77,169 +77,231 @@ fun RecipeDiscoveryScreen(
         modifier = Modifier.fillMaxSize()
     ) {
 
-        Column(
+        Column( // column for the scroll
             modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(scrollState)
+                .fillMaxSize()
+                .verticalScroll(scrollState),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
 
-            Column(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                NourishTextMessage(
-                    textSender = TextSender.LLM,
-                    modifier = Modifier.align(Alignment.Start)
+
+            Box() { // TOP OF SCREEN: contents of the chat
+
+                Column( // column for the top contents
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Box(
-                        modifier = Modifier.padding(8.dp)
+                    NourishTextMessage(
+                        textSender = TextSender.LLM,
+                        modifier = Modifier.align(Alignment.Start)
                     ) {
-                        NourishH3(
-                            text = "Let's find a recipe for you.",
+                        Box(
                             modifier = Modifier.padding(8.dp)
-                        )
+                        ) {
+                            NourishH3(
+                                text = "Let's find a recipe for you.",
+                                modifier = Modifier.padding(8.dp)
+                            )
+                        }
+                    }
+
+                    NourishTextMessage(
+                        textSender = TextSender.USER,
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            NourishH4(
+                                text = "Discover a recipe, by entering a...",
+                                modifier = Modifier.padding(8.dp)
+                            )
+
+                            NourishIconTextButton(
+                                onClick = {
+                                    recipeDiscoveryViewModel.setUserChoice(LlmMode.FROM_DESCRIPTION)
+                                    recipeDiscoveryViewModel.setPlaceholderText("Dish or description ...")
+                                    recipeDiscoveryViewModel.setRequestType(LlmRequestType.RECIPE)
+                                },
+                                painter = painterResource(R.drawable.cook),
+                                description = "Dish or Description",
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+
+                            NourishIconTextButton(
+                                onClick = {
+                                    recipeDiscoveryViewModel.setUserChoice(LlmMode.FROM_IMAGE)
+                                    recipeDiscoveryViewModel.setPlaceholderText("Optional details ...")
+                                    recipeDiscoveryViewModel.setRequestType(LlmRequestType.DISHES_FROM_IMAGE)
+                                },
+                                painter = painterResource(R.drawable.camera),
+                                description = "Photo of a Dish",
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+
+                            NourishIconTextButton(
+                                onClick = {
+                                    recipeDiscoveryViewModel.setUserChoice(LlmMode.FROM_INGREDIENTS)
+                                    recipeDiscoveryViewModel.setPlaceholderText("Ingredients ...")
+                                    recipeDiscoveryViewModel.setRequestType(LlmRequestType.DISHES_FROM_INGREDIENTS)
+                                },
+                                painter = painterResource(R.drawable.ingredients),
+                                description = "List or Photo of ingredients",
+                                modifier = Modifier.padding(8.dp)
+                            )
+
+                        }
+                    }
+
+                    if (uiState.userChoice != null) {
+                        when (uiState.userChoice) {
+                            LlmMode.FROM_DESCRIPTION -> {
+                                NourishTextMessage(
+                                    textSender = TextSender.LLM,
+                                    modifier = Modifier.align(Alignment.Start)
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .padding(8.dp)
+                                            .fillMaxWidth()
+                                    ) {
+                                        NourishH4(
+                                            text = "Enter the name or description of a dish.",
+                                            modifier = Modifier.padding(8.dp)
+                                        )
+                                        NourishTextDivider("Tip")
+
+                                        Text(
+                                            text = "The dish does not need to be precise; for example, you can enter 'something sweet but healthy ...'",
+                                            modifier = Modifier.padding(bottom = 8.dp),
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
+                            }
+
+                            LlmMode.FROM_IMAGE -> {
+                                NourishTextMessage(
+                                    textSender = TextSender.LLM,
+                                    modifier = Modifier.align(Alignment.Start)
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .padding(8.dp)
+                                            .fillMaxWidth()
+                                    ) {
+                                        NourishH4(
+                                            text = "Upload the image of the dish.",
+                                            modifier = Modifier
+                                                .padding(top = 8.dp)
+                                                .fillMaxWidth()
+                                        )
+
+                                        NourishTextDivider("Tip")
+
+                                        Text(
+                                            text = "You can also provide further information as text, if you wish.",
+                                            modifier = Modifier.padding(bottom = 8.dp),
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
+                            }
+
+                            LlmMode.FROM_INGREDIENTS -> {
+                                NourishTextMessage(
+                                    textSender = TextSender.LLM,
+                                    modifier = Modifier.align(Alignment.Start)
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .padding(8.dp)
+                                            .fillMaxWidth()
+                                    ) {
+                                        NourishH4(
+                                            text = "List your ingredients below, or upload an image of them.",
+                                            modifier = Modifier
+                                                .padding(top = 8.dp)
+                                                .fillMaxWidth()
+                                        )
+
+                                        NourishTextDivider("Tip")
+
+                                        Text(
+                                            text = "Try uploading an image of the contents of your fridge!",
+                                            modifier = Modifier.padding(bottom = 8.dp),
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+
+                                }
+                            }
+
+                            null -> {
+                                // never reached
+                            }
+                        }
+
                     }
                 }
 
-                NourishTextMessage(
-                    textSender = TextSender.USER,
-                    modifier = Modifier.align(Alignment.End)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        NourishH4(
-                            text = "Discover a recipe, by entering a...",
-                            modifier = Modifier.padding(8.dp)
-                        )
-
-                        NourishIconTextButton(
-                            onClick = {
-                                recipeDiscoveryViewModel.setUserChoice(LlmMode.FROM_DESCRIPTION)
-                                recipeDiscoveryViewModel.setPlaceholderText("Dish or description ...")
-                                recipeDiscoveryViewModel.setRequestType(LlmRequestType.RECIPE)
-                            },
-                            painter = painterResource(R.drawable.cook),
-                            description = "Dish or Description",
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-
-                        NourishIconTextButton(
-                            onClick = {
-                                recipeDiscoveryViewModel.setUserChoice(LlmMode.FROM_IMAGE)
-                                recipeDiscoveryViewModel.setPlaceholderText("Optional details ...")
-                                recipeDiscoveryViewModel.setRequestType(LlmRequestType.DISHES_FROM_IMAGE)
-                            },
-                            painter = painterResource(R.drawable.camera),
-                            description = "Photo of a Dish",
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-
-                        NourishIconTextButton(
-                            onClick = {
-                                recipeDiscoveryViewModel.setUserChoice(LlmMode.FROM_INGREDIENTS)
-                                recipeDiscoveryViewModel.setPlaceholderText("Ingredients ...")
-                                recipeDiscoveryViewModel.setRequestType(LlmRequestType.DISHES_FROM_INGREDIENTS)
-                            },
-                            painter = painterResource(R.drawable.ingredients),
-                            description = "List or Photo of ingredients",
-                            modifier = Modifier.padding(8.dp)
-                        )
-
+                // result from LLM:
+                val context = LocalContext.current
+                val dishes = uiState.dishes
+                if (dishes != null) {
+                    val dishes = uiState.dishes
+                    val arrayOfDishes = listOf(
+                        dishes!!.firstMostLikelyDish,
+                        dishes.secondMostLikelyDish,
+                        dishes.thirdMostLikelyDish,
+                        dishes.fourthMostLikelyDish
+                    )
+                    Text("Choose a recipe to generate:")
+                    arrayOfDishes.forEach { dish ->
+                        Button(onClick = {
+                            if (dishes.ingredientsIdentified != null) {
+                                recipeDiscoveryViewModel.setUserRequest(dish + ", using only ingredients: ${dishes.ingredientsIdentified}")
+                            } else {
+                                recipeDiscoveryViewModel.setUserRequest(dish)
+                            }
+                            if (uiState.savedImageFilename == "") {
+                                // generate without image
+                                Log.i("GENERATING", "generating without image")
+                                recipeDiscoveryViewModel.makeLlmApiCall(LlmRequestType.RECIPE)
+                            } else {
+                                // generate with image
+                                Log.i("GENERATING", "generating with image")
+                                recipeDiscoveryViewModel.makeLlmApiCall(
+                                    LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH,
+                                    uiState.savedImageFilename,
+                                    context.filesDir
+                                )
+                            }
+                        }) {
+                            Text(dish)
+                        }
+                    }
+                    if (dishes.ingredientsIdentified != null) {
+                        Text("Ingredients identified: ${dishes.ingredientsIdentified}")
                     }
                 }
 
-                if (uiState.userChoice != null) {
-                    when (uiState.userChoice) {
-                        LlmMode.FROM_DESCRIPTION -> {
-                            NourishTextMessage(
-                                textSender = TextSender.LLM,
-                                modifier = Modifier.align(Alignment.Start)
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .padding(8.dp)
-                                        .fillMaxWidth()
-                                ) {
-                                    NourishH4(
-                                        text = "Enter the name or description of a dish.",
-                                        modifier = Modifier.padding(8.dp)
-                                    )
-                                    NourishTextDivider("Tip")
+                // Outputs the response, or error if occurred.
+                if (uiState.apiResponse != "") {
+                    Log.i("recipe res", "not null")
+                    Text(
+                        uiState.apiResponse,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
 
-                                    Text(
-                                        text = "The dish does not need to be precise; for example, you can enter 'something sweet but healthy ...'",
-                                        modifier = Modifier.padding(bottom = 8.dp),
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
-                            }
-                        }
 
-                        LlmMode.FROM_IMAGE -> {
-                            NourishTextMessage(
-                                textSender = TextSender.LLM,
-                                modifier = Modifier.align(Alignment.Start)
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .padding(8.dp)
-                                        .fillMaxWidth()
-                                ) {
-                                    NourishH4(
-                                        text = "Upload the image of the dish.",
-                                        modifier = Modifier
-                                            .padding(top = 8.dp)
-                                            .fillMaxWidth()
-                                    )
 
-                                    NourishTextDivider("Tip")
-
-                                    Text(
-                                        text = "You can also provide further information as text, if you wish.",
-                                        modifier = Modifier.padding(bottom = 8.dp),
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
-                            }
-                        }
-
-                        LlmMode.FROM_INGREDIENTS -> {
-                            NourishTextMessage(
-                                textSender = TextSender.LLM,
-                                modifier = Modifier.align(Alignment.Start)
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .padding(8.dp)
-                                        .fillMaxWidth()
-                                ) {
-                                    NourishH4(
-                                        text = "List your ingredients below, or upload an image of them.",
-                                        modifier = Modifier
-                                            .padding(top = 8.dp)
-                                            .fillMaxWidth()
-                                    )
-
-                                    NourishTextDivider("Tip")
-
-                                    Text(
-                                        text = "Try uploading an image of the contents of your fridge!",
-                                        modifier = Modifier.padding(bottom = 8.dp),
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
-
-                            }
-                        }
-
-                        null -> {
-                            // never reached
-                        }
-                    }
-
+                IndeterminateCircularIndicator()
+            }
+                Box() { // BOTTOM OF SCREEN: box for textbox user input
                     // if image is uploaded, change request type for the ingredient case
 
                     val context = LocalContext.current
@@ -307,8 +369,8 @@ fun RecipeDiscoveryScreen(
                                     NourishIconButton(
                                         onClick = {
                                             imageFile.delete(); recipeDiscoveryViewModel.setSavedImageFilename(
-                                                ""
-                                            )
+                                            ""
+                                        )
                                             // revert back to normal ingredient mode if in ingredient mode:
                                             if (uiState.userChoice == LlmMode.FROM_INGREDIENTS) {
                                                 recipeDiscoveryViewModel.setRequestType(LlmRequestType.DISHES_FROM_INGREDIENTS)
@@ -403,52 +465,7 @@ fun RecipeDiscoveryScreen(
                     }
 
                 }
-            }
-
-            // result from LLM:
-            val context = LocalContext.current
-            val dishes = uiState.dishes
-            if (dishes != null) {
-                val dishes = uiState.dishes
-                val arrayOfDishes = listOf(dishes!!.firstMostLikelyDish, dishes.secondMostLikelyDish, dishes.thirdMostLikelyDish, dishes.fourthMostLikelyDish)
-                Text("Choose a recipe to generate:")
-                arrayOfDishes.forEach { dish ->
-                    Button(onClick={
-                        if (dishes.ingredientsIdentified != null) {
-                            recipeDiscoveryViewModel.setUserRequest(dish + ", using only ingredients: ${dishes.ingredientsIdentified}")
-                        } else {
-                            recipeDiscoveryViewModel.setUserRequest(dish)
-                        }
-                        if (uiState.savedImageFilename == "") {
-                            // generate without image
-                            Log.i("GENERATING", "generating without image")
-                            recipeDiscoveryViewModel.makeLlmApiCall(LlmRequestType.RECIPE)
-                        } else {
-                            // generate with image
-                            Log.i("GENERATING", "generating with image")
-                            recipeDiscoveryViewModel.makeLlmApiCall(LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH, uiState.savedImageFilename, context.filesDir)
-                        }
-                    }){
-                        Text(dish)
-                    }
                 }
-                if (dishes.ingredientsIdentified != null) {
-                    Text("Ingredients identified: ${dishes.ingredientsIdentified}")
-                }
-            }
-
-            // Outputs the response, or error if occurred.
-            if (uiState.apiResponse != "") {
-                Log.i("recipe res", "not null")
-                Text(
-                    uiState.apiResponse,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-
-
-            IndeterminateCircularIndicator()
         }
 
         if (uiState.displayImage) {
@@ -500,7 +517,7 @@ fun RecipeDiscoveryScreen(
                             }
                     }
                 }
-            }
+
         }
 
         /*
