@@ -1,19 +1,15 @@
 package uk.co.imoqen.nourish.profile
 
 import androidx.activity.compose.LocalActivity
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -24,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import uk.co.imoqen.nourish.common.NourishBottomCard
 import uk.co.imoqen.nourish.common.NourishButton
@@ -104,7 +99,7 @@ fun ProfileScreen(
                                     profileViewModel.setOldPassword(password)
                                 },
                                 placeholder = "Enter existing password",
-                                icon = Icons.Filled.Lock,
+                                leadingIcon = Icons.Filled.Lock,
                                 onDone = {
 
                                 },
@@ -116,7 +111,7 @@ fun ProfileScreen(
                                     profileViewModel.setNewPassword(updatedPassword)
                                 },
                                 placeholder = "Enter a new password",
-                                icon = Icons.Filled.Lock,
+                                leadingIcon = Icons.Filled.Lock,
                                 onDone = {
                                     keyboard?.hide()
                                     keyboardFocusManager.clearFocus(force = true)
@@ -177,7 +172,7 @@ fun ProfileScreen(
                                     profileViewModel.setDeleteAccountPassword(password)
                                 },
                                 placeholder = "Enter your password",
-                                icon = Icons.Filled.Lock,
+                                leadingIcon = Icons.Filled.Lock,
                                 visualTransformation = PasswordVisualTransformation(),
                                 onDone = {
                                     keyboard?.hide()

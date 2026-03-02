@@ -51,9 +51,9 @@ fun NourishTextField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
-    icon: ImageVector,
     onDone: () -> Unit, // for submitting to make the enter button work. this will close the keyboard.
     modifier: Modifier = Modifier,
+    leadingIcon: ImageVector? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None, //only for password fields
     trailingIcon: ImageVector? = null, // optional: for clearing input
     onTrailingIconPress: () -> Unit = {}, // optional: for clearing input
@@ -65,13 +65,16 @@ fun NourishTextField(
         placeholder = {
             Text(placeholder)
         },
-        leadingIcon = {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        },
+        leadingIcon =  if (leadingIcon != null ) {
+            {
+                Icon(
+                    imageVector = leadingIcon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        } else null
+        ,
         modifier = modifier
             .fillMaxWidth(0.9f)
             .padding(top = 8.dp),
@@ -280,21 +283,23 @@ fun NourishIconTextButton(
 fun NourishIconButton(
     onClick: () -> Unit,
     painter: Painter,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    backgroundColour: Color = MaterialTheme.colorScheme.primaryContainer,
+    iconColour: Color = MaterialTheme.colorScheme.onPrimaryContainer,
 ) {
     IconButton(
         onClick = {
             onClick()
         },
         colors = IconButtonDefaults.iconButtonColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+            containerColor = backgroundColour
         ),
         modifier = modifier
     ) {
         Icon(
             painter = painter,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+            tint = iconColour,
         )
     }
 }
