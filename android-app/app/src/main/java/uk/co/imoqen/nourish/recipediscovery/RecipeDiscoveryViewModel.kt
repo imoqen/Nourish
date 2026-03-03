@@ -305,17 +305,23 @@ class RecipeDiscoveryViewModel @Inject constructor(
 
     fun getAllTagsForUser() {
         viewModelScope.launch() {
-            setRecipeTags(
-                filterActions.getAllTagsForUser(mutableUiState.value.recipeTags)
-            )
+            (filterActions.getAllTagsForUser(
+                mutableUiState.value.recipeTags
+            ))?.let { updatedTags ->
+                setRecipeTags(updatedTags) // only sets if not null
+            }
         }
     }
 
+    // only sets if the update is not null.
     fun getAllRecipeTypes() {
         viewModelScope.launch() {
-            setRecipeTypes(
-                filterActions.getAllRecipeTypes(mutableUiState.value.recipeTypes)
-            )
+            (filterActions.getAllRecipeTypes(
+                mutableUiState.value.recipeTypes
+            ))?.let { updatedTypes ->
+                Log.i("setting types", "not null: ${updatedTypes}")
+                setRecipeTypes(updatedTypes) // only sets if not null
+            }
         }
     }
 

@@ -311,6 +311,7 @@ class RecipeBookViewModel @Inject constructor(
     fun getRecipeBookMap() {
         viewModelScope.launch() {
             runCatching {
+                Log.i("all recipes", "getting all")
                 val allRecipes = getAllRecipes().debounce(300).first() // get all recipes. debouncing is added to provide smoothness
                 // Filter to search term if search has been made:
                 /*if (mutableUiState.value.searchTerm != "") {
@@ -352,17 +353,22 @@ class RecipeBookViewModel @Inject constructor(
 
     fun getAllTagsForUser() {
         viewModelScope.launch() {
-            setRecipeTags(
-                filterActions.getAllTagsForUser(mutableUiState.value.recipeTags)
-            )
+            (filterActions.getAllTagsForUser(
+                mutableUiState.value.recipeTags
+            ))?.let { updatedTags ->
+                setRecipeTags(updatedTags) // only sets if not null
+            }
         }
     }
 
     fun getAllRecipeTypes() {
         viewModelScope.launch() {
-            setRecipeTypes(
-                filterActions.getAllRecipeTypes(mutableUiState.value.recipeTypes)
-            )
+            (filterActions.getAllRecipeTypes(
+                mutableUiState.value.recipeTypes
+            ))?.let { updatedTypes ->
+                Log.i("setting types", "not null: ${updatedTypes}")
+                setRecipeTypes(updatedTypes) // only sets if not null
+            }
         }
     }
 

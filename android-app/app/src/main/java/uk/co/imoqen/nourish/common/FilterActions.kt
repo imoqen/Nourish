@@ -59,6 +59,7 @@ class FilterActions @Inject constructor(
             val updatedTypes = recipeRepository.getAllRecipeTypes().first()
             // only set if not already set or value updated:
             if (previousTypes == null || updatedTypes.size != previousTypes.size) {
+                Log.i("get types", "not null")
                 return (recipeRepository.getAllRecipeTypes().first().map { type ->
                     TypeSelection(
                         type,
@@ -73,6 +74,7 @@ class FilterActions @Inject constructor(
                 ))
                 Log.i("recipe types", "failed: $e")
             }
+        Log.i("get types", "null")
         return null // failure occurred
     }
 

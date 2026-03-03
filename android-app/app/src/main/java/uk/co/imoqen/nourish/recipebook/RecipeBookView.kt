@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish.recipebook
 
+import android.util.Log
 import uk.co.imoqen.nourish.R
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -35,6 +36,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -152,15 +154,21 @@ fun RecipeBookScreen(
             modifier = Modifier.fillMaxWidth().verticalScroll(scrollState)
         ) {
             // set all recipes
+            // maybe should putthis in launched effect in the future
             recipeBookViewModel.getRecipeBookMap()
-            // set all tags and recipe types for the dropdown
-            recipeBookViewModel.getAllTagsForUser()
-            recipeBookViewModel.getAllRecipeTypes()
 
-            // then filter if a search has been made
-            /*if (uiState.searchTerm != "") {
-                recipeBookViewModel.filterRecipeBookMapByTitle()
-            }*/
+            // set all tags and recipe types for the dropdown
+            // set all nutritional tags and recipe types for the dropdown, only change when those change.
+
+            LaunchedEffect(uiState.recipeTypes?.size) {
+                Log.i("size:", "${uiState.recipeTypes?.size}")
+                recipeBookViewModel.getAllRecipeTypes()
+            }
+            LaunchedEffect(uiState.recipeTags?.size) {
+                Log.i("size:", "${uiState.recipeTags?.size}")
+                recipeBookViewModel.getAllTagsForUser()
+            }
+
             RecipeList(recipeBookViewModel, onViewRecipeCard)
         }
     }

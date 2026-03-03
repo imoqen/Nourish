@@ -28,6 +28,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -67,6 +68,16 @@ fun RecipeDiscoveryScreen(
 ) {
     val uiState by recipeDiscoveryViewModel.uiState.collectAsState()
     val keyboardFocusManager = LocalFocusManager.current // To close the keyboard once user submits input
+
+    // set all nutritional tags and recipe types for the dropdown, only change when those change.
+    LaunchedEffect(uiState.recipeTypes?.size) {
+        Log.i("size:", "${uiState.recipeTypes?.size}")
+        recipeDiscoveryViewModel.getAllRecipeTypes()
+    }
+    LaunchedEffect(uiState.recipeTags?.size) {
+        Log.i("size:", "${uiState.recipeTags?.size}")
+        recipeDiscoveryViewModel.getAllTagsForUser()
+    }
 
     Box( // for displaying the overlay if it is to be displayed
         modifier = Modifier.fillMaxSize()
@@ -396,10 +407,6 @@ fun UserInputSection(
             }
         }
 
-    // set all tags and recipe types for the dropdown
-    recipeDiscoveryViewModel.getAllTagsForUser()
-    recipeDiscoveryViewModel.getAllRecipeTypes()
-
     Column(
         modifier = Modifier
             .background(
@@ -417,7 +424,7 @@ fun UserInputSection(
             Box() {
                 NourishIconTextButton(
                     onClick = {
-                        recipeDiscoveryViewModel.setDisplayFilters(!uiState.displayFilters)
+                        recipeDiscoveryViewModel.setDisplayFilters(true)
                     },
                     painter = painterResource(R.drawable.arrow_down),
                     "Nutritional filters",
