@@ -54,6 +54,7 @@ fun NourishTextField(
     onDone: () -> Unit, // for submitting to make the enter button work. this will close the keyboard.
     modifier: Modifier = Modifier,
     leadingIcon: ImageVector? = null,
+    onLeadingIconPress: () -> Unit = {},
     visualTransformation: VisualTransformation = VisualTransformation.None, //only for password fields
     trailingIcon: ImageVector? = null, // optional: for clearing input
     onTrailingIconPress: () -> Unit = {}, // optional: for clearing input
@@ -67,11 +68,15 @@ fun NourishTextField(
         },
         leadingIcon =  if (leadingIcon != null ) {
             {
-                Icon(
-                    imageVector = leadingIcon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                IconButton(
+                    onClick = onLeadingIconPress
+                ) {
+                    Icon(
+                        imageVector = leadingIcon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         } else null
         ,

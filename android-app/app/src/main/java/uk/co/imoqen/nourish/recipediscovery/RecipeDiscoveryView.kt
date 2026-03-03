@@ -39,10 +39,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -201,7 +203,7 @@ fun InitialMessage(
                 NourishIconTextButton(
                     onClick = {
                         recipeDiscoveryViewModel.setUserChoice(LlmMode.FROM_DESCRIPTION)
-                        recipeDiscoveryViewModel.setPlaceholderText("Dish or description ...")
+                        recipeDiscoveryViewModel.setPlaceholderText("Dish or description")
                         recipeDiscoveryViewModel.setRequestType(LlmRequestType.RECIPE)
                     },
                     painter = painterResource(R.drawable.cook),
@@ -212,7 +214,7 @@ fun InitialMessage(
                 NourishIconTextButton(
                     onClick = {
                         recipeDiscoveryViewModel.setUserChoice(LlmMode.FROM_IMAGE)
-                        recipeDiscoveryViewModel.setPlaceholderText("Optional details ...")
+                        recipeDiscoveryViewModel.setPlaceholderText("Optional details")
                         recipeDiscoveryViewModel.setRequestType(LlmRequestType.DISHES_FROM_IMAGE)
                     },
                     painter = painterResource(R.drawable.camera),
@@ -223,7 +225,7 @@ fun InitialMessage(
                 NourishIconTextButton(
                     onClick = {
                         recipeDiscoveryViewModel.setUserChoice(LlmMode.FROM_INGREDIENTS)
-                        recipeDiscoveryViewModel.setPlaceholderText("Ingredients ...")
+                        recipeDiscoveryViewModel.setPlaceholderText("Ingredients")
                         recipeDiscoveryViewModel.setRequestType(LlmRequestType.DISHES_FROM_INGREDIENTS)
                     },
                     painter = painterResource(R.drawable.ingredients),
@@ -426,22 +428,15 @@ fun UserInputSection(
             verticalAlignment = Alignment.Bottom, // push everything to bottom, particularly for nutriitonal filters button
             modifier = Modifier.padding(6.dp)
         ) {
-
             // FILTER SELECTOR:
             Box(
-                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp) // min to keep the dropdown from moving aorund the screen WANT TOM AKE THIS MAX WIDTH DONT KNOW WHY ITS NOT WORKING
+                modifier = Modifier.fillMaxWidth(
+                    // if image, only take up half the screen to allow the image to have space.
+                    if (uiState.savedImageFilename != "") { 0.5f } else { 1.0f }
+                )
             ) {
-                Column() {
-                    NourishIconTextButton(
-                        onClick = {
-                            recipeDiscoveryViewModel.setDisplayFilters(true)
-                        },
-                        painter = painterResource(R.drawable.arrow_down),
-                        "Nutritional filters",
-                        modifier = Modifier.padding(top = 6.dp)
-                    )
-                    SelectedTags(uiState.recipeTags, recipeDiscoveryViewModel::updateSelected)
-                }
+                // Selected tags:
+                SelectedTags(uiState.recipeTags, recipeDiscoveryViewModel::updateSelected)
 
                 val sheetState = rememberModalBottomSheetState()
                 if (uiState.displayFilters) {
@@ -567,6 +562,10 @@ fun UserInputSection(
                         Modifier.fillMaxWidth(0.85f)
                     }
                         .then(Modifier.padding(4.dp)),
+                leadingIcon = ImageVector.vectorResource(R.drawable.filter_icon), // converts painterresource to imagevector. in future should move to all painterresource approach - recommended by google.
+                onLeadingIconPress = {
+                    recipeDiscoveryViewModel.setDisplayFilters(true)
+                },
                 trailingIcon = Icons.Filled.Send,
                 onTrailingIconPress = {
 

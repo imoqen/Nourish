@@ -29,7 +29,7 @@ data class RecipeDiscoveryUiState(
 
     val requestType: LlmRequestType = LlmRequestType.RECIPE, // gen recipe by default
 
-    val placeholderText: String = "What would you like to cook?"
+    val placeholderText: String = ""
 )
 
 enum class LlmMode {
