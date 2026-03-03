@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -25,6 +26,8 @@ import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,6 +54,7 @@ import uk.co.imoqen.nourish.common.NourishIconTextButton
 import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.common.NourishTextMessage
+import uk.co.imoqen.nourish.common.SelectedTags
 import uk.co.imoqen.nourish.common.TagsDisplayForFiltering
 import uk.co.imoqen.nourish.common.TextSender
 import uk.co.imoqen.nourish.common.TypesDisplayForFiltering
@@ -384,6 +388,7 @@ fun RecipeGenerationResult(
     IndeterminateCircularIndicator()
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserInputSection(
     recipeDiscoveryViewModel: RecipeDiscoveryViewModel,
@@ -421,35 +426,50 @@ fun UserInputSection(
         ) {
 
             // FILTER SELECTOR:
-            Box() {
-                NourishIconTextButton(
-                    onClick = {
-                        recipeDiscoveryViewModel.setDisplayFilters(true)
-                    },
-                    painter = painterResource(R.drawable.arrow_down),
-                    "Nutritional filters",
-                    modifier = Modifier.padding(top = 6.dp)
-                )
+            Box(
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp) // min to keep the dropdown from moving aorund the screen WANT TOM AKE THIS MAX WIDTH DONT KNOW WHY ITS NOT WORKING
+            ) {
+                Column() {
+                    NourishIconTextButton(
+                        onClick = {
+                            recipeDiscoveryViewModel.setDisplayFilters(true)
+                        },
+                        painter = painterResource(R.drawable.arrow_down),
+                        "Nutritional filters",
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
+                    SelectedTags(uiState.recipeTags, recipeDiscoveryViewModel::updateSelected)
+                }
 
-                DropdownMenu(
+                ExposedDropdownMenuBox(
                     expanded = uiState.displayFilters,
-                    shape = RoundedCornerShape(24.dp),
+                    //shape = RoundedCornerShape(24.dp),
                     modifier = Modifier.fillMaxWidth(0.8f),
-                    onDismissRequest = { recipeDiscoveryViewModel.setDisplayFilters(false) }
+                    onExpandedChange = { recipeDiscoveryViewModel.setDisplayFilters(!(uiState.displayFilters)) }
                 ) {
                     // Dropdown menu:
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                    ExposedDropdownMenu(
+                        expanded = uiState.displayFilters,
+                        onDismissRequest = { recipeDiscoveryViewModel.setDisplayFilters(false) }
                     ) {
-                        NourishTextDivider("Filter by tag(s)")
-                        val tags = recipeDiscoveryViewModel.uiState.collectAsState().value.recipeTags
-                        TagsDisplayForFiltering(tags, recipeDiscoveryViewModel::updateSelected)
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            NourishTextDivider("Filter by tag(s)")
+                            val tags =
+                                recipeDiscoveryViewModel.uiState.collectAsState().value.recipeTags
+                            TagsDisplayForFiltering(tags, recipeDiscoveryViewModel::updateSelected)
 
-                        NourishTextDivider("Filter by type(s)")
+                            NourishTextDivider("Filter by type(s)")
 
-                        val types = recipeDiscoveryViewModel.uiState.collectAsState().value.recipeTypes
-                        TypesDisplayForFiltering(types, recipeDiscoveryViewModel::updateSelected)
+                            val types =
+                                recipeDiscoveryViewModel.uiState.collectAsState().value.recipeTypes
+                            TypesDisplayForFiltering(
+                                types,
+                                recipeDiscoveryViewModel::updateSelected
+                            )
+                        }
                     }
                 }
             }
