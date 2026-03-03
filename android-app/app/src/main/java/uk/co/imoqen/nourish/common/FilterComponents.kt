@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -163,7 +164,7 @@ fun SelectedTags(
                     )
                 ) {
                     Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
@@ -177,13 +178,21 @@ fun SelectedTags(
                                 colour.onBackgroundColour()
                             }
                         )
-                        Image(
+                        Icon(
                             painter = painterResource(R.drawable.cross),
                             contentDescription = "Remove Tag",
                             modifier = Modifier
                                 .clickable {
                                     updateSelectedTag(tag, false) // remove the tag
                                 }
+                                .size(18.dp)
+                                .padding(end=2.dp)
+                            ,
+                            tint = if (isSystemInDarkTheme()) {
+                                colour.backgroundColour()
+                            } else {
+                                colour.onBackgroundColour()
+                            }
                         )
                     }
 

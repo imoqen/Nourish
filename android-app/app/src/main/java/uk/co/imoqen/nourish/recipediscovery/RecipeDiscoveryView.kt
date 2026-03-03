@@ -29,7 +29,9 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -441,17 +443,15 @@ fun UserInputSection(
                     SelectedTags(uiState.recipeTags, recipeDiscoveryViewModel::updateSelected)
                 }
 
-                ExposedDropdownMenuBox(
-                    expanded = uiState.displayFilters,
-                    //shape = RoundedCornerShape(24.dp),
-                    modifier = Modifier.fillMaxWidth(0.8f),
-                    onExpandedChange = { recipeDiscoveryViewModel.setDisplayFilters(!(uiState.displayFilters)) }
-                ) {
-                    // Dropdown menu:
-                    ExposedDropdownMenu(
-                        expanded = uiState.displayFilters,
-                        onDismissRequest = { recipeDiscoveryViewModel.setDisplayFilters(false) }
+                val sheetState = rememberModalBottomSheetState()
+                if (uiState.displayFilters) {
+                    ModalBottomSheet(
+                        onDismissRequest = {
+                            recipeDiscoveryViewModel.setDisplayFilters(false)
+                        },
+                        sheetState = sheetState,
                     ) {
+
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
