@@ -13,6 +13,7 @@ appcompat = "1.6.1"
 material = "1.10.0"
 uiText = "1.10.2"
 animation = "1.10.3"
+animationVersion = "1.10.4"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -34,6 +35,7 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-compose-ui-text = { group = "androidx.compose.ui", name = "ui-text", version.ref = "uiText" }
 androidx-compose-animation = { group = "androidx.compose.animation", name = "animation", version.ref = "animation" }
+androidx-animation = { group = "androidx.compose.animation", name = "animation", version.ref = "animationVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -5,12 +5,15 @@ import uk.co.imoqen.nourish.R
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateBounds
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,6 +21,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -41,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -136,7 +141,9 @@ fun RecipeDiscoveryScreen(
                         )
 
                         Box(
-                            modifier = Modifier.fillMaxSize(0.9f).align(Alignment.Center)
+                            modifier = Modifier
+                                .fillMaxSize(0.9f)
+                                .align(Alignment.Center)
                                 //.clipToBounds()
                         ) {
                             Image(
@@ -151,9 +158,11 @@ fun RecipeDiscoveryScreen(
                             NourishIconButton(
                                 onClick = { recipeDiscoveryViewModel.setDisplayImage(false) },
                                 painter = painterResource(R.drawable.collapse),
-                                modifier = Modifier.align(
-                                    Alignment.CenterEnd
-                                ).offset(x = (16).dp)
+                                modifier = Modifier
+                                    .align(
+                                        Alignment.CenterEnd
+                                    )
+                                    .offset(x = (16).dp)
                             )
                         }
                     }
@@ -426,45 +435,58 @@ fun UserInputSection(
         Row(
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.Bottom, // push everything to bottom, particularly for nutriitonal filters button
-            modifier = Modifier.padding(6.dp)
+            modifier = Modifier.padding(6.dp).fillMaxWidth()
         ) {
-            // FILTER SELECTOR:
-            Box(
-                modifier = Modifier.fillMaxWidth(
-                    // if image, only take up half the screen to allow the image to have space.
-                    if (uiState.savedImageFilename != "") { 0.5f } else { 1.0f }
-                )
-            ) {
-                // Selected tags:
-                SelectedTags(uiState.recipeTags, recipeDiscoveryViewModel::updateSelected)
+            // FILTER SELECTOR: only display if at least one tag has been selected
+            if (uiState.recipeTags != null && uiState.recipeTags.any{ it.selected }) { // only display if at least one has been selected, not if all unselected
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(
+                            // if image, only take up half the screen to allow the image to have space.
+                            if (uiState.savedImageFilename != "") {
+                                0.6f
+                            } else {
+                                1.0f
+                            }
+                        )
+                        .background(
+                            MaterialTheme.colorScheme.background,
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                        .padding(6.dp)
+                        .animateContentSize()
+                ) {
+                    // Selected tags:
+                    SelectedTags(uiState.recipeTags, recipeDiscoveryViewModel::updateSelected)
+                }
+            }
 
-                val sheetState = rememberModalBottomSheetState()
-                if (uiState.displayFilters) {
-                    ModalBottomSheet(
-                        onDismissRequest = {
-                            recipeDiscoveryViewModel.setDisplayFilters(false)
-                        },
-                        sheetState = sheetState,
+            val sheetState = rememberModalBottomSheetState()
+            if (uiState.displayFilters) {
+                ModalBottomSheet(
+                    onDismissRequest = {
+                        recipeDiscoveryViewModel.setDisplayFilters(false)
+                    },
+                    sheetState = sheetState,
+                ) {
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
+                        NourishTextDivider("Filter by tag(s)")
+                        val tags =
+                            recipeDiscoveryViewModel.uiState.collectAsState().value.recipeTags
+                        TagsDisplayForFiltering(tags, recipeDiscoveryViewModel::updateSelected)
 
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            NourishTextDivider("Filter by tag(s)")
-                            val tags =
-                                recipeDiscoveryViewModel.uiState.collectAsState().value.recipeTags
-                            TagsDisplayForFiltering(tags, recipeDiscoveryViewModel::updateSelected)
+                        NourishTextDivider("Filter by type(s)")
 
-                            NourishTextDivider("Filter by type(s)")
-
-                            val types =
-                                recipeDiscoveryViewModel.uiState.collectAsState().value.recipeTypes
-                            TypesDisplayForFiltering(
-                                types,
-                                recipeDiscoveryViewModel::updateSelected
-                            )
-                        }
+                        val types =
+                            recipeDiscoveryViewModel.uiState.collectAsState().value.recipeTypes
+                        TypesDisplayForFiltering(
+                            types,
+                            recipeDiscoveryViewModel::updateSelected
+                        )
                     }
                 }
             }
@@ -483,59 +505,74 @@ fun UserInputSection(
                             .build()
                     )
 
-                    Box(
-                        modifier = Modifier.padding(8.dp)
-                            .height(200.dp).width(200.dp)
-                    ) {
-                        Image(
-                            painter = painter,
-                            contentDescription = null,
+                    // push the image to always be on the right side (end of the row)
+                    Spacer(modifier = Modifier.weight(1f))
 
-                            // scale down the height of it
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.matchParentSize()
-                        )
-                        NourishIconButton(
-                            onClick = {
-                                recipeDiscoveryViewModel.setDisplayImage(true)
-                            },
-                            painter = painterResource(R.drawable.expand),
-                            modifier = Modifier.align(
-                                Alignment.TopEnd
-                            ).offset(x = 16.dp),
-                            backgroundColour = MaterialTheme.colorScheme.background
-                        )
-                        NourishIconButton(
-                            onClick = {
-                                pickMedia.launch(
-                                    PickVisualMediaRequest(
-                                        ActivityResultContracts.PickVisualMedia.ImageOnly
-                                    )
-                                )
-                            },
-                            painter = painterResource(R.drawable.edit),
-                            modifier = Modifier.align(
-                                Alignment.CenterEnd
-                            ).offset(x = 16.dp),
-                            backgroundColour = MaterialTheme.colorScheme.background
-                        )
-                        NourishIconButton(
-                            onClick = {
-                                imageFile.delete(); recipeDiscoveryViewModel.setSavedImageFilename(
-                                ""
+                    LookaheadScope {
+                        Box(
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .height(140.dp)
+                                .width(140.dp)
+                                .animateBounds(this) // allows it to animate
+                        ) {
+                            Image(
+                                painter = painter,
+                                contentDescription = null,
+                                // scale down the height of it
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.matchParentSize()
+
                             )
-                                // revert back to normal ingredient mode if in ingredient mode:
-                                if (uiState.userChoice == LlmMode.FROM_INGREDIENTS) {
-                                    recipeDiscoveryViewModel.setRequestType(LlmRequestType.DISHES_FROM_INGREDIENTS)
-                                }
-                            },
-                            painter = painterResource(R.drawable.delete),
-                            modifier = Modifier.align(
-                                Alignment.BottomEnd
-                            ).offset(x = 16.dp),
-                            backgroundColour = MaterialTheme.colorScheme.background,
-                            iconColour = MaterialTheme.colorScheme.error
-                        )
+
+                            NourishIconButton(
+                                onClick = {
+                                    recipeDiscoveryViewModel.setDisplayImage(true)
+                                },
+                                painter = painterResource(R.drawable.expand),
+                                modifier = Modifier
+                                    .align(
+                                        Alignment.TopEnd
+                                    )
+                                    .offset(x = 10.dp),
+                                backgroundColour = MaterialTheme.colorScheme.background
+                            )
+                            NourishIconButton(
+                                onClick = {
+                                    pickMedia.launch(
+                                        PickVisualMediaRequest(
+                                            ActivityResultContracts.PickVisualMedia.ImageOnly
+                                        )
+                                    )
+                                },
+                                painter = painterResource(R.drawable.edit),
+                                modifier = Modifier
+                                    .align(
+                                        Alignment.CenterEnd
+                                    )
+                                    .offset(x = 10.dp),
+                                backgroundColour = MaterialTheme.colorScheme.background
+                            )
+                            NourishIconButton(
+                                onClick = {
+                                    imageFile.delete(); recipeDiscoveryViewModel.setSavedImageFilename(
+                                    ""
+                                )
+                                    // revert back to normal ingredient mode if in ingredient mode:
+                                    if (uiState.userChoice == LlmMode.FROM_INGREDIENTS) {
+                                        recipeDiscoveryViewModel.setRequestType(LlmRequestType.DISHES_FROM_INGREDIENTS)
+                                    }
+                                },
+                                painter = painterResource(R.drawable.delete),
+                                modifier = Modifier
+                                    .align(
+                                        Alignment.BottomEnd
+                                    )
+                                    .offset(x = 10.dp),
+                                backgroundColour = MaterialTheme.colorScheme.background,
+                                iconColour = MaterialTheme.colorScheme.error
+                            )
+                        }
                     }
                 }
             }
@@ -545,75 +582,77 @@ fun UserInputSection(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // text box for user text input:
-            NourishTextField(
-                value = uiState.userRequest,
-                onValueChange = { request: String ->
-                    recipeDiscoveryViewModel.setUserRequest(request)
-                },
-                placeholder = uiState.placeholderText,
-                onDone = { keyboardFocusManager.clearFocus() },
-                modifier =
-                    // make the search bar fill the max width if: in from_description mode (cannot upload image), or an image has been uploaded (so cannot upload another)
-                    if (uiState.userChoice == LlmMode.FROM_DESCRIPTION || uiState.savedImageFilename != "") {
-                        Modifier.fillMaxWidth()
-                    } // only leaves space for cam if needed
-                    else {
-                        Modifier.fillMaxWidth(0.85f)
-                    }
-                        .then(Modifier.padding(4.dp)),
-                leadingIcon = ImageVector.vectorResource(R.drawable.filter_icon), // converts painterresource to imagevector. in future should move to all painterresource approach - recommended by google.
-                onLeadingIconPress = {
-                    recipeDiscoveryViewModel.setDisplayFilters(true)
-                },
-                trailingIcon = Icons.Filled.Send,
-                onTrailingIconPress = {
-
-                    // generate the recipe:
-
-                    if (uiState.savedImageFilename == "" && uiState.requestType == LlmRequestType.RECIPE) {
-                        Log.i("recipe", "making recipe")
-                        // generate recipe from text
-                        recipeDiscoveryViewModel.makeLlmApiCall(LlmRequestType.RECIPE) // make llm call
-                    }
-                    // generate potential dishes from ingredients list:
-                    else if (uiState.savedImageFilename == "" && uiState.requestType == LlmRequestType.DISHES_FROM_INGREDIENTS) {
-                        recipeDiscoveryViewModel.makeLlmApiCall(LlmRequestType.DISHES_FROM_INGREDIENTS)
-                    }
-                    // generate potential dishes from image of ingredients, e.g. image of contents of a fridge:
-                    else if (uiState.savedImageFilename != "" && uiState.requestType == LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE) {
-                        recipeDiscoveryViewModel.makeLlmApiCall(
-                            LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE,
-                            uiState.savedImageFilename,
-                            context.filesDir
-                        )
-                    }
-                    // generate potential dishes from an image of a dish, e.g. image of pasta:
-                    else {
-                        Log.i("recipe", "from image")
-                        // generate recipe from image
-                        recipeDiscoveryViewModel.makeLlmApiCall(
-                            LlmRequestType.DISHES_FROM_IMAGE,
-                            uiState.savedImageFilename,
-                            context.filesDir
-                        )
-                    }
-                },
-                alwaysDisplayTrailingIcon = true
-            )
-            // only allow image upload if not exist already
-            if (uiState.savedImageFilename == "" && uiState.userChoice != LlmMode.FROM_DESCRIPTION) {
-                NourishIconButton(
-                    onClick = {
-                        pickMedia.launch(
-                            PickVisualMediaRequest(
-                                ActivityResultContracts.PickVisualMedia.ImageOnly
-                            )
-                        )
+            LookaheadScope {
+                // text box for user text input:
+                NourishTextField(
+                    value = uiState.userRequest,
+                    onValueChange = { request: String ->
+                        recipeDiscoveryViewModel.setUserRequest(request)
                     },
-                    painter = painterResource(R.drawable.camera),
-                    modifier = Modifier.padding(end = 4.dp)
+                    placeholder = uiState.placeholderText,
+                    onDone = { keyboardFocusManager.clearFocus() },
+                    modifier =
+                        // make the search bar fill the max width if: in from_description mode (cannot upload image), or an image has been uploaded (so cannot upload another)
+                        if (uiState.userChoice == LlmMode.FROM_DESCRIPTION || uiState.savedImageFilename != "") {
+                            Modifier.fillMaxWidth()
+                        } // only leaves space for cam if needed
+                        else {
+                            Modifier.fillMaxWidth(0.85f)
+                        }
+                            .then(Modifier.padding(4.dp)).animateBounds(this),
+                    leadingIcon = ImageVector.vectorResource(R.drawable.filter_icon), // converts painterresource to imagevector. in future should move to all painterresource approach - recommended by google.
+                    onLeadingIconPress = {
+                        recipeDiscoveryViewModel.setDisplayFilters(true)
+                    },
+                    trailingIcon = Icons.Filled.Send,
+                    onTrailingIconPress = {
+
+                        // generate the recipe:
+
+                        if (uiState.savedImageFilename == "" && uiState.requestType == LlmRequestType.RECIPE) {
+                            Log.i("recipe", "making recipe")
+                            // generate recipe from text
+                            recipeDiscoveryViewModel.makeLlmApiCall(LlmRequestType.RECIPE) // make llm call
+                        }
+                        // generate potential dishes from ingredients list:
+                        else if (uiState.savedImageFilename == "" && uiState.requestType == LlmRequestType.DISHES_FROM_INGREDIENTS) {
+                            recipeDiscoveryViewModel.makeLlmApiCall(LlmRequestType.DISHES_FROM_INGREDIENTS)
+                        }
+                        // generate potential dishes from image of ingredients, e.g. image of contents of a fridge:
+                        else if (uiState.savedImageFilename != "" && uiState.requestType == LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE) {
+                            recipeDiscoveryViewModel.makeLlmApiCall(
+                                LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE,
+                                uiState.savedImageFilename,
+                                context.filesDir
+                            )
+                        }
+                        // generate potential dishes from an image of a dish, e.g. image of pasta:
+                        else {
+                            Log.i("recipe", "from image")
+                            // generate recipe from image
+                            recipeDiscoveryViewModel.makeLlmApiCall(
+                                LlmRequestType.DISHES_FROM_IMAGE,
+                                uiState.savedImageFilename,
+                                context.filesDir
+                            )
+                        }
+                    },
+                    alwaysDisplayTrailingIcon = true
                 )
+                // only allow image upload if not exist already
+                if (uiState.savedImageFilename == "" && uiState.userChoice != LlmMode.FROM_DESCRIPTION) {
+                    NourishIconButton(
+                        onClick = {
+                            pickMedia.launch(
+                                PickVisualMediaRequest(
+                                    ActivityResultContracts.PickVisualMedia.ImageOnly
+                                )
+                            )
+                        },
+                        painter = painterResource(R.drawable.camera),
+                        modifier = Modifier.padding(end = 4.dp)
+                    )
+                }
             }
         }
     }

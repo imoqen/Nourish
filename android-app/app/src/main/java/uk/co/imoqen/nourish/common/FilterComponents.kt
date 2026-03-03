@@ -1,5 +1,8 @@
 package uk.co.imoqen.nourish.common
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -10,9 +13,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -143,59 +149,71 @@ fun SelectedTags(
     tags: List<TagSelection>?,
     updateSelectedTag: (Tag, Boolean) -> Unit
 ) {
-    FlowRow(
-        modifier = Modifier.padding(2.dp),
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+    val scrollState = rememberScrollState()
+
+    Box(
+        modifier = Modifier
+            .heightIn(max = 140.dp)   // max height of 120px to match the image in the upload, this holds 3 rows of tags nicely
+            .verticalScroll(scrollState)
     ) {
-        tags?.forEach { (tag, selected) ->
-            if (selected) { // only display selected tags.
-                // alternate colour of tag depending on dark / light mode
-                val colour = enumValueOf<NourishColour>(tag.colour)
-
-                Box(
-                    modifier = Modifier.padding(2.dp).clip(RoundedCornerShape(12.dp)).background(
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isSystemInDarkTheme()) {
-                            colour.onBackgroundColour()
-                        } else {
-                            colour.dimmedBackgroundColour()
-                        }
-                    )
+        FlowRow(
+            modifier = Modifier.padding(2.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            tags?.forEach { (tag, selected) ->
+                AnimatedVisibility(
+                    visible = selected,
+                    enter = fadeIn(),
+                    exit = fadeOut()
                 ) {
-                    Row(
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = tag.displayName,
-                            fontSize = 14.sp,
-                            modifier = Modifier
-                                .padding(4.dp).padding(horizontal = 2.dp),
-                            color = if (isSystemInDarkTheme()) {
-                                colour.backgroundColour()
-                            } else {
-                                colour.onBackgroundColour()
-                            }
-                        )
-                        Icon(
-                            painter = painterResource(R.drawable.cross),
-                            contentDescription = "Remove Tag",
-                            modifier = Modifier
-                                .clickable {
-                                    updateSelectedTag(tag, false) // remove the tag
-                                }
-                                .size(18.dp)
-                                .padding(end=2.dp)
-                            ,
-                            tint = if (isSystemInDarkTheme()) {
-                                colour.backgroundColour()
-                            } else {
-                                colour.onBackgroundColour()
-                            }
-                        )
-                    }
+                    // alternate colour of tag depending on dark / light mode
+                    val colour = enumValueOf<NourishColour>(tag.colour)
 
+                    Box(
+                        modifier = Modifier.padding(2.dp).clip(RoundedCornerShape(12.dp))
+                            .background(
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (isSystemInDarkTheme()) {
+                                    colour.onBackgroundColour()
+                                } else {
+                                    colour.dimmedBackgroundColour()
+                                }
+                            )
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = tag.displayName,
+                                fontSize = 14.sp,
+                                modifier = Modifier
+                                    .padding(4.dp).padding(horizontal = 2.dp),
+                                color = if (isSystemInDarkTheme()) {
+                                    colour.backgroundColour()
+                                } else {
+                                    colour.onBackgroundColour()
+                                }
+                            )
+                            Icon(
+                                painter = painterResource(R.drawable.cross),
+                                contentDescription = "Remove Tag",
+                                modifier = Modifier
+                                    .clickable {
+                                        updateSelectedTag(tag, false) // remove the tag
+                                    }
+                                    .size(18.dp)
+                                    .padding(end = 2.dp),
+                                tint = if (isSystemInDarkTheme()) {
+                                    colour.backgroundColour()
+                                } else {
+                                    colour.onBackgroundColour()
+                                }
+                            )
+                        }
+
+                    }
                 }
             }
         }
