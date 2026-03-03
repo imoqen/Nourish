@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.ErrorMessage
+import uk.co.imoqen.nourish.common.FilterActions
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
@@ -21,9 +22,13 @@ import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import javax.inject.Inject
 import uk.co.imoqen.nourish.common.saveImage
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
+import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
+import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import uk.co.imoqen.nourish.network.response.LlmRecipe
+import uk.co.imoqen.nourish.recipebook.TagSelection
+import uk.co.imoqen.nourish.recipebook.TypeSelection
 import java.io.File
 import java.lang.NullPointerException
 import kotlin.onSuccess
@@ -47,7 +52,8 @@ class RecipeDiscoveryViewModel @Inject constructor(
     private val authenticationManager: AuthenticationManager,
     private val apiManager: ApiManager,
     private val uiEventBus: UiEventBus,
-    private val recipeRepository: RecipeRepository
+    private val recipeRepository: RecipeRepository,
+    private val filterActions: FilterActions
 ): ViewModel() {
     private val mutableUiState = MutableStateFlow(RecipeDiscoveryUiState())
     val uiState: StateFlow<RecipeDiscoveryUiState> = mutableUiState.asStateFlow()
@@ -121,6 +127,30 @@ class RecipeDiscoveryViewModel @Inject constructor(
         mutableUiState.update { currentState ->
             currentState.copy(
                 displayImage = displayImage
+            )
+        }
+    }
+
+    fun setDisplayFilters(displayFilters: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                displayFilters = displayFilters
+            )
+        }
+    }
+
+    fun setRecipeTags(recipeTags: List<TagSelection>?) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                recipeTags = recipeTags
+            )
+        }
+    }
+
+    fun setRecipeTypes(recipeTypes: List<TypeSelection>?) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                recipeTypes = recipeTypes
             )
         }
     }
@@ -270,6 +300,46 @@ class RecipeDiscoveryViewModel @Inject constructor(
                     "The recipe could not be saved. Please try again, or generate a new recipe."
                 ))
             }
+        }
+    }
+
+    fun getAllTagsForUser() {
+        viewModelScope.launch() {
+            setRecipeTags(
+                filterActions.getAllTagsForUser(mutableUiState.value.recipeTags)
+            )
+        }
+    }
+
+    fun getAllRecipeTypes() {
+        viewModelScope.launch() {
+            setRecipeTypes(
+                filterActions.getAllRecipeTypes(mutableUiState.value.recipeTypes)
+            )
+        }
+    }
+
+    fun updateSelected(tag: Tag, status: Boolean) {
+        viewModelScope.launch() {
+            setRecipeTags(
+                filterActions.updateSelected(
+                    tag,
+                    status,
+                    mutableUiState.value.recipeTags
+                )
+            )
+        }
+    }
+
+    fun updateSelected(recipeType: RecipeType, status: Boolean) {
+        viewModelScope.launch() {
+            setRecipeTypes(
+                filterActions.updateSelected(
+                    recipeType,
+                    status,
+                    mutableUiState.value.recipeTypes
+                )
+            )
         }
     }
 

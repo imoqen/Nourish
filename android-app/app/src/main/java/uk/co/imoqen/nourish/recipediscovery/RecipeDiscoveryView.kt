@@ -18,11 +18,13 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,8 +50,11 @@ import uk.co.imoqen.nourish.common.NourishIconTextButton
 import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.common.NourishTextMessage
+import uk.co.imoqen.nourish.common.TagsDisplayForFiltering
 import uk.co.imoqen.nourish.common.TextSender
+import uk.co.imoqen.nourish.common.TypesDisplayForFiltering
 import uk.co.imoqen.nourish.network.request.LlmRequestType
+
 import java.io.File
 
 /**
@@ -391,6 +396,10 @@ fun UserInputSection(
             }
         }
 
+    // set all tags and recipe types for the dropdown
+    recipeDiscoveryViewModel.getAllTagsForUser()
+    recipeDiscoveryViewModel.getAllRecipeTypes()
+
     Column(
         modifier = Modifier
             .background(
@@ -405,12 +414,38 @@ fun UserInputSection(
         ) {
 
             // FILTER SELECTOR:
-            NourishIconTextButton(
-                onClick = {},
-                painter = painterResource(R.drawable.arrow_down),
-                "Nutritional filters",
-                modifier = Modifier.padding(top=6.dp)
-            )
+            Box() {
+                NourishIconTextButton(
+                    onClick = {
+                        recipeDiscoveryViewModel.setDisplayFilters(!uiState.displayFilters)
+                    },
+                    painter = painterResource(R.drawable.arrow_down),
+                    "Nutritional filters",
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+
+                DropdownMenu(
+                    expanded = uiState.displayFilters,
+                    shape = RoundedCornerShape(24.dp),
+                    modifier = Modifier.fillMaxWidth(0.8f),
+                    onDismissRequest = { recipeDiscoveryViewModel.setDisplayFilters(false) }
+                ) {
+                    // Dropdown menu:
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        NourishTextDivider("Filter by tag(s)")
+                        val tags = recipeDiscoveryViewModel.uiState.collectAsState().value.recipeTags
+                        TagsDisplayForFiltering(tags, recipeDiscoveryViewModel::updateSelected)
+
+                        NourishTextDivider("Filter by type(s)")
+
+                        val types = recipeDiscoveryViewModel.uiState.collectAsState().value.recipeTypes
+                        TypesDisplayForFiltering(types, recipeDiscoveryViewModel::updateSelected)
+                    }
+                }
+            }
 
             // IMAGE SELECTOR:
 

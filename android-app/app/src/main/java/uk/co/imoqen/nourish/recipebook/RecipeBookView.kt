@@ -7,7 +7,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -39,7 +38,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
@@ -57,6 +55,8 @@ import coil3.request.ImageRequest
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
+import uk.co.imoqen.nourish.common.TagsDisplayForFiltering
+import uk.co.imoqen.nourish.common.TypesDisplayForFiltering
 import uk.co.imoqen.nourish.common.backgroundColour
 import uk.co.imoqen.nourish.common.dimmedBackgroundColour
 import uk.co.imoqen.nourish.common.onBackgroundColour
@@ -136,11 +136,13 @@ fun RecipeBookScreen(
                         verticalArrangement = Arrangement.Center
                     ) {
                         NourishTextDivider("Filter by tag(s)")
+                        val tags = recipeBookViewModel.uiState.collectAsState().value.recipeTags
+                        TagsDisplayForFiltering(tags, recipeBookViewModel::updateSelected)
 
-
-                        TagsDisplayForFiltering(recipeBookViewModel)
                         NourishTextDivider("Filter by type(s)")
-                        TypesDisplayForFiltering(recipeBookViewModel)
+
+                        val types = recipeBookViewModel.uiState.collectAsState().value.recipeTypes
+                        TypesDisplayForFiltering(types, recipeBookViewModel::updateSelected)
                     }
                 }
             }
@@ -151,10 +153,9 @@ fun RecipeBookScreen(
         ) {
             // set all recipes
             recipeBookViewModel.getRecipeBookMap()
-            // set all tags for the dropdown
+            // set all tags and recipe types for the dropdown
             recipeBookViewModel.getAllTagsForUser()
-
-            recipeBookViewModel.setAllRecipeTypes()
+            recipeBookViewModel.getAllRecipeTypes()
 
             // then filter if a search has been made
             /*if (uiState.searchTerm != "") {
@@ -196,7 +197,7 @@ fun RecipeList(
                 ) {
                     val list: MutableList<Pair<String, NourishColour>> = mutableListOf()
                     //uiState.allTags!!.map { tag -> Pair(tag.tag.displayName, enumValueOf<NourishColour>(tag.tag.colour))}.toMutableList()
-                    uiState.allTags!!.forEach { tagSelection ->
+                    uiState.recipeTags!!.forEach { tagSelection ->
                         if (tagSelection.selected) {
                             list.add(
                                 Pair(
@@ -367,118 +368,6 @@ fun TagsDisplay(
                 colour.onBackgroundColour()
             }
         )
-    }
-}
-
-@Composable
-fun TypesDisplayForFiltering(
-    recipeBookViewModel: RecipeBookViewModel,
-) {
-    val types = recipeBookViewModel.uiState.collectAsState().value.recipeTypes
-    FlowRow(
-        modifier = Modifier.padding(2.dp),
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        types?.forEach { (type, selected) ->
-            Box(
-                modifier = Modifier.padding(2.dp).clip(RoundedCornerShape(12.dp))
-            ) {
-                Text(
-                    text = type.title,
-                    fontSize = 14.sp,
-                    modifier = Modifier
-                        .background(
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        .clickable {
-                            recipeBookViewModel.updateSelectedType(
-                                type,
-                                !selected
-                            ) // do the selection
-                        }
-                        .then(
-                            if (selected) {
-                                Modifier.border(
-                                    width = 1.dp,
-                                    color = MaterialTheme.colorScheme.error,
-                                    shape = RoundedCornerShape(12.dp)
-                                )
-                            } else {
-                                Modifier
-                            }
-                        )
-                        .then(
-                            Modifier.padding(4.dp).padding(horizontal = 2.dp)
-                        ),
-                    color = MaterialTheme.colorScheme.background
-
-                )
-
-            }
-        }
-    }
-}
-
-@Composable
-fun TagsDisplayForFiltering(
-    recipeBookViewModel: RecipeBookViewModel
-) {
-    val tags = recipeBookViewModel.uiState.collectAsState().value.allTags
-    FlowRow(
-        modifier = Modifier.padding(2.dp),
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        tags?.forEach { (tag, selected) ->
-            // alternate colour of tag depending on dark / light mode
-            val colour = enumValueOf<NourishColour>(tag.colour)
-
-            Box(
-                modifier = Modifier.padding(2.dp).clip(RoundedCornerShape(12.dp))
-            ) {
-                Text(
-                    text = tag.displayName,
-                    fontSize = 14.sp,
-                    modifier = Modifier
-                        .background(
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (isSystemInDarkTheme()) {
-                                colour.onBackgroundColour()
-                            } else {
-                                colour.dimmedBackgroundColour()
-                            }
-                        )
-                        .clickable {
-                            recipeBookViewModel.updateSelectedTag(
-                                tag,
-                                !selected
-                            ) // do the selection
-                        }
-                        .then(
-                            if (selected) {
-                                Modifier.border(
-                                    width = 1.dp,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                    shape = RoundedCornerShape(12.dp)
-                                )
-                            } else {
-                                Modifier
-                            }
-                        )
-                        .then(
-                            Modifier.padding(4.dp).padding(horizontal=2.dp)
-                        ),
-                    color = if (isSystemInDarkTheme()) {
-                        colour.backgroundColour()
-                    } else {
-                        colour.onBackgroundColour()
-                    }
-                )
-
-            }
-        }
     }
 }
 
