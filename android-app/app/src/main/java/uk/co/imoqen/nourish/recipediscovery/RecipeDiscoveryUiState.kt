@@ -20,9 +20,13 @@ data class RecipeDiscoveryUiState(
 
     val displayImage: Boolean = false,
     val displayFilters: Boolean = false,
+    val displayTagCreation: Boolean = false,
+
+    val createdTagName: String = "",
 
     val recipeTags: List<TagSelection>? = null,
     val recipeTypes: List<TypeSelection>? = null,
+
 
     // the currently uploaded / saved image, most recent one; name of file. can find the file via File(context.filesDir, savedImageFilename):
     val savedImageFilename: String = "",

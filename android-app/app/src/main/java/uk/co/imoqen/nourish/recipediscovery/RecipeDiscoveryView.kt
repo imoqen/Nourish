@@ -9,6 +9,7 @@ import androidx.compose.animation.animateBounds
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Create
@@ -56,6 +60,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
+import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.NourishH3
 import uk.co.imoqen.nourish.common.NourishH4
 import uk.co.imoqen.nourish.common.NourishIconButton
@@ -67,9 +72,13 @@ import uk.co.imoqen.nourish.common.SelectedTags
 import uk.co.imoqen.nourish.common.TagsDisplayForFiltering
 import uk.co.imoqen.nourish.common.TextSender
 import uk.co.imoqen.nourish.common.TypesDisplayForFiltering
+import uk.co.imoqen.nourish.common.backgroundColour
+import uk.co.imoqen.nourish.common.dimmedBackgroundColour
+import uk.co.imoqen.nourish.common.onBackgroundColour
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 
 import java.io.File
+import kotlin.text.lowercase
 
 /**
  * View for RecipeDiscovery, where LLM calls can be made and recipes thus generated.
@@ -470,23 +479,87 @@ fun UserInputSection(
                     sheetState = sheetState,
                 ) {
 
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        NourishTextDivider("Filter by tag(s)")
-                        val tags =
-                            recipeDiscoveryViewModel.uiState.collectAsState().value.recipeTags
-                        TagsDisplayForFiltering(tags, recipeDiscoveryViewModel::updateSelected)
+                    val keyboardFocusManager =
+                        LocalFocusManager.current
 
-                        NourishTextDivider("Filter by type(s)")
+                    if (uiState.displayTagCreation) {
 
-                        val types =
-                            recipeDiscoveryViewModel.uiState.collectAsState().value.recipeTypes
-                        TypesDisplayForFiltering(
-                            types,
-                            recipeDiscoveryViewModel::updateSelected
+                        NourishTextField(
+                            value = uiState.createdTagName,
+                            onValueChange = { recipeDiscoveryViewModel.setCreatedTagName(it) },
+                            placeholder = "Enter a name for the tag",
+                            onDone = { keyboardFocusManager.clearFocus() }
                         )
+
+                        // identifier is created by making the display name all caps and replacing spaces with -. only alphanumerics can be added. so need to vberify this.
+
+                        // colour picker too from predefined colours.
+                        // 3x3 as there are 9 colours
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(3),
+                            modifier = Modifier.fillMaxWidth().padding(12.dp)
+                        ) {
+                            items(NourishColour.entries) { colour ->
+                                Column(
+                                    modifier = Modifier.fillMaxWidth().padding(3.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) { // simply for padding between tags
+                                    Box(
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .background(
+                                                color =
+                                                    if (isSystemInDarkTheme()) {
+                                                        colour.onBackgroundColour()
+                                                    } else {
+                                                        colour.dimmedBackgroundColour()
+                                                    },
+                                                shape = RoundedCornerShape(16.dp)
+                                            )
+                                            .padding(4.dp)
+                                    ) {
+                                        Text(
+                                            text = colour.name.lowercase()
+                                                .replaceFirstChar { it.uppercase() },
+                                            color =
+                                                if (isSystemInDarkTheme()) {
+                                                    colour.backgroundColour()
+                                                } else {
+                                                    colour.onBackgroundColour()
+                                                },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                    } else {
+
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            NourishTextDivider("Filter by tag(s)")
+                            val tags =
+                                recipeDiscoveryViewModel.uiState.collectAsState().value.recipeTags
+                            TagsDisplayForFiltering(
+                                tags,
+                                recipeDiscoveryViewModel::updateSelected,
+                                true
+                            ) { recipeDiscoveryViewModel.setDisplayTagCreation(true) }
+
+                            NourishTextDivider("Filter by type(s)")
+
+                            val types =
+                                recipeDiscoveryViewModel.uiState.collectAsState().value.recipeTypes
+                            TypesDisplayForFiltering(
+                                types,
+                                recipeDiscoveryViewModel::updateSelected
+                            )
+                        }
                     }
                 }
             }

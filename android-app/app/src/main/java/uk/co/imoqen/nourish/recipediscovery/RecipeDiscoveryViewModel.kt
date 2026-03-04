@@ -155,6 +155,22 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
+    fun setDisplayTagCreation(displayTagCreation: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                displayTagCreation = displayTagCreation
+            )
+        }
+    }
+
+    fun setCreatedTagName(createdTagName: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                createdTagName = createdTagName
+            )
+        }
+    }
+
     /**
      * Makes the API call by forming the request, getting the user token and ensuring it is valid.
      * Then, placing this token in the Bearer Authorization header and the request in the body.

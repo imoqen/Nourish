@@ -40,7 +40,9 @@ import uk.co.imoqen.nourish.recipebook.TypeSelection
 @Composable
 fun TagsDisplayForFiltering(
     tags: List<TagSelection>?,
-    updateSelectedTag: (Tag, Boolean) -> Unit
+    updateSelectedTag: (Tag, Boolean) -> Unit,
+    displayAddButton: Boolean = false,
+    onDisplayAddButtonPressed: () -> Unit = {}
 ) {
     //val tags = recipeBookViewModel.uiState.collectAsState().value.allTags
     FlowRow(
@@ -91,6 +93,34 @@ fun TagsDisplayForFiltering(
                     }
                 )
 
+            }
+        }
+        if (displayAddButton) {
+            Box(
+                modifier = Modifier
+                    .padding(2.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.background)
+                    .clickable { onDisplayAddButtonPressed() }
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Add your own",
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.padding(4.dp).padding(horizontal=2.dp)
+                    )
+                    Icon(
+                        painter = painterResource(R.drawable.add),
+                        contentDescription = "Add a new nutritional filter",
+                        modifier = Modifier
+                            .size(18.dp)
+                            .padding(end = 2.dp),
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
             }
         }
     }
