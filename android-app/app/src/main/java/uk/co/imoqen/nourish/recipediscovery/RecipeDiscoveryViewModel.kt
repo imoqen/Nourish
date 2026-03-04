@@ -237,6 +237,22 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
+    fun setChosenDish(chosenDish: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                chosenDish = chosenDish
+            )
+        }
+    }
+
+    fun setRecipeToGenerate(recipeToGenerate: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                recipeToGenerate = recipeToGenerate
+            )
+        }
+    }
+
     fun createTag(
         description: String,
         colour: NourishColour?
@@ -321,7 +337,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
         viewModelScope.launch() {
             runCatching {
                 // get the user prompt ("what would you like to cook?" field)
-                val userPrompt = mutableUiState.value.userRequest
+                val userPrompt = mutableUiState.value.chosenDish
 
                 // Get filters selected and the meal type:
                 var chosenNutritionalFilters = mutableUiState.value.recipeTags?.filter { it.selected }?.joinToString(", ") // only gets the selected filters and puts them into a string
@@ -535,6 +551,8 @@ class RecipeDiscoveryViewModel @Inject constructor(
         setSavedImageFilename("")
         setRequestType(LlmRequestType.RECIPE)
         setPlaceholderText("")
+        setChosenDish("")
+        setRecipeToGenerate("")
     }
 
 }

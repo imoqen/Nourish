@@ -41,6 +41,10 @@ data class RecipeDiscoveryUiState(
     val allowUserInput: Boolean = false,
     val userSentRequest: Boolean = false,
 
+    val chosenDish: String = "",
+
+    val recipeToGenerate: String = "",
+
     // the currently uploaded / saved image, most recent one; name of file. can find the file via File(context.filesDir, savedImageFilename):
     val savedImageFilename: String = "",
 

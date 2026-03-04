@@ -237,8 +237,10 @@ fun NourishButton(
 fun NourishSurfaceButton(
     onClick: () -> Unit,
     text: String,
+    enabled: Boolean = true
 ) {
     Button(
+        enabled = enabled,
         colors = ButtonDefaults.buttonColors(
             MaterialTheme.colorScheme.primaryContainer
         ),
@@ -248,11 +250,11 @@ fun NourishSurfaceButton(
         modifier = Modifier
             .padding(vertical = 4.dp)
             .padding(horizontal = 4.dp),
-        shape = RoundedCornerShape(6.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
         Text(
             text = text,
-            modifier = Modifier.padding(8.dp)
+            modifier = Modifier.padding(2.dp)
         )
     }
 }

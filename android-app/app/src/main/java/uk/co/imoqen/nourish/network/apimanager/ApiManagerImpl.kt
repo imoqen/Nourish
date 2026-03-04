@@ -47,6 +47,7 @@ class ApiManagerImpl @Inject constructor(
                     )
                 }
 
+                // generate recipe from image and the chosen dish
                 LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH -> {
                     Log.i("calling llm", "pompt: $request")
                     val file = File(filesDir, imageFilename)

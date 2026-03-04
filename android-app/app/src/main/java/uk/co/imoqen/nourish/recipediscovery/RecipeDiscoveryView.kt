@@ -168,6 +168,15 @@ fun RecipeDiscoveryScreen(
                             UserRequest(recipeDiscoveryViewModel, uiState, context)
                         }
                         item {
+                            // proposes possible dishes
+                            RecipeDishProposalGenerationResult(recipeDiscoveryViewModel, uiState)
+                        }
+                        item {
+                            // user chosen recipe if dishes were proposed
+                            UserDishChoice(uiState)
+                        }
+                        item {
+                            // the recipe result
                             RecipeGenerationResult(recipeDiscoveryViewModel, uiState)
                         }
                         item {
@@ -278,6 +287,37 @@ fun restart(
 }
 
 @Composable
+fun UserDishChoice(
+    uiState: RecipeDiscoveryUiState,
+) {
+    if (uiState.chosenDish != "") {
+        Column( // column for the top contents
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            NourishTextMessage(
+                textSender = TextSender.USER,
+                modifier = Modifier.align(Alignment.End)
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Generate a recipe for",
+                        fontWeight = FontWeight.SemiBold,
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        text = uiState.chosenDish,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun UserRequest(
     recipeDiscoveryViewModel: RecipeDiscoveryViewModel,
     uiState: RecipeDiscoveryUiState,
@@ -298,37 +338,18 @@ fun UserRequest(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     NourishUserRequestComponent {
-                        Row(
+                        Column(
                             modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Column(
-                                modifier =
-                                    if (uiState.savedImageFilename == "") { Modifier.fillMaxWidth() }
-                                    else if (uiState.userRequest == "" ) { Modifier.fillMaxWidth(0f) }
-                                    else { Modifier.fillMaxWidth(0.5f) },
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
+                            if (uiState.userRequest != "") {
                                 Text(
                                     text = uiState.userRequest,
                                     fontWeight = FontWeight.SemiBold,
                                     textAlign = TextAlign.Center
                                 )
                             }
-
-                            Spacer(
-                                modifier = Modifier.weight(1f)
-                            )
-
-                            Column(
-                                modifier =
-                                    if (uiState.userRequest == "") { Modifier.fillMaxWidth() }
-                                    else if (uiState.savedImageFilename == "" ) { Modifier.fillMaxWidth(0f) }
-                                    else { Modifier.fillMaxWidth(0.5f) },
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                UserUploadedImage(recipeDiscoveryViewModel, uiState, context)
-                            }
+                            UserUploadedImage(recipeDiscoveryViewModel, uiState, context)
                         }
                     }
 
@@ -569,8 +590,9 @@ fun RecipeGenerationInfo(
         //}
     }
 }
+
 @Composable
-fun RecipeGenerationResult(
+fun RecipeDishProposalGenerationResult(
     recipeDiscoveryViewModel: RecipeDiscoveryViewModel,
     uiState: RecipeDiscoveryUiState
 ) {
@@ -594,7 +616,7 @@ fun RecipeGenerationResult(
                 modifier = Modifier.align(Alignment.Start)
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().padding(bottom=8.dp)
                 ) {
                     NourishH4(
                         text = "The following dishes have been identified.",
@@ -604,10 +626,12 @@ fun RecipeGenerationResult(
 
                     arrayOfDishes.forEach { dish ->
                         Box(
-                            modifier = Modifier.padding(2.dp)
+                            modifier = Modifier.fillMaxWidth().padding(2.dp),
+                            contentAlignment = Alignment.Center
                         ) {
                             NourishSurfaceButton(
                                 onClick = {
+                                    recipeDiscoveryViewModel.setChosenDish(dish) // set the chosen dish
                                     generateRecipe(
                                         dish,
                                         recipeDiscoveryViewModel,
@@ -616,7 +640,8 @@ fun RecipeGenerationResult(
                                         dishes
                                     )
                                 },
-                                text = dish
+                                text = dish,
+                                enabled = (uiState.chosenDish == "") // only enabled if user has not yet chosen the dish.
                             )
                         }
                     }
@@ -625,7 +650,7 @@ fun RecipeGenerationResult(
                         NourishTextDivider("Ingredients identified")
                         Text(
                             text = dishes.ingredientsIdentified,
-                            modifier = Modifier.padding(8.dp)
+                            modifier = Modifier.padding(horizontal=8.dp).padding(top=8.dp)
                         )
                     }
                 }
@@ -634,7 +659,13 @@ fun RecipeGenerationResult(
         }
 
     }
+}
 
+@Composable
+fun RecipeGenerationResult(
+    recipeDiscoveryViewModel: RecipeDiscoveryViewModel,
+    uiState: RecipeDiscoveryUiState
+) {
     // Outputs the response, or error if occurred.
     if (uiState.apiResponse != "") {
         Log.i("recipe res", "not null")
@@ -643,6 +674,8 @@ fun RecipeGenerationResult(
             modifier = Modifier.fillMaxWidth()
         )
     }
+
+    // the loading circle:
     IndeterminateCircularIndicator()
 }
 
@@ -655,9 +688,9 @@ fun generateRecipe(
 ) {
     // Set the user request depending on whether an image or ingredients were included
     if (dishes.ingredientsIdentified != null) {
-        recipeDiscoveryViewModel.setUserRequest(dish + ", using only ingredients: ${dishes.ingredientsIdentified}")
+        recipeDiscoveryViewModel.setRecipeToGenerate(dish + ", using only ingredients: ${dishes.ingredientsIdentified}")
     } else {
-        recipeDiscoveryViewModel.setUserRequest(dish)
+        recipeDiscoveryViewModel.setRecipeToGenerate(dish)
     }
 
     // Make the LLM API call depending on whether an image or ingredients were included
@@ -1231,6 +1264,8 @@ fun sendToLlm(
     }
 
     if (validRequest) {
+        // update the chosen dish with the user's request, so that the user request can remain when the dish is chosen and the correct val thus sent to the llm
+        recipeDiscoveryViewModel.setChosenDish(uiState.userRequest)
         // then reset the ui state, as data has been sent and was valid
         recipeDiscoveryViewModel.setAllowUserInput(false)
         recipeDiscoveryViewModel.setUserSentRequest(true)
