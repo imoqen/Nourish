@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.FilterActions
+import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
@@ -24,6 +25,7 @@ import uk.co.imoqen.nourish.common.saveImage
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.tag.Tag
+import uk.co.imoqen.nourish.db.tag.TagRepository
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import uk.co.imoqen.nourish.network.response.LlmRecipe
@@ -53,7 +55,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
     private val apiManager: ApiManager,
     private val uiEventBus: UiEventBus,
     private val recipeRepository: RecipeRepository,
-    private val filterActions: FilterActions
+    private val filterActions: FilterActions,
 ): ViewModel() {
     private val mutableUiState = MutableStateFlow(RecipeDiscoveryUiState())
     val uiState: StateFlow<RecipeDiscoveryUiState> = mutableUiState.asStateFlow()
@@ -169,6 +171,58 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 createdTagName = createdTagName
             )
         }
+    }
+
+    fun setCreatedTagColour(createdTagColour: NourishColour?) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                createdTagColour = createdTagColour
+            )
+        }
+    }
+
+    fun setTagCreationError(tagCreationError: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                tagCreationError = tagCreationError
+            )
+        }
+    }
+
+    fun createTag(
+        description: String,
+        colour: NourishColour?
+    ) {
+        viewModelScope.launch() {
+            runCatching {
+                if (description == "") {
+                    setTagCreationError("Please enter a description.")
+                    return@launch
+                }
+                if (description.length > 27) {
+                    setTagCreationError("The description is too long. It must be less than 27 characters.")
+                    return@launch
+                }
+                if (colour == null) {
+                    setTagCreationError("Please select a colour.")
+                    return@launch
+                }
+                filterActions.createTag(description, colour)
+            }
+                .onSuccess {
+                    // when the tag has been successfully made,
+                    getAllTagsForUser() // update the tags as a new one now exists
+                    closeTagCreation()
+                }
+        }
+    }
+
+    // closes the tag creation area
+    fun closeTagCreation() {
+        setDisplayTagCreation(false)
+        setCreatedTagColour(null)
+        setCreatedTagName("")
+        setTagCreationError("")
     }
 
     /**

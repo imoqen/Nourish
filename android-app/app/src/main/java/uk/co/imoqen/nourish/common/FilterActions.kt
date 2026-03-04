@@ -21,6 +21,31 @@ class FilterActions @Inject constructor(
     private val recipeRepository: RecipeRepository
 ){
 
+    suspend fun createTag(
+        description: String,
+        colour: NourishColour
+    ) {
+        runCatching {
+            val uid = authenticationManager.getUid()
+            if (uid == null) {
+                throw NullPointerException()
+            }
+            // create the tag
+            tagRepository.insert(Tag(
+                identifier = description.uppercase().replace(" ", "-"),
+                displayName = description,
+                colour = colour.name,
+                authorId = uid
+            ))
+        }
+            .onFailure { e ->
+                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
+                    "Tag could not be created."
+                ))
+                Log.i("tag creation", "failed: $e")
+            }
+    }
+
     // gets all tags
     suspend fun getAllTagsForUser(
         previousTags: List<TagSelection>?
@@ -43,9 +68,6 @@ class FilterActions @Inject constructor(
             }
         }
             .onFailure { e ->
-                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
-                    "The tags could not be obtained. Please try again later."
-                ))
                 Log.i("tag obtaining", "failed: $e")
             }
         return null // if failure, return null.

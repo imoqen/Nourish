@@ -84,6 +84,15 @@ class AuthenticationManagerImpl @Inject constructor(
         }
     }
 
+    // stores state holding whether this is the user's first login
+    private fun setIsFirstLogin(isFirstLogin: Boolean) {
+        mutableAuthenticationState.update { currentState ->
+            currentState.copy(
+                isFirstLogin = isFirstLogin,
+            )
+        }
+    }
+
     // Methods used in the AuthenticationViewModel:
 
     /**
@@ -96,6 +105,9 @@ class AuthenticationManagerImpl @Inject constructor(
         // If success, can now proceed to login:
         if (auth.currentUser != null) {
             setLoginState(true, auth.currentUser!!.uid, auth.currentUser!!.email ?: "")
+
+            // this is user's first time logging in because they have just signed up:
+            setIsFirstLogin(true)
         }
     }
 
@@ -108,6 +120,8 @@ class AuthenticationManagerImpl @Inject constructor(
         auth.signInWithEmailAndPassword(email, password).await()
         if (auth.currentUser != null) {
             setLoginState(true, auth.currentUser!!.uid, auth.currentUser!!.email ?: "")
+            // not user's first time logging in; as they are signing in so already have account
+            setIsFirstLogin(false)
         }
     }
 
@@ -141,11 +155,18 @@ class AuthenticationManagerImpl @Inject constructor(
                     googleIdTokenCredential.idToken,
                     null
                 )
-                auth.signInWithCredential(firebaseCredential).await()
+                val result = auth.signInWithCredential(firebaseCredential).await()
 
                 // Check if validly signed in:
                 if (auth.currentUser != null) {
                     setLoginState(true, auth.currentUser!!.uid, auth.currentUser!!.email ?: "")
+
+                    // if this is the user's first time logging in:
+                    if (result.additionalUserInfo != null && result.additionalUserInfo!!.isNewUser) {
+                        setIsFirstLogin(true)
+                    } else {
+                        setIsFirstLogin(false)
+                    }
                 }
             }
         }
@@ -303,6 +324,13 @@ class AuthenticationManagerImpl @Inject constructor(
         }
         val user = auth.currentUser!!
         return user.email
+    }
+
+    override fun getIsFirstLogin(): Boolean {
+        if (!isLoggedIn()) {
+            return false // early return if not logged in; no auth credentials.
+        }
+        return mutableAuthenticationState.value.isFirstLogin
     }
 
     // Auxiliary functions, thus not declared in the interface

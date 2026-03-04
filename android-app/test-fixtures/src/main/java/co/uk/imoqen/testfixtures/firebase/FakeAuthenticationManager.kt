@@ -106,4 +106,8 @@ class FakeAuthenticationManager(): AuthenticationManager {
     override fun getEmail(): String? {
         return "test@gmail.com"
     }
+
+    override fun getIsFirstLogin(): Boolean {
+        return true // first time logging in always
+    }
 }

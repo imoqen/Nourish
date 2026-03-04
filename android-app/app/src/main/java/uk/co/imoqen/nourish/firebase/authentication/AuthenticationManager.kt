@@ -102,4 +102,7 @@ interface AuthenticationManager {
     // required for adding the user to room db:
     fun getUid(): String?
     fun getEmail(): String?
+
+    // for determining if it is user's first time logging in
+    fun getIsFirstLogin(): Boolean
 }

@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish.recipediscovery
 
+import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import uk.co.imoqen.nourish.recipebook.TagSelection
@@ -20,9 +21,12 @@ data class RecipeDiscoveryUiState(
 
     val displayImage: Boolean = false,
     val displayFilters: Boolean = false,
-    val displayTagCreation: Boolean = false,
 
+    val displayTagCreation: Boolean = false,
     val createdTagName: String = "",
+    val createdTagColour: NourishColour? = null,
+    val tagCreationError: String = "",
+    val displayTagEdit: Boolean = false,
 
     val recipeTags: List<TagSelection>? = null,
     val recipeTypes: List<TypeSelection>? = null,

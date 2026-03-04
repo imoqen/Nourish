@@ -272,7 +272,7 @@ fun NourishIconTextButton(
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
                 modifier = Modifier
-                    .size(32.dp)
+                    .size(24.dp)
             )
             if (description != "") {
                 Text(
@@ -335,10 +335,11 @@ fun GoogleButton(
 
 @Composable
 fun NourishTextDivider(
-    text: String
+    text: String,
+    modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically

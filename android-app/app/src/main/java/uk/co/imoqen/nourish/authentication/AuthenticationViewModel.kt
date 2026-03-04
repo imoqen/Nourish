@@ -1,6 +1,7 @@
 package uk.co.imoqen.nourish.authentication
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -151,6 +152,12 @@ class AuthenticationViewModel @Inject constructor(
             if (uid == null) {
                 return@launch
             }
+            // do nothing if it is not the user's first time logging in.
+            if (!authenticationManager.getIsFirstLogin()) {
+                Log.i("first time", "false")
+                return@launch
+            }
+            Log.i("first time", "true")
 
             val recipeTags = listOf(
                 Tag(identifier = "VEGAN", displayName = "Vegan", colour = "GREEN", authorId = uid),

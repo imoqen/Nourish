@@ -9,6 +9,8 @@ import androidx.compose.animation.animateBounds
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,6 +38,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -61,6 +64,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import uk.co.imoqen.nourish.common.NourishColour
+import uk.co.imoqen.nourish.common.NourishErrorText
 import uk.co.imoqen.nourish.common.NourishH3
 import uk.co.imoqen.nourish.common.NourishH4
 import uk.co.imoqen.nourish.common.NourishIconButton
@@ -470,7 +474,9 @@ fun UserInputSection(
                 }
             }
 
-            val sheetState = rememberModalBottomSheetState()
+            val sheetState = rememberModalBottomSheetState(
+                skipPartiallyExpanded = true // makes it fill the screen with the required amount rather than stuck at half the screen size
+            )
             if (uiState.displayFilters) {
                 ModalBottomSheet(
                     onDismissRequest = {
@@ -484,55 +490,114 @@ fun UserInputSection(
 
                     if (uiState.displayTagCreation) {
 
-                        NourishTextField(
-                            value = uiState.createdTagName,
-                            onValueChange = { recipeDiscoveryViewModel.setCreatedTagName(it) },
-                            placeholder = "Enter a name for the tag",
-                            onDone = { keyboardFocusManager.clearFocus() }
-                        )
-
-                        // identifier is created by making the display name all caps and replacing spaces with -. only alphanumerics can be added. so need to vberify this.
-
-                        // colour picker too from predefined colours.
-                        // 3x3 as there are 9 colours
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(3),
-                            modifier = Modifier.fillMaxWidth().padding(12.dp)
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom=20.dp) // to add padding to bottom to ensure not too close to bottom of screen
+                                .animateContentSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            items(NourishColour.entries) { colour ->
-                                Column(
-                                    modifier = Modifier.fillMaxWidth().padding(3.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) { // simply for padding between tags
-                                    Box(
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .background(
+
+                            NourishTextDivider(
+                                "Create a Nutritional Filter",
+                                modifier = Modifier.padding(top = 6.dp)
+                            )
+
+                            NourishTextField(
+                                value = uiState.createdTagName,
+                                onValueChange = { recipeDiscoveryViewModel.setCreatedTagName(it) },
+                                placeholder = "Enter a description, e.g. 'Vegan'",
+                                onDone = { keyboardFocusManager.clearFocus() }
+                            )
+
+                            // identifier is created by making the display name all caps and replacing spaces with -. only alphanumerics can be added. so need to vberify this.
+
+                            NourishTextDivider(
+                                "Choose a colour",
+                                modifier = Modifier.padding(top = 6.dp)
+                            )
+
+                            // colour picker too from predefined colours.
+                            // 3x3 as there are 9 colours
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(3),
+                                modifier = Modifier.fillMaxWidth().padding(12.dp)
+                            ) {
+                                items(NourishColour.entries) { colour ->
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth().padding(3.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) { // simply for padding between tags
+                                        Box(
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .background(
+                                                    color =
+                                                        if (isSystemInDarkTheme()) {
+                                                            colour.onBackgroundColour()
+                                                        } else {
+                                                            colour.dimmedBackgroundColour()
+                                                        },
+                                                    shape = RoundedCornerShape(16.dp)
+                                                )
+                                                .clickable { recipeDiscoveryViewModel.setCreatedTagColour(colour) }
+                                                .then(
+                                                    // highlight if this is the selected colour for the tag:
+                                                    if (uiState.createdTagColour == colour) {
+                                                        Modifier.border(
+                                                            width = 1.dp,
+                                                            color = MaterialTheme.colorScheme.onBackground,
+                                                            shape = RoundedCornerShape(12.dp)
+                                                        )
+                                                    } else {
+                                                        Modifier
+                                                    }
+                                                )
+                                                .then(
+                                                    Modifier.padding(4.dp)
+                                                )
+                                        ) {
+                                            Text(
+                                                text = colour.name.lowercase()
+                                                    .replaceFirstChar { it.uppercase() },
                                                 color =
                                                     if (isSystemInDarkTheme()) {
-                                                        colour.onBackgroundColour()
+                                                        colour.backgroundColour()
                                                     } else {
-                                                        colour.dimmedBackgroundColour()
+                                                        colour.onBackgroundColour()
                                                     },
-                                                shape = RoundedCornerShape(16.dp)
+                                                modifier = Modifier.fillMaxWidth(),
+                                                textAlign = TextAlign.Center
                                             )
-                                            .padding(4.dp)
-                                    ) {
-                                        Text(
-                                            text = colour.name.lowercase()
-                                                .replaceFirstChar { it.uppercase() },
-                                            color =
-                                                if (isSystemInDarkTheme()) {
-                                                    colour.backgroundColour()
-                                                } else {
-                                                    colour.onBackgroundColour()
-                                                },
-                                            modifier = Modifier.fillMaxWidth(),
-                                            textAlign = TextAlign.Center
-                                        )
+                                        }
                                     }
                                 }
+                            }
+
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceAround
+                            ) {
+                                NourishIconTextButton(
+                                    onClick = { recipeDiscoveryViewModel.createTag(uiState.createdTagName, uiState.createdTagColour) },
+                                    painter = painterResource(R.drawable.tick),
+                                    description = "Create tag"
+                                )
+                                NourishIconTextButton(
+                                    onClick = {
+                                        recipeDiscoveryViewModel.closeTagCreation()
+                                              },
+                                    painter = painterResource(R.drawable.cross),
+                                    description = "Discard tag"
+                                )
+                            }
+
+                            if (uiState.tagCreationError != "") {
+                                NourishErrorText(uiState.tagCreationError)
                             }
                         }
 
@@ -548,8 +613,11 @@ fun UserInputSection(
                             TagsDisplayForFiltering(
                                 tags,
                                 recipeDiscoveryViewModel::updateSelected,
-                                true
-                            ) { recipeDiscoveryViewModel.setDisplayTagCreation(true) }
+                                true,
+                                { recipeDiscoveryViewModel.setDisplayTagCreation(true) },
+                                true,
+                                { }
+                            )
 
                             NourishTextDivider("Filter by type(s)")
 
