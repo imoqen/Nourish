@@ -2,6 +2,7 @@ package uk.co.imoqen.nourish.common
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -548,20 +549,48 @@ fun NourishConfirmationDialog (
     if (show) {
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text(title) },
-            text = { Text(description) },
+
+            title = {
+                        Column(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(title)
+                            HorizontalDivider(
+                                modifier = Modifier.padding(top = 12.dp)
+                            )
+                        }
+                    },
+
+            text = {
+                        Column(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(description)
+                            HorizontalDivider(
+                                modifier = Modifier.padding(top = 12.dp)
+                            )
+                        }
+                   },
+
             confirmButton = {
-                NourishButton(
-                    text = "Confirm",
-                    onClick = { onConfirmation; onDismiss } // confirm then dismsis it
-                )
+                // contains both dismiss and confirm so i can override the right alignment in alert dialog
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    NourishButton(
+                        text = "Confirm",
+                        onClick = { onConfirmation(); onDismiss() } // confirm then dismsis it
+                    )
+                    NourishButton(
+                        text = "Cancel",
+                        onClick = { onDismiss() }
+                    )
+                }
             },
-            dismissButton = {
-                NourishButton(
-                    text = "Dismiss",
-                    onClick = onDismiss
-                )
-            }
+
+            modifier = Modifier.padding(32.dp)
         )
     }
 }

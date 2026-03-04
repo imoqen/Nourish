@@ -1,6 +1,7 @@
 package uk.co.imoqen.nourish.common
 
 import android.R.attr.clickable
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -49,8 +50,8 @@ fun TagsDisplayForFiltering(
     onEditButtonPressed: () -> Unit = {},
     trailingIcon: Painter? = null,
     trailingIconDescription: String = "",
-    onTrailingIconPress: (() -> Unit)? = null,
-    setTagOnTrailingIconPress: ((Tag) -> Unit)? = null,
+    onTrailingIconPress: () -> Unit = {  },
+    setTagOnTrailingIconPress: (Tag?) -> Unit = {  },
 ) {
     //val tags = recipeBookViewModel.uiState.collectAsState().value.allTags
     FlowRow(
@@ -63,7 +64,9 @@ fun TagsDisplayForFiltering(
             val colour = enumValueOf<NourishColour>(tag.colour)
 
             Box(
-                modifier = Modifier.padding(2.dp).clip(RoundedCornerShape(12.dp))
+                modifier = Modifier
+                    .padding(2.dp)
+                    .clip(RoundedCornerShape(12.dp))
             ) {
                 Row(
                     modifier = Modifier.background(
@@ -87,14 +90,14 @@ fun TagsDisplayForFiltering(
                             .then(
                                 if (onTagPressed != null) {
                                     Modifier.clickable {
-                                        onTagPressed(tag, !selected) // do the selection
+                                        onTagPressed.invoke(tag, !selected) // do the selection
                                     }
                                 } else {
                                     Modifier
                                 }
                             )
                             .then(
-                                if (selected) {
+                                if (selected && trailingIcon == null) { //dont display outline if trailing icon present (for deletion)
                                     Modifier.border(
                                         width = 1.dp,
                                         color = MaterialTheme.colorScheme.onBackground,
@@ -105,7 +108,9 @@ fun TagsDisplayForFiltering(
                                 }
                             )
                             .then(
-                                Modifier.padding(4.dp).padding(horizontal = 2.dp)
+                                Modifier
+                                    .padding(4.dp)
+                                    .padding(horizontal = 2.dp)
                             ),
                         color = if (isSystemInDarkTheme()) {
                             colour.backgroundColour()
@@ -121,14 +126,15 @@ fun TagsDisplayForFiltering(
                             modifier = Modifier
                                 .size(18.dp)
                                 .then(
-                                    if (onTrailingIconPress != null && setTagOnTrailingIconPress != null) {
+                                    //if (onTrailingIconPress != null && setTagOnTrailingIconPress != null) {
+
                                         Modifier.clickable {
+                                            Log.i("tag delete", "setting tag to delete")
+                                            // invoke is required because the methods are nullable
                                             setTagOnTrailingIconPress(tag) // set thetag (to delete)
                                             onTrailingIconPress()
                                         }
-                                    } else {
-                                        Modifier
-                                    }
+
                                 )
                                 .then(
                                     Modifier.padding(end = 2.dp)
@@ -159,7 +165,9 @@ fun TagsDisplayForFiltering(
                     Text(
                         text = "Add your own",
                         color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.padding(4.dp).padding(horizontal=2.dp)
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .padding(horizontal = 2.dp)
                     )
                     Icon(
                         painter = painterResource(R.drawable.add),
@@ -187,7 +195,9 @@ fun TagsDisplayForFiltering(
                     Text(
                         text = "Edit",
                         color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.padding(4.dp).padding(horizontal=2.dp)
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .padding(horizontal = 2.dp)
                     )
                     Icon(
                         painter = painterResource(R.drawable.edit),
@@ -215,7 +225,9 @@ fun TypesDisplayForFiltering(
     ) {
         types?.forEach { (type, selected) ->
             Box(
-                modifier = Modifier.padding(2.dp).clip(RoundedCornerShape(12.dp))
+                modifier = Modifier
+                    .padding(2.dp)
+                    .clip(RoundedCornerShape(12.dp))
             ) {
                 Text(
                     text = type.title,
@@ -240,7 +252,9 @@ fun TypesDisplayForFiltering(
                             }
                         )
                         .then(
-                            Modifier.padding(4.dp).padding(horizontal = 2.dp)
+                            Modifier
+                                .padding(4.dp)
+                                .padding(horizontal = 2.dp)
                         ),
                     color = MaterialTheme.colorScheme.onBackground
 
@@ -278,7 +292,9 @@ fun SelectedTags(
                     val colour = enumValueOf<NourishColour>(tag.colour)
 
                     Box(
-                        modifier = Modifier.padding(2.dp).clip(RoundedCornerShape(12.dp))
+                        modifier = Modifier
+                            .padding(2.dp)
+                            .clip(RoundedCornerShape(12.dp))
                             .background(
                                 shape = RoundedCornerShape(12.dp),
                                 color = if (isSystemInDarkTheme()) {
@@ -296,7 +312,8 @@ fun SelectedTags(
                                 text = tag.displayName,
                                 fontSize = 14.sp,
                                 modifier = Modifier
-                                    .padding(4.dp).padding(horizontal = 2.dp),
+                                    .padding(4.dp)
+                                    .padding(horizontal = 2.dp),
                                 color = if (isSystemInDarkTheme()) {
                                     colour.backgroundColour()
                                 } else {

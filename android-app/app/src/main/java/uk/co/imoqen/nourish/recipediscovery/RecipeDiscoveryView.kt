@@ -619,16 +619,15 @@ fun UserInputSection(
                             onTrailingIconPress = {
                                 recipeDiscoveryViewModel.setShowConfirmationDialog(true)
                             },
-                            setTagOnTrailingIconPress = {
-                                recipeDiscoveryViewModel::setTagToDelete
-                            }
+                            setTagOnTrailingIconPress = recipeDiscoveryViewModel::setTagToDelete
+
                         )
 
                         NourishConfirmationDialog(
                             show = uiState.showConfirmationDialog,
                             title = "Confirm Tag Deletion",
-                            description = "Are you sure you wish to delete this nutritional tag? This action cannot be undone.",
-                            onConfirmation = { recipeDiscoveryViewModel::deleteTag },
+                            description = "Are you sure you wish to delete this nutritional tag?\n\nThis action cannot be undone.",
+                            onConfirmation = { recipeDiscoveryViewModel.deleteTag() },
                             onDismiss = { recipeDiscoveryViewModel.setShowConfirmationDialog(false) }
                         )
                     }

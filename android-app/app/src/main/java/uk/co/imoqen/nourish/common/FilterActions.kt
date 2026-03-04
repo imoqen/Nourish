@@ -158,4 +158,19 @@ class FilterActions @Inject constructor(
         return null
     }
 
+    suspend fun deleteTag(
+        tag: Tag
+    ) {
+        runCatching {
+            // the relation uses foreignkey.cascade; this means that children are automatically deleted so referential integrity remains.
+            Log.i("tag delete", "before")
+            tagRepository.delete(tag)
+            Log.i("tag delete", "after")
+        }
+            .onFailure { e ->
+                Log.i("tag delete", "tag not deleted: ${e}")
+            }
+
+    }
+
 }

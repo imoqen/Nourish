@@ -206,6 +206,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
     }
 
     fun setTagToDelete(tagToDelete: Tag?) {
+        Log.i("tag delete", "tag to delete: ${tagToDelete}")
         mutableUiState.update { currentState ->
             currentState.copy(
                 tagToDelete = tagToDelete
@@ -241,13 +242,22 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
-    fun deleteTag(
-    ) {
+    fun deleteTag() {
         viewModelScope.launch() {
             runCatching {
-
-                //filterActions.deleteTag(tag)
+                val tagToDelete = mutableUiState.value.tagToDelete
+                if (tagToDelete == null) {
+                    Log.i("tag delete", "null")
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Tag could not be deleted."))
+                    return@launch
+                }
+                Log.i("tag delete", "not null")
+                filterActions.deleteTag(tagToDelete)
             }
+                .onSuccess {
+                    // after tag is deleted, refresh the available tags:
+                    getAllTagsForUser()
+                }
 
         }
     }
