@@ -67,7 +67,7 @@ fun AppNavHost(
         ) { backStackEntry ->
             val recipeId = backStackEntry.arguments?.getLong("id")!!
             val recipeBookViewModel: RecipeBookViewModel = hiltViewModel()
-            RecipeCardScreen(recipeBookViewModel, recipeId) //TODO onEdit = { }) to move to edit page when editing recipe
+            RecipeCardScreen(recipeBookViewModel, recipeId, onBack={ navController.popBackStack() }) //TODO onEdit = { }) to move to edit page when editing recipe
         }
         // Can add Route destinations too (those not from tabs)
         // can add here. then can add params to them as shown in this video: https://www.youtube.com/watch?v=wJKwsI5WUI4

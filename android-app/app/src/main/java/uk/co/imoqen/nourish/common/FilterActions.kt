@@ -48,7 +48,8 @@ class FilterActions @Inject constructor(
 
     // gets all tags
     suspend fun getAllTagsForUser(
-        previousTags: List<TagSelection>?
+        previousTags: List<TagSelection>?,
+        reset: Boolean = false // to reset them to all be not selected
     ): List<TagSelection>? {
         runCatching {
             Log.i("setting","setting all tags")
@@ -62,8 +63,12 @@ class FilterActions @Inject constructor(
                 return (
                         (tagRepository.getAllForUser(uid).first())
                             .map { tag ->
-                                val oldTag = previousTags?.find{ it.tag == tag }
-                                val selected = (oldTag?.selected) ?: false
+                                val oldTag = previousTags?.find { it.tag == tag }
+                                val selected = if (!reset) {
+                                    (oldTag?.selected) ?: false
+                                } else {
+                                    false
+                                }
                                 TagSelection(tag, selected) // so that old tags preserve their selected values
                             }
                         )

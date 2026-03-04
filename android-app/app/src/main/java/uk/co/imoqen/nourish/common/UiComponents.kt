@@ -286,7 +286,8 @@ fun NourishIconTextButton(
     description: String,
     modifier: Modifier = Modifier,
     selected: Boolean = false,
-    fillMaxWidth: Boolean = false
+    fillMaxWidth: Boolean = false,
+    enabled: Boolean = true
 ) {
     Button(
         onClick = {
@@ -299,7 +300,8 @@ fun NourishIconTextButton(
                 MaterialTheme.colorScheme.primaryContainer
             }
         ),
-        modifier = if (fillMaxWidth) { modifier.fillMaxWidth().fillMaxHeight() } else Modifier
+        modifier = if (fillMaxWidth) { modifier.fillMaxWidth().fillMaxHeight() } else Modifier,
+        enabled = enabled
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically
@@ -307,7 +309,7 @@ fun NourishIconTextButton(
             Icon(
                 painter = painter,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                //tint = MaterialTheme.colorScheme.onPrimaryContainer,
                 modifier = Modifier
                     .size(24.dp)
             )

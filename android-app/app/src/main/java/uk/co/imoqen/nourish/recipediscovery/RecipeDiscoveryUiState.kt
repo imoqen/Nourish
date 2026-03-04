@@ -46,6 +46,9 @@ data class RecipeDiscoveryUiState(
 
     val requestType: LlmRequestType = LlmRequestType.RECIPE, // gen recipe by default
 
+    // to transition smoothly when restart occurs
+    val visible: Boolean = true, // in future should refactor the chat dialogs to use a single state then animate this and display with when
+
     val placeholderText: String = ""
 )
 

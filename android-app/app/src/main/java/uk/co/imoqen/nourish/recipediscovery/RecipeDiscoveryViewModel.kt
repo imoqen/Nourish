@@ -92,7 +92,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
-    fun setUserChoice(userChoice: LlmMode) {
+    fun setUserChoice(userChoice: LlmMode?) {
         mutableUiState.update { currentState ->
             currentState.copy(
                 userChoice = userChoice
@@ -116,7 +116,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
-    fun setDishes(dishes: LlmDishesProposed) {
+    fun setDishes(dishes: LlmDishesProposed?) {
         mutableUiState.update { currentState ->
             currentState.copy(
                 dishes = dishes
@@ -225,6 +225,14 @@ class RecipeDiscoveryViewModel @Inject constructor(
         mutableUiState.update { currentState ->
             currentState.copy(
                 userSentRequest = userSentRequest
+            )
+        }
+    }
+
+    fun setVisible(visible: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                visible = visible
             )
         }
     }
@@ -479,10 +487,12 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
-    fun getAllTagsForUser() {
+    fun getAllTagsForUser(
+        reset: Boolean = false // to reset to get all tags as not selected; by default set to false
+    ) {
         viewModelScope.launch() {
             (filterActions.getAllTagsForUser(
-                mutableUiState.value.recipeTags
+                mutableUiState.value.recipeTags, reset
             ))?.let { updatedTags ->
                 setRecipeTags(updatedTags) // only sets if not null
             }
@@ -509,6 +519,22 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 )
             )
         }
+    }
+
+    // to restart from fresh to gen a new recipe
+    fun restart() {
+        setApiResponse("")
+        setUserRequest("")
+        setAwaitingResponse(false)
+        setUserChoice(null)
+        setDishes(null)
+        getAllTagsForUser()
+        setSelectedRecipeType(null)
+        setAllowUserInput(false)
+        setUserSentRequest(false)
+        setSavedImageFilename("")
+        setRequestType(LlmRequestType.RECIPE)
+        setPlaceholderText("")
     }
 
 }

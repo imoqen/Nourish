@@ -47,6 +47,7 @@ import coil3.request.ImageRequest
 import kotlinx.coroutines.flow.emptyFlow
 import uk.co.imoqen.nourish.common.NourishH1
 import uk.co.imoqen.nourish.common.NourishH2
+import uk.co.imoqen.nourish.common.NourishH3
 import uk.co.imoqen.nourish.common.onBackgroundColour
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import java.io.File
@@ -54,7 +55,8 @@ import java.io.File
 @Composable
 fun RecipeCardScreen(
     recipeBookViewModel: RecipeBookViewModel,
-    recipeId: Long
+    recipeId: Long,
+    onBack: () -> Unit
 ) {
 
     val scrollState = rememberScrollState()
@@ -68,14 +70,15 @@ fun RecipeCardScreen(
         // should constrain it to only return recipe made by that user, for security. address in a future stepping stone ^
         if (recipe != null) {
             recipeBookViewModel.setSelectedRecipe(recipe)
-            RecipeCard(recipeBookViewModel)
+            RecipeCard(recipeBookViewModel, onBack)
         }
     }
 }
 
 @Composable
 fun RecipeCard(
-    recipeBookViewModel: RecipeBookViewModel
+    recipeBookViewModel: RecipeBookViewModel,
+    onBack: () -> Unit
 ) {
     val recipe = recipeBookViewModel.uiState.collectAsState().value.selectedRecipe
     recipeBookViewModel.buildRecipeCard()
@@ -134,14 +137,14 @@ fun RecipeCard(
                                 painter = painter,
                                 contentDescription = null,
                                 modifier = Modifier
-                                    .height(320.dp - 84.dp + 64.dp+32.dp) // total size of card - size of text bit (200 - 84) + extra for the rounded corner shape (32.dp)
+                                    .height(320.dp - 92.dp + 64.dp+32.dp) // total size of card - size of text bit (200 - 90) + extra for the rounded corner shape (32.dp)
                                     .fillMaxWidth(), // 2/3 of the card height - maybe use consts for this in future to ensure they match upon changes
                                 contentScale = ContentScale.Crop
                             )
                         } else {
                             Box(
                                 modifier = Modifier.fillMaxWidth() // matches the card width
-                                    .height(160.dp - 84.dp + 64.dp+32.dp) // takes up much less space because no image
+                                    .height(160.dp - 92.dp + 64.dp+32.dp) // takes up much less space because no image
                                     .background(MaterialTheme.colorScheme.error) // put the chosen colour
                             )
                         }
@@ -150,7 +153,7 @@ fun RecipeCard(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(84.dp)
+                            .height(92.dp)
                             .background(
                                 color = MaterialTheme.colorScheme.surfaceContainer,
                                 // bottom corners are rounded, top are not:
@@ -169,7 +172,7 @@ fun RecipeCard(
 
                         // back button:
                         IconButton(
-                            onClick = { },
+                            onClick = { onBack() },
                             modifier = Modifier.align(Alignment.CenterStart)
                         ) {
                             Icon(
@@ -202,14 +205,14 @@ fun RecipeCard(
                         // Emoji:
                         Text(
                             text = recipeCard.emoji,
-                            fontSize = 56.sp,
+                            fontSize = 48.sp,
                             // center emoji if no image, otherwise put at bottom center
                             modifier = if (displayImage) {
                                 Modifier.align(Alignment.BottomCenter)
                                     .offset(y = (-2).dp) // offsets are added to account for the img displayed for the rounded corner shape
                             } else {
                                 Modifier.align(Alignment.Center)
-                                    .offset(y = (24).dp) // offsets are added to account for the bg displayed for the rounded corner shape
+                                    .offset(y = (28).dp) // offsets are added to account for the bg displayed for the rounded corner shape
                             },
                             style = TextStyle(
                                 shadow = Shadow(
