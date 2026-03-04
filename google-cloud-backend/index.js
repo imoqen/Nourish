@@ -87,70 +87,75 @@ const IngredientSchemaZod = z.object({
 });
 
 // recipe generation:
-const RecipeSchemaZod = z.object({
-  title: z
-    .string()
-    .describe("Title of the recipe, must be 42 characters or less."),
+function recipeSchemaZod(allNutritionalFilters, dishType) {
+  return z.object({
+    title: z
+      .string()
+      .describe("Title of the recipe, must be 42 characters or less."),
 
-  sectionIngredients: z.array(
-    z.object({
-      section: z
-        .string()
-        .describe(
-          "A heading for this list of ingredients, for example 'For the ...' e.g. 'For the filling'",
-        ),
-      ingredients: z.array(IngredientSchemaZod),
-    }),
-  ),
-
-  servings: z
-    .number()
-    .int()
-    .describe(
-      "The number of servings (not pieces) made of this meal using the amount of ingredients in the ingredientAmounts and ingredientAmountsUnits list. " +
-        "Given as an integer.",
+    sectionIngredients: z.array(
+      z.object({
+        section: z
+          .string()
+          .describe(
+            "A heading for this list of ingredients, for example 'For the ...' e.g. 'For the filling'",
+          ),
+        ingredients: z.array(IngredientSchemaZod),
+      }),
     ),
 
-  mealType: z.string().describe(
-    "The type of meal that this corresponds to, returned exactly and with the same capitalisation as ONE element from the following list: Breakfast, Lunch, Dinner, Dessert, Side, Drink", // need to expand this to include the user's custom meal types
-  ),
+    servings: z
+      .number()
+      .int()
+      .describe(
+        "The number of servings (not pieces) made of this meal using the amount of ingredients in the ingredientAmounts and ingredientAmountsUnits list. " +
+          "Given as an integer.",
+      ),
 
-  method: z
-    .array(z.string())
-    .describe(
-      "An array of the recipe's method, each array element being an individual step. Ensure that the array is ordered from first to last step, and do not include step numbers. " +
-        "For step(s) involving heating the oven, ensure you specify Celsius and Farenheit and different oven options (Fan, Gas mark etc) " +
-        "When writing the units e.g. ML, ensure they correspond with those you wrote in the sectionIngredients array, but write them in the human-readable form (e.g. ML -> ml, DASH -> dash) " +
-        "For the final step, include a nice, upbeat happy step such as 'Enjoy your homemade ...'",
+    mealType: z
+      .string()
+      .describe(
+        "The type of meal that this corresponds to, returned exactly and with the same capitalisation as ONE element from the following list: " +
+          dishType,
+      ),
+
+    method: z
+      .array(z.string())
+      .describe(
+        "An array of the recipe's method, each array element being an individual step. Ensure that the array is ordered from first to last step, and do not include step numbers. " +
+          "For step(s) involving heating the oven, ensure you specify Celsius and Farenheit and different oven options (Fan, Gas mark etc) " +
+          "When writing the units e.g. ML, ensure they correspond with those you wrote in the sectionIngredients array, but write them in the human-readable form (e.g. ML -> ml, DASH -> dash) " +
+          "For the final step, include a nice, upbeat happy step such as 'Enjoy your homemade ...'",
+      ),
+
+    tags: z.array(z.string()).describe(
+      "Fill this in once the recipe has been generated, do not fill this in first and then fill in the recipe based on it: " +
+        "A list of 'tags' which apply to this recipe, as a comma separated list e.g. 'a, b, c' " +
+        "Each tag must be from the following list, do not include more (Be strict with this; e.g. it is only NO-ADDED-SUGAR if no extra sugar has been added - sugar sources such as maple syrup, honey etc still count as added sugar.): " +
+        allNutritionalFilters, // nutrients
+      // need to put all user specified tags here in the future
     ),
 
-  tags: z.array(z.string()).describe(
-    "Fill this in once the recipe has been generated, do not fill this in first and then fill in the recipe based on it: " +
-      "A list of 'tags' which apply to this recipe, as a comma separated list e.g. 'a, b, c' " +
-      "Each tag must be from the following list, do not include more (Be strict with this; e.g. it is only NO-ADDED-SUGAR if no extra sugar has been added - sugar sources such as maple syrup, honey etc still count as added sugar.): " +
-      "VEGAN, VEGETARIAN, GLUTEN-FREE, DAIRY-FREE, NUT-FREE, SOY-FREE, EGG-FREE, LACTOSE-FREE, WHEAT-FREE" + // dietary requirements
-      "FREEZER-FRIENDLY, UPF-FREE" + // misc
-      "HIGH-PROTEIN, LOW-FAT, LOW-CALORIE, RICH-IN-VITAMINS-MINERALS, LOW-CARB, HIGH-FIBRE, NO-ADDED-SUGAR", // nutrients
-    // need to put all user specified tags here in the future
-  ),
+    storage: z
+      .string()
+      .describe(
+        "A brief sentence describing how to best store the food once cooked, to maximise its shelf life. If it is freezer friendly, state this too. State how to safely reheat (and defrost if applicable, even if eaten cold) the food, if applicable.",
+      ),
 
-  storage: z
-    .string()
-    .describe(
-      "A brief sentence describing how to best store the food once cooked, to maximise its shelf life. If it is freezer friendly, state this too. State how to safely reheat (and defrost if applicable, even if eaten cold) the food, if applicable.",
-    ),
+    recipeNotPossible: z
+      .boolean()
+      .describe(
+        "If the provided prompt is invalid for generating a human-edible recipe, " +
+          "such as something which is inedible, " +
+          "return 'true' here and fill in every other required field with an empty string, " +
+          "otherwise return 'false' and generate the recipe accordingly.",
+      ),
 
-  recipeNotPossible: z
-    .boolean()
-    .describe(
-      "If the provided prompt is invalid for generating a human-edible recipe, " +
-        "such as something which is inedible, " +
-        "return 'true' here and fill in every other required field with an empty string, " +
-        "otherwise return 'false' and generate the recipe accordingly.",
-    ),
-
-  emoji: z.string().describe("A single emoji which best describes this dish."),
-});
+    emoji: z
+      .string()
+      .describe("A single emoji which best describes this dish."),
+  });
+}
 
 // tool strategy for formatting output:
 //https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
@@ -274,6 +279,11 @@ async function generate(req, res, requestType) {
       return res.status(400).json({ error: errorMessage });
     }
 
+    // Extract optional nutritional filters and meal type:
+    const chosenNutritionalFilters = req.body?.chosenNutritionalFilters;
+    const allNutritionalFilters = req.body?.allNutritionalFilters;
+    const dishType = req.body?.dishType;
+
     // Perform the LLM request and retrieve the response, different request depending on the request type
     let result;
     switch (requestType) {
@@ -283,6 +293,9 @@ async function generate(req, res, requestType) {
           GOOGLE_CLOUD_PROJECT,
           GOOGLE_CLOUD_LOCATION,
           prompt,
+          allNutritionalFilters,
+          chosenNutritionalFilters,
+          dishType,
         );
         break;
       }
@@ -292,6 +305,9 @@ async function generate(req, res, requestType) {
           GOOGLE_CLOUD_PROJECT,
           GOOGLE_CLOUD_LOCATION,
           req,
+          allNutritionalFilters,
+          chosenNutritionalFilters,
+          dishType,
         );
         break;
       }
@@ -302,6 +318,9 @@ async function generate(req, res, requestType) {
           GOOGLE_CLOUD_PROJECT,
           GOOGLE_CLOUD_LOCATION,
           prompt,
+          allNutritionalFilters,
+          chosenNutritionalFilters,
+          dishType,
         );
         break;
       }
@@ -312,6 +331,9 @@ async function generate(req, res, requestType) {
           GOOGLE_CLOUD_PROJECT,
           GOOGLE_CLOUD_LOCATION,
           req,
+          allNutritionalFilters,
+          chosenNutritionalFilters,
+          dishType,
         );
         break;
       }
@@ -322,6 +344,9 @@ async function generate(req, res, requestType) {
           GOOGLE_CLOUD_PROJECT,
           GOOGLE_CLOUD_LOCATION,
           req,
+          allNutritionalFilters,
+          chosenNutritionalFilters,
+          dishType,
         );
         break;
       }
@@ -471,6 +496,9 @@ async function generateRecipe(
   projectId = GOOGLE_CLOUD_PROJECT,
   location = GOOGLE_CLOUD_LOCATION,
   prompt,
+  allNutritionalFilters,
+  chosenNutritionalFilters,
+  dishType,
 ) {
   // these will be switched dynamically using user preferences
   const metricUnits =
@@ -491,21 +519,42 @@ async function generateRecipe(
   const agent = createAgent({
     model: llm,
     tools: [],
-    responseFormat: toolStrategy(RecipeSchemaZod),
+    responseFormat: toolStrategy(
+      recipeSchemaZod(allNutritionalFilters, dishType),
+    ),
   });
 
-  console.log("Generating recipe for: " + prompt + ":");
+  console.log(
+    "Generating recipe for: " +
+      prompt +
+      " with nutritional filters: " +
+      chosenNutritionalFilters +
+      "and dish type: " +
+      dishType +
+      "and all nutritional filters: " +
+      allNutritionalFilters +
+      ":",
+  );
 
   const result = await agent.invoke({
     messages: [
       {
         role: "system",
         content:
-          "Return in the required schema, write in sufficient detail but not too much (keep below 250 words).",
+          "Return in the required schema, write in sufficient detail but not too much (keep below 250 words). Ensure that the recipe produced conforms to the following nutritional requirements and are thus listed in the tags array of the schema (and any more tags which you deem appropriate for the recipe): " +
+          chosenNutritionalFilters +
+          " and the recipe must be of type: " +
+          dishType,
       },
       {
         role: "user",
-        content: "Create a recipe for the following dish: " + prompt,
+        content:
+          "Create a recipe for the following dish, ensuring that the recipe produced conforms to these nutritional requirements: " +
+          chosenNutritionalFilters +
+          " and the recipe must be of type: " +
+          dishType +
+          ". The recipe to generate is: " +
+          prompt,
       },
     ],
   });
@@ -520,6 +569,9 @@ async function generateDishesFromIngredients(
   projectId = GOOGLE_CLOUD_PROJECT,
   location = GOOGLE_CLOUD_LOCATION,
   prompt,
+  allNutritionalFilters,
+  chosenNutritionalFilters,
+  dishType,
 ) {
   // https://docs.langchain.com/oss/javascript/integrations/chat/google_vertex_ai
   const llm = new ChatVertexAI({
@@ -566,6 +618,9 @@ async function generateRecipeFromDishImage(
   projectId = GOOGLE_CLOUD_PROJECT,
   location = GOOGLE_CLOUD_LOCATION,
   req,
+  allNutritionalFilters,
+  chosenNutritionalFilters,
+  dishType,
 ) {
   // get the image file:
   const file = req.file;
@@ -625,6 +680,9 @@ async function generateDishesFromIngredientsImage(
   projectId = GOOGLE_CLOUD_PROJECT,
   location = GOOGLE_CLOUD_LOCATION,
   req,
+  allNutritionalFilters,
+  chosenNutritionalFilters,
+  dishType,
 ) {
   // get the image file:
   const file = req.file;
@@ -692,6 +750,9 @@ async function generateDishesFromImage(
   projectId = GOOGLE_CLOUD_PROJECT,
   location = GOOGLE_CLOUD_LOCATION,
   req,
+  allNutritionalFilters,
+  chosenNutritionalFilters,
+  dishType,
 ) {
   // get the image file:
   const file = req.file;

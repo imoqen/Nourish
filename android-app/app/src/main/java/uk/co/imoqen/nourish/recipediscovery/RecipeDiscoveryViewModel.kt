@@ -299,6 +299,20 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 // get the user prompt ("what would you like to cook?" field)
                 val userPrompt = mutableUiState.value.userRequest
 
+                // Get filters selected and the meal type:
+                var chosenNutritionalFilters = mutableUiState.value.recipeTags?.filter { it.selected }?.joinToString(", ") // only gets the selected filters and puts them into a string
+                if (chosenNutritionalFilters == null) {
+                    chosenNutritionalFilters = ""
+                }
+
+                var allNutritionalFilters = mutableUiState.value.recipeTags?.joinToString(", ") { it.tag.identifier }
+                if (allNutritionalFilters == null) {
+                    allNutritionalFilters = ""
+                }
+
+                val dishType = mutableUiState.value.selectedRecipeType?.title?: "Breakfast, Lunch, Dinner, Dessert, Side, Drink" // if none provided, all.
+
+
                 // if the user submitted empty string as prompt, and this string is NOT optional for this call type, return error:
                 if ((type == LlmRequestType.RECIPE || type == LlmRequestType.DISHES_FROM_INGREDIENTS || type == LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH) && userPrompt == "") {
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_BLANK_PROMPT))
@@ -307,7 +321,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 }
 
                 // make it into a request:
-                val request = LlmRequest(userPrompt)
+                val request = LlmRequest(userPrompt, chosenNutritionalFilters, allNutritionalFilters, dishType)
 
                 // validate the user's token:
                 val tokenResult = authenticationManager.getUserToken()
