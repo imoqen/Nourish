@@ -133,10 +133,10 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
-    fun setDisplayFilters(displayFilters: Boolean) {
+    fun setFilterDisplayState(filterDisplayState: FilterState) {
         mutableUiState.update { currentState ->
             currentState.copy(
-                displayFilters = displayFilters
+                filterDisplayState = filterDisplayState
             )
         }
     }
@@ -153,14 +153,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
         mutableUiState.update { currentState ->
             currentState.copy(
                 recipeTypes = recipeTypes
-            )
-        }
-    }
-
-    fun setDisplayTagCreation(displayTagCreation: Boolean) {
-        mutableUiState.update { currentState ->
-            currentState.copy(
-                displayTagCreation = displayTagCreation
             )
         }
     }
@@ -185,14 +177,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
         mutableUiState.update { currentState ->
             currentState.copy(
                 tagCreationError = tagCreationError
-            )
-        }
-    }
-
-    fun setDisplayTagEdit(displayTagEdit: Boolean) {
-        mutableUiState.update { currentState ->
-            currentState.copy(
-                displayTagEdit = displayTagEdit
             )
         }
     }
@@ -264,7 +248,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
 
     // closes the tag creation area
     fun closeTagCreation() {
-        setDisplayTagCreation(false)
+        setFilterDisplayState(FilterState.APPLY) // go back to apply filter menu
         setCreatedTagColour(null)
         setCreatedTagName("")
         setTagCreationError("")

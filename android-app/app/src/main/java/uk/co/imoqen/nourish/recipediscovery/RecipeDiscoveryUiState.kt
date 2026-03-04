@@ -13,6 +13,8 @@ import uk.co.imoqen.nourish.recipebook.TypeSelection
  */
 data class RecipeDiscoveryUiState(
 
+    val filterDisplayState: FilterState = FilterState.NONE,
+
     val showConfirmationDialog: Boolean = false,
     val tagToDelete: Tag? = null,
 
@@ -25,13 +27,13 @@ data class RecipeDiscoveryUiState(
     val dishes: LlmDishesProposed? = null,
 
     val displayImage: Boolean = false,
-    val displayFilters: Boolean = false,
+    //val displayFilters: Boolean = false,
 
-    val displayTagCreation: Boolean = false,
+    //val displayTagCreation: Boolean = false,
     val createdTagName: String = "",
     val createdTagColour: NourishColour? = null,
     val tagCreationError: String = "",
-    val displayTagEdit: Boolean = false,
+    //val displayTagEdit: Boolean = false,
 
     val recipeTags: List<TagSelection>? = null,
     val recipeTypes: List<TypeSelection>? = null,
@@ -49,4 +51,11 @@ enum class LlmMode {
     FROM_DESCRIPTION,
     FROM_IMAGE,
     FROM_INGREDIENTS
+}
+
+enum class FilterState {
+    APPLY, // to apply filters to the query
+    CREATE, // to add a new filter
+    EDIT, // delete filters
+    NONE // when the modal bottom sheet for filtering should not be displayed
 }
