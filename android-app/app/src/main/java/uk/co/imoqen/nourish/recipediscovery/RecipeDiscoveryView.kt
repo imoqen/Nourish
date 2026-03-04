@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -35,6 +36,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -45,6 +47,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -55,6 +59,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.rememberAsyncImagePainter
@@ -73,6 +78,7 @@ import uk.co.imoqen.nourish.common.SelectedTags
 import uk.co.imoqen.nourish.common.TagsDisplayForFiltering
 import uk.co.imoqen.nourish.common.TextSender
 import uk.co.imoqen.nourish.common.TypesDisplayForFiltering
+import uk.co.imoqen.nourish.common.TypesDisplayForMutuallyExclusiveFiltering
 import uk.co.imoqen.nourish.common.backgroundColour
 import uk.co.imoqen.nourish.common.dimmedBackgroundColour
 import uk.co.imoqen.nourish.common.onBackgroundColour
@@ -450,30 +456,73 @@ fun UserInputSection(
                 .fillMaxWidth()
         ) {
             // FILTER SELECTOR: only display if at least one tag has been selected
-            if (uiState.recipeTags != null && uiState.recipeTags.any{ it.selected }) { // only display if at least one has been selected, not if all unselected
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(
-                            // if image, only take up half the screen to allow the image to have space.
-                            if (uiState.savedImageFilename != "") {
-                                0.6f
-                            } else {
-                                1.0f
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(
+                        // if image, only take up half the screen to allow the image to have space.
+                        if (uiState.savedImageFilename != "") {
+                            0.6f
+                        } else {
+                            1.0f
+                        }
+                    )
+                    .background(
+                        MaterialTheme.colorScheme.background,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                    .padding(6.dp)
+                    .animateContentSize()
+            ) {
+                Column() {
+                    val filtersSelected = uiState.recipeTags != null && uiState.recipeTags.any { it.selected }
+                    // Selected dish type:
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = if (filtersSelected) { Modifier.padding(bottom=4.dp) } else { Modifier }
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.surfaceContainer
+                                )
+                                .clip(RoundedCornerShape(12.dp)) // clip stops the clickable element from exceeding the rounded corner shape
+                                .clickable {
+                                    recipeDiscoveryViewModel.setDisplayRecipeTypeSelector(true)
+                                }
+                                .padding(4.dp)
+                                .padding(horizontal = 2.dp)
+
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Dish Type: ${uiState.selectedRecipeType?.title ?: "Any"}",
+                                    fontSize = 16.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(end=4.dp)
+                                )
+                                Icon(
+                                    painter = painterResource(R.drawable.edit),
+                                    contentDescription = "Edit dish type",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp)
+                                )
                             }
-                        )
-                        .background(
-                            MaterialTheme.colorScheme.background,
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                        .padding(6.dp)
-                        .animateContentSize()
-                ) {
+                        }
+                    }
+
                     // Selected tags:
-                    SelectedTags(uiState.recipeTags, recipeDiscoveryViewModel::updateSelected)
+                    if (filtersSelected) { // only display if at least one has been selected, not if all unselected
+                        SelectedTags(uiState.recipeTags, recipeDiscoveryViewModel::updateSelected)
+                    }
                 }
             }
 
-            val sheetState = rememberModalBottomSheetState(
+
+            val nutritionalTagSheetState = rememberModalBottomSheetState(
                 skipPartiallyExpanded = true // makes it fill the screen with the required amount rather than stuck at half the screen size
             )
             if (uiState.filterDisplayState != FilterState.NONE) {
@@ -481,7 +530,7 @@ fun UserInputSection(
                     onDismissRequest = {
                         recipeDiscoveryViewModel.setFilterDisplayState(FilterState.NONE)
                     },
-                    sheetState = sheetState
+                    sheetState = nutritionalTagSheetState
                 ) {
 
                     val keyboardFocusManager = LocalFocusManager.current
@@ -506,15 +555,6 @@ fun UserInputSection(
                                         onAddButtonPressed = { recipeDiscoveryViewModel.setFilterDisplayState(FilterState.CREATE) },
                                         displayEditButton = true,
                                         onEditButtonPressed = { recipeDiscoveryViewModel.setFilterDisplayState(FilterState.EDIT) }
-                                    )
-
-                                    NourishTextDivider("Filter by type(s)")
-
-                                    val types =
-                                        recipeDiscoveryViewModel.uiState.collectAsState().value.recipeTypes
-                                    TypesDisplayForFiltering(
-                                        types,
-                                        recipeDiscoveryViewModel::updateSelected
                                     )
                                 }
                             }
@@ -686,6 +726,30 @@ fun UserInputSection(
                 }
             }
 
+            val recipeTypeSheetState = rememberModalBottomSheetState(
+                skipPartiallyExpanded = true // makes it fill the screen with the required amount rather than stuck at half the screen size
+            )
+
+            if (uiState.displayRecipeTypeSelector) {
+                ModalBottomSheet(
+                    onDismissRequest = {
+                        recipeDiscoveryViewModel.setDisplayRecipeTypeSelector(false)
+                    },
+                    sheetState = recipeTypeSheetState
+                ) {
+                    NourishTextDivider("Choose a type for the dish")
+                    Text("If no type is provided, the resulting recipe will be a dish of the most appropriate type.")
+
+                    val types =
+                        recipeDiscoveryViewModel.uiState.collectAsState().value.recipeTypes
+                    TypesDisplayForMutuallyExclusiveFiltering(
+                        types,
+                        uiState.selectedRecipeType,
+                        recipeDiscoveryViewModel::setSelectedRecipeType
+                    )
+                }
+            }
+
             // IMAGE SELECTOR:
 
             // image is above if selected:
@@ -729,7 +793,7 @@ fun UserInputSection(
                                     .align(
                                         Alignment.TopEnd
                                     )
-                                    .offset(x = 10.dp),
+                                    .offset(x = 16.dp),
                                 backgroundColour = MaterialTheme.colorScheme.background
                             )
                             NourishIconButton(
@@ -745,7 +809,7 @@ fun UserInputSection(
                                     .align(
                                         Alignment.CenterEnd
                                     )
-                                    .offset(x = 10.dp),
+                                    .offset(x = 16.dp),
                                 backgroundColour = MaterialTheme.colorScheme.background
                             )
                             NourishIconButton(
@@ -763,7 +827,7 @@ fun UserInputSection(
                                     .align(
                                         Alignment.BottomEnd
                                     )
-                                    .offset(x = 10.dp),
+                                    .offset(x = 16.dp),
                                 backgroundColour = MaterialTheme.colorScheme.background,
                                 iconColour = MaterialTheme.colorScheme.error
                             )

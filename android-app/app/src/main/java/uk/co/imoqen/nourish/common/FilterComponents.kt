@@ -213,6 +213,72 @@ fun TagsDisplayForFiltering(
     }
 }
 
+// used in recipe discovery
+@Composable
+fun TypesDisplayForMutuallyExclusiveFiltering(
+    types: List<RecipeType>?,
+    selectedType: RecipeType?,
+    updateSelectedType: (RecipeType?) -> Unit,
+) {
+    FlowRow(
+        modifier = Modifier.padding(2.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        types?.forEach { type ->
+            Box(
+                modifier = Modifier
+                    .padding(2.dp)
+                    .clip(RoundedCornerShape(12.dp))
+            ) {
+                Text(
+                    text = type.title,
+                    fontSize = 14.sp,
+                    modifier = Modifier
+                        .background(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.background
+                        )
+                        .clickable {
+                            if (type == selectedType) {
+                                // deselect it: already selected.
+                                updateSelectedType(null)
+                            } else {
+                                // select it as its not already selected
+                                updateSelectedType(type)
+                            }
+                        }
+                        .then(
+                            if (type == selectedType) {
+                                Modifier.border(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.error,
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                            } else {
+                                Modifier
+                            }
+                        )
+                        .then(
+                            Modifier
+                                .padding(4.dp)
+                                .padding(horizontal = 2.dp)
+                        ),
+                    color = MaterialTheme.colorScheme.onBackground
+
+                )
+
+            }
+        }
+    }
+    // reset button:
+    NourishIconButton(
+        onClick = { updateSelectedType(null) }, // reset back to all types
+        painter = painterResource(R.drawable.cross),
+    )
+}
+
+// used in recipe book
 @Composable
 fun TypesDisplayForFiltering(
     types: List<TypeSelection>?,
@@ -264,6 +330,22 @@ fun TypesDisplayForFiltering(
         }
     }
 }
+
+// recipe types are mutually exclusive: only one can be selected. so this is why a list isnt used
+@Composable
+fun SelectedType(
+    type: RecipeType,
+    updateSelectedType: (RecipeType) -> Unit
+) {
+    val scrollState = rememberScrollState()
+
+    Box(
+        modifier = Modifier
+            .heightIn(max = 140.dp)   // max height of 120px to match the image in the upload, this holds 3 rows of tags nicely
+            .verticalScroll(scrollState)
+    ) {
+
+    }}
 
 @Composable
 fun SelectedTags(

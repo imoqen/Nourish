@@ -76,7 +76,8 @@ class FilterActions @Inject constructor(
     }
 
     // not "ForUser" because recipe types are the same for all users.
-    suspend fun getAllRecipeTypes(
+    // for when MULTIPLE recipe types can be selected
+    suspend fun getAllRecipeTypesSelectionList(
         previousTypes: List<TypeSelection>?
     ): List<TypeSelection>? {
         runCatching {
@@ -91,6 +92,21 @@ class FilterActions @Inject constructor(
                     ) // set all recipe types to not be selected currently
                 })
             }
+        }
+            .onFailure { e ->
+                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
+                    "Couldn't fetch recipe types. Please try again later."
+                ))
+                Log.i("recipe types", "failed: $e")
+            }
+        Log.i("get types", "null")
+        return null // failure occurred
+    }
+
+    // for when only one type can be selected
+    suspend fun getAllRecipeTypes(): List<RecipeType>? {
+        runCatching {
+            return recipeRepository.getAllRecipeTypes().first()
         }
             .onFailure { e ->
                 uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(

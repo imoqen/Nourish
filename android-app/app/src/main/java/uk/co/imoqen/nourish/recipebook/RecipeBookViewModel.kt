@@ -363,7 +363,7 @@ class RecipeBookViewModel @Inject constructor(
 
     fun getAllRecipeTypes() {
         viewModelScope.launch() {
-            (filterActions.getAllRecipeTypes(
+            (filterActions.getAllRecipeTypesSelectionList(
                 mutableUiState.value.recipeTypes
             ))?.let { updatedTypes ->
                 Log.i("setting types", "not null: ${updatedTypes}")

@@ -1,6 +1,7 @@
 package uk.co.imoqen.nourish.recipediscovery
 
 import uk.co.imoqen.nourish.common.NourishColour
+import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
@@ -33,8 +34,9 @@ data class RecipeDiscoveryUiState(
     val tagCreationError: String = "",
 
     val recipeTags: List<TagSelection>? = null,
-    val recipeTypes: List<TypeSelection>? = null,
-
+    val recipeTypes: List<RecipeType>? = null, // typeselection not needed as only one can be selected anyway
+    val selectedRecipeType: RecipeType? = null,
+    val displayRecipeTypeSelector: Boolean = false,
 
     // the currently uploaded / saved image, most recent one; name of file. can find the file via File(context.filesDir, savedImageFilename):
     val savedImageFilename: String = "",

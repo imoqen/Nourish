@@ -25,7 +25,6 @@ import uk.co.imoqen.nourish.common.saveImage
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.tag.Tag
-import uk.co.imoqen.nourish.db.tag.TagRepository
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import uk.co.imoqen.nourish.network.response.LlmRecipe
@@ -149,7 +148,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
-    fun setRecipeTypes(recipeTypes: List<TypeSelection>?) {
+    fun setRecipeTypes(recipeTypes: List<RecipeType>?) {
         mutableUiState.update { currentState ->
             currentState.copy(
                 recipeTypes = recipeTypes
@@ -194,6 +193,22 @@ class RecipeDiscoveryViewModel @Inject constructor(
         mutableUiState.update { currentState ->
             currentState.copy(
                 tagToDelete = tagToDelete
+            )
+        }
+    }
+
+    fun setSelectedRecipeType(selectedRecipeType: RecipeType?) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                selectedRecipeType = selectedRecipeType
+            )
+        }
+    }
+
+    fun setDisplayRecipeTypeSelector(displayRecipeTypeSelector: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                displayRecipeTypeSelector = displayRecipeTypeSelector
             )
         }
     }
@@ -426,9 +441,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
     // only sets if the update is not null.
     fun getAllRecipeTypes() {
         viewModelScope.launch() {
-            (filterActions.getAllRecipeTypes(
-                mutableUiState.value.recipeTypes
-            ))?.let { updatedTypes ->
+            (filterActions.getAllRecipeTypes())?.let { updatedTypes ->
                 Log.i("setting types", "not null: ${updatedTypes}")
                 setRecipeTypes(updatedTypes) // only sets if not null
             }
@@ -442,18 +455,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
                     tag,
                     status,
                     mutableUiState.value.recipeTags
-                )
-            )
-        }
-    }
-
-    fun updateSelected(recipeType: RecipeType, status: Boolean) {
-        viewModelScope.launch() {
-            setRecipeTypes(
-                filterActions.updateSelected(
-                    recipeType,
-                    status,
-                    mutableUiState.value.recipeTypes
                 )
             )
         }
