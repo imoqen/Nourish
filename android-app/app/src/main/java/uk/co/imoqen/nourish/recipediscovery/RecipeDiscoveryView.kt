@@ -688,9 +688,9 @@ fun generateRecipe(
 ) {
     // Set the user request depending on whether an image or ingredients were included
     if (dishes.ingredientsIdentified != null) {
-        recipeDiscoveryViewModel.setRecipeToGenerate(dish + ", using only ingredients: ${dishes.ingredientsIdentified}")
+        recipeDiscoveryViewModel.setChosenDish(dish + ", using only ingredients: ${dishes.ingredientsIdentified}")
     } else {
-        recipeDiscoveryViewModel.setRecipeToGenerate(dish)
+        recipeDiscoveryViewModel.setChosenDish(dish)
     }
 
     // Make the LLM API call depending on whether an image or ingredients were included
@@ -1098,6 +1098,7 @@ fun UserInputSection(
                     },
                     trailingIcon = Icons.Filled.Send,
                     onTrailingIconPress = {
+                        recipeDiscoveryViewModel.setChosenDish(uiState.userRequest)
                         sendToLlm(uiState, recipeDiscoveryViewModel, context)
                     },
                     alwaysDisplayTrailingIcon = true

@@ -245,14 +245,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
-    fun setRecipeToGenerate(recipeToGenerate: String) {
-        mutableUiState.update { currentState ->
-            currentState.copy(
-                recipeToGenerate = recipeToGenerate
-            )
-        }
-    }
-
     fun createTag(
         description: String,
         colour: NourishColour?
@@ -552,7 +544,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
         setRequestType(LlmRequestType.RECIPE)
         setPlaceholderText("")
         setChosenDish("")
-        setRecipeToGenerate("")
     }
 
 }
