@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -221,7 +222,7 @@ fun TypesDisplayForMutuallyExclusiveFiltering(
     updateSelectedType: (RecipeType?) -> Unit,
 ) {
     FlowRow(
-        modifier = Modifier.padding(2.dp),
+        modifier = Modifier.padding(2.dp).fillMaxWidth(0.85f),
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
@@ -252,7 +253,7 @@ fun TypesDisplayForMutuallyExclusiveFiltering(
                             if (type == selectedType) {
                                 Modifier.border(
                                     width = 1.dp,
-                                    color = MaterialTheme.colorScheme.error,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                     shape = RoundedCornerShape(12.dp)
                                 )
                             } else {
@@ -270,12 +271,13 @@ fun TypesDisplayForMutuallyExclusiveFiltering(
 
             }
         }
+        // reset button:
+        NourishIconButton(
+            onClick = { updateSelectedType(null) }, // reset back to all types
+            painter = painterResource(R.drawable.cross),
+            modifier = Modifier.size(32.dp)
+        )
     }
-    // reset button:
-    NourishIconButton(
-        onClick = { updateSelectedType(null) }, // reset back to all types
-        painter = painterResource(R.drawable.cross),
-    )
 }
 
 // used in recipe book

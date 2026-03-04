@@ -2,12 +2,14 @@ package uk.co.imoqen.nourish.common
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -257,19 +259,25 @@ fun NourishIconTextButton(
     onClick: () -> Unit,
     painter: Painter,
     description: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    selected: Boolean = false,
+    fillMaxWidth: Boolean = false
 ) {
     Button(
         onClick = {
             onClick()
         },
         colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+            containerColor = if (selected) {
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha=0.40f)
+            } else {
+                MaterialTheme.colorScheme.primaryContainer
+            }
         ),
-        modifier = modifier
+        modifier = if (fillMaxWidth) { modifier.fillMaxWidth().fillMaxHeight() } else Modifier
     ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 painter = painter,
@@ -278,6 +286,7 @@ fun NourishIconTextButton(
                 modifier = Modifier
                     .size(24.dp)
             )
+
             if (description != "") {
                 Text(
                     text = description,
@@ -513,18 +522,23 @@ fun NourishTextMessage(
     modifier: Modifier = Modifier,
     textMessage: @Composable () -> Unit
 ) {
+    val textMessageShape = RoundedCornerShape(
+        topStart = 32.dp,
+        topEnd = 32.dp,
+        bottomStart = if (textSender == TextSender.LLM) { 0.dp } else { 32.dp },
+        bottomEnd = if (textSender == TextSender.USER) { 0.dp } else { 32.dp },
+    )
     Box(
         modifier = modifier
             .fillMaxWidth(0.95f)
             .padding(8.dp)
+            .shadow(
+                elevation = 8.dp,
+                shape = textMessageShape
+            )
             .background(
                 color = if (textSender == TextSender.LLM) { MaterialTheme.colorScheme.surface } else { MaterialTheme.colorScheme.surfaceContainer },
-                shape = RoundedCornerShape(
-                    topStart = 32.dp,
-                    topEnd = 32.dp,
-                    bottomStart = if (textSender == TextSender.LLM) { 0.dp } else { 32.dp },
-                    bottomEnd = if (textSender == TextSender.USER) { 0.dp } else { 32.dp },
-                )
+                shape = textMessageShape
             )
     ) {
         textMessage()

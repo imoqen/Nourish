@@ -11,10 +11,20 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContent
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -28,6 +38,8 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -159,6 +171,9 @@ fun MainContent(
                             selectedDestinationTab,
                             navController
                         )
+                    },
+                    topBar = {
+                        NourishTopBar()
                     }
                 ) { contentPadding ->
                     // Navigation around the app is controlled by the app navigation host
@@ -171,5 +186,25 @@ fun MainContent(
             }
         }
     }
+    }
+}
+
+@Composable
+fun NourishTopBar() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight(0.08f)
+            .padding(vertical=4.dp),
+        horizontalArrangement = Arrangement.Center
+
+    ) {
+        Image(
+            painter = painterResource(R.drawable.nourish_title_outlined),
+            contentDescription = "Nourish Title",
+            modifier = Modifier
+                .statusBarsPadding() //ensure icon goes below camera cutout
+                .padding(bottom=2.dp)
+        )
     }
 }

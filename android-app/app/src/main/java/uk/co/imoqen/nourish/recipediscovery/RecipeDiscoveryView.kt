@@ -16,8 +16,10 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,6 +31,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Send
@@ -45,11 +48,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LookaheadScope
@@ -64,6 +70,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
+import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.NourishConfirmationDialog
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.NourishErrorText
@@ -98,6 +105,10 @@ fun RecipeDiscoveryScreen(
     val uiState by recipeDiscoveryViewModel.uiState.collectAsState()
     val keyboardFocusManager = LocalFocusManager.current // To close the keyboard once user submits input
 
+    // for scrolling to bottom of the chat
+    val scope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
+
     // set all nutritional tags and recipe types for the dropdown, only change when those change.
     LaunchedEffect(uiState.recipeTypes?.size) {
         Log.i("size:", "${uiState.recipeTypes?.size}")
@@ -111,28 +122,55 @@ fun RecipeDiscoveryScreen(
     Box( // for displaying the overlay if it is to be displayed
         modifier = Modifier.fillMaxSize()
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
 
-            LazyColumn(
-                modifier = Modifier.weight(1f)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                item {
-                    InitialMessage(recipeDiscoveryViewModel)
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                ) {
+
+                    LazyColumn(
+                        state = listState,
+                        contentPadding = PaddingValues(bottom=8.dp)
+                    ) {
+                        item {
+                            InitialMessage(recipeDiscoveryViewModel, uiState, {
+                                /*scope.launch {
+                            Log.i("scrolling", "down")
+                            //listState.animateScrollToItem(2, scrollOffset =  Int.MAX_VALUE) // go to last index (end of view) to scroll down to message when sent. doesnt really work
+                        }*/
+                            })
+                        }
+                        item {
+                            RecipeGenerationInfo(uiState)
+                        }
+                        item {
+                            RecipeGenerationResult(recipeDiscoveryViewModel, uiState)
+                        }
+                    }
+                    Box(
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .height(40.dp)
+                            .fillMaxWidth()
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(Color.Transparent, Color.Black.copy(0.05f))
+                                )
+                            )
+                    )
                 }
-                item {
-                    RecipeGenerationInfo(uiState)
-                }
-                item {
-                    RecipeGenerationResult(recipeDiscoveryViewModel, uiState)
-                }
+
+
+                UserInputSection(recipeDiscoveryViewModel, uiState, keyboardFocusManager)
+
             }
 
-            UserInputSection(recipeDiscoveryViewModel, uiState, keyboardFocusManager)
-
         }
-    }
+
 
     // Image expansion dialog overlay:
     if (uiState.displayImage) {
@@ -191,7 +229,9 @@ fun RecipeDiscoveryScreen(
 
 @Composable
 fun InitialMessage(
-    recipeDiscoveryViewModel: RecipeDiscoveryViewModel
+    recipeDiscoveryViewModel: RecipeDiscoveryViewModel,
+    uiState: RecipeDiscoveryUiState,
+    onMessageSent: () -> Unit
 ) {
     Column( // column for the top contents
         modifier = Modifier.fillMaxWidth()
@@ -222,7 +262,7 @@ fun InitialMessage(
             ) {
                 NourishH4(
                     text = "Discover a recipe, by entering a...",
-                    modifier = Modifier.padding(8.dp)
+                    modifier = Modifier.padding(horizontal=8.dp)
                 )
 
                 NourishIconTextButton(
@@ -230,10 +270,13 @@ fun InitialMessage(
                         recipeDiscoveryViewModel.setUserChoice(LlmMode.FROM_DESCRIPTION)
                         recipeDiscoveryViewModel.setPlaceholderText("Dish or description")
                         recipeDiscoveryViewModel.setRequestType(LlmRequestType.RECIPE)
+                        onMessageSent()
                     },
                     painter = painterResource(R.drawable.cook),
                     description = "Dish or Description",
-                    modifier = Modifier.padding(top = 8.dp)
+                    modifier = Modifier.padding(top = 4.dp).fillMaxWidth(0.9f),
+                    selected = uiState.userChoice == LlmMode.FROM_DESCRIPTION,
+                    fillMaxWidth = true
                 )
 
                 NourishIconTextButton(
@@ -241,10 +284,13 @@ fun InitialMessage(
                         recipeDiscoveryViewModel.setUserChoice(LlmMode.FROM_IMAGE)
                         recipeDiscoveryViewModel.setPlaceholderText("Optional details")
                         recipeDiscoveryViewModel.setRequestType(LlmRequestType.DISHES_FROM_IMAGE)
+                        onMessageSent()
                     },
                     painter = painterResource(R.drawable.camera),
                     description = "Photo of a Dish",
-                    modifier = Modifier.padding(top = 8.dp)
+                    modifier = Modifier.padding(top = 4.dp).fillMaxWidth(0.9f),
+                    selected = uiState.userChoice == LlmMode.FROM_IMAGE,
+                    fillMaxWidth = true
                 )
 
                 NourishIconTextButton(
@@ -252,10 +298,13 @@ fun InitialMessage(
                         recipeDiscoveryViewModel.setUserChoice(LlmMode.FROM_INGREDIENTS)
                         recipeDiscoveryViewModel.setPlaceholderText("Ingredients")
                         recipeDiscoveryViewModel.setRequestType(LlmRequestType.DISHES_FROM_INGREDIENTS)
+                        onMessageSent()
                     },
                     painter = painterResource(R.drawable.ingredients),
                     description = "List or Photo of ingredients",
-                    modifier = Modifier.padding(8.dp)
+                    modifier = Modifier.padding(4.dp).fillMaxWidth(0.9f),
+                    selected = uiState.userChoice == LlmMode.FROM_INGREDIENTS,
+                    fillMaxWidth = true
                 )
 
             }
@@ -268,96 +317,99 @@ fun RecipeGenerationInfo(
     uiState: RecipeDiscoveryUiState
 ) {
     Column() {
-        if (uiState.userChoice != null) {
-            when (uiState.userChoice) {
-                LlmMode.FROM_DESCRIPTION -> {
-                    NourishTextMessage(
-                        textSender = TextSender.LLM,
-                        modifier = Modifier.align(Alignment.Start)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .padding(8.dp)
-                                .fillMaxWidth()
+        //if (uiState.userChoice != null) {
+            AnimatedContent(
+                targetState = uiState.userChoice
+            ) { state ->
+                when (state) {
+                    LlmMode.FROM_DESCRIPTION -> {
+                        NourishTextMessage(
+                            textSender = TextSender.LLM,
+                            modifier = Modifier.align(Alignment.Start)
                         ) {
-                            NourishH4(
-                                text = "Enter the name or description of a dish.",
-                                modifier = Modifier.padding(8.dp)
-                            )
-                            NourishTextDivider("Tip")
-
-                            Text(
-                                text = "The dish does not need to be precise; for example, you can enter 'something sweet but healthy ...'",
-                                modifier = Modifier.padding(bottom = 8.dp),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
-                }
-
-                LlmMode.FROM_IMAGE -> {
-                    NourishTextMessage(
-                        textSender = TextSender.LLM,
-                        modifier = Modifier.align(Alignment.Start)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .padding(8.dp)
-                                .fillMaxWidth()
-                        ) {
-                            NourishH4(
-                                text = "Upload the image of the dish.",
+                            Column(
                                 modifier = Modifier
-                                    .padding(top = 8.dp)
+                                    .padding(8.dp)
                                     .fillMaxWidth()
-                            )
+                            ) {
+                                NourishH4(
+                                    text = "Enter the name or description of a dish.",
+                                    modifier = Modifier.padding(8.dp)
+                                )
+                                NourishTextDivider("Tip")
 
-                            NourishTextDivider("Tip")
-
-                            Text(
-                                text = "You can also provide further information as text, if you wish.",
-                                modifier = Modifier.padding(bottom = 8.dp),
-                                textAlign = TextAlign.Center
-                            )
+                                Text(
+                                    text = "The dish does not need to be precise; for example, you can enter 'something sweet but healthy ...'",
+                                    modifier = Modifier.padding(bottom = 8.dp),
+                                    textAlign = TextAlign.Center
+                                )
+                            }
                         }
                     }
-                }
 
-                LlmMode.FROM_INGREDIENTS -> {
-                    NourishTextMessage(
-                        textSender = TextSender.LLM,
-                        modifier = Modifier.align(Alignment.Start)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .padding(8.dp)
-                                .fillMaxWidth()
+                    LlmMode.FROM_IMAGE -> {
+                        NourishTextMessage(
+                            textSender = TextSender.LLM,
+                            modifier = Modifier.align(Alignment.Start)
                         ) {
-                            NourishH4(
-                                text = "List your ingredients below, or upload an image of them.",
+                            Column(
                                 modifier = Modifier
-                                    .padding(top = 8.dp)
+                                    .padding(8.dp)
                                     .fillMaxWidth()
-                            )
+                            ) {
+                                NourishH4(
+                                    text = "Upload the image of the dish.",
+                                    modifier = Modifier
+                                        .padding(top = 8.dp)
+                                        .fillMaxWidth()
+                                )
 
-                            NourishTextDivider("Tip")
+                                NourishTextDivider("Tip")
 
-                            Text(
-                                text = "Try uploading an image of the contents of your fridge!",
-                                modifier = Modifier.padding(bottom = 8.dp),
-                                textAlign = TextAlign.Center
-                            )
+                                Text(
+                                    text = "You can also provide further information as text, if you wish.",
+                                    modifier = Modifier.padding(bottom = 8.dp),
+                                    textAlign = TextAlign.Center
+                                )
+                            }
                         }
-
                     }
-                }
 
-                null -> {
-                    // never reached
+                    LlmMode.FROM_INGREDIENTS -> {
+                        NourishTextMessage(
+                            textSender = TextSender.LLM,
+                            modifier = Modifier.align(Alignment.Start)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .fillMaxWidth()
+                            ) {
+                                NourishH4(
+                                    text = "List your ingredients below, or upload an image of them.",
+                                    modifier = Modifier
+                                        .padding(top = 8.dp)
+                                        .fillMaxWidth()
+                                )
+
+                                NourishTextDivider("Tip")
+
+                                Text(
+                                    text = "Try uploading an image of the contents of your fridge!",
+                                    modifier = Modifier.padding(bottom = 8.dp),
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+
+                        }
+                    }
+
+                    null -> {
+                        // never reached
+                    }
                 }
             }
-
-        }
+        //}
     }
 }
 @Composable
@@ -452,7 +504,7 @@ fun UserInputSection(
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.Bottom, // push everything to bottom, particularly for nutriitonal filters button
             modifier = Modifier
-                .padding(6.dp)
+                .padding(horizontal=6.dp).padding(top=12.dp) // extra to make distance between text input box and top of box
                 .fillMaxWidth()
         ) {
             // FILTER SELECTOR: only display if at least one tag has been selected
@@ -544,9 +596,10 @@ fun UserInputSection(
                             FilterState.APPLY -> {
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
+                                    verticalArrangement = Arrangement.Center,
+                                    modifier = Modifier.padding(bottom = 20.dp)
                                 ) {
-                                    NourishTextDivider("Filter by tag(s)")
+                                    NourishTextDivider("Filter by Nutritional Tag(s)")
 
                                     TagsDisplayForFiltering(
                                         tags = tags,
@@ -682,7 +735,7 @@ fun UserInputSection(
 
                             FilterState.EDIT -> {
                                 Column(
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.Center
                                 ) {
@@ -703,9 +756,6 @@ fun UserInputSection(
                                         onClick = { recipeDiscoveryViewModel.setFilterDisplayState(FilterState.APPLY) },
                                         painter = painterResource(R.drawable.arrow_left),
                                         description = "Back",
-                                        modifier = Modifier.padding(
-                                            bottom = 10.dp,
-                                        ) // so it has space from the btotom
                                     )
                                 }
 
@@ -737,16 +787,26 @@ fun UserInputSection(
                     },
                     sheetState = recipeTypeSheetState
                 ) {
-                    NourishTextDivider("Choose a type for the dish")
-                    Text("If no type is provided, the resulting recipe will be a dish of the most appropriate type.")
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        NourishTextDivider(
+                            "Choose a type for the dish",
+                        )
+                        Text(
+                            "If no type is provided, the resulting recipe will be a dish of the most appropriate type.",
+                            modifier = Modifier.padding(horizontal = 16.dp).padding(vertical = 10.dp)
+                        )
 
-                    val types =
-                        recipeDiscoveryViewModel.uiState.collectAsState().value.recipeTypes
-                    TypesDisplayForMutuallyExclusiveFiltering(
-                        types,
-                        uiState.selectedRecipeType,
-                        recipeDiscoveryViewModel::setSelectedRecipeType
-                    )
+                        val types =
+                            recipeDiscoveryViewModel.uiState.collectAsState().value.recipeTypes
+                        TypesDisplayForMutuallyExclusiveFiltering(
+                            types,
+                            uiState.selectedRecipeType,
+                            recipeDiscoveryViewModel::setSelectedRecipeType
+                        )
+                    }
                 }
             }
 
