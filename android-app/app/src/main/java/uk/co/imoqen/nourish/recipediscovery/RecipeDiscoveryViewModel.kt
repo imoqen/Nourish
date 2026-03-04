@@ -189,6 +189,30 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
+    fun setDisplayTagEdit(displayTagEdit: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                displayTagEdit = displayTagEdit
+            )
+        }
+    }
+
+    fun setShowConfirmationDialog(showConfirmationDialog: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                showConfirmationDialog = showConfirmationDialog
+            )
+        }
+    }
+
+    fun setTagToDelete(tagToDelete: Tag?) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                tagToDelete = tagToDelete
+            )
+        }
+    }
+
     fun createTag(
         description: String,
         colour: NourishColour?
@@ -214,6 +238,17 @@ class RecipeDiscoveryViewModel @Inject constructor(
                     getAllTagsForUser() // update the tags as a new one now exists
                     closeTagCreation()
                 }
+        }
+    }
+
+    fun deleteTag(
+    ) {
+        viewModelScope.launch() {
+            runCatching {
+
+                //filterActions.deleteTag(tag)
+            }
+
         }
     }
 

@@ -139,7 +139,10 @@ fun RecipeBookScreen(
                     ) {
                         NourishTextDivider("Filter by tag(s)")
                         val tags = recipeBookViewModel.uiState.collectAsState().value.recipeTags
-                        TagsDisplayForFiltering(tags, recipeBookViewModel::updateSelected)
+                        TagsDisplayForFiltering(
+                            tags = tags,
+                            onTagPressed = recipeBookViewModel::updateSelected
+                        )
 
                         NourishTextDivider("Filter by type(s)")
 

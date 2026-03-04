@@ -1,6 +1,7 @@
 package uk.co.imoqen.nourish.recipediscovery
 
 import uk.co.imoqen.nourish.common.NourishColour
+import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import uk.co.imoqen.nourish.recipebook.TagSelection
@@ -11,6 +12,10 @@ import uk.co.imoqen.nourish.recipebook.TypeSelection
  * This encapsulation allows state to persist and be updated reliably.
  */
 data class RecipeDiscoveryUiState(
+
+    val showConfirmationDialog: Boolean = false,
+    val tagToDelete: Tag? = null,
+
     val apiResponse: String = "",
     val userRequest: String = "",
     val awaitingResponse: Boolean = false,

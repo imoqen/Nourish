@@ -14,8 +14,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.center
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RadialGradientShader
@@ -383,7 +386,7 @@ fun GradientButton(text:String) {
     val nourishGreen = MaterialTheme.colorScheme.primary
     //val gradient = Brush.radialGradient(colorStops = colorStops)
     val largeRadialGradient = object : ShaderBrush() {
-        override fun createShader(size: androidx.compose.ui.geometry.Size): Shader {
+        override fun createShader(size: Size): Shader {
             val biggerDimension = maxOf(size.height, size.width)
             return RadialGradientShader(
                 colors = listOf(Color(0xFF47734F), nourishGreen),
@@ -530,4 +533,35 @@ fun NourishTextMessage(
 enum class TextSender {
     LLM,
     USER
+}
+
+// alert dialog using android's built in: https://developer.android.com/develop/ui/views/components/dialogs
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NourishConfirmationDialog (
+    show: Boolean,
+    title: String,
+    description: String,
+    onConfirmation: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    if (show) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text(title) },
+            text = { Text(description) },
+            confirmButton = {
+                NourishButton(
+                    text = "Confirm",
+                    onClick = { onConfirmation; onDismiss } // confirm then dismsis it
+                )
+            },
+            dismissButton = {
+                NourishButton(
+                    text = "Dismiss",
+                    onClick = onDismiss
+                )
+            }
+        )
+    }
 }

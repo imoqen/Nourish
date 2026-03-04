@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish.common
 
+import android.R.attr.clickable
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -27,6 +28,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,11 +42,15 @@ import uk.co.imoqen.nourish.recipebook.TypeSelection
 @Composable
 fun TagsDisplayForFiltering(
     tags: List<TagSelection>?,
-    updateSelectedTag: (Tag, Boolean) -> Unit,
+    onTagPressed: ((Tag, Boolean) -> Unit)? = null, // optional so that doesnt do anything when in the edit menu
     displayAddButton: Boolean = false,
     onAddButtonPressed: () -> Unit = {},
     displayEditButton: Boolean = false,
     onEditButtonPressed: () -> Unit = {},
+    trailingIcon: Painter? = null,
+    trailingIconDescription: String = "",
+    onTrailingIconPress: (() -> Unit)? = null,
+    setTagOnTrailingIconPress: ((Tag) -> Unit)? = null,
 ) {
     //val tags = recipeBookViewModel.uiState.collectAsState().value.allTags
     FlowRow(
@@ -59,41 +65,82 @@ fun TagsDisplayForFiltering(
             Box(
                 modifier = Modifier.padding(2.dp).clip(RoundedCornerShape(12.dp))
             ) {
-                Text(
-                    text = tag.displayName,
-                    fontSize = 14.sp,
-                    modifier = Modifier
-                        .background(
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (isSystemInDarkTheme()) {
+                Row(
+                    modifier = Modifier.background(
+                        shape = RoundedCornerShape(12.dp),
+                        color =
+                            if (isSystemInDarkTheme()) {
                                 colour.onBackgroundColour()
                             } else {
                                 colour.dimmedBackgroundColour()
                             }
-                        )
-                        .clickable {
-                            updateSelectedTag(tag, !selected) // do the selection
+                    ),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
+                    Text(
+                        text = tag.displayName,
+                        fontSize = 14.sp,
+                        modifier = Modifier
+                            // only clickable if onTagPressed is present:
+                            .then(
+                                if (onTagPressed != null) {
+                                    Modifier.clickable {
+                                        onTagPressed(tag, !selected) // do the selection
+                                    }
+                                } else {
+                                    Modifier
+                                }
+                            )
+                            .then(
+                                if (selected) {
+                                    Modifier.border(
+                                        width = 1.dp,
+                                        color = MaterialTheme.colorScheme.onBackground,
+                                        shape = RoundedCornerShape(12.dp)
+                                    )
+                                } else {
+                                    Modifier
+                                }
+                            )
+                            .then(
+                                Modifier.padding(4.dp).padding(horizontal = 2.dp)
+                            ),
+                        color = if (isSystemInDarkTheme()) {
+                            colour.backgroundColour()
+                        } else {
+                            colour.onBackgroundColour()
                         }
-                        .then(
-                            if (selected) {
-                                Modifier.border(
-                                    width = 1.dp,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                    shape = RoundedCornerShape(12.dp)
+                    )
+
+                    if (trailingIcon != null) {
+                        Icon(
+                            painter = trailingIcon,
+                            contentDescription = trailingIconDescription,
+                            modifier = Modifier
+                                .size(18.dp)
+                                .then(
+                                    if (onTrailingIconPress != null && setTagOnTrailingIconPress != null) {
+                                        Modifier.clickable {
+                                            setTagOnTrailingIconPress(tag) // set thetag (to delete)
+                                            onTrailingIconPress()
+                                        }
+                                    } else {
+                                        Modifier
+                                    }
                                 )
+                                .then(
+                                    Modifier.padding(end = 2.dp)
+                                ),
+                            tint = if (isSystemInDarkTheme()) {
+                                colour.backgroundColour()
                             } else {
-                                Modifier
+                                colour.onBackgroundColour()
                             }
                         )
-                        .then(
-                            Modifier.padding(4.dp).padding(horizontal=2.dp)
-                        ),
-                    color = if (isSystemInDarkTheme()) {
-                        colour.backgroundColour()
-                    } else {
-                        colour.onBackgroundColour()
                     }
-                )
+                }
 
             }
         }
