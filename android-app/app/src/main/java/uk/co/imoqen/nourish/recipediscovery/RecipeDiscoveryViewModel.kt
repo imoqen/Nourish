@@ -213,6 +213,22 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
+    fun setAllowUserInput(allowUserInput: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                allowUserInput = allowUserInput
+            )
+        }
+    }
+
+    fun setUserSentRequest(userSentRequest: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                userSentRequest = userSentRequest
+            )
+        }
+    }
+
     fun createTag(
         description: String,
         colour: NourishColour?
@@ -320,6 +336,12 @@ class RecipeDiscoveryViewModel @Inject constructor(
                     return@launch
                 }
 
+                if ((type == LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE || type == LlmRequestType.DISHES_FROM_IMAGE || type == LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH) && imageFilename == "") {
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("A photo must be uploaded to proceed."))
+                    setAwaitingResponse(false)
+                    return@launch
+                }
+
                 // make it into a request:
                 val request = LlmRequest(userPrompt, chosenNutritionalFilters, allNutritionalFilters, dishType)
 
@@ -344,7 +366,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
                             viewModelScope.launch() {
                                 if (dishesJson.dishNotPossible) {
                                     // user inputted invalid prompt / image; recipe cannot be generated.
-                                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Valid dishes could not be generated. Please enter something differents."))
+                                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Valid dishes could not be generated. Please enter something different."))
                                     setAwaitingResponse(false)
                                     return@launch
                                 }
@@ -396,6 +418,21 @@ class RecipeDiscoveryViewModel @Inject constructor(
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("3" + ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
                     setAwaitingResponse(false)
                 }
+        }
+    }
+
+    fun displayBlankInputError(
+        requestType: LlmRequestType
+    ) {
+        viewModelScope.launch() {
+            val errorMessage = when (requestType) {
+                LlmRequestType.RECIPE -> "Please enter a dish or description before sending the request."
+                LlmRequestType.DISHES_FROM_INGREDIENTS -> "Please enter ingredients or an image before sending the request."
+                LlmRequestType.DISHES_FROM_IMAGE, LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE, LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH -> "Please upload an image before sending the request."
+                LlmRequestType.RECIPE_QUERY, LlmRequestType.RECIPE_ALTERATION -> "" // do nothing - TODO in future.
+            }
+            uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(errorMessage))
+            setAwaitingResponse(false)
         }
     }
 

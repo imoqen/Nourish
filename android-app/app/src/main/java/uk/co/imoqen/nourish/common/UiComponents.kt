@@ -232,6 +232,31 @@ fun NourishButton(
     }
 }
 
+// grey button instead of app theme (green)
+@Composable
+fun NourishSurfaceButton(
+    onClick: () -> Unit,
+    text: String,
+) {
+    Button(
+        colors = ButtonDefaults.buttonColors(
+            MaterialTheme.colorScheme.primaryContainer
+        ),
+        onClick = {
+            onClick()
+        },
+        modifier = Modifier
+            .padding(vertical = 4.dp)
+            .padding(horizontal = 4.dp),
+        shape = RoundedCornerShape(6.dp)
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(8.dp)
+        )
+    }
+}
+
 @Composable
 fun NourishDangerButton(
     onClick: () -> Unit,

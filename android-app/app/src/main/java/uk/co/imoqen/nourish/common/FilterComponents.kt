@@ -352,7 +352,8 @@ fun SelectedType(
 @Composable
 fun SelectedTags(
     tags: List<TagSelection>?,
-    updateSelectedTag: (Tag, Boolean) -> Unit
+    allowEdit: Boolean = false,
+    updateSelectedTag: (Tag, Boolean) -> Unit = {_,_ -> }
 ) {
     val scrollState = rememberScrollState()
 
@@ -404,21 +405,23 @@ fun SelectedTags(
                                     colour.onBackgroundColour()
                                 }
                             )
-                            Icon(
-                                painter = painterResource(R.drawable.cross),
-                                contentDescription = "Remove Tag",
-                                modifier = Modifier
-                                    .clickable {
-                                        updateSelectedTag(tag, false) // remove the tag
+                            if (allowEdit) {
+                                Icon(
+                                    painter = painterResource(R.drawable.cross),
+                                    contentDescription = "Remove Tag",
+                                    modifier = Modifier
+                                        .clickable {
+                                            updateSelectedTag(tag, false) // remove the tag
+                                        }
+                                        .size(18.dp)
+                                        .padding(end = 2.dp),
+                                    tint = if (isSystemInDarkTheme()) {
+                                        colour.backgroundColour()
+                                    } else {
+                                        colour.onBackgroundColour()
                                     }
-                                    .size(18.dp)
-                                    .padding(end = 2.dp),
-                                tint = if (isSystemInDarkTheme()) {
-                                    colour.backgroundColour()
-                                } else {
-                                    colour.onBackgroundColour()
-                                }
-                            )
+                                )
+                            }
                         }
 
                     }
