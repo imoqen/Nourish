@@ -13,7 +13,7 @@ import uk.co.imoqen.nourish.recipebook.TypeSelection
  */
 data class RecipeDiscoveryUiState(
 
-    val filterDisplayState: FilterState = FilterState.NONE,
+    val filterDisplayState: FilterState = FilterState.NONE, // determines what part of the filter selection is shown
 
     val showConfirmationDialog: Boolean = false,
     val tagToDelete: Tag? = null,
@@ -27,13 +27,10 @@ data class RecipeDiscoveryUiState(
     val dishes: LlmDishesProposed? = null,
 
     val displayImage: Boolean = false,
-    //val displayFilters: Boolean = false,
 
-    //val displayTagCreation: Boolean = false,
     val createdTagName: String = "",
     val createdTagColour: NourishColour? = null,
     val tagCreationError: String = "",
-    //val displayTagEdit: Boolean = false,
 
     val recipeTags: List<TagSelection>? = null,
     val recipeTypes: List<TypeSelection>? = null,

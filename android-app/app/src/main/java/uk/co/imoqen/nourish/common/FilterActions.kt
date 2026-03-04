@@ -62,7 +62,9 @@ class FilterActions @Inject constructor(
                 return (
                         (tagRepository.getAllForUser(uid).first())
                             .map { tag ->
-                                TagSelection(tag, false) // set all to not be checked initially
+                                val oldTag = previousTags?.find{ it.tag == tag }
+                                val selected = (oldTag?.selected) ?: false
+                                TagSelection(tag, selected) // so that old tags preserve their selected values
                             }
                         )
             }

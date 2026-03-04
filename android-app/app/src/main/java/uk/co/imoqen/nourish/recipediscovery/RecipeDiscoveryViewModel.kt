@@ -216,12 +216,23 @@ class RecipeDiscoveryViewModel @Inject constructor(
                     setTagCreationError("Please select a colour.")
                     return@launch
                 }
+                // check that tag doesnt already exist
+                if (mutableUiState.value.recipeTags != null &&
+                    mutableUiState.value.recipeTags!!.map{
+                        it.tag.identifier.uppercase()
+                    }.contains(description.uppercase().replace(" ", "-"))) {
+                    setTagCreationError("Please ensure that the tag description is unique; it cannot be the same as another tag.")
+                    return@launch
+                }
                 filterActions.createTag(description, colour)
             }
                 .onSuccess {
                     // when the tag has been successfully made,
                     getAllTagsForUser() // update the tags as a new one now exists
                     closeTagCreation()
+                }
+                .onFailure {
+                    setTagCreationError("An error occurred: the tag could not be created.")
                 }
         }
     }

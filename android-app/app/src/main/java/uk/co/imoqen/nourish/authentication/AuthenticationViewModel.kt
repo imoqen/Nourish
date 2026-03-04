@@ -174,7 +174,7 @@ class AuthenticationViewModel @Inject constructor(
                 Tag(identifier = "HIGH-PROTEIN", displayName = "High protein", colour = "PURPLE", authorId = uid),
                 Tag(identifier = "LOW-FAT", displayName = "Low fat", colour = "GREEN", authorId = uid),
                 Tag(identifier = "LOW-CALORIE", displayName = "Low calorie", colour = "PINK", authorId = uid),
-                Tag(identifier = "RICH-IN-VITAMINS-MINERALS", displayName = "Vitamins & Minerals", colour = "RED", authorId = uid),
+                Tag(identifier = "VITAMINS-&-MINERALS", displayName = "Vitamins & Minerals", colour = "RED", authorId = uid),
                 Tag(identifier = "LOW-CARB", displayName = "Low carb", colour = "YELLOW", authorId = uid),
                 Tag(identifier = "HIGH-FIBRE", displayName = "High fibre", colour = "ORANGE", authorId = uid),
                 Tag(identifier = "NO-ADDED-SUGAR", displayName = "No added sugar", colour = "GREY", authorId = uid),
