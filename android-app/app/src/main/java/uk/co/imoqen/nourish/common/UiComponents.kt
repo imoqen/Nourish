@@ -170,8 +170,11 @@ fun NourishH2(
         text = text,
         fontSize = 20.sp,
         fontWeight = FontWeight.Bold,
-        modifier = modifier
-            .padding(6.dp),
+        modifier = Modifier
+            .padding(6.dp)
+            .then(
+                modifier
+            ),
         textAlign = TextAlign.Center
     )
 }
@@ -400,11 +403,14 @@ fun NourishTextDivider(
 }
 
 @Composable
-fun NourishDivider() {
+fun NourishDivider(
+    modifier: Modifier = Modifier
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp),
+            .padding(vertical = 16.dp)
+            .then( modifier ),
         verticalAlignment = Alignment.CenterVertically
     ) {
         HorizontalDivider(

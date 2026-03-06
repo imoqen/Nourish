@@ -1,7 +1,9 @@
 package uk.co.imoqen.nourish.recipebook
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import uk.co.imoqen.nourish.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,9 +36,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -45,9 +49,11 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import kotlinx.coroutines.flow.emptyFlow
+import uk.co.imoqen.nourish.common.NourishDivider
 import uk.co.imoqen.nourish.common.NourishH1
 import uk.co.imoqen.nourish.common.NourishH2
 import uk.co.imoqen.nourish.common.NourishH3
+import uk.co.imoqen.nourish.common.NourishIconButton
 import uk.co.imoqen.nourish.common.onBackgroundColour
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import java.io.File
@@ -235,7 +241,7 @@ fun RecipeCard(
                                 color = MaterialTheme.colorScheme.surfaceContainer,
                                 shape = RoundedCornerShape(16.dp)
                             )
-                            .fillMaxWidth(0.7f)
+                            .weight(1f) // tags takes up all remaining space, serving size takes up as much as it needs.
                     ) {
                         Column(
                             modifier = Modifier.padding(8.dp) // for inner padding of the total item
@@ -259,10 +265,35 @@ fun RecipeCard(
                             )
                             //.fillMaxWidth(0.3f)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(8.dp) // for inner padding of the total item
+                        Row(
+                            modifier = Modifier
+                                .padding(8.dp) // for inner padding of the total item
+                                .animateContentSize()
                         ) {
-                            Text("Serves ${recipeCard.serves}")
+                            NourishIconButton(
+                                onClick = { recipeBookViewModel.alterServingSize(false) },
+                                painter = painterResource(R.drawable.subtract),
+                                modifier = Modifier.width(24.dp)
+                            )
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(horizontal = 3.dp)
+                            ) {
+                                Image(
+                                    painter = painterResource(R.drawable.person),
+                                    contentDescription = "Number of Servings",
+                                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground)
+                                )
+                                Text(
+                                    text = "${recipeCard.serves}",
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            NourishIconButton(
+                                onClick = { recipeBookViewModel.alterServingSize(true) },
+                                painter = painterResource(R.drawable.add),
+                                modifier = Modifier.width(24.dp)
+                            )
                         }
                     }
                 }
@@ -278,10 +309,12 @@ fun RecipeCard(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
+                    NourishH2("Ingredients")
+                    NourishDivider(modifier = Modifier.padding(0.dp))
                     Column(
-                        modifier = Modifier.padding(8.dp) // for inner padding of the total item
+                        modifier = Modifier
+                            .animateContentSize()
                     ) {
-                        NourishH2("Ingredients")
                         // then output the ingredients by section
                         recipeCard.sectionsWithIngredients.forEach { (section, ingredients) ->
                             Column(

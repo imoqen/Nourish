@@ -125,6 +125,7 @@ function recipeSchemaZod(allNutritionalFilters, dishType) {
         "An array of the recipe's method, each array element being an individual step. Ensure that the array is ordered from first to last step, and do not include step numbers. " +
           "For step(s) involving heating the oven, ensure you specify Celsius and Farenheit and different oven options (Fan, Gas mark etc) " +
           "When writing the units e.g. ML, ensure they correspond with those you wrote in the sectionIngredients array, but write them in the human-readable form (e.g. ML -> ml, DASH -> dash) " +
+          "Do NOT include any absolute measurements/amounts within the steps (e.g. 100ml of ingredient X), only refer to the ingredients themselves (e.g. ingredient X) (as the recipe will be able to be scaled by the user). If you do need to state measurements, only use relative e.g. half of ingredient X etc." +
           "For the final step, include a nice, upbeat happy step such as 'Enjoy your homemade ...'",
       ),
 
@@ -552,7 +553,7 @@ async function generateRecipe(
       {
         role: "system",
         content:
-          "Return in the required schema, write in sufficient detail but not too much (keep below 250 words). Ensure that the recipe produced conforms to the following nutritional requirements and are thus listed in the tags array of the schema (and any more tags which you deem appropriate for the recipe): " +
+          "Return in the required schema, write in sufficient detail but not too much (keep below 250 words). Do not include absolute amounts in the method part of the schema. Ensure that the recipe produced conforms to the following nutritional requirements and are thus listed in the tags array of the schema (and any more tags which you deem appropriate for the recipe): " +
           chosenNutritionalFilters +
           " and the recipe must be of type: " +
           dishType,
@@ -683,7 +684,7 @@ async function generateRecipeFromDishImage(
       {
         role: "system",
         content:
-          "Return in the required schema, write in sufficient detail but not too much (keep below 250 words)." +
+          "Return in the required schema, write in sufficient detail but not too much (keep below 250 words). Do not include absolute amounts in the method part of the schema. " +
           "Furthermore, a list of ingredients is supplied. The recipe must be created using only these ingredients, but the recipe does not need to " +
           "use all of these - they are simply what the user has access to and can use for the recipe. So do not use ingredients if they are not needed for the recipe." +
           "Ensure that the recipe is of type " +

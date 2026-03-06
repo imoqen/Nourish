@@ -4,7 +4,9 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
+import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeIngredient
 import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeWithRecipeIngredients
 
 // keeping recipes stuff together for simplicity
@@ -26,6 +28,9 @@ interface RecipeDao {
     // insert one
     @Insert
     suspend fun insert(recipe: Recipe): Long
+
+    @Update
+    suspend fun update(recipe: Recipe)
 
     /*@Transaction
     @Query("SELECT * FROM Recipe WHERE id = :recipeId")

@@ -3,6 +3,7 @@ package uk.co.imoqen.nourish.db.recipe
 import android.util.Log
 import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import uk.co.imoqen.nourish.db.NourishDatabase
 import uk.co.imoqen.nourish.db.ingredient.Ingredient
 import uk.co.imoqen.nourish.db.ingredient.IngredientRepositoryImpl
@@ -160,4 +161,34 @@ class RecipeRepositoryImpl @Inject constructor(
             }
         }
     }
+
+    override suspend fun updateRecipeIngredient(recipeIngredient: RecipeIngredient) {
+        recipeIngredientDao.update(recipeIngredient)
+    }
+
+    override suspend fun updateRecipe(recipe: Recipe) {
+        recipeDao.update(recipe)
+    }
+
+    // transactional so the scale is reverted if an error occurs, so the recipe scale stays correct
+    override suspend fun scaleRecipe(recipe: Recipe, currentServingSize: Int, increase: Boolean) {
+        db.withTransaction {
+            val newServingSize = if (increase) { currentServingSize+1 } else { currentServingSize-1 }
+            val scalingFactor = newServingSize.toFloat() / currentServingSize.toFloat()
+
+            val recipeIngredients = getRecipeWithRecipeIngredients(recipe.id).first()
+
+            recipeIngredients.ingredients.forEach { recipeIngredient ->
+                val scaledAmount = "%.2f".format(recipeIngredient.amount*scalingFactor).toDouble()
+                updateRecipeIngredient(
+                    recipeIngredient.copy(amount = scaledAmount)
+                )
+            }
+
+            // then update serving size:
+            recipeDao.update(recipe.copy(numberOfServings = newServingSize))
+        }
+    }
+
+
 }
