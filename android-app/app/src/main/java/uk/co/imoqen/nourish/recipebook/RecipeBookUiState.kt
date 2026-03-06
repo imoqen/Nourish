@@ -1,6 +1,5 @@
 package uk.co.imoqen.nourish.recipebook
 
-import coil3.Image
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
@@ -12,8 +11,8 @@ data class RecipeBookUiState(
     val selectedRecipeCard: RecipeCardExpanded? = null,
     val searchTerm: String = "",
     val displayDropdownFilter: Boolean = false,
-    val allTags: List<TagSelection>? = null,
-    val recipeTypes: List<TypeSelection>? = null
+    val recipeTags: List<TagSelection>? = null, // all of the recipe tags
+    val recipeTypes: List<TypeSelection>? = null // all of the recipe types
 )
 
 data class TagSelection(

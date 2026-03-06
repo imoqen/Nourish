@@ -1,73 +1,43 @@
 package uk.co.imoqen.nourish.authentication
 
-import android.util.Log
 import uk.co.imoqen.nourish.R
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MailOutline
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.GoogleButton
-import uk.co.imoqen.nourish.common.GradientButton
 import uk.co.imoqen.nourish.common.NourishBottomCard
 import uk.co.imoqen.nourish.common.NourishButton
 import uk.co.imoqen.nourish.common.NourishErrorText
@@ -148,7 +118,7 @@ fun LoginScreen(
                             authenticationViewModel.setSigninEmail(newEmail)
                         },
                         placeholder = "Enter email address",
-                        icon = Icons.Filled.MailOutline,
+                        leadingIcon = Icons.Filled.MailOutline,
                         onDone = { keyboardFocusManager.clearFocus() }
                     )
                     // Password:
@@ -158,7 +128,7 @@ fun LoginScreen(
                             authenticationViewModel.setSigninPassword(newPassword)
                         },
                         placeholder = "Enter password",
-                        icon = Icons.Filled.Lock,
+                        leadingIcon = Icons.Filled.Lock,
                         visualTransformation = PasswordVisualTransformation(),
                         onDone = { keyboardFocusManager.clearFocus() }
                     )
@@ -218,7 +188,7 @@ fun LoginScreen(
                                         )
                                     },
                                     placeholder = "Enter account email",
-                                    icon = Icons.Filled.Email,
+                                    leadingIcon = Icons.Filled.Email,
                                     onDone = { keyboardFocusManager.clearFocus(force = true) }
                                 )
 
@@ -264,7 +234,7 @@ fun LoginScreen(
                             authenticationViewModel.setSignupEmail(newEmail)
                         },
                         placeholder = "Enter email address",
-                        icon = Icons.Filled.MailOutline,
+                        leadingIcon = Icons.Filled.MailOutline,
                         onDone = { keyboardFocusManager.clearFocus() }
                     )
 
@@ -275,7 +245,7 @@ fun LoginScreen(
                             authenticationViewModel.setSignupPassword(newPassword)
                         },
                         placeholder = "Enter password",
-                        icon = Icons.Filled.Lock,
+                        leadingIcon = Icons.Filled.Lock,
                         visualTransformation = PasswordVisualTransformation(),
                         onDone = { keyboardFocusManager.clearFocus() }
                     )
@@ -287,7 +257,7 @@ fun LoginScreen(
                             )
                         },
                         placeholder = "Confirm password",
-                        icon = Icons.Filled.Lock,
+                        leadingIcon = Icons.Filled.Lock,
                         visualTransformation = PasswordVisualTransformation(),
                         onDone = { keyboardFocusManager.clearFocus() }
                     )

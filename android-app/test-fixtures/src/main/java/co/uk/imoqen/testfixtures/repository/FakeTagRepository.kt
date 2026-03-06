@@ -14,6 +14,10 @@ class FakeTagRepository(): TagRepository {
         TODO("Not yet implemented")
     }
 
+    override suspend fun delete(tag: Tag) {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun getIdByIdentifier(identifier: String): Long? {
         TODO("Not yet implemented")
     }

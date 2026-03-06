@@ -7,7 +7,10 @@ interface TagRepository {
 
     suspend fun insert(tag: Tag): Long
 
-    suspend fun getIdByIdentifier(identifier: String): Long?
+    suspend fun delete(tag: Tag)
+
+    suspend fun getIdByIdentifier(identifier: String, uid: String): Long?
 
     fun getById(id: Long): Flow<Tag?>
+
 }

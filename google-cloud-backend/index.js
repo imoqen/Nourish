@@ -87,166 +87,191 @@ const IngredientSchemaZod = z.object({
 });
 
 // recipe generation:
-const RecipeSchemaZod = z.object({
-  title: z
-    .string()
-    .describe("Title of the recipe, must be 42 characters or less."),
+function recipeSchemaZod(allNutritionalFilters, dishType) {
+  return z.object({
+    title: z
+      .string()
+      .describe("Title of the recipe, must be 42 characters or less."),
 
-  sectionIngredients: z.array(
-    z.object({
-      section: z
-        .string()
-        .describe(
-          "A heading for this list of ingredients, for example 'For the ...' e.g. 'For the filling'",
-        ),
-      ingredients: z.array(IngredientSchemaZod),
-    }),
-  ),
-
-  servings: z
-    .number()
-    .int()
-    .describe(
-      "The number of servings (not pieces) made of this meal using the amount of ingredients in the ingredientAmounts and ingredientAmountsUnits list. " +
-        "Given as an integer.",
+    sectionIngredients: z.array(
+      z.object({
+        section: z
+          .string()
+          .describe(
+            "A heading for this list of ingredients, for example 'For the ...' e.g. 'For the filling'",
+          ),
+        ingredients: z.array(IngredientSchemaZod),
+      }),
     ),
 
-  mealType: z.string().describe(
-    "The type of meal that this corresponds to, returned exactly and with the same capitalisation as ONE element from the following list: Breakfast, Lunch, Dinner, Dessert, Side, Drink", // need to expand this to include the user's custom meal types
-  ),
+    servings: z
+      .number()
+      .int()
+      .describe(
+        "The number of servings (not pieces) made of this meal using the amount of ingredients in the ingredientAmounts and ingredientAmountsUnits list. " +
+          "Given as an integer.",
+      ),
 
-  method: z
-    .array(z.string())
-    .describe(
-      "An array of the recipe's method, each array element being an individual step. Ensure that the array is ordered from first to last step, and do not include step numbers. " +
-        "For step(s) involving heating the oven, ensure you specify Celsius and Farenheit and different oven options (Fan, Gas mark etc) " +
-        "When writing the units e.g. ML, ensure they correspond with those you wrote in the sectionIngredients array, but write them in the human-readable form (e.g. ML -> ml, DASH -> dash) " +
-        "For the final step, include a nice, upbeat happy step such as 'Enjoy your homemade ...'",
-    ),
+    mealType: z
+      .string()
+      .describe(
+        "The type of meal that this corresponds to, returned exactly and with the same capitalisation as ONE element from the following list: " +
+          dishType,
+      ),
 
-  tags: z.array(z.string()).describe(
-    "Fill this in once the recipe has been generated, do not fill this in first and then fill in the recipe based on it: " +
-      "A list of 'tags' which apply to this recipe, as a comma separated list e.g. 'a, b, c' " +
-      "Each tag must be from the following list, do not include more (Be strict with this; e.g. it is only NO-ADDED-SUGAR if no extra sugar has been added - sugar sources such as maple syrup, honey etc still count as added sugar.): " +
-      "VEGAN, VEGETARIAN, GLUTEN-FREE, DAIRY-FREE, NUT-FREE, SOY-FREE, EGG-FREE, LACTOSE-FREE, WHEAT-FREE" + // dietary requirements
-      "FREEZER-FRIENDLY, UPF-FREE" + // misc
-      "HIGH-PROTEIN, LOW-FAT, LOW-CALORIE, RICH-IN-VITAMINS-MINERALS, LOW-CARB, HIGH-FIBRE, NO-ADDED-SUGAR", // nutrients
-    // need to put all user specified tags here in the future
-  ),
+    method: z
+      .array(z.string())
+      .describe(
+        "An array of the recipe's method, each array element being an individual step. Ensure that the array is ordered from first to last step, and do not include step numbers. " +
+          "For step(s) involving heating the oven, ensure you specify Celsius and Farenheit and different oven options (Fan, Gas mark etc) " +
+          "When writing the units e.g. ML, ensure they correspond with those you wrote in the sectionIngredients array, but write them in the human-readable form (e.g. ML -> ml, DASH -> dash) " +
+          "For the final step, include a nice, upbeat happy step such as 'Enjoy your homemade ...'",
+      ),
 
-  storage: z
-    .string()
-    .describe(
-      "A brief sentence describing how to best store the food once cooked, to maximise its shelf life. If it is freezer friendly, state this too. State how to safely reheat (and defrost if applicable, even if eaten cold) the food, if applicable.",
-    ),
-
-  recipeNotPossible: z
-    .boolean()
-    .describe(
-      "If the provided prompt is invalid for generating a human-edible recipe, " +
-        "such as something which is inedible, " +
-        "return 'true' here and fill in every other required field with an empty string, " +
-        "otherwise return 'false' and generate the recipe accordingly.",
+    tags: z.array(z.string()).describe(
+      "Fill this in once the recipe has been generated, do not fill this in first and then fill in the recipe based on it: " +
+        "A list of 'tags' which apply to this recipe, as a comma separated list e.g. 'a, b, c' " +
+        "Each tag must be from the following list, do not include more (Be strict with this; e.g. it is only NO-ADDED-SUGAR if no extra sugar has been added - sugar sources such as maple syrup, honey etc still count as added sugar.): " +
+        allNutritionalFilters, // nutrients
+      // need to put all user specified tags here in the future
     ),
 
-  emoji: z.string().describe("A single emoji which best describes this dish."),
-});
+    storage: z
+      .string()
+      .describe(
+        "A brief sentence describing how to best store the food once cooked, to maximise its shelf life. If it is freezer friendly, state this too. State how to safely reheat (and defrost if applicable, even if eaten cold) the food, if applicable.",
+      ),
 
-// tool strategy for formatting output:
-//https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
-const RecipeListFromIngredientsSchemaZod = z.object({
-  firstMostLikelyDish: z
-    .string()
-    .describe(
-      "The first most likely dish you believe is best suited to cook from the ingredients.",
-    ),
-  secondMostLikelyDish: z
-    .string()
-    .describe(
-      "The second most likely dish you believe is best suited to cook from the ingredients.",
-    ),
-  thirdMostLikelyDish: z
-    .string()
-    .describe(
-      "The third most likely dish you believe is best suited to cook from the ingredients.",
-    ),
-  fourthMostLikelyDish: z
-    .string()
-    .describe(
-      "The fourth most likely dish you believe is best suited to cook from the ingredients.",
-    ),
-  dishNotPossible: z
-    .boolean()
-    .describe(
-      "If the provided ingredients are invalid for generating a human-edible recipe, such as something which is inedible, " +
-        "return 'true' here and fill in every other required field with an empty string, otherwise return 'false' and generate the dishes accordingly.",
-    ),
-});
+    recipeNotPossible: z
+      .boolean()
+      .describe(
+        "If the provided prompt is invalid for generating a human-edible recipe, " +
+          "such as something which is inedible, " +
+          "return 'true' here and fill in every other required field with an empty string, " +
+          "otherwise return 'false' and generate the recipe accordingly.",
+      ),
+
+    emoji: z
+      .string()
+      .describe(
+        "A single emoji which best describes this dish. Consider the recipe/ingredients when choosing the emoji; don't just base the emoji on the name of the dish.",
+      ),
+  });
+}
 
 // tool strategy for formatting output:
 //https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
-const RecipeListFromImageIngredientsSchemaZod = z.object({
-  ingredientsIdentified: z
-    .string()
-    .describe("The ingredients you can see which are present in the image."),
-  firstMostLikelyDish: z
-    .string()
-    .describe(
-      "The first most likely dish you believe can be cooked with ingredients present in the image.",
-    ),
-  secondMostLikelyDish: z
-    .string()
-    .describe(
-      "The second most likely dish you believe can be cooked with ingredients present in the image.",
-    ),
-  thirdMostLikelyDish: z
-    .string()
-    .describe(
-      "The third most likely dish you believe can be cooked with ingredients present in the image.",
-    ),
-  fourthMostLikelyDish: z
-    .string()
-    .describe(
-      "The fourth most likely dish you believe can be cooked with ingredients present in the image.",
-    ),
-  dishNotPossible: z
-    .boolean()
-    .describe(
-      "If the provided ingredients in the image are invalid for generating a human-edible recipe, such as something which is inedible, " +
-        "return 'true' here and fill in every other required field with an empty string, otherwise return 'false' and generate the dishes accordingly.",
-    ),
-});
+function recipeListFromIngredientsSchemaZod(dishType) {
+  return z.object({
+    firstMostLikelyDish: z
+      .string()
+      .describe(
+        "The first most likely dish you believe is best suited to cook from the ingredients and nutritional information, for type: " +
+          dishType,
+      ),
+    secondMostLikelyDish: z
+      .string()
+      .describe(
+        "The second most likely dish you believe is best suited to cook from the ingredients and nutritional information, for type: " +
+          dishType,
+      ),
+    thirdMostLikelyDish: z
+      .string()
+      .describe(
+        "The third most likely dish you believe is best suited to cook from the ingredients and nutritional information, for type: " +
+          dishType,
+      ),
+    fourthMostLikelyDish: z
+      .string()
+      .describe(
+        "The fourth most likely dish you believe is best suited to cook from the ingredients and nutritional information, for type: " +
+          dishType,
+      ),
+    dishNotPossible: z
+      .boolean()
+      .describe(
+        "If the provided ingredients are invalid for generating a human-edible recipe, such as something which is inedible, " +
+          "return 'true' here and fill in every other required field with an empty string, otherwise return 'false' and generate the dishes accordingly.",
+      ),
+  });
+}
 
 // tool strategy for formatting output:
 //https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
-const RecipeListFromImageSchemaZod = z.object({
-  firstMostLikelyDish: z
-    .string()
-    .describe(
-      "The first most likely dish you believe is present in the image.",
-    ),
-  secondMostLikelyDish: z
-    .string()
-    .describe(
-      "The second most likely dish you believe is present in the image.",
-    ),
-  thirdMostLikelyDish: z
-    .string()
-    .describe(
-      "The third most likely dish you believe is present in the image.",
-    ),
-  fourthMostLikelyDish: z
-    .string()
-    .describe(
-      "The fourth most likely dish you believe is present in the image.",
-    ),
-  dishNotPossible: z
-    .boolean()
-    .describe(
-      "If the provided image does not contain a valid dish, and thus invalid for generating a human-edible recipe, such as something which is inedible, " +
-        "return 'true' here and fill in every other required field with an empty string, otherwise return 'false' and generate the dishes accordingly.",
-    ),
-});
+function recipeListFromImageIngredientsSchemaZod(dishType) {
+  return z.object({
+    ingredientsIdentified: z
+      .string()
+      .describe("The ingredients you can see which are present in the image."),
+    firstMostLikelyDish: z
+      .string()
+      .describe(
+        "The first most likely dish you believe can be cooked with ingredients present in the image, considering the type: " +
+          dishType,
+      ),
+    secondMostLikelyDish: z
+      .string()
+      .describe(
+        "The second most likely dish you believe can be cooked with ingredients present in the image, considering the type: " +
+          dishType,
+      ),
+    thirdMostLikelyDish: z
+      .string()
+      .describe(
+        "The third most likely dish you believe can be cooked with ingredients present in the image, considering the type: " +
+          dishType,
+      ),
+    fourthMostLikelyDish: z
+      .string()
+      .describe(
+        "The fourth most likely dish you believe can be cooked with ingredients present in the image, considering the type: " +
+          dishType,
+      ),
+    dishNotPossible: z
+      .boolean()
+      .describe(
+        "If the provided ingredients in the image are invalid for generating a human-edible recipe, such as something which is inedible, " +
+          "return 'true' here and fill in every other required field with an empty string, otherwise return 'false' and generate the dishes accordingly.",
+      ),
+  });
+}
+
+// tool strategy for formatting output:
+//https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
+function recipeListFromImageSchemaZod(dishType) {
+  return z.object({
+    firstMostLikelyDish: z
+      .string()
+      .describe(
+        "The first most likely dish you believe is present in the image, considering the type: " +
+          dishType,
+      ),
+    secondMostLikelyDish: z
+      .string()
+      .describe(
+        "The second most likely dish you believe is present in the image, considering the type: " +
+          dishType,
+      ),
+    thirdMostLikelyDish: z
+      .string()
+      .describe(
+        "The third most likely dish you believe is present in the image, considering the type: " +
+          dishType,
+      ),
+    fourthMostLikelyDish: z
+      .string()
+      .describe(
+        "The fourth most likely dish you believe is present in the image, considering the type: " +
+          dishType,
+      ),
+    dishNotPossible: z
+      .boolean()
+      .describe(
+        "If the provided image does not contain a valid dish, and thus invalid for generating a human-edible recipe, such as something which is inedible, " +
+          "return 'true' here and fill in every other required field with an empty string, otherwise return 'false' and generate the dishes accordingly.",
+      ),
+  });
+}
 
 /**
  * Receives the request send from the Nourish app and builds the response accordingly.
@@ -274,6 +299,11 @@ async function generate(req, res, requestType) {
       return res.status(400).json({ error: errorMessage });
     }
 
+    // Extract optional nutritional filters and meal type:
+    const chosenNutritionalFilters = req.body?.chosenNutritionalFilters;
+    const allNutritionalFilters = req.body?.allNutritionalFilters;
+    const dishType = req.body?.dishType;
+
     // Perform the LLM request and retrieve the response, different request depending on the request type
     let result;
     switch (requestType) {
@@ -283,6 +313,9 @@ async function generate(req, res, requestType) {
           GOOGLE_CLOUD_PROJECT,
           GOOGLE_CLOUD_LOCATION,
           prompt,
+          allNutritionalFilters,
+          chosenNutritionalFilters,
+          dishType,
         );
         break;
       }
@@ -299,9 +332,12 @@ async function generate(req, res, requestType) {
       // Generate dishes from ingredients
       case LlmRequestType.DISHES_FROM_INGREDIENTS: {
         result = await generateDishesFromIngredients(
+          // all nutritional filters are not passed here as they are not used.
           GOOGLE_CLOUD_PROJECT,
           GOOGLE_CLOUD_LOCATION,
           prompt,
+          chosenNutritionalFilters,
+          dishType,
         );
         break;
       }
@@ -471,6 +507,9 @@ async function generateRecipe(
   projectId = GOOGLE_CLOUD_PROJECT,
   location = GOOGLE_CLOUD_LOCATION,
   prompt,
+  allNutritionalFilters,
+  chosenNutritionalFilters,
+  dishType,
 ) {
   // these will be switched dynamically using user preferences
   const metricUnits =
@@ -491,21 +530,42 @@ async function generateRecipe(
   const agent = createAgent({
     model: llm,
     tools: [],
-    responseFormat: toolStrategy(RecipeSchemaZod),
+    responseFormat: toolStrategy(
+      recipeSchemaZod(allNutritionalFilters, dishType),
+    ),
   });
 
-  console.log("Generating recipe for: " + prompt + ":");
+  console.log(
+    "Generating recipe for: " +
+      prompt +
+      " with nutritional filters: " +
+      chosenNutritionalFilters +
+      "and dish type: " +
+      dishType +
+      "and all nutritional filters: " +
+      allNutritionalFilters +
+      ":",
+  );
 
   const result = await agent.invoke({
     messages: [
       {
         role: "system",
         content:
-          "Return in the required schema, write in sufficient detail but not too much (keep below 250 words).",
+          "Return in the required schema, write in sufficient detail but not too much (keep below 250 words). Ensure that the recipe produced conforms to the following nutritional requirements and are thus listed in the tags array of the schema (and any more tags which you deem appropriate for the recipe): " +
+          chosenNutritionalFilters +
+          " and the recipe must be of type: " +
+          dishType,
       },
       {
         role: "user",
-        content: "Create a recipe for the following dish: " + prompt,
+        content:
+          "Create a recipe for the following dish, ensuring that the recipe produced conforms to these nutritional requirements: " +
+          chosenNutritionalFilters +
+          " and the recipe must be of type: " +
+          dishType +
+          ". The recipe to generate is: " +
+          prompt,
       },
     ],
   });
@@ -520,6 +580,8 @@ async function generateDishesFromIngredients(
   projectId = GOOGLE_CLOUD_PROJECT,
   location = GOOGLE_CLOUD_LOCATION,
   prompt,
+  chosenNutritionalFilters,
+  dishType,
 ) {
   // https://docs.langchain.com/oss/javascript/integrations/chat/google_vertex_ai
   const llm = new ChatVertexAI({
@@ -531,10 +593,17 @@ async function generateDishesFromIngredients(
   const agent = createAgent({
     model: llm,
     tools: [],
-    responseFormat: toolStrategy(RecipeListFromIngredientsSchemaZod),
+    responseFormat: toolStrategy(recipeListFromIngredientsSchemaZod(dishType)),
   });
 
-  console.log("Generating dishes for ingredients: " + prompt + ":");
+  console.log(
+    "Generating dishes for ingredients: " +
+      prompt +
+      " with filters: " +
+      chosenNutritionalFilters +
+      " and type: " +
+      dishType,
+  );
 
   const result = await agent.invoke({
     messages: [
@@ -543,12 +612,18 @@ async function generateDishesFromIngredients(
         content:
           "Return in the required schema, with the best dish you believe can be cooked from only these ingredients in firstMostLikelyDish field " +
           "and the other fields filled accordingly. Ensure the JSON schema is satisfied and do not include more JSON." +
-          "Write the name of each dish concisely; in less than 20 words per dish, but include detail if necessary e.g. flavour, type, characteristics.",
+          "Write the name of each dish concisely; in less than 20 words per dish, but include detail if necessary e.g. flavour, type, characteristics." +
+          "Ensure that every dish conforms to the nutritional filters: " +
+          chosenNutritionalFilters,
       },
       {
         role: "user",
         content:
-          "Return 4 names of dishes which you believe can be cooked at home using only these ingredients (with the exception of cooking ingredients which are almost always present - small amounts of salt, pepper and oil. With that being said, though, do not include the salt/pepper/oil if it is not relevant to the recipe): " +
+          "Return 4 names of dishes which are of type " +
+          dishType +
+          " and conform to the nutritional filters: " +
+          chosenNutritionalFilters +
+          ", which you believe can be cooked at home using only these ingredients (with the exception of cooking ingredients which are almost always present - small amounts of salt, pepper and oil. With that being said, though, do not include the salt/pepper/oil if it is not relevant to the recipe): " +
           prompt,
       },
     ],
@@ -574,7 +649,11 @@ async function generateRecipeFromDishImage(
   const dataUrl = `data:${filetype};base64,${base64encoded}`; // required format for gemini 2.0 flash
 
   // User can supply further detail if they wish, but this is optional:
-  const dish = JSON.parse(req.body?.detail).prompt;
+  const detail = JSON.parse(req.body?.detail);
+  const dish = detail.prompt;
+  const dishType = detail.dishType;
+  const chosenNutritionalFilters = detail.chosenNutritionalFilters;
+  const allNutritionalFilters = detail.allNutritionalFilters;
 
   // https://docs.langchain.com/oss/javascript/integrations/chat/google_vertex_ai
   const llm = new ChatVertexAI({
@@ -586,10 +665,18 @@ async function generateRecipeFromDishImage(
   const agent = createAgent({
     model: llm,
     tools: [],
-    responseFormat: toolStrategy(RecipeSchemaZod),
+    responseFormat: toolStrategy(
+      recipeSchemaZod(allNutritionalFilters, dishType),
+    ),
   });
 
-  console.log("Generating recipe for dish using image:");
+  console.log(
+    "Generating recipe for dish using image" +
+      " with filters: " +
+      chosenNutritionalFilters +
+      " and type: " +
+      dishType,
+  );
 
   const result = await agent.invoke({
     messages: [
@@ -598,7 +685,11 @@ async function generateRecipeFromDishImage(
         content:
           "Return in the required schema, write in sufficient detail but not too much (keep below 250 words)." +
           "Furthermore, a list of ingredients is supplied. The recipe must be created using only these ingredients, but the recipe does not need to " +
-          "use all of these - they are simply what the user has access to and can use for the recipe. So do not use ingredients if they are not needed for the recipe.",
+          "use all of these - they are simply what the user has access to and can use for the recipe. So do not use ingredients if they are not needed for the recipe." +
+          "Ensure that the recipe is of type " +
+          dishType +
+          " and conforms to the nutritional filters given in " +
+          chosenNutritionalFilters,
       },
       {
         role: "user",
@@ -606,7 +697,9 @@ async function generateRecipeFromDishImage(
           {
             type: "text",
             text:
-              "Generate a recipe for the following dish, creating the recipe as close to the image provided as possible: " +
+              "Generate a recipe for the following dish ensuring that the recipe conforms to the nutritional filters given in " +
+              chosenNutritionalFilters +
+              ", and creating the recipe as close to the image provided as possible: " +
               dish,
           },
           { type: "image_url", image_url: { url: dataUrl } },
@@ -633,12 +726,19 @@ async function generateDishesFromIngredientsImage(
   const dataUrl = `data:${filetype};base64,${base64encoded}`; // required format for gemini 2.0 flash
 
   // User can supply further detail if they wish, but this is optional:
-  const userDetail = JSON.parse(req.body?.detail).prompt;
+  const detail = JSON.parse(req.body?.detail);
+  const userDetail = detail.prompt;
+  const dishType = detail.dishType;
+  const chosenNutritionalFilters = detail.chosenNutritionalFilters;
+
   let userPrompt =
-    "This is a picture featuring many different cooking ingredients. Return 4 names of dishes which you believe can be cooked using only these ingredients (with the exception of small amounts of salt, pepper and oil).";
+    "This is a picture featuring many different cooking ingredients. Return 4 names of dishes which you believe can be cooked using only these ingredients (with the exception of small amounts of salt, pepper and oil). Ensure the dishes conform to the following nutritional filters: " +
+    chosenNutritionalFilters;
   if (userDetail != "") {
     userPrompt =
-      "This is a picture featuring many different cooking ingredients. Return 4 names of dishes which you believe can be cooked using only these ingredients (with the exception of small amounts of salt, pepper and oil). Further detail to assist classification: " +
+      "This is a picture featuring many different cooking ingredients. Return 4 names of dishes which you believe can be cooked using only these ingredients (with the exception of small amounts of salt, pepper and oil). Ensure the dishes conform to the following nutritional filters: " +
+      chosenNutritionalFilters +
+      " Further detail to assist classification: " +
       userDetail;
   }
 
@@ -652,10 +752,18 @@ async function generateDishesFromIngredientsImage(
   const agent = createAgent({
     model: llm,
     tools: [],
-    responseFormat: toolStrategy(RecipeListFromImageIngredientsSchemaZod),
+    responseFormat: toolStrategy(
+      recipeListFromImageIngredientsSchemaZod(dishType),
+    ),
   });
 
-  console.log("Identifying ingredients and potential dishes:");
+  console.log(
+    "Identifying ingredients and potential dishes" +
+      " with filters: " +
+      chosenNutritionalFilters +
+      " and type: " +
+      dishType,
+  );
 
   const result = await agent.invoke({
     messages: [
@@ -665,7 +773,11 @@ async function generateDishesFromIngredientsImage(
           "Return in the required schema, first with the ingredients that you can see present in the image in the ingredients field, and then " +
           "the dish you believe is most likely able to be cooked with these ingredients in firstMostLikelyDish field " +
           "and the other fields filled accordingly. Ensure the JSON schema is satisfied and do not include more JSON." +
-          "Write the name of each dish concisely; in less than 20 words per dish, but include detail if necessary e.g. flavour, type, characteristics.",
+          "Write the name of each dish concisely; in less than 20 words per dish, but include detail if necessary e.g. flavour, type, characteristics." +
+          "Ensure the dishes are of type + " +
+          dishType +
+          " and conform to the following nutritional filters: " +
+          chosenNutritionalFilters,
       },
       {
         role: "user",
@@ -700,12 +812,19 @@ async function generateDishesFromImage(
   const dataUrl = `data:${filetype};base64,${base64encoded}`; // required format for gemini 2.0 flash
 
   // User can supply further detail if they wish, but this is optional:
-  const userDetail = JSON.parse(req.body?.detail).prompt;
+  const detail = JSON.parse(req.body?.detail);
+  const userDetail = detail.prompt;
+  const dishType = detail.dishType;
+  const chosenNutritionalFilters = detail.chosenNutritionalFilters;
+
   let userPrompt =
-    "Return 4 names of dishes which you believe are in the image.";
+    "Return 4 names of dishes which you believe are in the image. Ensure the dishes conform to the following nutritional filters: " +
+    chosenNutritionalFilters;
   if (userDetail != "") {
     userPrompt =
-      "Return 4 names of dishes which you believe are in the image. Further detail to assist classification: " +
+      "Return 4 names of dishes which you believe are in the image. Ensure the dishes conform to the following nutritional filters: " +
+      chosenNutritionalFilters +
+      " Further detail to assist classification: " +
       userDetail;
   }
 
@@ -719,10 +838,16 @@ async function generateDishesFromImage(
   const agent = createAgent({
     model: llm,
     tools: [],
-    responseFormat: toolStrategy(RecipeListFromImageSchemaZod),
+    responseFormat: toolStrategy(recipeListFromImageSchemaZod(dishType)),
   });
 
-  console.log("Identifying dishes in the image:");
+  console.log(
+    "Identifying dishes in the image" +
+      " with filters: " +
+      chosenNutritionalFilters +
+      " and type: " +
+      dishType,
+  );
 
   const result = await agent.invoke({
     messages: [
@@ -731,7 +856,11 @@ async function generateDishesFromImage(
         content:
           "Return in the required schema, with the dish you believe is most likely depicted in the image in firstMostLikelyDish field " +
           "and the other fields filled accordingly. Ensure the JSON schema is satisfied and do not include more JSON." +
-          "Write the name of each dish concisely; in less than 20 words per dish, but include detail if necessary e.g. flavour, type, characteristics.",
+          "Write the name of each dish concisely; in less than 20 words per dish, but include detail if necessary e.g. flavour, type, characteristics." +
+          "Ensure the dishes are of type + " +
+          dishType +
+          " and conform to the following nutritional filters: " +
+          chosenNutritionalFilters,
       },
       {
         role: "user",

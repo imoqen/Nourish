@@ -1,6 +1,7 @@
 package uk.co.imoqen.nourish.db.tag
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -15,8 +16,11 @@ interface TagDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE) // will ignore if tag already exists which has the authorId (uid) and displayName combination. due to the index defined in Tag
     suspend fun insert(tag: Tag): Long
 
-    @Query("SELECT id FROM tag WHERE identifier = :identifier LIMIT 1")
-    suspend fun getIdByIdentifier(identifier: String): Long?
+    @Delete
+    suspend fun delete(tag: Tag)
+
+    @Query("SELECT id FROM tag WHERE identifier = :identifier AND authorId = :uid LIMIT 1")
+    suspend fun getIdByIdentifier(identifier: String, uid: String): Long?
 
     @Query("SELECT * FROM tag WHERE id = :id LIMIT 1")
     fun getById(id: Long): Flow<Tag?>

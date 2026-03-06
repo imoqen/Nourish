@@ -1,6 +1,7 @@
 package uk.co.imoqen.nourish.authentication
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -151,6 +152,12 @@ class AuthenticationViewModel @Inject constructor(
             if (uid == null) {
                 return@launch
             }
+            // do nothing if it is not the user's first time logging in.
+            if (!authenticationManager.getIsFirstLogin()) {
+                Log.i("first time", "false")
+                return@launch
+            }
+            Log.i("first time", "true")
 
             val recipeTags = listOf(
                 Tag(identifier = "VEGAN", displayName = "Vegan", colour = "GREEN", authorId = uid),
@@ -167,7 +174,7 @@ class AuthenticationViewModel @Inject constructor(
                 Tag(identifier = "HIGH-PROTEIN", displayName = "High protein", colour = "PURPLE", authorId = uid),
                 Tag(identifier = "LOW-FAT", displayName = "Low fat", colour = "GREEN", authorId = uid),
                 Tag(identifier = "LOW-CALORIE", displayName = "Low calorie", colour = "PINK", authorId = uid),
-                Tag(identifier = "RICH-IN-VITAMINS-MINERALS", displayName = "Vitamins & Minerals", colour = "RED", authorId = uid),
+                Tag(identifier = "VITAMINS-&-MINERALS", displayName = "Vitamins & Minerals", colour = "RED", authorId = uid),
                 Tag(identifier = "LOW-CARB", displayName = "Low carb", colour = "YELLOW", authorId = uid),
                 Tag(identifier = "HIGH-FIBRE", displayName = "High fibre", colour = "ORANGE", authorId = uid),
                 Tag(identifier = "NO-ADDED-SUGAR", displayName = "No added sugar", colour = "GREY", authorId = uid),

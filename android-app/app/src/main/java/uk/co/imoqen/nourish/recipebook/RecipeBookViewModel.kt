@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import uk.co.imoqen.nourish.common.FilterActions
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
@@ -43,7 +44,8 @@ class RecipeBookViewModel @Inject constructor(
     private val uiEventBus: UiEventBus,
     private val recipeRepository: RecipeRepository,
     private val ingredientRepository: IngredientRepository,
-    private val tagRepository: TagRepository
+    private val tagRepository: TagRepository,
+    private val filterActions: FilterActions
 ): ViewModel() {
 
     private val mutableUiState = MutableStateFlow(RecipeBookUiState())
@@ -90,94 +92,19 @@ class RecipeBookViewModel @Inject constructor(
         }
     }
 
-    fun setAllTags(allTags: List<TagSelection>) {
+    fun setRecipeTags(recipeTags: List<TagSelection>?) {
         mutableUiState.update { currentState ->
             currentState.copy(
-                allTags = allTags
+                recipeTags = recipeTags
             )
         }
     }
 
-    fun setRecipeTypes(recipeTypes: List<TypeSelection>) {
+    fun setRecipeTypes(recipeTypes: List<TypeSelection>?) {
         mutableUiState.update { currentState ->
             currentState.copy(
                 recipeTypes = recipeTypes
             )
-        }
-    }
-
-    // gets all tags
-    fun getAllTagsForUser() {
-        viewModelScope.launch() {
-            runCatching {
-                Log.i("setting","setting all tags")
-                val uid = authenticationManager.getUid()
-                if (uid == null) {
-                    throw NullPointerException()
-                }
-                // only update if an update has been made to the list of tags, or no tags have been obtained yet:
-                val allTags = mutableUiState.value.allTags
-                val allTagsUpdated = tagRepository.getAllForUser(uid).first()
-                if (allTags == null || allTags.size != allTagsUpdated.size) {
-                    setAllTags((tagRepository.getAllForUser(uid).first()).map { tag ->
-                        TagSelection(tag, false) // set all to not be checked initially
-                    })
-                }
-            }
-                .onFailure { e ->
-                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("The tags could not be obtained. Please try again later."))
-                    Log.i("tag obtaining", "failed: $e")
-                }
-        }
-    }
-
-    // IN FUTURE, REFACTOR THE FOLLOWING TWO METHODS TO USE SAME METHOD as they are similar.
-
-    // update the tag to show as selected when pressed.
-    fun updateSelectedTag(tag: Tag, status: Boolean) {
-        viewModelScope.launch() {
-            runCatching {
-                Log.i("updating","updating tag: ${tag.displayName}")
-                val allTags = mutableUiState.value.allTags
-                if (allTags == null) {
-                    throw NullPointerException()
-                }
-                setAllTags(allTags.map { tagSelection ->
-                    if (tag == tagSelection.tag) {
-                        tagSelection.copy(selected = status)
-                    } else {
-                        tagSelection
-                    }
-                })
-            }
-                .onFailure { e ->
-                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("The tag could not be selected. Please try again later."))
-                    Log.i("tag select", "failed: $e")
-                }
-        }
-    }
-
-    // update the type to show as selected when pressed.
-    fun updateSelectedType(type: RecipeType, status: Boolean) {
-        viewModelScope.launch() {
-            runCatching {
-                Log.i("updating","updating type: ${type.title}")
-                val recipeTypes = mutableUiState.value.recipeTypes
-                if (recipeTypes == null) {
-                    throw NullPointerException()
-                }
-                setRecipeTypes(recipeTypes.map { recipeSelection ->
-                    if (type == recipeSelection.type) {
-                        recipeSelection.copy(selected = status)
-                    } else {
-                        recipeSelection
-                    }
-                })
-            }
-                .onFailure { e ->
-                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("The type could not be selected. Please try again later."))
-                    Log.i("type select", "failed: $e")
-                }
         }
     }
 
@@ -380,33 +307,11 @@ class RecipeBookViewModel @Inject constructor(
         return true
     }
 
-    fun setAllRecipeTypes() {
-        viewModelScope.launch() {
-            runCatching {
-                val originalTypes = uiState.value.recipeTypes
-                val updatedTypes = recipeRepository.getAllRecipeTypes().first()
-                // only set if not already set or value updated:
-                if (originalTypes == null || updatedTypes.size != originalTypes.size) {
-                    setRecipeTypes(recipeRepository.getAllRecipeTypes().first().map { type ->
-                        TypeSelection(
-                            type,
-                            false
-                        ) // set all recipe types to not be selected currently
-                    })
-                }
-            }
-                .onSuccess {  }
-                .onFailure { e ->
-                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Couldn't fetch recipe types. Please try again later."))
-                    Log.i("recipe types", "failed: $e")
-                }
-        }
-    }
-
     @OptIn(FlowPreview::class)
     fun getRecipeBookMap() {
         viewModelScope.launch() {
             runCatching {
+                Log.i("all recipes", "getting all")
                 val allRecipes = getAllRecipes().debounce(300).first() // get all recipes. debouncing is added to provide smoothness
                 // Filter to search term if search has been made:
                 /*if (mutableUiState.value.searchTerm != "") {
@@ -443,6 +348,51 @@ class RecipeBookViewModel @Inject constructor(
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Couldn't fetch recipes. Please try again later."))
                     Log.i("recipe book", "failed: $e")
                 }
+        }
+    }
+
+    fun getAllTagsForUser() {
+        viewModelScope.launch() {
+            (filterActions.getAllTagsForUser(
+                mutableUiState.value.recipeTags
+            ))?.let { updatedTags ->
+                setRecipeTags(updatedTags) // only sets if not null
+            }
+        }
+    }
+
+    fun getAllRecipeTypes() {
+        viewModelScope.launch() {
+            (filterActions.getAllRecipeTypesSelectionList(
+                mutableUiState.value.recipeTypes
+            ))?.let { updatedTypes ->
+                Log.i("setting types", "not null: ${updatedTypes}")
+                setRecipeTypes(updatedTypes) // only sets if not null
+            }
+        }
+    }
+
+    fun updateSelected(tag: Tag, status: Boolean) {
+        viewModelScope.launch() {
+            setRecipeTags(
+                filterActions.updateSelected(
+                    tag,
+                    status,
+                    mutableUiState.value.recipeTags
+                )
+            )
+        }
+    }
+
+    fun updateSelected(recipeType: RecipeType, status: Boolean) {
+        viewModelScope.launch() {
+            setRecipeTypes(
+                filterActions.updateSelected(
+                    recipeType,
+                    status,
+                    mutableUiState.value.recipeTypes
+                )
+            )
         }
     }
 

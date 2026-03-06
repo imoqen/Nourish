@@ -7,5 +7,6 @@ package uk.co.imoqen.nourish.authentication
 data class AuthenticationState (
     val loggedIn: Boolean = false,
     val uid: String = "",
-    val email: String = ""
+    val email: String = "",
+    val isFirstLogin: Boolean = false
 )
