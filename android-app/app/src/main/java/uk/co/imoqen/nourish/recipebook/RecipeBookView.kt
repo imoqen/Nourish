@@ -67,6 +67,9 @@ import coil3.request.ImageRequest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.NourishColour
+import uk.co.imoqen.nourish.common.NourishDivider
+import uk.co.imoqen.nourish.common.NourishH2
+import uk.co.imoqen.nourish.common.NourishH3
 import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.common.SelectedTags
@@ -234,7 +237,14 @@ fun RecipeList(
 
                     if (recipeTypesSelected.isEmpty() || recipeTypesSelected.contains(recipeType)) {
                         if (recipeCardsUnexpanded.isNotEmpty()) {
-                            Text(recipeType.title)
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                NourishH2(recipeType.title)
+                            }
 
                             val list: MutableList<Pair<String, NourishColour>> = mutableListOf()
                             //uiState.allTags!!.map { tag -> Pair(tag.tag.displayName, enumValueOf<NourishColour>(tag.tag.colour))}.toMutableList()
@@ -423,11 +433,16 @@ fun RecipeList(
                                         }
                                     }
                                 }
+
+                                NourishDivider()
+
                             } else {
                                 Text("There are no ${recipeType.title} recipes which match the search/filter criteria.")
+                                NourishDivider()
                             }
                         } else {
                             Text("You have not yet saved any ${recipeType.title} recipes.")
+                            NourishDivider()
                         }
                     }
                 }
@@ -447,7 +462,6 @@ fun RecipeList(
                     )
 
                 }
-
             }
         } else {
             // display loading for when app first starts then display error msg for when no recipes yet
