@@ -305,7 +305,7 @@ fun NourishIconTextButton(
                 MaterialTheme.colorScheme.primaryContainer
             }
         ),
-        modifier = if (fillMaxWidth) { modifier.fillMaxWidth().fillMaxHeight() } else Modifier,
+        modifier = if (fillMaxWidth) { modifier.fillMaxWidth().fillMaxHeight() } else modifier,
         enabled = enabled
     ) {
         Row(

@@ -1,8 +1,10 @@
 package uk.co.imoqen.nourish.recipebook
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import uk.co.imoqen.nourish.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -26,6 +28,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,6 +46,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -54,6 +58,7 @@ import uk.co.imoqen.nourish.common.NourishH1
 import uk.co.imoqen.nourish.common.NourishH2
 import uk.co.imoqen.nourish.common.NourishH3
 import uk.co.imoqen.nourish.common.NourishIconButton
+import uk.co.imoqen.nourish.common.NourishIconTextButton
 import uk.co.imoqen.nourish.common.onBackgroundColour
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import java.io.File
@@ -97,7 +102,7 @@ fun RecipeCard(
 
         ) {
             Column(
-                modifier = Modifier.fillMaxSize().background(color = MaterialTheme.colorScheme.background),
+                modifier = Modifier.fillMaxSize().background(color = MaterialTheme.colorScheme.background).padding(bottom=8.dp),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -244,14 +249,26 @@ fun RecipeCard(
                             .weight(1f) // tags takes up all remaining space, serving size takes up as much as it needs.
                     ) {
                         Column(
-                            modifier = Modifier.padding(8.dp) // for inner padding of the total item
+                            modifier = Modifier.padding(8.dp).fillMaxWidth() // for inner padding of the total item
                         ) {
-                            FlowRow(
-                                modifier = Modifier.padding(2.dp),
-                                horizontalArrangement = Arrangement.spacedBy(2.dp),
-                                verticalArrangement = Arrangement.spacedBy(2.dp),
-                            ) {
-                                TagsDisplay(recipeCard.recipeTags)
+                            val tags = recipeCard.recipeTags
+                            if (tags.isEmpty()) {
+                                Text(
+                                    text = "No tags",
+                                    modifier = Modifier.fillMaxWidth(),
+                                    color = MaterialTheme.colorScheme.onBackground.copy(
+                                        0.5f
+                                    ),
+                                    textAlign = TextAlign.Center
+                                )
+                            } else {
+                                FlowRow(
+                                    modifier = Modifier.padding(2.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                                ) {
+                                    TagsDisplay(tags)
+                                }
                             }
                         }
                     }
@@ -273,7 +290,7 @@ fun RecipeCard(
                             NourishIconButton(
                                 onClick = { recipeBookViewModel.alterServingSize(false) },
                                 painter = painterResource(R.drawable.subtract),
-                                modifier = Modifier.width(24.dp)
+                                modifier = Modifier.size(38.dp)
                             )
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -292,7 +309,7 @@ fun RecipeCard(
                             NourishIconButton(
                                 onClick = { recipeBookViewModel.alterServingSize(true) },
                                 painter = painterResource(R.drawable.add),
-                                modifier = Modifier.width(24.dp)
+                                modifier = Modifier.size(38.dp)
                             )
                         }
                     }
@@ -310,7 +327,8 @@ fun RecipeCard(
                     verticalArrangement = Arrangement.Center
                 ) {
                     NourishH2("Ingredients")
-                    NourishDivider(modifier = Modifier.padding(0.dp))
+                    HorizontalDivider()
+
                     Column(
                         modifier = Modifier
                             .animateContentSize()
@@ -348,10 +366,13 @@ fun RecipeCard(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
+
+                    NourishH2("Method")
+                    HorizontalDivider()
+
                     Column(
-                        modifier = Modifier.padding(8.dp) // for inner padding of the total item
+                        modifier = Modifier.padding(8.dp).padding(bottom=8.dp) // for inner padding of the total item
                     ) {
-                        NourishH2("Method")
                         recipeCard.method.forEachIndexed { i, (instruction, complete, id) ->
                             Row(
                                 horizontalArrangement = Arrangement.Center,
@@ -373,13 +394,74 @@ fun RecipeCard(
                                 text = instruction,
                                 textDecoration = if (complete) {
                                     TextDecoration.LineThrough
-                                } else TextDecoration.None
+                                } else TextDecoration.None,
+                                textAlign = TextAlign.Center
                             )
+
+                            if (i != recipeCard.method.size-1) {
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(horizontal = 12.dp)
+                                        .padding(top = 12.dp)
+                                )
+                            }
                         }
                     }
                 }
             }
-            Text("Storage guidance: ${recipeCard.storageInstructions}")
+
+            HorizontalDivider(modifier = Modifier.padding(bottom=4.dp))
+
+            Column(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                NourishH2("Storage Guidance")
+
+                HorizontalDivider()
+
+                Text(
+                    text = recipeCard.storageInstructions,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(top=4.dp))
+
+            Column(
+                modifier = Modifier.fillMaxSize().background(color = MaterialTheme.colorScheme.background).padding(vertical=10.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+
+                NourishIconTextButton(
+                    onClick = {},
+                    painter = painterResource(R.drawable.forkchart),
+                    description = "Nutritional Values",
+                    modifier = Modifier.fillMaxWidth(0.7f)
+                )
+
+                NourishIconTextButton(
+                    onClick = {},
+                    painter = painterResource(R.drawable.adjust),
+                    description = "Make an alteration",
+                    modifier = Modifier.fillMaxWidth(0.7f)
+                )
+
+                NourishIconTextButton(
+                    onClick = {},
+                    painter = painterResource(R.drawable.live_question),
+                    description = "Ask a question",
+                    modifier = Modifier.fillMaxWidth(0.7f)
+                )
+            }
+
         }
     }
 }
