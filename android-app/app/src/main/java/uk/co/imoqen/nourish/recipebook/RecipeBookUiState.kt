@@ -42,7 +42,6 @@ data class RecipeCardExpanded(
     val recipeType: Pair<String, Int>,
     val recipeTags: MutableList<Pair<String, NourishColour>>,
     val storageInstructions: String,
-    val recipeId: Long, // to recover the corresponding recipe card if needed
     val imagePath: String,
     val emoji: String
 )

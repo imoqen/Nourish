@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import uk.co.imoqen.nourish.common.FilterActions
+import uk.co.imoqen.nourish.common.RecipeActions
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
@@ -45,7 +45,7 @@ class RecipeBookViewModel @Inject constructor(
     private val recipeRepository: RecipeRepository,
     private val ingredientRepository: IngredientRepository,
     private val tagRepository: TagRepository,
-    private val filterActions: FilterActions
+    private val recipeActions: RecipeActions
 ): ViewModel() {
 
     private val mutableUiState = MutableStateFlow(RecipeBookUiState())
@@ -195,7 +195,7 @@ class RecipeBookViewModel @Inject constructor(
 
                 val recipeCard = RecipeCardExpanded(
                     title, ingredientsMap, method, serves, recipeType,
-                    recipeTags, storageInstructions, recipe.id, recipe.imagePath, recipe.emoji
+                    recipeTags, storageInstructions, recipe.imagePath, recipe.emoji
                 )
 
                 setRecipeCard(recipeCard)
@@ -264,7 +264,7 @@ class RecipeBookViewModel @Inject constructor(
             // determine pluralities
             val ingredientAmount = ingredient.amount
             val ingredientUnit = ingredient.ingredientUnit
-            val unit = if (determineUnitPlurality(ingredientAmount)) {
+            val unit = if (recipeActions.determineUnitPlurality(ingredientAmount)) {
                 ingredientUnit.pluralName
             } else {
                 ingredientUnit.singularName
@@ -274,7 +274,7 @@ class RecipeBookViewModel @Inject constructor(
 
             if (ingredientName != null && sectionTitle != null) {
                 val ingredientPluralisedName =
-                    if (determineIngredientPlurality(ingredientAmount, ingredientUnit)) {
+                    if (recipeActions.determineIngredientPlurality(ingredientAmount, ingredientUnit)) {
                         ingredientName.plural
                     } else {
                         ingredientName.singular
@@ -290,29 +290,6 @@ class RecipeBookViewModel @Inject constructor(
             }
         }
         return sectionsWithIngredients
-    }
-
-    // determine if plural form should be used or not
-// true if plural, false if singular
-    fun determineUnitPlurality(
-        ingredientAmount: Double,
-    ): Boolean {
-        // plural form should be used in most cases; just a few cases where it shouldn't.
-        return ingredientAmount != 1.0 // if only 1, should always be singular.
-    }
-
-    fun determineIngredientPlurality(
-        ingredientAmount: Double,
-        ingredientUnit: IngredientUnit
-    ): Boolean {
-        if (ingredientAmount <= 1.0) {
-            // e.g. 1 strawberry = singular
-            // but 1 cup strawberry should be plural: 1 cup strawberries
-            if (ingredientUnit.useSingularForOne) {
-                return false // use singular
-            }
-        }
-        return true
     }
 
     @OptIn(FlowPreview::class)
@@ -382,7 +359,7 @@ class RecipeBookViewModel @Inject constructor(
 
     fun getAllTagsForUser() {
         viewModelScope.launch() {
-            (filterActions.getAllTagsForUser(
+            (recipeActions.getAllTagsForUser(
                 mutableUiState.value.recipeTags
             ))?.let { updatedTags ->
                 setRecipeTags(updatedTags) // only sets if not null
@@ -392,7 +369,7 @@ class RecipeBookViewModel @Inject constructor(
 
     fun getAllRecipeTypes() {
         viewModelScope.launch() {
-            (filterActions.getAllRecipeTypesSelectionList(
+            (recipeActions.getAllRecipeTypesSelectionList(
                 mutableUiState.value.recipeTypes
             ))?.let { updatedTypes ->
                 Log.i("setting types", "not null: ${updatedTypes}")
@@ -404,7 +381,7 @@ class RecipeBookViewModel @Inject constructor(
     fun updateSelected(tag: Tag, status: Boolean) {
         viewModelScope.launch() {
             setRecipeTags(
-                filterActions.updateSelected(
+                recipeActions.updateSelected(
                     tag,
                     status,
                     mutableUiState.value.recipeTags
@@ -416,7 +393,7 @@ class RecipeBookViewModel @Inject constructor(
     fun updateSelected(recipeType: RecipeType, status: Boolean) {
         viewModelScope.launch() {
             setRecipeTypes(
-                filterActions.updateSelected(
+                recipeActions.updateSelected(
                     recipeType,
                     status,
                     mutableUiState.value.recipeTypes
@@ -425,5 +402,11 @@ class RecipeBookViewModel @Inject constructor(
         }
     }
 
+    // recipe actions
+    fun formatIngredientAmount(
+        ingredientAmount: Double
+    ): String {
+        return recipeActions.formatIngredientAmount(ingredientAmount)
+    }
 
 }

@@ -553,7 +553,7 @@ async function generateRecipe(
       {
         role: "system",
         content:
-          "Return in the required schema, write in sufficient detail but not too much (keep below 250 words). Do not include absolute amounts in the method part of the schema. Ensure that the recipe produced conforms to the following nutritional requirements and are thus listed in the tags array of the schema (and any more tags which you deem appropriate for the recipe): " +
+          "Return in the required schema, write in sufficient detail but not too much (keep below 250 words). Use British English. Do not include absolute amounts in the method part of the schema. Ensure that the recipe produced conforms to the following nutritional requirements and are thus listed in the tags array of the schema (and any more tags which you deem appropriate for the recipe): " +
           chosenNutritionalFilters +
           " and the recipe must be of type: " +
           dishType,
@@ -612,7 +612,7 @@ async function generateDishesFromIngredients(
         role: "system",
         content:
           "Return in the required schema, with the best dish you believe can be cooked from only these ingredients in firstMostLikelyDish field " +
-          "and the other fields filled accordingly. Ensure the JSON schema is satisfied and do not include more JSON." +
+          "and the other fields filled accordingly. Ensure the JSON schema is satisfied and do not include more JSON. Use British English. " +
           "Write the name of each dish concisely; in less than 20 words per dish, but include detail if necessary e.g. flavour, type, characteristics." +
           "Ensure that every dish conforms to the nutritional filters: " +
           chosenNutritionalFilters,
@@ -684,7 +684,7 @@ async function generateRecipeFromDishImage(
       {
         role: "system",
         content:
-          "Return in the required schema, write in sufficient detail but not too much (keep below 250 words). Do not include absolute amounts in the method part of the schema. " +
+          "Return in the required schema, write in sufficient detail but not too much (keep below 250 words). Use British English. Do not include absolute amounts in the method part of the schema. " +
           "Furthermore, a list of ingredients is supplied. The recipe must be created using only these ingredients, but the recipe does not need to " +
           "use all of these - they are simply what the user has access to and can use for the recipe. So do not use ingredients if they are not needed for the recipe." +
           "Ensure that the recipe is of type " +
@@ -773,7 +773,7 @@ async function generateDishesFromIngredientsImage(
         content:
           "Return in the required schema, first with the ingredients that you can see present in the image in the ingredients field, and then " +
           "the dish you believe is most likely able to be cooked with these ingredients in firstMostLikelyDish field " +
-          "and the other fields filled accordingly. Ensure the JSON schema is satisfied and do not include more JSON." +
+          "and the other fields filled accordingly. Ensure the JSON schema is satisfied and do not include more JSON. Use British English. " +
           "Write the name of each dish concisely; in less than 20 words per dish, but include detail if necessary e.g. flavour, type, characteristics." +
           "Ensure the dishes are of type + " +
           dishType +
@@ -856,7 +856,7 @@ async function generateDishesFromImage(
         role: "system",
         content:
           "Return in the required schema, with the dish you believe is most likely depicted in the image in firstMostLikelyDish field " +
-          "and the other fields filled accordingly. Ensure the JSON schema is satisfied and do not include more JSON." +
+          "and the other fields filled accordingly. Ensure the JSON schema is satisfied and do not include more JSON. Use British English. " +
           "Write the name of each dish concisely; in less than 20 words per dish, but include detail if necessary e.g. flavour, type, characteristics." +
           "Ensure the dishes are of type + " +
           dishType +

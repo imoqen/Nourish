@@ -355,7 +355,7 @@ fun RecipeCard(
 
                                 // id can be used if user wishes to add to shopping list
                                 ingredients.forEach { (ingredient, amount, id) ->
-                                    Text("${formatIngredientAmount(amount)} $ingredient")
+                                    Text("${recipeBookViewModel.formatIngredientAmount(amount)} $ingredient")
                                 }
                             }
                         }
@@ -487,15 +487,4 @@ fun RecipeCard(
 @Composable
 fun LlmActions() {
     Text("hello world!")
-}
-
-// shaves off the decimal if it is .0, otherwise keeps it.
-// e.g. 5.0 -> 5 but 5.5 remains -> 5.5
-fun formatIngredientAmount(
-    ingredientAmount: Double
-): String {
-    if (ingredientAmount % 1.0 == 0.0) {
-        return ingredientAmount.toInt().toString()
-    }
-    return ingredientAmount.toString()
 }

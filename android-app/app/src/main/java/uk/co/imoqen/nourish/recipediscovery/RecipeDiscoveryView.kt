@@ -88,6 +88,7 @@ import uk.co.imoqen.nourish.common.NourishSurfaceButton
 import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.common.NourishTextMessage
+import uk.co.imoqen.nourish.common.RecipeActions
 import uk.co.imoqen.nourish.common.SelectedTags
 import uk.co.imoqen.nourish.common.TagsDisplayForFiltering
 import uk.co.imoqen.nourish.common.TextSender
@@ -95,8 +96,10 @@ import uk.co.imoqen.nourish.common.TypesDisplayForMutuallyExclusiveFiltering
 import uk.co.imoqen.nourish.common.backgroundColour
 import uk.co.imoqen.nourish.common.dimmedBackgroundColour
 import uk.co.imoqen.nourish.common.onBackgroundColour
+import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
+import uk.co.imoqen.nourish.recipebook.ImageCardHeader
 
 import java.io.File
 import kotlin.text.lowercase
@@ -654,17 +657,53 @@ fun RecipeGenerationResult(
     viewModel: RecipeDiscoveryViewModel,
     uiState: RecipeDiscoveryUiState
 ) {
-    // Outputs the response, or error if occurred.
-    if (uiState.apiResponse != "") {
-        Log.i("recipe res", "not null")
-        Text(
-            uiState.apiResponse,
-            modifier = Modifier.fillMaxWidth()
-        )
+    Column( // column for the top contents
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        NourishTextMessage(
+            textSender = TextSender.LLM,
+            modifier = Modifier.align(Alignment.Start)
+        ) {
+
+            // Outputs the response, or error if occurred.
+            if (uiState.llmGeneratedRecipe != null) {
+                Log.i("recipe res", "not null")
+                val context = LocalContext.current
+                Column() {
+                    ImageCardHeader(
+                        uiState.savedImageFilename,
+                        uiState.llmGeneratedRecipe.emoji,
+                        context
+                    )
+                    NourishH3(uiState.llmGeneratedRecipe.title)
+
+                    uiState.llmGeneratedRecipe.sectionIngredients.forEach { ingredientSection ->
+                        Text(ingredientSection.section)
+                        ingredientSection.ingredients.forEach { ingredient ->
+
+                            val ingredientText = viewModel.formatIngredientText(ingredient)
+                            Text(ingredientText)
+                        }
+                    }
+
+                    uiState.llmGeneratedRecipe.method.forEachIndexed { i, step ->
+                        Text("Step ${(i + 1)}: $step")
+                    }
+
+                    Text("Servings: ${uiState.llmGeneratedRecipe.servings}")
+                    Text("Storage guidance: ${uiState.llmGeneratedRecipe.storage}")
+
+                    Text(uiState.llmGeneratedRecipe.mealType)
+
+                    // then put all the tags which were selected.
+                }
+            }
+        }
     }
 
     // the loading circle:
     IndeterminateCircularIndicator()
+
 }
 
 fun generateRecipeFromChosenDish(
@@ -676,7 +715,7 @@ fun generateRecipeFromChosenDish(
 ) {
     // Set the user request depending on whether an image or ingredients were included
     if (dishes.ingredientsIdentified != null) {
-        viewModel.setChosenDish(dish + ", using only ingredients: ${dishes.ingredientsIdentified}")
+        viewModel.setChosenDish(dish + "\n\nUsing only ingredients: ${dishes.ingredientsIdentified}")
     } else {
         viewModel.setChosenDish(dish)
     }

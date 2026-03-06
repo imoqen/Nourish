@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish.recipebook
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.animation.AnimatedContent
 import uk.co.imoqen.nourish.R
@@ -306,75 +307,13 @@ fun RecipeList(
                                                         Column(
                                                             modifier = Modifier.fillMaxSize()
                                                         ) {
-                                                            Box(
-                                                                modifier = Modifier
-                                                                    .width(240.dp) // matches the card width
-                                                                    .height(
-                                                                        if (recipeCardUnexpanded.imagePath != "") {
-                                                                            115.dp
-                                                                        } else {
-                                                                            100.dp
-                                                                        }
-                                                                    )
-                                                            ) {
-                                                                // Image:
-                                                                val imageFile =
-                                                                    File(
-                                                                        context.filesDir,
-                                                                        recipeCardUnexpanded.imagePath
-                                                                    )
-                                                                var displayImage = false
-                                                                if (imageFile.exists() && recipeCardUnexpanded.imagePath != "") {
-                                                                    displayImage = true
-                                                                    //Use Coil to display the selected image
-                                                                    val painter =
-                                                                        rememberAsyncImagePainter(
-                                                                            ImageRequest
-                                                                                .Builder(
-                                                                                    LocalContext.current
-                                                                                )
-                                                                                .data(imageFile)
-                                                                                .build()
-                                                                        )
 
-                                                                    Image(
-                                                                        painter = painter,
-                                                                        contentDescription = null,
-                                                                        modifier = Modifier
-                                                                            .width(240.dp) // matches the card width
-                                                                            .height(100.dp), // 2/3 of the card height - maybe use consts for this in future to ensure they match upon changes
-                                                                        contentScale = ContentScale.Crop
-                                                                    )
-                                                                } else {
-                                                                    Box(
-                                                                        modifier = Modifier.width(
-                                                                            240.dp
-                                                                        ) // matches the card width
-                                                                            .height(100.dp)
-                                                                            .background(
-                                                                                MaterialTheme.colorScheme.error
-                                                                            ) // put the chosen colour
-                                                                    )
-                                                                }
-                                                                // Emoji:
-                                                                Text(
-                                                                    text = recipeCardUnexpanded.emoji,
-                                                                    fontSize = 32.sp,
-                                                                    // center emoji if no image, otherwise put at bottom center
-                                                                    modifier = if (displayImage) {
-                                                                        Modifier.align(Alignment.BottomCenter)
-                                                                    } else {
-                                                                        Modifier.align(Alignment.Center)
-                                                                    },
-                                                                    style = TextStyle(
-                                                                        shadow = Shadow(
-                                                                            color = Color.Black,
-                                                                            offset = Offset(4f, 4f),
-                                                                            blurRadius = 4f
-                                                                        )
-                                                                    )
-                                                                )
-                                                            }
+                                                            ImageCardHeader(
+                                                                recipeCardUnexpanded.imagePath,
+                                                                recipeCardUnexpanded.emoji,
+                                                                context
+                                                            )
+
                                                             Column(
                                                                 modifier = Modifier.fillMaxWidth(),
                                                                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -467,6 +406,82 @@ fun RecipeList(
             // display loading for when app first starts then display error msg for when no recipes yet
             RecipeLoadingBar()
         }
+    }
+}
+
+@Composable
+fun ImageCardHeader(
+    imagePath: String,
+    emoji: String,
+    context: Context,
+    fillMaxWidth: Boolean = false
+) {
+    Box(
+        modifier =
+            if (fillMaxWidth) { Modifier.fillMaxWidth() } else { Modifier.width(240.dp)  }
+                .height(
+                    if (imagePath != "") {
+                        115.dp
+                    } else {
+                        100.dp
+                    }
+                )
+    ) {
+        // Image:
+        val imageFile =
+            File(
+                context.filesDir,
+                imagePath
+            )
+        var displayImage = false
+        if (imageFile.exists() && imagePath != "") {
+            displayImage = true
+            //Use Coil to display the selected image
+            val painter =
+                rememberAsyncImagePainter(
+                    ImageRequest
+                        .Builder(
+                            LocalContext.current
+                        )
+                        .data(imageFile)
+                        .build()
+                )
+
+            Image(
+                painter = painter,
+                contentDescription = null,
+                modifier =
+                    if (fillMaxWidth) { Modifier.fillMaxWidth() } else { Modifier.width(240.dp)  } // matches the card width
+                    .height(100.dp), // 2/3 of the card height - maybe use consts for this in future to ensure they match upon changes
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Box(
+                modifier = if (fillMaxWidth) { Modifier.fillMaxWidth() } else { Modifier.width(240.dp)  }// matches the card width
+                    .height(100.dp)
+                    .background(
+                        MaterialTheme.colorScheme.error
+                    ) // put the chosen colour
+            )
+        }
+        // Emoji:
+        Text(
+            text = emoji,
+            fontSize = 32.sp,
+            // center emoji if no image, otherwise put at bottom center
+            modifier = if (displayImage) {
+                Modifier.align(Alignment.BottomCenter)
+            } else {
+                Modifier.align(Alignment.Center)
+            },
+            style = TextStyle(
+                shadow = Shadow(
+                    color = Color.Black,
+                    offset = Offset(4f, 4f),
+                    blurRadius = 4f
+                )
+            )
+        )
     }
 }
 

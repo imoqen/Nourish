@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.ErrorMessage
-import uk.co.imoqen.nourish.common.FilterActions
+import uk.co.imoqen.nourish.common.RecipeActions
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
@@ -22,14 +22,15 @@ import uk.co.imoqen.nourish.network.request.LlmRequest
 import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import javax.inject.Inject
 import uk.co.imoqen.nourish.common.saveImage
+import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
+import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 import uk.co.imoqen.nourish.recipebook.TagSelection
-import uk.co.imoqen.nourish.recipebook.TypeSelection
 import java.io.File
 import java.lang.NullPointerException
 import kotlin.onSuccess
@@ -54,7 +55,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
     private val apiManager: ApiManager,
     private val uiEventBus: UiEventBus,
     private val recipeRepository: RecipeRepository,
-    private val filterActions: FilterActions,
+    private val recipeActions: RecipeActions,
 ): ViewModel() {
     private val mutableUiState = MutableStateFlow(RecipeDiscoveryUiState())
     val uiState: StateFlow<RecipeDiscoveryUiState> = mutableUiState.asStateFlow()
@@ -64,6 +65,14 @@ class RecipeDiscoveryViewModel @Inject constructor(
         mutableUiState.update { currentState ->
             currentState.copy(
                 apiResponse = apiResponse
+            )
+        }
+    }
+
+    fun setLlmGeneratedRecipe(llmGeneratedRecipe: LlmRecipe?) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                llmGeneratedRecipe = llmGeneratedRecipe
             )
         }
     }
@@ -273,7 +282,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
                     setTagCreationError("Please ensure that the tag description is unique; it cannot be the same as another tag.")
                     return@launch
                 }
-                filterActions.createTag(description, colour)
+                recipeActions.createTag(description, colour)
             }
                 .onSuccess {
                     // when the tag has been successfully made,
@@ -296,7 +305,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
                     return@launch
                 }
                 Log.i("tag delete", "not null")
-                filterActions.deleteTag(tagToDelete)
+                recipeActions.deleteTag(tagToDelete)
             }
                 .onSuccess {
                     // after tag is deleted, refresh the available tags:
@@ -449,6 +458,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
                         }
                         // Response is valid - output in a recipe card to the user
                         setApiResponse(response.string)
+                        setLlmGeneratedRecipe(response.llmRecipe)
                         addRecipe(response.llmRecipe)
 
                         // valid: set to the dish selection stage
@@ -526,7 +536,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
         reset: Boolean = false // to reset to get all tags as not selected; by default set to false
     ) {
         viewModelScope.launch() {
-            (filterActions.getAllTagsForUser(
+            (recipeActions.getAllTagsForUser(
                 mutableUiState.value.recipeTags, reset
             ))?.let { updatedTags ->
                 setRecipeTags(updatedTags) // only sets if not null
@@ -537,7 +547,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
     // only sets if the update is not null.
     fun getAllRecipeTypes() {
         viewModelScope.launch() {
-            (filterActions.getAllRecipeTypes())?.let { updatedTypes ->
+            (recipeActions.getAllRecipeTypes())?.let { updatedTypes ->
                 Log.i("setting types", "not null: ${updatedTypes}")
                 setRecipeTypes(updatedTypes) // only sets if not null
             }
@@ -547,7 +557,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
     fun updateSelected(tag: Tag, status: Boolean) {
         viewModelScope.launch() {
             setRecipeTags(
-                filterActions.updateSelected(
+                recipeActions.updateSelected(
                     tag,
                     status,
                     mutableUiState.value.recipeTags
@@ -573,6 +583,64 @@ class RecipeDiscoveryViewModel @Inject constructor(
 
         setSavedImageFilename("")
         setPlaceholderText("")
+
+        setLlmGeneratedRecipe(null)
+    }
+
+    fun determineUnitPlurality(
+        ingredientAmount: Double,
+    ): Boolean {
+        return recipeActions.determineUnitPlurality(ingredientAmount)
+    }
+
+    fun determineIngredientPlurality(
+        ingredientAmount: Double,
+        ingredientUnit: IngredientUnit
+    ): Boolean {
+        return recipeActions.determineIngredientPlurality(ingredientAmount, ingredientUnit)
+    }
+
+    fun formatIngredientAmount(
+        ingredientAmount: Double
+    ): String {
+        return recipeActions.formatIngredientAmount(ingredientAmount)
+    }
+
+    // only used for llmingredient as they are dealt with differently.
+    fun formatIngredientText(
+        ingredient: LlmIngredient
+    ): String {
+        runCatching {
+            val amount = ingredient.ingredientAmount
+            val ingredientUnit = IngredientUnit.valueOf(ingredient.ingredientAmountUnit)
+
+            val unit = if (determineUnitPlurality(amount)) {
+                ingredientUnit.pluralName
+            } else {
+                ingredientUnit.singularName
+            }
+
+            val ingredientPluralisedName =
+                if (determineIngredientPlurality(ingredient.ingredientAmount, ingredientUnit)) {
+                    ingredient.ingredientPlural
+                } else {
+                    ingredient.ingredientSingular
+                }
+
+            return if (unit != "") {
+                ("${formatIngredientAmount(amount)} $unit $ingredientPluralisedName")
+            } else {
+                ("${formatIngredientAmount(amount)} $ingredientPluralisedName")
+            }
+        }
+            .onFailure {
+                viewModelScope.launch {
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("The recipe could not be generated. Please try again."))
+                    setLlmChatStage(LlmChatStage.USER_INPUT)
+                    return@launch
+                }
+            }
+        return "" // invalid if reached here
     }
 
 }
