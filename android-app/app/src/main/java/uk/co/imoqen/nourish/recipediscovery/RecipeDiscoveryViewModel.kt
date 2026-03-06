@@ -351,14 +351,14 @@ class RecipeDiscoveryViewModel @Inject constructor(
                     mutableUiState.value.recipeTags?.filter { it.selected }
                         ?.joinToString(", ") { it.tag.identifier } // only gets the selected filters and puts them into a string
                 if (chosenNutritionalFilters == null) {
-                    chosenNutritionalFilters = ""
+                    chosenNutritionalFilters = "[]" // signifies empty list
                 }
                 Log.i("selected tags: ", chosenNutritionalFilters)
 
 
                 var allNutritionalFilters = mutableUiState.value.recipeTags?.joinToString(", ") { it.tag.identifier }
                 if (allNutritionalFilters == null) {
-                    allNutritionalFilters = ""
+                    allNutritionalFilters = "[]" // signifies empty list
                 }
 
                 val dishType = mutableUiState.value.selectedRecipeType?.title?: "Breakfast, Lunch, Dinner, Dessert, Side, Drink" // if none provided, all.
@@ -560,15 +560,19 @@ class RecipeDiscoveryViewModel @Inject constructor(
     fun restart() {
         setApiResponse("")
         setUserRequest("")
+        setChosenDish("")
+
         setUserChoice(null)
         setDishes(null)
-        getAllTagsForUser()
+
+        getAllTagsForUser(reset=true)
         setSelectedRecipeType(null)
+
         setLlmChatStage(LlmChatStage.USER_SELECT_OPTION) // the starting stage
-        setSavedImageFilename("")
         setRequestType(LlmRequestType.RECIPE)
+
+        setSavedImageFilename("")
         setPlaceholderText("")
-        setChosenDish("")
     }
 
 }

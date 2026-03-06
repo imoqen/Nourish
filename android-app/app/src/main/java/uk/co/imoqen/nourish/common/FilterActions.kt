@@ -59,14 +59,16 @@ class FilterActions @Inject constructor(
             }
             // only update if an update has been made to the list of tags, or no tags have been obtained yet:
             val allTagsUpdated = tagRepository.getAllForUser(uid).first()
-            if (previousTags == null || previousTags.size != allTagsUpdated.size) {
+            if (previousTags == null || previousTags.size != allTagsUpdated.size || reset) {
                 return (
                         (tagRepository.getAllForUser(uid).first())
                             .map { tag ->
                                 val oldTag = previousTags?.find { it.tag == tag }
                                 val selected = if (!reset) {
+                                    Log.i("selected", "${oldTag?.selected}")
                                     (oldTag?.selected) ?: false
                                 } else {
+                                    Log.i("selected", "RESETTING TO FALSE")
                                     false
                                 }
                                 TagSelection(tag, selected) // so that old tags preserve their selected values
