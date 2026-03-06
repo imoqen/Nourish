@@ -76,14 +76,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
-    fun setAwaitingResponse(awaitingResponse: Boolean) {
-        mutableUiState.update { currentState ->
-            currentState.copy(
-                awaitingResponse = awaitingResponse
-            )
-        }
-    }
-
     fun setSavedImageFilename(savedImageFilename: String) {
         mutableUiState.update { currentState ->
             currentState.copy(
@@ -213,22 +205,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
-    fun setAllowUserInput(allowUserInput: Boolean) {
-        mutableUiState.update { currentState ->
-            currentState.copy(
-                allowUserInput = allowUserInput
-            )
-        }
-    }
-
-    fun setUserSentRequest(userSentRequest: Boolean) {
-        mutableUiState.update { currentState ->
-            currentState.copy(
-                userSentRequest = userSentRequest
-            )
-        }
-    }
-
     fun setVisible(visible: Boolean) {
         mutableUiState.update { currentState ->
             currentState.copy(
@@ -243,6 +219,32 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 chosenDish = chosenDish
             )
         }
+    }
+
+    fun setLlmChatStage(llmChatStage: LlmChatStage) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                llmChatStage = llmChatStage
+            )
+        }
+    }
+
+    fun updateToInputStageGivenOptions(
+        userChoice: LlmMode?,
+        placeholderText: String,
+        requestType: LlmRequestType,
+    ) {
+        setUserChoice(userChoice) // for the display of the ui
+        setPlaceholderText(placeholderText) // for the message response
+        setRequestType(requestType) // for the llm request api call
+
+        if (userChoice == LlmMode.FROM_DESCRIPTION) { // no image can be uploaded in this mode
+            // ensure no image can be uploaded:
+            setSavedImageFilename("")
+        }
+
+        // allow user input:
+        setLlmChatStage(LlmChatStage.USER_INPUT)
     }
 
     fun createTag(
@@ -325,17 +327,34 @@ class RecipeDiscoveryViewModel @Inject constructor(
         imageFilename: String = "", // optional
         filesDir: File? = null, // optional
     ) {
-        setAwaitingResponse(true)
+        setLlmChatStage(LlmChatStage.AWAITING_LLM_RESPONSE)
         viewModelScope.launch() {
             runCatching {
-                // get the user prompt ("what would you like to cook?" field)
-                val userPrompt = mutableUiState.value.chosenDish
+                val userPrompt =
+                    // GENERATE POSSIBLE DISHES
+                    if (type == LlmRequestType.DISHES_FROM_INGREDIENTS || type == LlmRequestType.DISHES_FROM_IMAGE || type == LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE ) {
+                        mutableUiState.value.userRequest // additional detail along with their inputted ingredients or image
+                    }
+                    // GENERATE RECIPE FROM DISH CHOICE
+                    else if (mutableUiState.value.userChoice != LlmMode.FROM_DESCRIPTION) {
+                        // input to generate the recipe must be from the dish chosen
+                        mutableUiState.value.chosenDish
+                    }
+                    // GENERATE RECIPE FROM DESCRIPTION
+                    else {
+                        // input to generate the recipe is simply the request
+                        mutableUiState.value.userRequest
+                    }
 
                 // Get filters selected and the meal type:
-                var chosenNutritionalFilters = mutableUiState.value.recipeTags?.filter { it.selected }?.joinToString(", ") // only gets the selected filters and puts them into a string
+                var chosenNutritionalFilters =
+                    mutableUiState.value.recipeTags?.filter { it.selected }
+                        ?.joinToString(", ") { it.tag.identifier } // only gets the selected filters and puts them into a string
                 if (chosenNutritionalFilters == null) {
                     chosenNutritionalFilters = ""
                 }
+                Log.i("selected tags: ", chosenNutritionalFilters)
+
 
                 var allNutritionalFilters = mutableUiState.value.recipeTags?.joinToString(", ") { it.tag.identifier }
                 if (allNutritionalFilters == null) {
@@ -348,13 +367,15 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 // if the user submitted empty string as prompt, and this string is NOT optional for this call type, return error:
                 if ((type == LlmRequestType.RECIPE || type == LlmRequestType.DISHES_FROM_INGREDIENTS || type == LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH) && userPrompt == "") {
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_BLANK_PROMPT))
-                    setAwaitingResponse(false)
+                    // error occurred; go back to the USER_INPUT stage (MAY NOT WORK: TEST THIS).
+                    setLlmChatStage(LlmChatStage.USER_INPUT)
                     return@launch
                 }
 
                 if ((type == LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE || type == LlmRequestType.DISHES_FROM_IMAGE || type == LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH) && imageFilename == "") {
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("A photo must be uploaded to proceed."))
-                    setAwaitingResponse(false)
+                    // error occurred; go back to the USER_INPUT stage (MAY NOT WORK: TEST THIS).
+                    setLlmChatStage(LlmChatStage.USER_INPUT)
                     return@launch
                 }
 
@@ -365,7 +386,8 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 val tokenResult = authenticationManager.getUserToken()
                 if (tokenResult == null) {
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("1" + ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
-                    setAwaitingResponse(false)
+                    // error occurred; go back to the USER_INPUT stage (MAY NOT WORK: TEST THIS).
+                    setLlmChatStage(LlmChatStage.USER_INPUT)
                     return@launch
                 }
 
@@ -383,7 +405,8 @@ class RecipeDiscoveryViewModel @Inject constructor(
                                 if (dishesJson.dishNotPossible) {
                                     // user inputted invalid prompt / image; recipe cannot be generated.
                                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Valid dishes could not be generated. Please enter something different."))
-                                    setAwaitingResponse(false)
+                                    // error occurred; go back to the USER_INPUT stage (MAY NOT WORK: TEST THIS).
+                                    setLlmChatStage(LlmChatStage.USER_INPUT)
                                     return@launch
                                 }
 
@@ -397,7 +420,9 @@ class RecipeDiscoveryViewModel @Inject constructor(
                                         dishNotPossible = false
                                     )
                                 )
-                                setAwaitingResponse(false)
+
+                                // valid: set to the dish selection stage
+                                setLlmChatStage(LlmChatStage.USER_SELECT_DISH)
                             }
                         }
                     },
@@ -407,32 +432,34 @@ class RecipeDiscoveryViewModel @Inject constructor(
                         if (response == null || response.llmRecipe == null) {
                             // Error message in Snackbar:
                             uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("2" + ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
-                            setAwaitingResponse(false)
+                            setLlmChatStage(LlmChatStage.USER_INPUT)
                             return@launch
                         }
                         if (response.string.startsWith("An error occurred.") || response.string.startsWith("Error:")) {
                             // Response error in Snackbar:
                             uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(response.string))
-                            setAwaitingResponse(false)
+                            setLlmChatStage(LlmChatStage.USER_INPUT)
                             return@launch
                         }
                         if (response.llmRecipe.recipeNotPossible) {
                             // user inputted invalid prompt / image; recipe cannot be generated.
                             uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("A valid recipe could not be generated. Please try another dish."))
-                            setAwaitingResponse(false)
+                            setLlmChatStage(LlmChatStage.USER_INPUT)
                             return@launch
                         }
                         // Response is valid - output in a recipe card to the user
                         setApiResponse(response.string)
                         addRecipe(response.llmRecipe)
-                        setAwaitingResponse(false)
+
+                        // valid: set to the dish selection stage
+                        setLlmChatStage(LlmChatStage.USER_VIEW_RECIPE)
                     }
                 }
             }
                 .onFailure {
                     // error occurred
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("3" + ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
-                    setAwaitingResponse(false)
+                    setLlmChatStage(LlmChatStage.USER_INPUT)
                 }
         }
     }
@@ -448,7 +475,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 LlmRequestType.RECIPE_QUERY, LlmRequestType.RECIPE_ALTERATION -> "" // do nothing - TODO in future.
             }
             uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(errorMessage))
-            setAwaitingResponse(false)
+            setLlmChatStage(LlmChatStage.USER_INPUT)
         }
     }
 
@@ -533,13 +560,11 @@ class RecipeDiscoveryViewModel @Inject constructor(
     fun restart() {
         setApiResponse("")
         setUserRequest("")
-        setAwaitingResponse(false)
         setUserChoice(null)
         setDishes(null)
         getAllTagsForUser()
         setSelectedRecipeType(null)
-        setAllowUserInput(false)
-        setUserSentRequest(false)
+        setLlmChatStage(LlmChatStage.USER_SELECT_OPTION) // the starting stage
         setSavedImageFilename("")
         setRequestType(LlmRequestType.RECIPE)
         setPlaceholderText("")

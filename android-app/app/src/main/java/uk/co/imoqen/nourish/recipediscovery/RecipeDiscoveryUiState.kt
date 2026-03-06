@@ -21,7 +21,6 @@ data class RecipeDiscoveryUiState(
 
     val apiResponse: String = "",
     val userRequest: String = "",
-    val awaitingResponse: Boolean = false,
 
     val userChoice: LlmMode? = null,
 
@@ -38,9 +37,6 @@ data class RecipeDiscoveryUiState(
     val selectedRecipeType: RecipeType? = null,
     val displayRecipeTypeSelector: Boolean = false,
 
-    val allowUserInput: Boolean = false,
-    val userSentRequest: Boolean = false,
-
     val chosenDish: String = "",
 
 
@@ -52,8 +48,19 @@ data class RecipeDiscoveryUiState(
     // to transition smoothly when restart occurs
     val visible: Boolean = true, // in future should refactor the chat dialogs to use a single state then animate this and display with when
 
-    val placeholderText: String = ""
+    val placeholderText: String = "",
+
+    val llmChatStage: LlmChatStage = LlmChatStage.USER_SELECT_OPTION // begsina t the first stage
 )
+
+// controls flow within the llm chat. in the report, can draw this out into a flow diagram to show all the possible flows through the chat
+enum class LlmChatStage {
+    USER_SELECT_OPTION, // first stage
+    USER_INPUT, // second stage - once sent, cant be edited hence user only enters input once.
+    AWAITING_LLM_RESPONSE, // third stage
+    USER_SELECT_DISH, // optional fourth stage, which causes AWAITING_LLM_RESPONSE again
+    USER_VIEW_RECIPE // fourth/fifth stage
+}
 
 enum class LlmMode {
     FROM_DESCRIPTION,

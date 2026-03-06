@@ -332,10 +332,10 @@ async function generate(req, res, requestType) {
       // Generate dishes from ingredients
       case LlmRequestType.DISHES_FROM_INGREDIENTS: {
         result = await generateDishesFromIngredients(
+          // all nutritional filters are not passed here as they are not used.
           GOOGLE_CLOUD_PROJECT,
           GOOGLE_CLOUD_LOCATION,
           prompt,
-          allNutritionalFilters,
           chosenNutritionalFilters,
           dishType,
         );
@@ -730,7 +730,6 @@ async function generateDishesFromIngredientsImage(
   const userDetail = detail.prompt;
   const dishType = detail.dishType;
   const chosenNutritionalFilters = detail.chosenNutritionalFilters;
-  const allNutritionalFilters = detail.allNutritionalFilters;
 
   let userPrompt =
     "This is a picture featuring many different cooking ingredients. Return 4 names of dishes which you believe can be cooked using only these ingredients (with the exception of small amounts of salt, pepper and oil). Ensure the dishes conform to the following nutritional filters: " +
