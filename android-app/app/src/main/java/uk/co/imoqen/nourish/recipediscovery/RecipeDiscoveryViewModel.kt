@@ -181,10 +181,26 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
-    fun setShowConfirmationDialog(showConfirmationDialog: Boolean) {
+    fun setShowTagConfirmationDialog(showTagConfirmationDialog: Boolean) {
         mutableUiState.update { currentState ->
             currentState.copy(
-                showConfirmationDialog = showConfirmationDialog
+                showTagConfirmationDialog = showTagConfirmationDialog
+            )
+        }
+    }
+
+    fun setShowRestartConfirmationDialog(showRestartConfirmationDialog: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                showRestartConfirmationDialog = showRestartConfirmationDialog
+            )
+        }
+    }
+
+    fun setRecipeSaved(recipeSaved: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                recipeSaved = recipeSaved
             )
         }
     }
@@ -459,7 +475,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
                         // Response is valid - output in a recipe card to the user
                         setApiResponse(response.string)
                         setLlmGeneratedRecipe(response.llmRecipe)
-                        addRecipe(response.llmRecipe)
 
                         // valid: set to the dish selection stage
                         setLlmChatStage(LlmChatStage.USER_VIEW_RECIPE)
@@ -512,23 +527,35 @@ class RecipeDiscoveryViewModel @Inject constructor(
 
     fun addRecipe(llmRecipe: LlmRecipe) {
         viewModelScope.launch() {
-            try {
+            runCatching {
                 // Check that user is logged in validly
                 val uid = authenticationManager.getUid()
-                if (uid == null) { throw NullPointerException() } // user is null; throw to be handled appropriately
+                if (uid == null) {
+                    throw NullPointerException()
+                } // user is null; throw to be handled appropriately
                 // Add the recipe to the database:
                 recipeRepository.createRecipe(
                     uid,
                     llmRecipe,
                     mutableUiState.value.savedImageFilename
                 )
-                // If an error occurs, it is caught below:
-            } catch (e: Exception) {
-                Log.i("RECIPE SAVE", "ERROR: $e")
-                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
-                    "The recipe could not be saved. Please try again, or generate a new recipe."
-                ))
             }
+                .onSuccess {
+                    setRecipeSaved(true)
+                    uiEventBus.enqueueEvent(
+                        UiEvent.ShowSnackbar(
+                            "The recipe has been saved. To generate a new recipe, press Restart."
+                        )
+                    )
+                }
+
+                .onFailure { e ->
+                    uiEventBus.enqueueEvent(
+                        UiEvent.ShowSnackbar(
+                            "The recipe could not be saved. Please try again, or generate a new recipe."
+                        )
+                    )
+                }
         }
     }
 
@@ -585,6 +612,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
         setPlaceholderText("")
 
         setLlmGeneratedRecipe(null)
+        setRecipeSaved(false)
     }
 
     fun determineUnitPlurality(

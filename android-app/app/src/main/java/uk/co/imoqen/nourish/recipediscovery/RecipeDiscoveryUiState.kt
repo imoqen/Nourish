@@ -17,7 +17,8 @@ data class RecipeDiscoveryUiState(
 
     val filterDisplayState: FilterState = FilterState.NONE, // determines what part of the filter selection is shown
 
-    val showConfirmationDialog: Boolean = false,
+    val showTagConfirmationDialog: Boolean = false,
+    val showRestartConfirmationDialog: Boolean = false,
     val tagToDelete: Tag? = null,
 
     val apiResponse: String = "",
@@ -37,6 +38,8 @@ data class RecipeDiscoveryUiState(
     val recipeTypes: List<RecipeType>? = null, // typeselection not needed as only one can be selected anyway
     val selectedRecipeType: RecipeType? = null,
     val displayRecipeTypeSelector: Boolean = false,
+
+    val recipeSaved: Boolean = false, // to prevent recipes from being saved more than once.
 
     val chosenDish: String = "",
 

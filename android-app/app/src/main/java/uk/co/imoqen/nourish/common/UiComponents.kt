@@ -221,7 +221,8 @@ fun NourishErrorText(
 @Composable
 fun NourishButton(
     onClick: () -> Unit,
-    text: String
+    text: String,
+    enabled: Boolean = true
 ) {
     Button(
         onClick = {
@@ -229,7 +230,8 @@ fun NourishButton(
         },
         modifier = Modifier
             .padding(vertical = 4.dp)
-            .padding(horizontal = 4.dp)
+            .padding(horizontal = 4.dp),
+        enabled = enabled
     ) {
         Text(text)
     }
@@ -629,12 +631,12 @@ fun NourishConfirmationDialog (
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     NourishButton(
-                        text = "Confirm",
-                        onClick = { onConfirmation(); onDismiss() } // confirm then dismsis it
-                    )
-                    NourishButton(
                         text = "Cancel",
                         onClick = { onDismiss() }
+                    )
+                    NourishButton(
+                        text = "Confirm",
+                        onClick = { onConfirmation(); onDismiss() } // confirm then dismsis it
                     )
                 }
             },

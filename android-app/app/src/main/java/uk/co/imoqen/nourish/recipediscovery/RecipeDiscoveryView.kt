@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -37,7 +38,9 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.CircularProgressIndicator
@@ -77,9 +80,12 @@ import coil3.request.ImageRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import uk.co.imoqen.nourish.common.NourishButton
 import uk.co.imoqen.nourish.common.NourishConfirmationDialog
 import uk.co.imoqen.nourish.common.NourishColour
+import uk.co.imoqen.nourish.common.NourishDivider
 import uk.co.imoqen.nourish.common.NourishErrorText
+import uk.co.imoqen.nourish.common.NourishH2
 import uk.co.imoqen.nourish.common.NourishH3
 import uk.co.imoqen.nourish.common.NourishH4
 import uk.co.imoqen.nourish.common.NourishIconButton
@@ -99,6 +105,7 @@ import uk.co.imoqen.nourish.common.onBackgroundColour
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
+import uk.co.imoqen.nourish.network.response.LlmRecipe
 import uk.co.imoqen.nourish.recipebook.ImageCardHeader
 
 import java.io.File
@@ -183,12 +190,19 @@ fun RecipeDiscoveryScreen(
                                     horizontalArrangement = Arrangement.Center
                                 ) {
                                     NourishIconTextButton(
-                                        onClick = { restart(viewModel, scope) },
+                                        onClick = { viewModel.setShowRestartConfirmationDialog(true) },
                                         painter = painterResource(R.drawable.cross),
                                         description = "Restart",
                                     )
                                 }
                             }
+                            NourishConfirmationDialog(
+                                show = uiState.showRestartConfirmationDialog,
+                                title = "Confirm Restart",
+                                description = "Are you sure you wish to restart the chat?\n\nAny unsaved recipes in this current instance will be lost.",
+                                onConfirmation = { restart(viewModel, scope) },
+                                onDismiss = { viewModel.setShowRestartConfirmationDialog(false) }
+                            )
                         }
                     }
                     Box(
@@ -352,8 +366,11 @@ fun UserRequest(
                         }
                     }
 
-                    NourishUserRequestComponent {
-                        Text("Dish type: ${uiState.selectedRecipeType?.title ?: "Any"}")
+                    NourishUserRequestComponent(fillMaxWidth = false) {
+                        Text(
+                            text = "Dish type: ${uiState.selectedRecipeType?.title ?: "Any"}",
+                            modifier = Modifier.padding(horizontal=6.dp)
+                        )
                     }
 
                     val selectedTags = uiState.recipeTags?.filter{ it.selected }
@@ -373,12 +390,17 @@ fun UserRequest(
 
 @Composable
 fun NourishUserRequestComponent(
+    fillMaxWidth: Boolean = true,
     content: @Composable () -> Unit
 ) {
     Box(
-        modifier = Modifier
-            .padding(4.dp)
-            .fillMaxWidth()
+        modifier = if (fillMaxWidth) {
+            Modifier
+                .padding(4.dp)
+                .fillMaxWidth()
+        } else {
+            Modifier.padding(4.dp)
+        }
             .background(
                 color = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(16.dp)
@@ -667,36 +689,7 @@ fun RecipeGenerationResult(
 
             // Outputs the response, or error if occurred.
             if (uiState.llmGeneratedRecipe != null) {
-                Log.i("recipe res", "not null")
-                val context = LocalContext.current
-                Column() {
-                    ImageCardHeader(
-                        uiState.savedImageFilename,
-                        uiState.llmGeneratedRecipe.emoji,
-                        context
-                    )
-                    NourishH3(uiState.llmGeneratedRecipe.title)
-
-                    uiState.llmGeneratedRecipe.sectionIngredients.forEach { ingredientSection ->
-                        Text(ingredientSection.section)
-                        ingredientSection.ingredients.forEach { ingredient ->
-
-                            val ingredientText = viewModel.formatIngredientText(ingredient)
-                            Text(ingredientText)
-                        }
-                    }
-
-                    uiState.llmGeneratedRecipe.method.forEachIndexed { i, step ->
-                        Text("Step ${(i + 1)}: $step")
-                    }
-
-                    Text("Servings: ${uiState.llmGeneratedRecipe.servings}")
-                    Text("Storage guidance: ${uiState.llmGeneratedRecipe.storage}")
-
-                    Text(uiState.llmGeneratedRecipe.mealType)
-
-                    // then put all the tags which were selected.
-                }
+                GeneratedRecipe(viewModel, uiState, uiState.llmGeneratedRecipe)
             }
         }
     }
@@ -704,6 +697,162 @@ fun RecipeGenerationResult(
     // the loading circle:
     IndeterminateCircularIndicator()
 
+}
+
+@Composable
+fun GeneratedRecipe(
+    viewModel: RecipeDiscoveryViewModel,
+    uiState: RecipeDiscoveryUiState,
+    recipe: LlmRecipe
+) {
+    Log.i("recipe res", "not null")
+    val context = LocalContext.current
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        ImageCardHeader(
+            uiState.savedImageFilename,
+            recipe.emoji,
+            context,
+            fillMaxWidth = true // fill the width of the llm response.
+        )
+        NourishH2(recipe.title)
+
+        NourishTextDivider("Ingredients")
+
+        recipe.sectionIngredients.forEachIndexed { i, ingredientSection ->
+            Box(
+                modifier = Modifier.padding(6.dp).fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // only display section title if there are multiple sections
+                    if (recipe.sectionIngredients.size > 1) {
+                        Text(
+                            text = ingredientSection.section,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    ingredientSection.ingredients.forEach { ingredient ->
+                        val ingredientText = viewModel.formatIngredientText(ingredient)
+                        Text(ingredientText)
+                    }
+
+                    if (i != recipe.sectionIngredients.size-1) {
+                        HorizontalDivider(modifier = Modifier.padding(horizontal=64.dp).padding(top=6.dp))
+                    }
+                }
+            }
+        }
+
+        NourishTextDivider("Method")
+
+        Box(
+            modifier = Modifier
+                .padding(10.dp)
+                .height(200.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    shape = RoundedCornerShape(16.dp)
+                )
+        ) {
+            Box(
+                modifier = Modifier
+                    .padding(10.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .height(200.dp) // constrain height so it doesnt take over so much when the method because method is long
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    recipe.method.forEachIndexed { i, step ->
+                        Box(
+                            modifier = Modifier.padding(6.dp).fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "Step ${(i + 1)}",
+                                    modifier = Modifier.fillMaxWidth(),
+                                    fontWeight = FontWeight.SemiBold,
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    text = step
+                                )
+
+                                if (i != recipe.method.size - 1) {
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(horizontal = 64.dp)
+                                            .padding(top = 6.dp)
+                                    )
+                                }
+
+                            }
+                        }
+                    }
+                }
+            }
+            // shadow to signify that the method box is scrollable
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(24.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color.Transparent, Color.Black.copy(0.1f))
+                        ),
+                    )
+            )
+        }
+
+        NourishTextDivider("Further information")
+
+        Box(
+            modifier = Modifier.padding(2.dp).fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+
+                Text("Servings: ${recipe.servings}")
+
+                Text("Meal type: ${recipe.mealType}")
+
+                SelectedTags(
+                    tags = uiState.recipeTags
+                )
+            }
+        }
+
+        NourishDivider()
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(bottom=8.dp)
+        ) {
+            Text(
+                text = "Save the recipe to access it in the future, edit it, view nutritional information, or ask questions about it.",
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(8.dp)
+            )
+
+            NourishButton(
+                onClick = { if (!uiState.recipeSaved) { viewModel.addRecipe(recipe) } },
+                text = "Save Recipe",
+                enabled = (!uiState.recipeSaved)
+            )
+        }
+    }
 }
 
 fun generateRecipeFromChosenDish(
@@ -1017,7 +1166,7 @@ fun UserInputSection(
                                         tags = tags,
                                         trailingIcon = painterResource(R.drawable.delete),
                                         onTrailingIconPress = {
-                                            viewModel.setShowConfirmationDialog(true)
+                                            viewModel.setShowTagConfirmationDialog(true)
                                         },
                                         setTagOnTrailingIconPress = viewModel::setTagToDelete
                                     )
@@ -1032,11 +1181,11 @@ fun UserInputSection(
                                 }
 
                                 NourishConfirmationDialog(
-                                    show = uiState.showConfirmationDialog,
+                                    show = uiState.showTagConfirmationDialog,
                                     title = "Confirm Tag Deletion",
                                     description = "Are you sure you wish to delete this nutritional tag?\n\nThis action cannot be undone.",
                                     onConfirmation = { viewModel.deleteTag() },
-                                    onDismiss = { viewModel.setShowConfirmationDialog(false) }
+                                    onDismiss = { viewModel.setShowTagConfirmationDialog(false) }
                                 )
                             }
 
@@ -1314,7 +1463,7 @@ fun IndeterminateCircularIndicator(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 28.dp)
+            .padding(bottom = 40.dp)
             .padding(top = 10.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically

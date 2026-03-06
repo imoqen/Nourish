@@ -23,6 +23,7 @@ import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.db.tag.TagRepositoryImpl
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 import javax.inject.Inject
+import kotlin.math.round
 
 class RecipeRepositoryImpl @Inject constructor(
     private val db: NourishDatabase,
@@ -179,7 +180,8 @@ class RecipeRepositoryImpl @Inject constructor(
             val recipeIngredients = getRecipeWithRecipeIngredients(recipe.id).first()
 
             recipeIngredients.ingredients.forEach { recipeIngredient ->
-                val scaledAmount = "%.2f".format(recipeIngredient.amount*scalingFactor).toDouble()
+                // rounds so that it is to nearest 0.25 to prevent weird numbers
+                val scaledAmount = "%.2f".format(round(recipeIngredient.amount*scalingFactor*4)/4).toDouble()
                 updateRecipeIngredient(
                     recipeIngredient.copy(amount = scaledAmount)
                 )
