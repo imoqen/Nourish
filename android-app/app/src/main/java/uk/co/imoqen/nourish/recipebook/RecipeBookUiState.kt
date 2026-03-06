@@ -12,8 +12,17 @@ data class RecipeBookUiState(
     val searchTerm: String = "",
     val displayDropdownFilter: Boolean = false,
     val recipeTags: List<TagSelection>? = null, // all of the recipe tags
-    val recipeTypes: List<TypeSelection>? = null // all of the recipe types
+    val recipeTypes: List<TypeSelection>? = null, // all of the recipe types
+
+    val llmAction: LlmAction = LlmAction.NONE
 )
+
+enum class LlmAction {
+    NONE,
+    NUTRITIONAL_VALUES,
+    ALTERATION,
+    QUESTION
+}
 
 data class TagSelection(
     val tag: Tag,

@@ -28,11 +28,14 @@ import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
@@ -66,6 +69,7 @@ import java.io.File
 @Composable
 fun RecipeCardScreen(
     recipeBookViewModel: RecipeBookViewModel,
+    uiState: RecipeBookUiState,
     recipeId: Long,
     onBack: () -> Unit
 ) {
@@ -81,19 +85,22 @@ fun RecipeCardScreen(
         // should constrain it to only return recipe made by that user, for security. address in a future stepping stone ^
         if (recipe != null) {
             recipeBookViewModel.setSelectedRecipe(recipe)
-            RecipeCard(recipeBookViewModel, onBack)
+            RecipeCard(recipeBookViewModel, onBack, uiState)
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeCard(
     recipeBookViewModel: RecipeBookViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    uiState: RecipeBookUiState
 ) {
     val recipe = recipeBookViewModel.uiState.collectAsState().value.selectedRecipe
     recipeBookViewModel.buildRecipeCard()
     val recipeCard = recipeBookViewModel.uiState.collectAsState().value.selectedRecipeCard
+    val sheetState = rememberModalBottomSheetState()
 
 
     if (recipeCard != null) {
@@ -441,21 +448,21 @@ fun RecipeCard(
             ) {
 
                 NourishIconTextButton(
-                    onClick = {},
+                    onClick = { recipeBookViewModel.setLlmAction(LlmAction.NUTRITIONAL_VALUES) },
                     painter = painterResource(R.drawable.forkchart),
                     description = "Nutritional Values",
                     modifier = Modifier.fillMaxWidth(0.7f)
                 )
 
                 NourishIconTextButton(
-                    onClick = {},
+                    onClick = { recipeBookViewModel.setLlmAction(LlmAction.ALTERATION) },
                     painter = painterResource(R.drawable.adjust),
                     description = "Make an alteration",
                     modifier = Modifier.fillMaxWidth(0.7f)
                 )
 
                 NourishIconTextButton(
-                    onClick = {},
+                    onClick = { recipeBookViewModel.setLlmAction(LlmAction.QUESTION) },
                     painter = painterResource(R.drawable.live_question),
                     description = "Ask a question",
                     modifier = Modifier.fillMaxWidth(0.7f)
@@ -463,7 +470,23 @@ fun RecipeCard(
             }
 
         }
+
+        if (uiState.llmAction != LlmAction.NONE) {
+            ModalBottomSheet(
+                onDismissRequest = {
+                    recipeBookViewModel.setLlmAction(LlmAction.NONE)
+                },
+                sheetState = sheetState
+            ) {
+                LlmActions()
+            }
+        }
     }
+}
+
+@Composable
+fun LlmActions() {
+    Text("hello world!")
 }
 
 // shaves off the decimal if it is .0, otherwise keeps it.

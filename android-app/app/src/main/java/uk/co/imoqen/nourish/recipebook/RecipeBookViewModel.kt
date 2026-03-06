@@ -108,6 +108,14 @@ class RecipeBookViewModel @Inject constructor(
         }
     }
 
+    fun setLlmAction(llmAction: LlmAction) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                llmAction = llmAction
+            )
+        }
+    }
+
     // gets all recipes for the currently logged in user. ensures that if user not logged in, empty list returned.
     fun getAllRecipes(): Flow<List<Recipe>> {
         val uid = authenticationManager.getUid()

@@ -6,6 +6,7 @@ import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -67,7 +68,8 @@ fun AppNavHost(
         ) { backStackEntry ->
             val recipeId = backStackEntry.arguments?.getLong("id")!!
             val recipeBookViewModel: RecipeBookViewModel = hiltViewModel()
-            RecipeCardScreen(recipeBookViewModel, recipeId, onBack={ navController.popBackStack() }) //TODO onEdit = { }) to move to edit page when editing recipe
+            val recipeBookUiState = recipeBookViewModel.uiState.collectAsState().value
+            RecipeCardScreen(recipeBookViewModel, recipeBookUiState, recipeId, onBack={ navController.popBackStack() }) //TODO onEdit = { }) to move to edit page when editing recipe
         }
         // Can add Route destinations too (those not from tabs)
         // can add here. then can add params to them as shown in this video: https://www.youtube.com/watch?v=wJKwsI5WUI4
