@@ -172,7 +172,7 @@ fun TagsDisplayForFiltering(
                     )
                     Icon(
                         painter = painterResource(R.drawable.add),
-                        contentDescription = "Add a new nutritional filter",
+                        contentDescription = "Add a new nutritional tag",
                         modifier = Modifier
                             .size(18.dp)
                             .padding(end = 2.dp),
@@ -202,7 +202,7 @@ fun TagsDisplayForFiltering(
                     )
                     Icon(
                         painter = painterResource(R.drawable.edit),
-                        contentDescription = "Edit your nutritional filters",
+                        contentDescription = "Edit your nutritional tags",
                         modifier = Modifier
                             .size(18.dp)
                             .padding(end = 2.dp),

@@ -854,7 +854,7 @@ fun UserInputSection(
                                 ) {
 
                                     NourishTextDivider(
-                                        "Create a Nutritional Filter",
+                                        "Create a Nutritional Tag",
                                         modifier = Modifier.padding(top = 6.dp)
                                     )
 
@@ -972,7 +972,7 @@ fun UserInputSection(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.Center
                                 ) {
-                                    NourishTextDivider("Delete a Nutritional Filter")
+                                    NourishTextDivider("Delete a Nutritional Tag")
 
                                     TagsDisplayForFiltering(
                                         tags = tags,

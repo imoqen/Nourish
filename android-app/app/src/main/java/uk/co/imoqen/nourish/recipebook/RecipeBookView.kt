@@ -57,6 +57,7 @@ import coil3.request.ImageRequest
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
+import uk.co.imoqen.nourish.common.SelectedTags
 import uk.co.imoqen.nourish.common.TagsDisplayForFiltering
 import uk.co.imoqen.nourish.common.TypesDisplayForFiltering
 import uk.co.imoqen.nourish.common.backgroundColour
@@ -102,7 +103,8 @@ fun RecipeBookScreen(
                     leadingIcon = Icons.Filled.Search,
                     onDone = { keyboardFocusManager.clearFocus() },
                     trailingIcon = Icons.Filled.Clear,
-                    onTrailingIconPress = { recipeBookViewModel.setSearchTerm("") }
+                    onTrailingIconPress = { recipeBookViewModel.setSearchTerm("") },
+                    modifier = Modifier.padding(bottom=8.dp)
                 )
             }
 
@@ -151,6 +153,17 @@ fun RecipeBookScreen(
                     }
                 }
             }
+        }
+
+        // display selected recipe tags:
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom=4.dp)
+        ) {
+            SelectedTags(
+                tags = uiState.recipeTags,
+                allowEdit = true,
+                updateSelectedTag = recipeBookViewModel::updateSelected
+            )
         }
 
         Column(
@@ -328,15 +341,26 @@ fun RecipeList(
                                                     horizontalArrangement = Arrangement.spacedBy(2.dp),
                                                     verticalArrangement = Arrangement.spacedBy(2.dp),
                                                 ) {
+                                                    if (recipeCardUnexpanded.recipeTags.isEmpty()) {
+                                                        Text(
+                                                            text = "No tags",
+                                                            color = MaterialTheme.colorScheme.onBackground.copy(0.5f)
+                                                        )
+                                                    } else {
 
-                                                    val toTake =
-                                                        determineSpaceAvailable(recipeCardUnexpanded)
-                                                    val tags =
-                                                        recipeCardUnexpanded.recipeTags.take(toTake)
+                                                        val toTake =
+                                                            determineSpaceAvailable(
+                                                                recipeCardUnexpanded
+                                                            )
+                                                        val tags =
+                                                            recipeCardUnexpanded.recipeTags.take(
+                                                                toTake
+                                                            )
 
-                                                    TagsDisplay(tags)
-                                                    if (recipeCardUnexpanded.recipeTags.size > tags.size) {
-                                                        Text("...")
+                                                        TagsDisplay(tags)
+                                                        if (recipeCardUnexpanded.recipeTags.size > tags.size) {
+                                                            Text("...")
+                                                        }
                                                     }
                                                 }
                                             }
