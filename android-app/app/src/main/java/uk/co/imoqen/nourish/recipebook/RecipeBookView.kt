@@ -1,12 +1,14 @@
 package uk.co.imoqen.nourish.recipebook
 
 import android.util.Log
+import androidx.compose.animation.AnimatedContent
 import uk.co.imoqen.nourish.R
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -28,16 +30,24 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -54,6 +64,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
@@ -166,9 +178,6 @@ fun RecipeBookScreen(
             )
         }
 
-        Column(
-            modifier = Modifier.fillMaxWidth().verticalScroll(scrollState)
-        ) {
             // set all recipes
             // maybe should putthis in launched effect in the future
             recipeBookViewModel.getRecipeBookMap()
@@ -185,8 +194,8 @@ fun RecipeBookScreen(
                 recipeBookViewModel.getAllTagsForUser()
             }
 
-            RecipeList(recipeBookViewModel, onViewRecipeCard)
-        }
+            RecipeList(recipeBookViewModel, onViewRecipeCard, scrollState)
+
     }
 }
 
@@ -194,187 +203,218 @@ fun RecipeBookScreen(
 @Composable
 fun RecipeList(
     recipeBookViewModel: RecipeBookViewModel,
-    onViewRecipeCard: (Long) -> Unit
+    onViewRecipeCard: (Long) -> Unit,
+    scrollState: ScrollState
 ) {
     val uiState = recipeBookViewModel.uiState.collectAsState().value
     val recipeBookMap = uiState.recipeBookMap
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
-    recipeBookMap?.forEach { (recipeType, recipeCardsUnexpanded) ->
-        val recipeTypesSelected: MutableList<RecipeType> = mutableListOf()
-        uiState.recipeTypes!!.forEach { typeSelection ->
-            if (typeSelection.selected) {
-                recipeTypesSelected.add(typeSelection.type)
-            }
-        }
-        if (recipeTypesSelected.isEmpty() || recipeTypesSelected.contains(recipeType)) {
-            if (recipeCardsUnexpanded.isNotEmpty()) {
-                Text(recipeType.title)
+    val totalRecipeAmount = recipeBookMap?.values?.size ?: 0
 
-                val list: MutableList<Pair<String, NourishColour>> = mutableListOf()
-                //uiState.allTags!!.map { tag -> Pair(tag.tag.displayName, enumValueOf<NourishColour>(tag.tag.colour))}.toMutableList()
-                uiState.recipeTags!!.forEach { tagSelection ->
-                    if (tagSelection.selected) {
-                        list.add(
-                            Pair(
-                                tagSelection.tag.displayName,
-                                enumValueOf<NourishColour>(tagSelection.tag.colour)
-                            )
-                        )
+    AnimatedContent(
+        targetState = (totalRecipeAmount != 0)
+    ) { recipesExist ->
+
+        if (recipesExist && recipeBookMap != null) {
+
+            Column(
+                modifier = Modifier.fillMaxWidth().verticalScroll(scrollState)
+            ) {
+
+                val recipeTypesSelected: MutableList<RecipeType> = mutableListOf()
+                uiState.recipeTypes!!.forEach { typeSelection ->
+                    if (typeSelection.selected) {
+                        recipeTypesSelected.add(typeSelection.type)
                     }
                 }
 
-                val numberOfVisibleRecipes = recipeCardsUnexpanded.count { recipeCardUnexpanded ->
-                    recipeCardUnexpanded.title.contains(
-                        uiState.searchTerm,
-                        true
-                    ) && recipeCardUnexpanded.recipeTags.containsAll(list)
-                }
+                recipeBookMap.forEach { (recipeType, recipeCardsUnexpanded) ->
 
-                if (numberOfVisibleRecipes != 0) {
+                    if (recipeTypesSelected.isEmpty() || recipeTypesSelected.contains(recipeType)) {
+                        if (recipeCardsUnexpanded.isNotEmpty()) {
+                            Text(recipeType.title)
 
-                    LazyRow(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 16.dp),
-                        //contentPadding = PaddingValues(rhorizontal = 8.dp),
-                        //horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(
-                            recipeCardsUnexpanded,
-                            key = { it.recipeId }) { recipeCardUnexpanded ->
-                            AnimatedVisibility(
-                                visible = (recipeCardUnexpanded.title.contains(
-                                    uiState.searchTerm,
-                                    true
-                                ) && recipeCardUnexpanded.recipeTags.containsAll(list)),
-                                enter = fadeIn(tween(300)),
-                                exit = fadeOut(tween(300))
-                            ) {
-                                Box(
-                                    modifier = Modifier.padding(horizontal = 4.dp) // padding goes here instead so it stays fine even when a box is invisibkle
+                            val list: MutableList<Pair<String, NourishColour>> = mutableListOf()
+                            //uiState.allTags!!.map { tag -> Pair(tag.tag.displayName, enumValueOf<NourishColour>(tag.tag.colour))}.toMutableList()
+                            uiState.recipeTags!!.forEach { tagSelection ->
+                                if (tagSelection.selected) {
+                                    list.add(
+                                        Pair(
+                                            tagSelection.tag.displayName,
+                                            enumValueOf<NourishColour>(tagSelection.tag.colour)
+                                        )
+                                    )
+                                }
+                            }
+
+                            val numberOfVisibleRecipes =
+                                recipeCardsUnexpanded.count { recipeCardUnexpanded ->
+                                    recipeCardUnexpanded.title.contains(
+                                        uiState.searchTerm,
+                                        true
+                                    ) && recipeCardUnexpanded.recipeTags.containsAll(list)
+                                }
+
+                            if (numberOfVisibleRecipes != 0) {
+
+                                LazyRow(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 16.dp),
+                                    //contentPadding = PaddingValues(rhorizontal = 8.dp),
+                                    //horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Card(
-                                        modifier = Modifier
-                                            .width(240.dp)
-                                            .height(210.dp)
-                                    ) {
-                                        Box(
-                                            Modifier.fillMaxSize()
-                                                .clickable {
-                                                    onViewRecipeCard(recipeCardUnexpanded.recipeId)
-                                                }
+                                    items(
+                                        recipeCardsUnexpanded,
+                                        key = { it.recipeId }) { recipeCardUnexpanded ->
+                                        AnimatedVisibility(
+                                            visible = (recipeCardUnexpanded.title.contains(
+                                                uiState.searchTerm,
+                                                true
+                                            ) && recipeCardUnexpanded.recipeTags.containsAll(list)),
+                                            enter = fadeIn(tween(300)),
+                                            exit = fadeOut(tween(300))
                                         ) {
-                                            Column(
-                                                modifier = Modifier.fillMaxSize()
+                                            Box(
+                                                modifier = Modifier.padding(horizontal = 4.dp) // padding goes here instead so it stays fine even when a box is invisibkle
                                             ) {
-                                                Box(
+                                                Card(
                                                     modifier = Modifier
-                                                        .width(240.dp) // matches the card width
-                                                        .height(
-                                                            if (recipeCardUnexpanded.imagePath != "") {
-                                                                115.dp
-                                                            } else {
-                                                                100.dp
+                                                        .width(240.dp)
+                                                        .height(210.dp)
+                                                ) {
+                                                    Box(
+                                                        Modifier.fillMaxSize()
+                                                            .clickable {
+                                                                onViewRecipeCard(
+                                                                    recipeCardUnexpanded.recipeId
+                                                                )
                                                             }
-                                                        )
-                                                ) {
-                                                    // Image:
-                                                    val imageFile =
-                                                        File(
-                                                            context.filesDir,
-                                                            recipeCardUnexpanded.imagePath
-                                                        )
-                                                    var displayImage = false
-                                                    if (imageFile.exists() && recipeCardUnexpanded.imagePath != "") {
-                                                        displayImage = true
-                                                        //Use Coil to display the selected image
-                                                        val painter = rememberAsyncImagePainter(
-                                                            ImageRequest
-                                                                .Builder(LocalContext.current)
-                                                                .data(imageFile)
-                                                                .build()
-                                                        )
-
-                                                        Image(
-                                                            painter = painter,
-                                                            contentDescription = null,
-                                                            modifier = Modifier
-                                                                .width(240.dp) // matches the card width
-                                                                .height(100.dp), // 2/3 of the card height - maybe use consts for this in future to ensure they match upon changes
-                                                            contentScale = ContentScale.Crop
-                                                        )
-                                                    } else {
-                                                        Box(
-                                                            modifier = Modifier.width(240.dp) // matches the card width
-                                                                .height(100.dp)
-                                                                .background(MaterialTheme.colorScheme.error) // put the chosen colour
-                                                        )
-                                                    }
-                                                    // Emoji:
-                                                    Text(
-                                                        text = recipeCardUnexpanded.emoji,
-                                                        fontSize = 32.sp,
-                                                        // center emoji if no image, otherwise put at bottom center
-                                                        modifier = if (displayImage) {
-                                                            Modifier.align(Alignment.BottomCenter)
-                                                        } else {
-                                                            Modifier.align(Alignment.Center)
-                                                        },
-                                                        style = TextStyle(
-                                                            shadow = Shadow(
-                                                                color = Color.Black,
-                                                                offset = Offset(4f, 4f),
-                                                                blurRadius = 4f
-                                                            )
-                                                        )
-                                                    )
-                                                }
-                                                Column(
-                                                    modifier = Modifier.fillMaxWidth(),
-                                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                                    verticalArrangement = Arrangement.Center
-                                                ) {
-                                                    Text(
-                                                        text = recipeCardUnexpanded.title,
-                                                        textAlign = TextAlign.Center,
-                                                        modifier = Modifier.padding(4.dp),
-                                                        fontWeight = FontWeight.Bold,
-                                                    )
-                                                }
-                                                Box(
-                                                    modifier = Modifier.fillMaxSize()
-                                                        .background(MaterialTheme.colorScheme.surfaceContainer),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    FlowRow(
-                                                        modifier = Modifier.padding(2.dp),
-                                                        horizontalArrangement = Arrangement.spacedBy(
-                                                            2.dp
-                                                        ),
-                                                        verticalArrangement = Arrangement.spacedBy(2.dp),
                                                     ) {
-                                                        if (recipeCardUnexpanded.recipeTags.isEmpty()) {
-                                                            Text(
-                                                                text = "No tags",
-                                                                color = MaterialTheme.colorScheme.onBackground.copy(
-                                                                    0.5f
-                                                                )
-                                                            )
-                                                        } else {
+                                                        Column(
+                                                            modifier = Modifier.fillMaxSize()
+                                                        ) {
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .width(240.dp) // matches the card width
+                                                                    .height(
+                                                                        if (recipeCardUnexpanded.imagePath != "") {
+                                                                            115.dp
+                                                                        } else {
+                                                                            100.dp
+                                                                        }
+                                                                    )
+                                                            ) {
+                                                                // Image:
+                                                                val imageFile =
+                                                                    File(
+                                                                        context.filesDir,
+                                                                        recipeCardUnexpanded.imagePath
+                                                                    )
+                                                                var displayImage = false
+                                                                if (imageFile.exists() && recipeCardUnexpanded.imagePath != "") {
+                                                                    displayImage = true
+                                                                    //Use Coil to display the selected image
+                                                                    val painter =
+                                                                        rememberAsyncImagePainter(
+                                                                            ImageRequest
+                                                                                .Builder(
+                                                                                    LocalContext.current
+                                                                                )
+                                                                                .data(imageFile)
+                                                                                .build()
+                                                                        )
 
-                                                            val toTake =
-                                                                determineSpaceAvailable(
-                                                                    recipeCardUnexpanded
+                                                                    Image(
+                                                                        painter = painter,
+                                                                        contentDescription = null,
+                                                                        modifier = Modifier
+                                                                            .width(240.dp) // matches the card width
+                                                                            .height(100.dp), // 2/3 of the card height - maybe use consts for this in future to ensure they match upon changes
+                                                                        contentScale = ContentScale.Crop
+                                                                    )
+                                                                } else {
+                                                                    Box(
+                                                                        modifier = Modifier.width(
+                                                                            240.dp
+                                                                        ) // matches the card width
+                                                                            .height(100.dp)
+                                                                            .background(
+                                                                                MaterialTheme.colorScheme.error
+                                                                            ) // put the chosen colour
+                                                                    )
+                                                                }
+                                                                // Emoji:
+                                                                Text(
+                                                                    text = recipeCardUnexpanded.emoji,
+                                                                    fontSize = 32.sp,
+                                                                    // center emoji if no image, otherwise put at bottom center
+                                                                    modifier = if (displayImage) {
+                                                                        Modifier.align(Alignment.BottomCenter)
+                                                                    } else {
+                                                                        Modifier.align(Alignment.Center)
+                                                                    },
+                                                                    style = TextStyle(
+                                                                        shadow = Shadow(
+                                                                            color = Color.Black,
+                                                                            offset = Offset(4f, 4f),
+                                                                            blurRadius = 4f
+                                                                        )
+                                                                    )
                                                                 )
-                                                            val tags =
-                                                                recipeCardUnexpanded.recipeTags.take(
-                                                                    toTake
+                                                            }
+                                                            Column(
+                                                                modifier = Modifier.fillMaxWidth(),
+                                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                                verticalArrangement = Arrangement.Center
+                                                            ) {
+                                                                Text(
+                                                                    text = recipeCardUnexpanded.title,
+                                                                    textAlign = TextAlign.Center,
+                                                                    modifier = Modifier.padding(4.dp),
+                                                                    fontWeight = FontWeight.Bold,
                                                                 )
+                                                            }
+                                                            Box(
+                                                                modifier = Modifier.fillMaxSize()
+                                                                    .background(MaterialTheme.colorScheme.surfaceContainer),
+                                                                contentAlignment = Alignment.Center
+                                                            ) {
+                                                                FlowRow(
+                                                                    modifier = Modifier.padding(2.dp),
+                                                                    horizontalArrangement = Arrangement.spacedBy(
+                                                                        2.dp
+                                                                    ),
+                                                                    verticalArrangement = Arrangement.spacedBy(
+                                                                        2.dp
+                                                                    ),
+                                                                ) {
+                                                                    if (recipeCardUnexpanded.recipeTags.isEmpty()) {
+                                                                        Text(
+                                                                            text = "No tags",
+                                                                            color = MaterialTheme.colorScheme.onBackground.copy(
+                                                                                0.5f
+                                                                            )
+                                                                        )
+                                                                    } else {
 
-                                                            TagsDisplay(tags)
-                                                            if (recipeCardUnexpanded.recipeTags.size > tags.size) {
-                                                                Text("...")
+                                                                        val toTake =
+                                                                            determineSpaceAvailable(
+                                                                                recipeCardUnexpanded
+                                                                            )
+                                                                        val tags =
+                                                                            recipeCardUnexpanded.recipeTags.take(
+                                                                                toTake
+                                                                            )
+
+                                                                        TagsDisplay(tags)
+                                                                        if (recipeCardUnexpanded.recipeTags.size > tags.size) {
+                                                                            Text("...")
+                                                                        }
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -383,19 +423,70 @@ fun RecipeList(
                                         }
                                     }
                                 }
+                            } else {
+                                Text("There are no ${recipeType.title} recipes which match the search/filter criteria.")
                             }
+                        } else {
+                            Text("You have not yet saved any ${recipeType.title} recipes.")
                         }
                     }
-
-
-
-                } else {
-                    Text("No recipes")
                 }
+
+                // message for if user selected a type but does not have any of those recipes saved:
+
+                if (!recipeBookMap.keys.containsAll(recipeTypesSelected)) {
+                    val selectedTypesWithoutRecipes = (recipeTypesSelected - recipeBookMap.keys)
+                    val text = if (selectedTypesWithoutRecipes.size > 1) {
+                        "You do not have any saved ${selectedTypesWithoutRecipes.joinToString(" or "){it.title}} recipes."
+                    } else {
+                        "You do not have any saved ${selectedTypesWithoutRecipes.joinToString("") { it.title }} recipes."
+                    }
+                    Text(
+                        text = text,
+                        modifier = Modifier.padding(6.dp)
+                    )
+
+                }
+
             }
+        } else {
+            // display loading for when app first starts then display error msg for when no recipes yet
+            RecipeLoadingBar()
         }
     }
+}
 
+// holds the loading bar and a message for if no recipes exist yet after loading
+@Composable
+fun RecipeLoadingBar() {
+    var noRecipes by remember { mutableStateOf(false) }
+    var loading by remember { mutableStateOf(true) }
+
+    // wait a bit for recipes to come
+    LaunchedEffect(Unit) {
+        delay(5000)
+        loading = false
+        noRecipes = true
+    }
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        if (loading) {
+            Text("Loading your recipes...")
+            LinearProgressIndicator(
+                modifier = Modifier.fillMaxWidth(0.6f),
+                color = MaterialTheme.colorScheme.secondary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+            )
+        }
+        if (noRecipes) {
+            Text("You have not yet saved any recipes.")
+
+        }
+    }
 }
 
 @Composable

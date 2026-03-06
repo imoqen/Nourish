@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContent
 import androidx.compose.foundation.layout.safeDrawing
@@ -36,7 +37,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -191,20 +194,19 @@ fun MainContent(
 
 @Composable
 fun NourishTopBar() {
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .fillMaxHeight(0.08f)
-            .padding(vertical=4.dp),
-        horizontalArrangement = Arrangement.Center
-
+            .statusBarsPadding()
+            .padding(bottom=4.dp),
+        contentAlignment = Alignment.Center
     ) {
         Image(
             painter = painterResource(R.drawable.nourish_title_outlined),
             contentDescription = "Nourish Title",
+            contentScale = ContentScale.Fit,
             modifier = Modifier
-                .statusBarsPadding() //ensure icon goes below camera cutout
-                .padding(bottom=2.dp)
+                .height(28.dp) // fixed height as it is the logo
         )
     }
 }

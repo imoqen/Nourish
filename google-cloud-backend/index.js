@@ -621,7 +621,7 @@ async function generateDishesFromIngredients(
         content:
           "Return 4 names of dishes which are of type " +
           dishType +
-          " and conform to the nutritional filters " +
+          " and conform to the nutritional filters: " +
           chosenNutritionalFilters +
           ", which you believe can be cooked at home using only these ingredients (with the exception of cooking ingredients which are almost always present - small amounts of salt, pepper and oil. With that being said, though, do not include the salt/pepper/oil if it is not relevant to the recipe): " +
           prompt,
