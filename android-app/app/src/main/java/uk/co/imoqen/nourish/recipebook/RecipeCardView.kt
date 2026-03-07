@@ -20,7 +20,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -42,6 +45,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -513,14 +517,14 @@ fun RecipeCard(
 
         }
 
-        if (uiState.llmActionType != LlmActionType.NONE) {
+        if (uiState.llmActionType != LlmActionType.NONE && uiState.selectedRecipe != null) {
             ModalBottomSheet(
                 onDismissRequest = {
                     recipeBookViewModel.setLlmActionType(LlmActionType.NONE)
                 },
                 sheetState = sheetState
             ) {
-                LlmActions(uiState, recipeBookViewModel, keyboardFocusManager)
+                LlmActions(uiState.selectedRecipe, uiState, recipeBookViewModel, keyboardFocusManager)
                 // the loading circle:
                 IndeterminateCircularIndicator(uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE)
 
@@ -530,7 +534,36 @@ fun RecipeCard(
 }
 
 @Composable
+fun NutritionalFact(
+    name: String,
+    amount: String
+) {
+    Box(
+        modifier = Modifier
+            .size(128.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.background)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.onBackground,
+                shape = CircleShape
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(text = name, fontWeight = FontWeight.SemiBold)
+            Text(text = amount, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
 fun LlmActions(
+    recipe: Recipe,
     uiState: RecipeBookUiState,
     viewModel: RecipeBookViewModel,
     keyboardFocusManager: FocusManager
@@ -538,11 +571,41 @@ fun LlmActions(
     val llmActionType = uiState.llmActionType
     when (llmActionType) {
         LlmActionType.NUTRITIONAL_VALUES -> {
-            viewModel.setUserActionRequest("Generate nutritional values for the provided dish in the provided JSON schema, for the given number of servings.")
-            NourishButton(
-                onClick = { viewModel.makeLlmApiCall(llmActionType) },
-                text = "Generate Nutritional Values",
-            )
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+
+                val nutrition =
+                    viewModel.getNutritionForRecipe(recipe.id).collectAsState(initial = null).value
+                if (nutrition == null) {
+                    viewModel.setUserActionRequest("Generate nutritional values for the provided dish in the provided JSON schema, for the given number of servings.")
+                    NourishButton(
+                        onClick = { viewModel.makeLlmApiCall(llmActionType) },
+                        text = "Generate Nutritional Values",
+                    )
+                } else {
+                    NourishH2("Nutritional Values")
+                    Text("In ${nutrition.servings} serving${if (nutrition.servings > 1) { "s" } else { "" }}")
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(minSize = 128.dp), // size of the circles inside. should add padding inside too though
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        item {
+                            NutritionalFact("Calories", "${nutrition.calories}")
+                            NutritionalFact("Fat", "${nutrition.fat}")
+                            NutritionalFact("Saturates", "${nutrition.saturates}")
+                            NutritionalFact("Carbohydrates", "${nutrition.carbohydrate}")
+                            NutritionalFact("Sugars", "${nutrition.sugars}")
+                            NutritionalFact("Protein", "${nutrition.protein}")
+                            NutritionalFact("Salt", "${nutrition.salt}")
+                        }
+                    }
+                }
+            }
+
         }
         LlmActionType.ALTERATION -> {
             NourishTextField(

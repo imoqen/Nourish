@@ -188,7 +188,6 @@ class RecipeBookViewModel @Inject constructor(
     }
 
     // RECIPE NUTRITION LOGIC:
-
     fun getNutritionForRecipe(recipeId: Long): Flow<RecipeNutrition?> {
         return recipeRepository.getNutritionForRecipe(recipeId)
     }
@@ -570,8 +569,21 @@ class RecipeBookViewModel @Inject constructor(
                         val llmNutrition = llmNutritionResponse?.llmNutrition
                         if (llmNutrition != null) {
                             viewModelScope.launch() {
-                                setActionChatStage(ActionChatStage.RESPONSE_RECEIVED)
                                 // add nutrition to the DB and display to user.
+                                recipeRepository.insertRecipeNutrition(
+                                    RecipeNutrition(
+                                        recipeId = recipe.id,
+                                        servings = llmNutrition.servings,
+                                        calories = llmNutrition.calories,
+                                        fat = llmNutrition.fat,
+                                        saturates = llmNutrition.saturates,
+                                        carbohydrate = llmNutrition.carbohydrate,
+                                        sugars = llmNutrition.sugars,
+                                        protein = llmNutrition.protein,
+                                        salt = llmNutrition.salt
+                                    )
+                                )
+                                setActionChatStage(ActionChatStage.RESPONSE_RECEIVED)
                             }
                         }
 
