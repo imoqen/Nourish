@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -51,6 +52,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -80,6 +82,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import kotlinx.coroutines.coroutineScope
@@ -558,24 +561,162 @@ fun RecipeCard(
                     onDismissRequest = {
                         recipeBookViewModel.setLlmActionType(LlmActionType.NONE)
                     },
-                    sheetState = sheetState,
-                    dragHandle = {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                            BottomSheetDefaults.DragHandle()
-                        }
-                    }
+                    sheetState = sheetState
                 ) {
                     LlmActions(
                         uiState.selectedRecipe,
                         uiState,
                         recipeBookViewModel,
-                        keyboardFocusManager,
-                        sheetState
+                        keyboardFocusManager
                     )
 
                 }
             } else if (uiState.llmActionType != LlmActionType.NONE && uiState.selectedRecipe != null) {
-                // ALTERATION
+                // ALTERATION ACTION
+                Dialog(
+                    onDismissRequest = {
+                        recipeBookViewModel.setLlmActionType(LlmActionType.NONE)
+                    }
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(24.dp)
+                    ) {
+                        AlterationLlmAction(uiState, recipeBookViewModel, uiState.selectedRecipe, keyboardFocusManager)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AlterationLlmAction(
+    uiState: RecipeBookUiState,
+    viewModel: RecipeBookViewModel,
+    recipe: Recipe,
+    keyboardFocusManager: FocusManager
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth().navigationBarsPadding().fillMaxHeight(0.8f)
+            .padding(bottom = 12.dp).padding(horizontal = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Top
+    ) {
+        LookaheadScope() { // for animation
+            Column(
+                modifier = Modifier.animateBounds(this),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+
+                NourishH2("Recipe Alteration", modifier = Modifier.padding(top = 16.dp))
+
+                HorizontalDivider(modifier = Modifier.padding(top = 10.dp))
+
+                // the loading circle:
+                IndeterminateCircularIndicator(uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE)
+
+                if (uiState.alteredRecipe == null) {
+                    if (uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE) {
+                        Text(
+                            "Altering the recipe...",
+                            modifier = Modifier.padding(16.dp),
+                            textAlign = TextAlign.Center
+                        )
+                    } else {
+                        Text(
+                            "Not happy with the recipe, or wish to change it in some way?",
+                            modifier = Modifier.padding(16.dp),
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            "Simply enter your alteration below, and a new recipe will be generated. You can then choose whether to replace the previous recipe with it, save it as a new recipe, or discard it.",
+                            modifier = Modifier.padding(16.dp),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    HorizontalDivider(modifier = Modifier.padding(bottom = 10.dp))
+                } else {
+                    HorizontalDivider(modifier = Modifier.padding(bottom = 10.dp))
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth().fillMaxHeight(0.75f),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        item {
+                            Column(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                RecipeCardPreview(
+                                    uiState.alteredRecipe,
+                                    viewModel::formatIngredientText,
+                                    imageFilename = recipe.imagePath,
+                                    context = LocalContext.current
+                                )
+
+                            }
+                        }
+                        item {
+                            Column(
+                                modifier = Modifier.padding(8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+
+                                NourishTextDivider("Select an option")
+
+                                NourishButton(
+                                    onClick = {
+                                        viewModel.setVisible(false)
+                                        viewModel.replaceRecipe(recipe, uiState.alteredRecipe)
+                                        viewModel.setVisible(true)
+                                        viewModel.setAlteredRecipe(null)
+                                        viewModel.setUserActionRequest("")
+                                        viewModel.setLlmActionType(LlmActionType.NONE)
+                                    },
+                                    text = "Replace recipe",
+                                )
+                                NourishButton(
+                                    onClick = {
+                                        viewModel.addRecipe(uiState.alteredRecipe)
+                                        viewModel.setAlteredRecipe(null)
+                                        viewModel.setLlmActionType(LlmActionType.NONE)
+                                    },
+                                    text = "Save as new recipe",
+                                )
+                                NourishButton(
+                                    onClick = {
+                                        viewModel.setAlteredRecipe(null)
+                                        viewModel.setUserActionRequest("")
+
+                                    },
+                                    text = "Discard recipe",
+                                )
+                            }
+                        }
+                    }
+                    NourishTextDivider("Try another alteration")
+                }
+
+                Spacer(modifier= Modifier.weight(1f))
+
+                AnimatedVisibility(
+                    visible = uiState.actionChatStage != ActionChatStage.AWAITING_LLM_RESPONSE
+                ) {
+                    NourishTextField(
+                        value = uiState.userActionRequest,
+                        onValueChange = { actionRequest ->
+                            viewModel.setUserActionRequest(actionRequest)
+                        },
+                        placeholder = "Enter an alteration",
+                        onDone = { keyboardFocusManager.clearFocus() },
+                        leadingIcon = ImageVector.vectorResource(R.drawable.edit_note),
+                        trailingIcon = Icons.Filled.Send,
+                        onTrailingIconPress = {
+                            viewModel.setAlteredRecipe(null)
+                            viewModel.makeLlmApiCall(LlmActionType.ALTERATION)
+                            viewModel.setUserActionRequest("")
+                        },
+                        alwaysDisplayTrailingIcon = false
+                    )
+                }
             }
         }
     }
@@ -616,7 +757,6 @@ fun LlmActions(
     uiState: RecipeBookUiState,
     viewModel: RecipeBookViewModel,
     keyboardFocusManager: FocusManager,
-    sheetState: SheetState
 ) {
     val llmActionType = uiState.llmActionType
     when (llmActionType) {
@@ -649,7 +789,10 @@ fun LlmActions(
                 } else if (nutrition != null) {
                     LookaheadScope() {
                         Column(
-                            modifier = Modifier.animateBounds(this)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .animateBounds(this),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
 
                             NourishH2("Nutritional Values")
@@ -725,160 +868,62 @@ fun LlmActions(
 
         }
         LlmActionType.ALTERATION -> {
-            LookaheadScope() { // for animation
-                Column(
-                    modifier = Modifier.fillMaxWidth().navigationBarsPadding()
-                        .padding(bottom = 12.dp).padding(horizontal = 10.dp).animateBounds(this),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    NourishH2("Recipe Alteration")
-
-                    // the loading circle:
-                    IndeterminateCircularIndicator(uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE)
-
-                    if (uiState.alteredRecipe == null) {
-                        if (uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE) {
-                            Text(
-                                "Altering the recipe...",
-                                modifier = Modifier.padding(16.dp),
-                                textAlign = TextAlign.Center
-                            )
-                        } else {
-                            Text(
-                                "Not happy with the recipe, or wish to change it in some way?",
-                                modifier = Modifier.padding(16.dp),
-                                textAlign = TextAlign.Center
-                            )
-                            Text(
-                                "Simply enter your alteration below, and a new recipe will be generated. You can then choose whether to replace the previous recipe with it, save it as a new recipe, or discard it.",
-                                modifier = Modifier.padding(16.dp),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
-                    else {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxWidth().fillMaxHeight(0.6f),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            item {
-                                Column(
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    RecipeCardPreview(
-                                        uiState.alteredRecipe,
-                                        viewModel::formatIngredientText,
-                                        imageFilename = recipe.imagePath,
-                                        context = LocalContext.current
-                                    )
-
-                                }
-                            }
-                            item {
-                                Column(
-                                    modifier = Modifier.padding(8.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-
-                                    NourishTextDivider("Select an option")
-
-                                    NourishButton(
-                                        onClick = {
-                                            viewModel.setVisible(false)
-                                            viewModel.replaceRecipe(recipe, uiState.alteredRecipe)
-                                            viewModel.setVisible(true)
-                                            viewModel.setAlteredRecipe(null)
-                                            viewModel.setUserActionRequest("")
-                                            viewModel.setLlmActionType(LlmActionType.NONE)
-                                        },
-                                        text = "Replace recipe",
-                                    )
-                                    NourishButton(
-                                        onClick = {
-                                            viewModel.addRecipe(uiState.alteredRecipe)
-                                            viewModel.setAlteredRecipe(null)
-                                            viewModel.setLlmActionType(LlmActionType.NONE)
-                                        },
-                                        text = "Save as new recipe",
-                                    )
-                                    NourishButton(
-                                        onClick = {
-                                            viewModel.setAlteredRecipe(null)
-                                            viewModel.setUserActionRequest("")
-
-                                        },
-                                        text = "Discard recipe",
-                                    )
-                                }
-                            }
-                        }
-
-                        NourishTextDivider("Try another alteration")
-                    }
-
-                    if (uiState.actionChatStage != ActionChatStage.AWAITING_LLM_RESPONSE) {
-                        NourishTextField(
-                            value = uiState.userActionRequest,
-                            onValueChange = { actionRequest ->
-                                viewModel.setUserActionRequest(actionRequest)
-                            },
-                            placeholder = "Enter an alteration",
-                            onDone = { keyboardFocusManager.clearFocus() },
-                            leadingIcon = ImageVector.vectorResource(R.drawable.edit_note),
-                            trailingIcon = Icons.Filled.Send,
-                            onTrailingIconPress = {
-                                viewModel.setAlteredRecipe(null)
-                                viewModel.makeLlmApiCall(llmActionType)
-                                viewModel.setUserActionRequest("")
-                            },
-                            alwaysDisplayTrailingIcon = false
-                        )
-                    }
-                }
-            }
+            // handled in the dialog as modal bottom sheet is pooor for scrolling
 
         }
         LlmActionType.QUESTION -> {
-            LookaheadScope() {
-                Column(
-                    modifier = Modifier.fillMaxWidth().navigationBarsPadding()
-                        .padding(bottom = 12.dp).padding(horizontal = 10.dp).animateBounds(this),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    NourishH2("Ask a Question")
+            Column(
+                modifier = Modifier.fillMaxWidth().navigationBarsPadding()
+                    .padding(bottom = 12.dp).padding(horizontal = 10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                NourishH2("Ask a Question")
 
-                    val queries =
-                        viewModel.getAllQueriesForRecipe(recipe.id)
-                            .collectAsState(initial = null).value
+                val queries =
+                    viewModel.getAllQueriesForRecipe(recipe.id)
+                        .collectAsState(initial = null).value
 
-                    if (queries == null || queries.isEmpty()) {
+                if (queries == null || queries.isEmpty()) {
 
-                        Text(
-                            "Ask the LLM a question about the recipe.",
-                            modifier = Modifier.padding(16.dp),
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
-                            "For example, 'can I use ingredient X rather than Y?'.",
-                            modifier = Modifier.padding(16.dp),
-                            textAlign = TextAlign.Center
-                        )
+                    Text(
+                        "Ask Gemini a question about the recipe.",
+                        modifier = Modifier.padding(16.dp),
+                        textAlign = TextAlign.Center
+                    )
 
-                    } else {
+                } else {
 
-                        val lazyListState = rememberLazyListState()
+                    val lazyListState = rememberLazyListState()
 
-                        LaunchedEffect(queries.size) {
-                            lazyListState.animateScrollToItem(0) // scrolls to the llm message once it is received
-                        }
+                    LaunchedEffect(queries.size) {
+                        lazyListState.animateScrollToItem(0) // scrolls to the llm message once it is received
+                    }
 
+                    LookaheadScope() {
                         LazyColumn(
-                            modifier = Modifier.fillMaxHeight(0.6f),
+                            modifier = Modifier.fillMaxHeight(0.6f).animateBounds(this),
                             state = lazyListState,
                             reverseLayout = true // so that start at bottom of the chat
                         ) {
+                            item {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    HorizontalDivider(modifier = Modifier.padding(bottom=8.dp))
+                                    Text(
+                                        "Please note that all answers are produced by Gemini; as such, there may be mistakes.",
+                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Text(
+                                        "Consult a dietitian or doctor for personalised, accurate nutritional advice.",
+                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
                             item {
                                 // the loading circle:
                                 IndeterminateCircularIndicator(uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE)
@@ -890,28 +935,32 @@ fun LlmActions(
                                 }
                             }
                         }
-
-                    }
-
-                    if (uiState.actionChatStage != ActionChatStage.AWAITING_LLM_RESPONSE) {
-                        NourishTextField(
-                            value = uiState.userActionRequest,
-                            onValueChange = { actionRequest ->
-                                viewModel.setUserActionRequest(actionRequest)
-                            },
-                            placeholder = "Enter a question",
-                            onDone = { keyboardFocusManager.clearFocus() },
-                            leadingIcon = ImageVector.vectorResource(R.drawable.live_question),
-                            trailingIcon = Icons.Filled.Send,
-                            onTrailingIconPress = {
-                                viewModel.makeLlmApiCall(llmActionType)
-                            },
-                            alwaysDisplayTrailingIcon = false
-                        )
                     }
 
                 }
+
+                AnimatedVisibility(
+                    visible = uiState.actionChatStage != ActionChatStage.AWAITING_LLM_RESPONSE
+                ) {
+                    NourishTextField(
+                        value = uiState.userActionRequest,
+                        onValueChange = { actionRequest ->
+                            viewModel.setUserActionRequest(actionRequest)
+                        },
+                        placeholder = "Enter a question",
+                        onDone = { keyboardFocusManager.clearFocus() },
+                        leadingIcon = ImageVector.vectorResource(R.drawable.live_question),
+                        trailingIcon = Icons.Filled.Send,
+                        onTrailingIconPress = {
+                            viewModel.makeLlmApiCall(llmActionType)
+                        },
+                        alwaysDisplayTrailingIcon = false
+                    )
+                }
+
+
             }
+
 
         }
         LlmActionType.NONE -> {

@@ -736,6 +736,23 @@ fun GeneratedRecipe(
                 enabled = (!uiState.recipeSaved)
             )
         }
+
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            HorizontalDivider(modifier = Modifier.padding(bottom=16.dp))
+            Text(
+                "Please note that all recipes are produced by Gemini; as such, there may be mistakes.",
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                textAlign = TextAlign.Center
+            )
+            Text(
+                "Consult a dietitian or doctor for personalised, accurate nutritional advice.",
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
 
