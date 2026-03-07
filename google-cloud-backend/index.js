@@ -447,10 +447,16 @@ async function generate(req, res, requestType) {
 async function generateAction(req, res, actionType) {
   try {
     // Extract and validate the prompt
-    const query = req.body?.query;
-    const recipe = req.body?.recipe;
+    const reqBody = req.body;
+    if (reqBody == null) {
+      return res.status(400).json({ error: "The request body is null." });
+    }
 
-    const errorMessage = await validateRequest(req, prompt);
+    // extract the user's query and recipe
+    const query = reqBody.query;
+    const recipe = reqBody.recipe;
+
+    const errorMessage = await validateRequest(req);
     if (errorMessage != "") {
       return res.status(400).json({ error: errorMessage });
     }
@@ -463,7 +469,6 @@ async function generateAction(req, res, actionType) {
         result = await generateNutritionalValues(
           GOOGLE_CLOUD_PROJECT,
           GOOGLE_CLOUD_LOCATION,
-          query,
           recipe,
         );
         break;
@@ -482,11 +487,17 @@ async function generateAction(req, res, actionType) {
 
       // generate a new, altered recipe
       case LlmActionType.ALTERATION: {
+        // only used for recipe alteration:
+        const allNutritionalFilters = reqBody.allNutritionalFilters;
+        const dishType = reqBody.dishType;
+
         result = await generateAlteredRecipe(
           GOOGLE_CLOUD_PROJECT,
           GOOGLE_CLOUD_LOCATION,
           query,
           recipe,
+          allNutritionalFilters,
+          dishType,
         );
         break;
       }
@@ -621,6 +632,160 @@ async function validateRequest(req, prompt, requestType) {
   return "";
 }
 
+// LLM CALLS using LangChain, for the recipe actions:
+
+/**
+ * Makes the LLM request using Google Vertex AI to call the LLM and retrieve the
+ * response.
+ * @param projectId - ID of the Google Cloud project
+ * @param location - Location of the Google Cloud project
+ * @returns The LLM response.
+ */
+async function generateNutritionalValues(
+  projectId = GOOGLE_CLOUD_PROJECT,
+  location = GOOGLE_CLOUD_LOCATION,
+  recipe,
+) {
+  const llm = new ChatVertexAI({
+    project: projectId,
+    location: location,
+    model: "gemini-2.5-flash",
+  });
+
+  const agent = createAgent({
+    model: llm,
+    tools: [],
+    responseFormat: toolStrategy(NutritionSchemaZod),
+  });
+
+  console.log("Generating nutritional values for: " + JSON.stringify(recipe));
+
+  const result = await agent.invoke({
+    messages: [
+      {
+        role: "system",
+        content:
+          "Return in the required schema and ensure it is scaled to the number of servings. Use British standards. " +
+          "Generate the nutritional values as requested in the schema for the provided recipe.",
+      },
+      {
+        role: "user",
+        content:
+          "Generate the nutritional values for the following recipe: " +
+          JSON.stringify(recipe),
+      },
+    ],
+  });
+
+  // note: this returns the tokens. should use this value to increment the token count instead.
+  console.log(JSON.stringify(result.structuredResponse));
+  return result.structuredResponse;
+}
+
+async function generateQuestionAnswer(
+  projectId = GOOGLE_CLOUD_PROJECT,
+  location = GOOGLE_CLOUD_LOCATION,
+  query,
+  recipe,
+) {
+  const llm = new ChatVertexAI({
+    project: projectId,
+    location: location,
+    model: "gemini-2.5-flash",
+  });
+
+  const agent = createAgent({
+    model: llm,
+    tools: [],
+    responseFormat: toolStrategy(QuestionAnswerSchemaZod),
+  });
+
+  console.log(
+    "Answering the question: " +
+      query +
+      " for recipe:" +
+      JSON.stringify(recipe),
+  );
+
+  const result = await agent.invoke({
+    messages: [
+      {
+        role: "system",
+        content:
+          "Return in the required schema, write in sufficient detail but not too much (keep below 100 words). Use British English. " +
+          "Generate an answer to the question provided to the user, regarding the recipe also provided by the user." +
+          "As the question is regarding food, ensure you conform to food safety and hygiene standards",
+      },
+      {
+        role: "user",
+        content:
+          "Please answer my question: '" +
+          query +
+          "' about the following recipe: " +
+          JSON.stringify(recipe),
+      },
+    ],
+  });
+
+  // note: this returns the tokens. should use this value to increment the token count instead.
+  console.log(JSON.stringify(result.structuredResponse));
+  return result.structuredResponse;
+}
+
+async function generateAlteredRecipe(
+  projectId = GOOGLE_CLOUD_PROJECT,
+  location = GOOGLE_CLOUD_LOCATION,
+  query,
+  recipe,
+  allNutritionalFilters,
+  dishType,
+) {
+  const llm = new ChatVertexAI({
+    project: projectId,
+    location: location,
+    model: "gemini-2.5-flash",
+  });
+
+  const agent = createAgent({
+    model: llm,
+    tools: [],
+    responseFormat: toolStrategy(
+      recipeSchemaZod(allNutritionalFilters, dishType),
+    ),
+  });
+
+  console.log(
+    "Answering the question: " +
+      query +
+      " for recipe:" +
+      JSON.stringify(recipe),
+  );
+
+  const result = await agent.invoke({
+    messages: [
+      {
+        role: "system",
+        content:
+          "Return in the required schema, write in sufficient detail but not too much (keep below 250 words). Use British English. " +
+          "Generate a new recipe using the provided recipe, ensuring it is altered to the user's needs accordingly. The recipe should remain the same for any part which does not need to be altered to the request." +
+          "If the recipe cannot be altered in the way that the user wishes (e.g. inedible), fill in the recipeNotPossible field as true and all others as null. Only do this if there really is no way to alter it, otherwise be creative to meet the user's needs.",
+      },
+      {
+        role: "user",
+        content:
+          "Please create a new recipe based on the alteration: '" +
+          query +
+          "' using the following recipe: " +
+          JSON.stringify(recipe),
+      },
+    ],
+  });
+
+  // note: this returns the tokens. should use this value to increment the token count instead.
+  console.log(JSON.stringify(result.structuredResponse));
+  return result.structuredResponse;
+}
+
 // LLM CALLS USING LangChain:
 
 /**
@@ -640,12 +805,6 @@ async function generateRecipe(
   chosenNutritionalFilters,
   dishType,
 ) {
-  // these will be switched dynamically using user preferences
-  const metricUnits =
-    "ML, L, G, KG, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit)";
-  const imperialUnits =
-    "TSP, TBSP, FL_OZ, CUP, PINT, QUART, GALLON, OZ, LB, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit), not something else like None - only UNIT.";
-
   // tool strategy for formatting output:
   //https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
 
@@ -700,7 +859,6 @@ async function generateRecipe(
   });
 
   // note: this returns the tokens. should use this value to increment the token count instead.
-  0;
   console.log(JSON.stringify(result.structuredResponse));
   return result.structuredResponse;
 }
@@ -1046,7 +1204,7 @@ app.post("/recipe-nutrition", async (req, res) => {
   await generateAction(req, res, LlmActionType.NUTRITIONAL_VALUES);
 });
 
-app.post("query-recipe", async (req, res) => {
+app.post("/query-recipe", async (req, res) => {
   await generateAction(req, res, LlmActionType.QUESTION);
 });
 
