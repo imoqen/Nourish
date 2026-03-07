@@ -18,10 +18,8 @@ import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.network.response.ApiResponse
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import uk.co.imoqen.nourish.network.response.LlmNutrition
-import uk.co.imoqen.nourish.network.response.LlmNutritionResponse
 import uk.co.imoqen.nourish.network.response.LlmQuestionResponse
 import uk.co.imoqen.nourish.network.response.LlmRecipe
-import uk.co.imoqen.nourish.network.response.LlmRecipeResponse
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -124,8 +122,8 @@ class ApiManagerImpl @Inject constructor(
         request: LlmActionRequest,
         bearerToken: String,
         onQuestionAnswered: (LlmQuestionResponse?) -> Unit,
-        onRecipeAltered: (LlmRecipeResponse?) -> Unit,
-        onNutritionGenerated: (LlmNutritionResponse?) -> Unit
+        onRecipeAltered: (LlmRecipe?) -> Unit,
+        onNutritionGenerated: (LlmNutrition?) -> Unit
     ) {
         // when: the last line of each block is what will be assigned to the call val
         try {
@@ -237,8 +235,8 @@ class ApiManagerImpl @Inject constructor(
     private fun <T> handleActionCall(
         call: Call<T>,
         onQuestionAnswered: (LlmQuestionResponse?) -> Unit,
-        onRecipeAltered: (LlmRecipeResponse?) -> Unit,
-        onNutritionGenerated: (LlmNutritionResponse?) -> Unit
+        onRecipeAltered: (LlmRecipe?) -> Unit,
+        onNutritionGenerated: (LlmNutrition?) -> Unit
     ) {
         call.enqueue(object : Callback<T> {
             // Response received from the server:
@@ -275,18 +273,18 @@ class ApiManagerImpl @Inject constructor(
     private fun <T> handleActionSuccess(
         response: Response<T>,
         onQuestionAnswered: (LlmQuestionResponse?) -> Unit,
-        onRecipeAltered: (LlmRecipeResponse?) -> Unit,
-        onNutritionGenerated: (LlmNutritionResponse?) -> Unit
+        onRecipeAltered: (LlmRecipe?) -> Unit,
+        onNutritionGenerated: (LlmNutrition?) -> Unit
     ) {
         val post = response.body()
         when(post) {
             is LlmQuestionResponse -> {
                 onQuestionAnswered(post)
             }
-            is LlmRecipeResponse -> {
+            is LlmRecipe -> {
                 onRecipeAltered(post)
             }
-            is LlmNutritionResponse -> {
+            is LlmNutrition -> {
                 onNutritionGenerated(post)
             }
             else -> {

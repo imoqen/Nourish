@@ -86,6 +86,10 @@ class RecipeRepositoryImpl @Inject constructor(
         recipeNutritionDao.insert(recipeNutrition)
     }
 
+    override suspend fun deleteNutritionForRecipeId(recipeId: Long){
+        recipeNutritionDao.deleteByRecipeId(recipeId)
+    }
+
     override fun getNutritionForRecipe(recipeId: Long): Flow<RecipeNutrition?> {
         return recipeNutritionDao.getByRecipeId(recipeId)
     }
@@ -113,7 +117,8 @@ class RecipeRepositoryImpl @Inject constructor(
     override suspend fun createRecipe(
         uid: String,
         llmRecipe: LlmRecipe,
-        imagePath: String // just set to "" if none, which is fine.
+        recipeId: Long,
+        imagePath: String// just set to "" if none, which is fine.
     ) {
         // if throws, it is handled accordingly where it is called.
         db.withTransaction {
@@ -127,11 +132,35 @@ class RecipeRepositoryImpl @Inject constructor(
             }
 
             // 2. Create the recipe and add it to the database
-            val recipe = Recipe(
-                authorUid = uid, title = llmRecipe.title, numberOfServings = llmRecipe.servings.toInt(),
-                colour = "todo", generated = true, imagePath = imagePath, archived = false,
-                storageInstructions = llmRecipe.storage, recipeTypeId = recipeTypeId, emoji = llmRecipe.emoji
-            )
+            var recipe: Recipe
+            if (recipeId.toInt() != -1) { // for replacing recipes, so use the original recipe id
+                recipe = Recipe(
+                    id = recipeId,
+                    authorUid = uid,
+                    title = llmRecipe.title,
+                    numberOfServings = llmRecipe.servings.toInt(),
+                    colour = "todo",
+                    generated = true,
+                    imagePath = imagePath,
+                    archived = false,
+                    storageInstructions = llmRecipe.storage,
+                    recipeTypeId = recipeTypeId,
+                    emoji = llmRecipe.emoji
+                )
+            } else {
+                recipe = Recipe(
+                    authorUid = uid,
+                    title = llmRecipe.title,
+                    numberOfServings = llmRecipe.servings.toInt(),
+                    colour = "todo",
+                    generated = true,
+                    imagePath = imagePath,
+                    archived = false,
+                    storageInstructions = llmRecipe.storage,
+                    recipeTypeId = recipeTypeId,
+                    emoji = llmRecipe.emoji
+                )
+            }
             val recipeId = recipeDao.insert(recipe)
 
             // 3. Search for each Ingredient and create it if it doesn't already exist:
@@ -225,5 +254,26 @@ class RecipeRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun replaceRecipe(currentRecipe: Recipe, newRecipe: LlmRecipe) {
+        // things to update:
+
+        // DELETE ALL AND UPLOAD NEW with the currentRecipe id:
+        // recipe ingredients
+        // ingredient sections
+        // will potentially have to add new ingredients as a result, BUT DONT DELETE THE OLD INGREDIENTS.
+        // recipe tags
+
+        // replace the recipe
+
+        // oir just save the original recipe id, then add recipe USING that recipe id.
+        val originalRecipeId = currentRecipe.id
+        val originalRecipeAuthor = currentRecipe.authorUid
+
+        // the previous nutritional values get deleted as they will no longer be accurate
+        deleteNutritionForRecipeId(originalRecipeId)
+
+        recipeDao.delete(currentRecipe)
+        createRecipe(originalRecipeAuthor,newRecipe, originalRecipeId)
+    }
 
 }

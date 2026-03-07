@@ -49,6 +49,7 @@ import uk.co.imoqen.nourish.network.response.LlmRecipe
 import uk.co.imoqen.nourish.recipediscovery.LlmChatStage
 import uk.co.imoqen.nourish.recipediscovery.LlmMode
 import java.io.File
+import java.lang.NullPointerException
 import javax.inject.Inject
 import kotlin.collections.getOrPut
 
@@ -144,6 +145,22 @@ class RecipeBookViewModel @Inject constructor(
         mutableUiState.update { currentState ->
             currentState.copy(
                 actionChatStage = actionChatStage
+            )
+        }
+    }
+
+    fun setAlteredRecipe(alteredRecipe: LlmRecipe?) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                alteredRecipe = alteredRecipe
+            )
+        }
+    }
+
+    fun setVisible(visible: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                visible = visible
             )
         }
     }
@@ -571,8 +588,7 @@ class RecipeBookViewModel @Inject constructor(
                         }
 
                     },
-                    onRecipeAltered = { llmRecipeResponse ->
-                        val llmRecipe = llmRecipeResponse?.llmRecipe
+                    onRecipeAltered = { llmRecipe ->
                         if (llmRecipe != null) {
                             viewModelScope.launch() {
                                 setActionChatStage(ActionChatStage.RESPONSE_RECEIVED)
@@ -581,6 +597,7 @@ class RecipeBookViewModel @Inject constructor(
                                     return@launch
                                 }
                                 // display the recipe to the user. there will be a button to overwrite the exising recipe, or save as a new recipe. when clicked, this will do the according process.
+                                setAlteredRecipe(llmRecipe)
                             }
                         }
                     },
@@ -612,6 +629,84 @@ class RecipeBookViewModel @Inject constructor(
                     // error occurred
                     setActionChatStage(ActionChatStage.USER_INPUT) // no longer awaiting - error occurred.
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
+                }
+        }
+    }
+
+    // only used for llmingredient as they are dealt with differently.
+    fun formatIngredientText(
+        ingredient: LlmIngredient
+    ): String {
+        runCatching {
+            return recipeActions.formatIngredientText(ingredient)
+        }
+            .onFailure {
+                viewModelScope.launch {
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("The recipe could not be generated. Please try again."))
+                    setActionChatStage(ActionChatStage.USER_INPUT)
+                    return@launch
+                }
+            }
+        return "" // invalid if reached here
+    }
+
+    fun addRecipe(llmRecipe: LlmRecipe) {
+        viewModelScope.launch() {
+            runCatching {
+                // Check that user is logged in validly
+                val uid = authenticationManager.getUid()
+                if (uid == null) {
+                    throw NullPointerException()
+                } // user is null; throw to be handled appropriately
+                // Add the recipe to the database:
+                recipeRepository.createRecipe(uid, llmRecipe)
+            }
+                .onSuccess {
+                    uiEventBus.enqueueEvent(
+                        UiEvent.ShowSnackbar(
+                            "The recipe has been saved."
+                        )
+                    )
+                }
+
+                .onFailure { e ->
+                    uiEventBus.enqueueEvent(
+                        UiEvent.ShowSnackbar(
+                            "The recipe could not be saved. Please try again, or enter a different alteration."
+                        )
+                    )
+                }
+        }
+    }
+
+    fun replaceRecipe(
+        originalRecipe: Recipe,
+        newRecipe: LlmRecipe
+    ) {
+        viewModelScope.launch() {
+            runCatching {
+                // Check that user is logged in validly
+                val uid = authenticationManager.getUid()
+                if (uid == null) {
+                    throw NullPointerException()
+                } // user is null; throw to be handled appropriately
+                // Add the recipe to the database:
+                recipeRepository.replaceRecipe(originalRecipe, newRecipe)
+            }
+                .onSuccess {
+                    uiEventBus.enqueueEvent(
+                        UiEvent.ShowSnackbar(
+                            "The recipe has been updated."
+                        )
+                    )
+                }
+
+                .onFailure { e ->
+                    uiEventBus.enqueueEvent(
+                        UiEvent.ShowSnackbar(
+                            "The recipe could not be updated. Please try again, or enter a different alteration."
+                        )
+                    )
                 }
         }
     }

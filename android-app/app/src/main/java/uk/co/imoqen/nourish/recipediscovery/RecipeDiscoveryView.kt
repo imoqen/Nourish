@@ -106,8 +106,10 @@ import uk.co.imoqen.nourish.common.onBackgroundColour
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
+import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 import uk.co.imoqen.nourish.recipebook.ImageCardHeader
+import uk.co.imoqen.nourish.recipebook.TagSelection
 
 import java.io.File
 import kotlin.text.lowercase
@@ -711,12 +713,51 @@ fun GeneratedRecipe(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        RecipeCardPreview(
+            recipe, viewModel::formatIngredientText, uiState.savedImageFilename,
+            context, uiState.recipeTags
+        )
+
+        NourishDivider()
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(bottom=8.dp)
+        ) {
+            Text(
+                text = "Save the recipe to access it in the future, edit it, view nutritional information, or ask questions about it.",
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(8.dp)
+            )
+
+            NourishButton(
+                onClick = { if (!uiState.recipeSaved) { viewModel.addRecipe(recipe) } },
+                text = "Save Recipe",
+                enabled = (!uiState.recipeSaved)
+            )
+        }
+    }
+}
+
+@Composable
+fun RecipeCardPreview(
+    recipe: LlmRecipe,
+    formatIngredientText: (LlmIngredient) -> String,
+    imageFilename: String,
+    context: Context,
+    tags: List<TagSelection>? = emptyList()
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         ImageCardHeader(
-            uiState.savedImageFilename,
+            imageFilename,
             recipe.emoji,
             context,
             fillMaxWidth = true // fill the width of the llm response.
         )
+
         NourishH2(recipe.title)
 
         NourishTextDivider("Ingredients")
@@ -738,13 +779,17 @@ fun GeneratedRecipe(
                         )
                     }
 
+                    Log.i("LLM RECIPE", "ingredients: ${ingredientSection.ingredients}")
+
                     ingredientSection.ingredients.forEach { ingredient ->
-                        val ingredientText = viewModel.formatIngredientText(ingredient)
+                        val ingredientText = formatIngredientText(ingredient)
                         Text(ingredientText)
                     }
 
-                    if (i != recipe.sectionIngredients.size-1) {
-                        HorizontalDivider(modifier = Modifier.padding(horizontal=64.dp).padding(top=6.dp))
+                    if (i != recipe.sectionIngredients.size - 1) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 64.dp).padding(top = 6.dp)
+                        )
                     }
                 }
             }
@@ -829,29 +874,10 @@ fun GeneratedRecipe(
 
                 Text("Meal type: ${recipe.mealType}")
 
-                SelectedTags(
-                    tags = uiState.recipeTags
-                )
+                if (tags != null && tags.isNotEmpty()) {
+                    SelectedTags(tags)
+                }
             }
-        }
-
-        NourishDivider()
-
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(bottom=8.dp)
-        ) {
-            Text(
-                text = "Save the recipe to access it in the future, edit it, view nutritional information, or ask questions about it.",
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(8.dp)
-            )
-
-            NourishButton(
-                onClick = { if (!uiState.recipeSaved) { viewModel.addRecipe(recipe) } },
-                text = "Save Recipe",
-                enabled = (!uiState.recipeSaved)
-            )
         }
     }
 }

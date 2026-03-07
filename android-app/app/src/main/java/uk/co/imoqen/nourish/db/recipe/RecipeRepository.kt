@@ -49,6 +49,7 @@ interface RecipeRepository {
     // RECIPE NUTRITION LOGIC:
     suspend fun insertRecipeNutrition(recipeNutrition: RecipeNutrition)
     fun getNutritionForRecipe(recipeId: Long): Flow<RecipeNutrition?>
+    suspend fun deleteNutritionForRecipeId(recipeId: Long)
 
     // RECIPE QUERY LOGIC:
     suspend fun insertRecipeQuery(recipeQuery: RecipeQuery): Long
@@ -60,7 +61,9 @@ interface RecipeRepository {
     /**
      * Creates a recipe in the database and its corresponding entities
      */
-    suspend fun createRecipe(uid: String, llmRecipe: LlmRecipe, imagePath: String)
+    suspend fun createRecipe(uid: String, llmRecipe: LlmRecipe, recipeId: Long = -1, imagePath: String = "")
+
+    suspend fun replaceRecipe(currentRecipe: Recipe, newRecipe: LlmRecipe)
 
     suspend fun updateRecipeIngredient(recipeIngredient: RecipeIngredient)
 

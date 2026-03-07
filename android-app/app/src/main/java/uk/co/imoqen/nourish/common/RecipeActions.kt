@@ -1,7 +1,9 @@
 package uk.co.imoqen.nourish.common
 
 import android.util.Log
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
@@ -10,8 +12,10 @@ import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.db.tag.TagRepository
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
+import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.recipebook.TagSelection
 import uk.co.imoqen.nourish.recipebook.TypeSelection
+import uk.co.imoqen.nourish.recipediscovery.LlmChatStage
 import javax.inject.Inject
 import kotlin.collections.map
 
@@ -229,6 +233,36 @@ class RecipeActions @Inject constructor(
             return ingredientAmount.toInt().toString()
         }
         return ingredientAmount.toString()
+    }
+
+    // only used for displaying llm ingredient as they are handled differently
+    fun formatIngredientText(
+        ingredient: LlmIngredient
+    ): String {
+        runCatching {
+            val amount = ingredient.ingredientAmount
+            val ingredientUnit = IngredientUnit.valueOf(ingredient.ingredientAmountUnit)
+
+            val unit = if (determineUnitPlurality(amount)) {
+                ingredientUnit.pluralName
+            } else {
+                ingredientUnit.singularName
+            }
+
+            val ingredientPluralisedName =
+                if (determineIngredientPlurality(ingredient.ingredientAmount, ingredientUnit)) {
+                    ingredient.ingredientPlural
+                } else {
+                    ingredient.ingredientSingular
+                }
+
+            return if (unit != "") {
+                ("${formatIngredientAmount(amount)} $unit $ingredientPluralisedName")
+            } else {
+                ("${formatIngredientAmount(amount)} $ingredientPluralisedName")
+            }
+        }
+        return "" // invalid if reached here
     }
 
 }

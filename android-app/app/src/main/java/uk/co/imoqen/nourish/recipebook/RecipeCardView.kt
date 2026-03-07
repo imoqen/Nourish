@@ -1,12 +1,17 @@
 package uk.co.imoqen.nourish.recipebook
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateBounds
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import uk.co.imoqen.nourish.R
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,6 +40,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
@@ -44,14 +50,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -59,6 +68,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -72,7 +82,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.IndeterminateCircularIndicator
 import uk.co.imoqen.nourish.common.NourishButton
 import uk.co.imoqen.nourish.common.NourishDivider
@@ -92,6 +105,7 @@ import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQuery
 import uk.co.imoqen.nourish.network.request.LlmActionType
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 import uk.co.imoqen.nourish.recipediscovery.LlmChatStage
+import uk.co.imoqen.nourish.recipediscovery.RecipeCardPreview
 import java.io.File
 
 @Composable
@@ -127,195 +141,283 @@ fun RecipeCard(
     uiState: RecipeBookUiState,
     keyboardFocusManager: FocusManager
 ) {
-    val recipe = recipeBookViewModel.uiState.collectAsState().value.selectedRecipe
-    recipeBookViewModel.buildRecipeCard()
-    val recipeCard = recipeBookViewModel.uiState.collectAsState().value.selectedRecipeCard
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    AnimatedVisibility(
+        visible = uiState.visible,
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        val recipe = recipeBookViewModel.uiState.collectAsState().value.selectedRecipe
+        recipeBookViewModel.buildRecipeCard()
+        val recipeCard = recipeBookViewModel.uiState.collectAsState().value.selectedRecipeCard
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
 
-    if (recipeCard != null) {
-        val imagePath = recipeCard.imagePath
-        Card(
+        if (recipeCard != null) {
+            val imagePath = recipeCard.imagePath
+            Card(
 
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(color = MaterialTheme.colorScheme.background)
-                    .padding(bottom = 8.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Box(
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(
-                            if (imagePath != "") {
-                                320.dp + 32.dp
-                            } else {
-                                160.dp + 32.dp
-                            }
-                        )
+                        .fillMaxSize()
+                        .background(color = MaterialTheme.colorScheme.background)
+                        .padding(bottom = 8.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-
-                    // image:
-                    val imagePath = recipeCard.imagePath
-                    var displayImage = false
-                    val context = LocalContext.current
-
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .align(Alignment.Center)
+                            .height(
+                                if (imagePath != "") {
+                                    320.dp + 32.dp
+                                } else {
+                                    160.dp + 32.dp
+                                }
+                            )
                     ) {
-                        // Image:
-                        val imageFile =
-                            File(
-                                context.filesDir,
-                                imagePath
-                            )
-                        if (imageFile.exists() && imagePath != "") {
-                            displayImage = true
-                            //Use Coil to display the selected image
-                            val painter = rememberAsyncImagePainter(
-                                ImageRequest
-                                    .Builder(LocalContext.current)
-                                    .data(imageFile)
-                                    .build()
-                            )
 
-                            Image(
-                                painter = painter,
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .height(320.dp - 92.dp + 64.dp + 32.dp) // total size of card - size of text bit (200 - 90) + extra for the rounded corner shape (32.dp)
-                                    .fillMaxWidth(), // 2/3 of the card height - maybe use consts for this in future to ensure they match upon changes
-                                contentScale = ContentScale.Crop
-                            )
-                        } else {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth() // matches the card width
-                                    .height(160.dp - 92.dp + 64.dp + 32.dp) // takes up much less space because no image
-                                    .background(MaterialTheme.colorScheme.error) // put the chosen colour
-                            )
-                        }
-                    }
+                        // image:
+                        val imagePath = recipeCard.imagePath
+                        var displayImage = false
+                        val context = LocalContext.current
 
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(92.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.surfaceContainer,
-                                // bottom corners are rounded, top are not:
-                                shape = RoundedCornerShape(
-                                    bottomStart = 32.dp,
-                                    bottomEnd = 32.dp
-                                )
-                            )
-                            .padding(vertical = 16.dp)
-                        //contentAlignment = Alignment.Center
-                    ) {
-                        NourishH2(
-                            recipeCard.title,
+                        Box(
                             modifier = Modifier
+                                .fillMaxWidth()
                                 .align(Alignment.Center)
-                                .fillMaxWidth(0.8f)
+                        ) {
+                            // Image:
+                            val imageFile =
+                                File(
+                                    context.filesDir,
+                                    imagePath
+                                )
+                            if (imageFile.exists() && imagePath != "") {
+                                displayImage = true
+                                //Use Coil to display the selected image
+                                val painter = rememberAsyncImagePainter(
+                                    ImageRequest
+                                        .Builder(LocalContext.current)
+                                        .data(imageFile)
+                                        .build()
+                                )
+
+                                Image(
+                                    painter = painter,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .height(320.dp - 92.dp + 64.dp + 32.dp) // total size of card - size of text bit (200 - 90) + extra for the rounded corner shape (32.dp)
+                                        .fillMaxWidth(), // 2/3 of the card height - maybe use consts for this in future to ensure they match upon changes
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth() // matches the card width
+                                        .height(160.dp - 92.dp + 64.dp + 32.dp) // takes up much less space because no image
+                                        .background(MaterialTheme.colorScheme.error) // put the chosen colour
+                                )
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(92.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceContainer,
+                                    // bottom corners are rounded, top are not:
+                                    shape = RoundedCornerShape(
+                                        bottomStart = 32.dp,
+                                        bottomEnd = 32.dp
+                                    )
+                                )
+                                .padding(vertical = 16.dp)
+                            //contentAlignment = Alignment.Center
+                        ) {
+                            NourishH2(
+                                recipeCard.title,
+                                modifier = Modifier
+                                    .align(Alignment.Center)
+                                    .fillMaxWidth(0.8f)
+                            )
+
+                            // back button:
+                            IconButton(
+                                onClick = { onBack() },
+                                modifier = Modifier.align(Alignment.CenterStart)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.KeyboardArrowLeft,
+                                    contentDescription = null
+                                )
+                            }
+                        }
+
+                        // simply the bottom bit which overlays the image to add the rounded corner style
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(32.dp)
+                                .align(Alignment.BottomCenter)
+                                .background(
+                                    color = MaterialTheme.colorScheme.background,
+                                    // bottom corners are rounded, top are not:
+                                    shape = RoundedCornerShape(
+                                        topStart = 32.dp,
+                                        topEnd = 32.dp
+                                    )
+                                )
                         )
 
-                        // back button:
-                        IconButton(
-                            onClick = { onBack() },
-                            modifier = Modifier.align(Alignment.CenterStart)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .fillMaxHeight()
                         ) {
-                            Icon(
-                                imageVector = Icons.Filled.KeyboardArrowLeft,
-                                contentDescription = null
+                            // Emoji:
+                            Text(
+                                text = recipeCard.emoji,
+                                fontSize = 48.sp,
+                                // center emoji if no image, otherwise put at bottom center
+                                modifier = if (displayImage) {
+                                    Modifier
+                                        .align(Alignment.BottomCenter)
+                                        .offset(y = (-2).dp) // offsets are added to account for the img displayed for the rounded corner shape
+                                } else {
+                                    Modifier
+                                        .align(Alignment.Center)
+                                        .offset(y = (28).dp) // offsets are added to account for the bg displayed for the rounded corner shape
+                                },
+                                style = TextStyle(
+                                    shadow = Shadow(
+                                        color = Color.Black,
+                                        offset = Offset(4f, 4f),
+                                        blurRadius = 4f
+                                    )
+                                )
                             )
                         }
                     }
 
-                    // simply the bottom bit which overlays the image to add the rounded corner style
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(32.dp)
-                            .align(Alignment.BottomCenter)
-                            .background(
-                                color = MaterialTheme.colorScheme.background,
-                                // bottom corners are rounded, top are not:
-                                shape = RoundedCornerShape(
-                                    topStart = 32.dp,
-                                    topEnd = 32.dp
-                                )
-                            )
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight()
-                    ) {
-                        // Emoji:
-                        Text(
-                            text = recipeCard.emoji,
-                            fontSize = 48.sp,
-                            // center emoji if no image, otherwise put at bottom center
-                            modifier = if (displayImage) {
-                                Modifier
-                                    .align(Alignment.BottomCenter)
-                                    .offset(y = (-2).dp) // offsets are added to account for the img displayed for the rounded corner shape
-                            } else {
-                                Modifier
-                                    .align(Alignment.Center)
-                                    .offset(y = (28).dp) // offsets are added to account for the bg displayed for the rounded corner shape
-                            },
-                            style = TextStyle(
-                                shadow = Shadow(
-                                    color = Color.Black,
-                                    offset = Offset(4f, 4f),
-                                    blurRadius = 4f
-                                )
-                            )
-                        )
-                    }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(0.95f)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.surfaceContainer,
-                                shape = RoundedCornerShape(16.dp)
-                            )
-                            .weight(1f) // tags takes up all remaining space, serving size takes up as much as it needs.
+                    Row(
+                        modifier = Modifier.fillMaxWidth(0.95f)
                     ) {
                         Column(
                             modifier = Modifier
                                 .padding(8.dp)
-                                .fillMaxWidth() // for inner padding of the total item
-                        ) {
-                            val tags = recipeCard.recipeTags
-                            if (tags.isEmpty()) {
-                                Text(
-                                    text = "No tags",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    color = MaterialTheme.colorScheme.onBackground.copy(
-                                        0.5f
-                                    ),
-                                    textAlign = TextAlign.Center
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceContainer,
+                                    shape = RoundedCornerShape(16.dp)
                                 )
-                            } else {
-                                FlowRow(
-                                    modifier = Modifier.padding(2.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(2.dp),
-                                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                                .weight(1f) // tags takes up all remaining space, serving size takes up as much as it needs.
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .fillMaxWidth() // for inner padding of the total item
+                            ) {
+                                val tags = recipeCard.recipeTags
+                                if (tags.isEmpty()) {
+                                    Text(
+                                        text = "No tags",
+                                        modifier = Modifier.fillMaxWidth(),
+                                        color = MaterialTheme.colorScheme.onBackground.copy(
+                                            0.5f
+                                        ),
+                                        textAlign = TextAlign.Center
+                                    )
+                                } else {
+                                    FlowRow(
+                                        modifier = Modifier.padding(2.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                                    ) {
+                                        TagsDisplay(tags)
+                                    }
+                                }
+                            }
+                        }
+
+                        Column(
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceContainer,
+                                    shape = RoundedCornerShape(16.dp)
+                                )
+                            //.fillMaxWidth(0.3f)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .padding(8.dp) // for inner padding of the total item
+                                    .animateContentSize()
+                            ) {
+                                NourishIconButton(
+                                    onClick = { recipeBookViewModel.alterServingSize(false) },
+                                    painter = painterResource(R.drawable.subtract),
+                                    modifier = Modifier.size(38.dp)
+                                )
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.padding(horizontal = 3.dp)
                                 ) {
-                                    TagsDisplay(tags)
+                                    Image(
+                                        painter = painterResource(R.drawable.person),
+                                        contentDescription = "Number of Servings",
+                                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground)
+                                    )
+                                    Text(
+                                        text = "${recipeCard.serves}",
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                NourishIconButton(
+                                    onClick = { recipeBookViewModel.alterServingSize(true) },
+                                    painter = painterResource(R.drawable.add),
+                                    modifier = Modifier.size(38.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceContainer,
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                            .fillMaxWidth(0.85f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        NourishH2("Ingredients")
+                        HorizontalDivider()
+
+                        Column(
+                            modifier = Modifier
+                                .animateContentSize()
+                        ) {
+                            // then output the ingredients by section
+                            recipeCard.sectionsWithIngredients.forEach { (section, ingredients) ->
+                                Column(
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                ) {
+                                    // only output name of section if there is more than 1 section, otherwise it is irrelevant
+                                    if (recipeCard.sectionsWithIngredients.size > 1) {
+                                        Text(
+                                            text = section,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+
+                                    // id can be used if user wishes to add to shopping list
+                                    ingredients.forEach { (ingredient, amount, id) ->
+                                        Text("${recipeBookViewModel.formatIngredientAmount(amount)} $ingredient")
+                                    }
                                 }
                             }
                         }
@@ -328,80 +430,61 @@ fun RecipeCard(
                                 color = MaterialTheme.colorScheme.surfaceContainer,
                                 shape = RoundedCornerShape(16.dp)
                             )
-                            //.fillMaxWidth(0.3f)
+                            .fillMaxWidth(0.95f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        Row(
+
+                        NourishH2("Method")
+                        HorizontalDivider()
+
+                        Column(
                             modifier = Modifier
-                                .padding(8.dp) // for inner padding of the total item
-                                .animateContentSize()
+                                .padding(8.dp)
+                                .padding(bottom = 8.dp) // for inner padding of the total item
                         ) {
-                            NourishIconButton(
-                                onClick = { recipeBookViewModel.alterServingSize(false) },
-                                painter = painterResource(R.drawable.subtract),
-                                modifier = Modifier.size(38.dp)
-                            )
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.padding(horizontal = 3.dp)
-                            ) {
-                                Image(
-                                    painter = painterResource(R.drawable.person),
-                                    contentDescription = "Number of Servings",
-                                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground)
-                                )
-                                Text(
-                                    text = "${recipeCard.serves}",
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                            NourishIconButton(
-                                onClick = { recipeBookViewModel.alterServingSize(true) },
-                                painter = painterResource(R.drawable.add),
-                                modifier = Modifier.size(38.dp)
-                            )
-                        }
-                    }
-                }
-
-                Column(
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.surfaceContainer,
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                        .fillMaxWidth(0.85f),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    NourishH2("Ingredients")
-                    HorizontalDivider()
-
-                    Column(
-                        modifier = Modifier
-                            .animateContentSize()
-                    ) {
-                        // then output the ingredients by section
-                        recipeCard.sectionsWithIngredients.forEach { (section, ingredients) ->
-                            Column(
-                                modifier = Modifier.padding(vertical = 8.dp)
-                            ) {
-                                // only output name of section if there is more than 1 section, otherwise it is irrelevant
-                                if (recipeCard.sectionsWithIngredients.size > 1) {
+                            recipeCard.method.forEachIndexed { i, (instruction, complete, id) ->
+                                Row(
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Checkbox(
+                                        modifier = Modifier.padding(0.dp),
+                                        checked = complete,
+                                        onCheckedChange = {
+                                            recipeBookViewModel.markStepAsComplete(
+                                                id,
+                                                !complete
+                                            )
+                                        }
+                                    )
                                     Text(
-                                        text = section,
-                                        fontWeight = FontWeight.Bold
+                                        fontSize = 18.sp,
+                                        text = "Step ${i + 1}.",
+                                        fontWeight = FontWeight.Bold,
+                                        //modifier = Modifier.padding(top=10.dp)
                                     )
                                 }
+                                Text(
+                                    text = instruction,
+                                    textDecoration = if (complete) {
+                                        TextDecoration.LineThrough
+                                    } else TextDecoration.None,
+                                    textAlign = TextAlign.Center
+                                )
 
-                                // id can be used if user wishes to add to shopping list
-                                ingredients.forEach { (ingredient, amount, id) ->
-                                    Text("${recipeBookViewModel.formatIngredientAmount(amount)} $ingredient")
+                                if (i != recipeCard.method.size - 1) {
+                                    HorizontalDivider(
+                                        modifier = Modifier
+                                            .padding(horizontal = 12.dp)
+                                            .padding(top = 12.dp)
+                                    )
                                 }
                             }
                         }
                     }
                 }
+
 
                 Column(
                     modifier = Modifier
@@ -410,132 +493,89 @@ fun RecipeCard(
                             color = MaterialTheme.colorScheme.surfaceContainer,
                             shape = RoundedCornerShape(16.dp)
                         )
-                        .fillMaxWidth(0.95f),
+                        .fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
+                    NourishH2("Storage Guidance")
 
-                    NourishH2("Method")
                     HorizontalDivider()
 
-                    Column(
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .padding(bottom = 8.dp) // for inner padding of the total item
-                    ) {
-                        recipeCard.method.forEachIndexed { i, (instruction, complete, id) ->
-                            Row(
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Checkbox(
-                                    modifier = Modifier.padding(0.dp),
-                                    checked = complete,
-                                    onCheckedChange = { recipeBookViewModel.markStepAsComplete(id, !complete) }
-                                )
-                                Text(
-                                    fontSize = 18.sp,
-                                    text = "Step ${i + 1}.",
-                                    fontWeight = FontWeight.Bold,
-                                    //modifier = Modifier.padding(top=10.dp)
-                                )
-                            }
-                            Text(
-                                text = instruction,
-                                textDecoration = if (complete) {
-                                    TextDecoration.LineThrough
-                                } else TextDecoration.None,
-                                textAlign = TextAlign.Center
-                            )
+                    Text(
+                        text = recipeCard.storageInstructions,
+                        modifier = Modifier.padding(8.dp)
+                    )
+                }
 
-                            if (i != recipeCard.method.size-1) {
-                                HorizontalDivider(
-                                    modifier = Modifier
-                                        .padding(horizontal = 12.dp)
-                                        .padding(top = 12.dp)
-                                )
-                            }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(color = MaterialTheme.colorScheme.background)
+                        .padding(vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+
+                    NourishIconTextButton(
+                        onClick = {
+                            recipeBookViewModel.setLlmActionType(LlmActionType.NUTRITIONAL_VALUES)
+                            recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
+                        },
+                        painter = painterResource(R.drawable.forkchart),
+                        description = "Nutritional Values",
+                        modifier = Modifier.fillMaxWidth(0.7f)
+                    )
+
+                    NourishIconTextButton(
+                        onClick = {
+                            recipeBookViewModel.setUserActionRequest("")
+                            recipeBookViewModel.setLlmActionType(LlmActionType.ALTERATION)
+                            recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
+                        },
+                        painter = painterResource(R.drawable.adjust),
+                        description = "Make an alteration",
+                        modifier = Modifier.fillMaxWidth(0.7f)
+                    )
+
+                    NourishIconTextButton(
+                        onClick = {
+                            recipeBookViewModel.setUserActionRequest("")
+                            recipeBookViewModel.setLlmActionType(LlmActionType.QUESTION)
+                            recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
+                        },
+                        painter = painterResource(R.drawable.live_question),
+                        description = "Ask a question",
+                        modifier = Modifier.fillMaxWidth(0.7f)
+                    )
+                }
+
+            }
+
+            if (uiState.llmActionType != LlmActionType.NONE && uiState.selectedRecipe != null && uiState.llmActionType != LlmActionType.ALTERATION) {
+                // NON-ALTERATION ACTIONS
+                ModalBottomSheet(
+                    onDismissRequest = {
+                        recipeBookViewModel.setLlmActionType(LlmActionType.NONE)
+                    },
+                    sheetState = sheetState,
+                    dragHandle = {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                            BottomSheetDefaults.DragHandle()
                         }
                     }
-                }
-            }
-
-
-            Column(
-                modifier = Modifier
-                    .padding(8.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.surfaceContainer,
-                        shape = RoundedCornerShape(16.dp)
+                ) {
+                    LlmActions(
+                        uiState.selectedRecipe,
+                        uiState,
+                        recipeBookViewModel,
+                        keyboardFocusManager,
+                        sheetState
                     )
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                NourishH2("Storage Guidance")
 
-                HorizontalDivider()
-
-                Text(
-                    text = recipeCard.storageInstructions,
-                    modifier = Modifier.padding(8.dp)
-                )
-            }
-
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(color = MaterialTheme.colorScheme.background)
-                    .padding(vertical = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-
-                NourishIconTextButton(
-                    onClick = {
-                        recipeBookViewModel.setLlmActionType(LlmActionType.NUTRITIONAL_VALUES)
-                        recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
-                              },
-                    painter = painterResource(R.drawable.forkchart),
-                    description = "Nutritional Values",
-                    modifier = Modifier.fillMaxWidth(0.7f)
-                )
-
-                NourishIconTextButton(
-                    onClick = {
-                        recipeBookViewModel.setUserActionRequest("")
-                        recipeBookViewModel.setLlmActionType(LlmActionType.ALTERATION)
-                        recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
-                              },
-                    painter = painterResource(R.drawable.adjust),
-                    description = "Make an alteration",
-                    modifier = Modifier.fillMaxWidth(0.7f)
-                )
-
-                NourishIconTextButton(
-                    onClick = {
-                        recipeBookViewModel.setUserActionRequest("")
-                        recipeBookViewModel.setLlmActionType(LlmActionType.QUESTION)
-                        recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
-                              },
-                    painter = painterResource(R.drawable.live_question),
-                    description = "Ask a question",
-                    modifier = Modifier.fillMaxWidth(0.7f)
-                )
-            }
-
-        }
-
-        if (uiState.llmActionType != LlmActionType.NONE && uiState.selectedRecipe != null) {
-            ModalBottomSheet(
-                onDismissRequest = {
-                    recipeBookViewModel.setLlmActionType(LlmActionType.NONE)
-                },
-                sheetState = sheetState,
-            ) {
-                LlmActions(uiState.selectedRecipe, uiState, recipeBookViewModel, keyboardFocusManager)
-
+                }
+            } else if (uiState.llmActionType != LlmActionType.NONE && uiState.selectedRecipe != null) {
+                // ALTERATION
             }
         }
     }
@@ -569,19 +609,21 @@ fun NutritionalFact(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LlmActions(
     recipe: Recipe,
     uiState: RecipeBookUiState,
     viewModel: RecipeBookViewModel,
-    keyboardFocusManager: FocusManager
+    keyboardFocusManager: FocusManager,
+    sheetState: SheetState
 ) {
     val llmActionType = uiState.llmActionType
     when (llmActionType) {
         LlmActionType.NUTRITIONAL_VALUES -> {
-
             Column(
-                modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom=12.dp).padding(horizontal=10.dp),
+                modifier = Modifier.fillMaxWidth().navigationBarsPadding()
+                    .padding(bottom = 12.dp).padding(horizontal = 10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
@@ -589,161 +631,286 @@ fun LlmActions(
                 IndeterminateCircularIndicator(uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE)
 
                 val nutrition =
-                    viewModel.getNutritionForRecipe(recipe.id).collectAsState(initial = null).value
-                if (nutrition == null) {
+                    viewModel.getNutritionForRecipe(recipe.id)
+                        .collectAsState(initial = null).value
+                if (uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE) {
+                    Text(
+                        "Estimating nutritional values...",
+                        modifier = Modifier.padding(16.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
+                if (nutrition == null && uiState.actionChatStage != ActionChatStage.AWAITING_LLM_RESPONSE) {
                     viewModel.setUserActionRequest("Generate nutritional values for the provided dish in the provided JSON schema, for the given number of servings.")
                     NourishButton(
                         onClick = { viewModel.makeLlmApiCall(llmActionType) },
                         text = "Generate Nutritional Values",
                     )
-                } else {
-                    NourishH2("Nutritional Values")
+                } else if (nutrition != null) {
+                    LookaheadScope() {
+                        Column(
+                            modifier = Modifier.animateBounds(this)
+                        ) {
 
-                    NourishTextDivider(
-                        text = "In ${nutrition.servings} serving${if (nutrition.servings > 1) { "s" } else { "" }}",
-                        modifier = Modifier.padding(bottom=8.dp)
-                    )
+                            NourishH2("Nutritional Values")
 
-                    NourishH2(
-                        text = "${nutrition.calories} kcal",
-                        modifier = Modifier.padding(bottom=10.dp)
-                    )
+                            NourishTextDivider(
+                                text = "in ${nutrition.servings} serving${
+                                    if (nutrition.servings > 1) {
+                                        "s"
+                                    } else {
+                                        ""
+                                    }
+                                }",
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
 
-                    LazyVerticalGrid(
-                        columns = GridCells.Adaptive(minSize = 92.dp), // size of the circles inside. should add padding inside too though
-                        horizontalArrangement = Arrangement.spacedBy(
-                            space = 10.dp,
-                            alignment = Alignment.CenterHorizontally
-                        ),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        item {
-                            NutritionalFact("Fat", "${nutrition.fat}g")
-                        }
-                        item {
-                            NutritionalFact("Saturates", "${nutrition.saturates}g")
-                        }
-                        item {
-                            NutritionalFact("Carbohydrate", "${nutrition.carbohydrate}g")
-                        }
-                        item {
-                            NutritionalFact("Sugars", "${nutrition.sugars}g")
-                        }
-                        item {
-                            NutritionalFact("Protein", "${nutrition.protein}g")
-                        }
-                        item {
-                            NutritionalFact("Salt", "${nutrition.salt}g")
-                        }
-                    }
+                            NourishH2(
+                                text = "${nutrition.calories} kcal",
+                                modifier = Modifier.padding(bottom = 10.dp)
+                            )
 
-                    HorizontalDivider(modifier=Modifier.padding(vertical=16.dp))
+                            LazyVerticalGrid(
+                                columns = GridCells.Adaptive(minSize = 92.dp), // size of the circles inside. should add padding inside too though
+                                horizontalArrangement = Arrangement.spacedBy(
+                                    space = 10.dp,
+                                    alignment = Alignment.CenterHorizontally
+                                ),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                item {
+                                    NutritionalFact("Fat", "${nutrition.fat}g")
+                                }
+                                item {
+                                    NutritionalFact("Saturates", "${nutrition.saturates}g")
+                                }
+                                item {
+                                    NutritionalFact(
+                                        "Carbohydrate",
+                                        "${nutrition.carbohydrate}g"
+                                    )
+                                }
+                                item {
+                                    NutritionalFact("Sugars", "${nutrition.sugars}g")
+                                }
+                                item {
+                                    NutritionalFact("Protein", "${nutrition.protein}g")
+                                }
+                                item {
+                                    NutritionalFact("Salt", "${nutrition.salt}g")
+                                }
+                            }
 
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal=16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            "Please note that these nutritional values are estimates, produced by Gemini.",
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
-                            "Consult a dietitian or doctor for personalised, accurate nutritional advice.",
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                            textAlign = TextAlign.Center
-                        )
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    "Please note that these nutritional values are estimates, produced by Gemini.",
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    "Consult a dietitian or doctor for personalised, accurate nutritional advice.",
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
                     }
                 }
             }
 
         }
         LlmActionType.ALTERATION -> {
-            NourishTextField(
-                value = uiState.userActionRequest,
-                onValueChange =  { actionRequest ->
-                    viewModel.setUserActionRequest(actionRequest)
-                },
-                placeholder = "Enter an alteration",
-                onDone = { keyboardFocusManager.clearFocus() },
-                leadingIcon = ImageVector.vectorResource(R.drawable.edit_note),
-                trailingIcon = Icons.Filled.Send,
-                onTrailingIconPress = {
-                    viewModel.makeLlmApiCall(llmActionType)
-                },
-                alwaysDisplayTrailingIcon = false
-            )
+            LookaheadScope() { // for animation
+                Column(
+                    modifier = Modifier.fillMaxWidth().navigationBarsPadding()
+                        .padding(bottom = 12.dp).padding(horizontal = 10.dp).animateBounds(this),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    NourishH2("Recipe Alteration")
+
+                    // the loading circle:
+                    IndeterminateCircularIndicator(uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE)
+
+                    if (uiState.alteredRecipe == null) {
+                        if (uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE) {
+                            Text(
+                                "Altering the recipe...",
+                                modifier = Modifier.padding(16.dp),
+                                textAlign = TextAlign.Center
+                            )
+                        } else {
+                            Text(
+                                "Not happy with the recipe, or wish to change it in some way?",
+                                modifier = Modifier.padding(16.dp),
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                "Simply enter your alteration below, and a new recipe will be generated. You can then choose whether to replace the previous recipe with it, save it as a new recipe, or discard it.",
+                                modifier = Modifier.padding(16.dp),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                    else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxWidth().fillMaxHeight(0.6f),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            item {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    RecipeCardPreview(
+                                        uiState.alteredRecipe,
+                                        viewModel::formatIngredientText,
+                                        imageFilename = recipe.imagePath,
+                                        context = LocalContext.current
+                                    )
+
+                                }
+                            }
+                            item {
+                                Column(
+                                    modifier = Modifier.padding(8.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+
+                                    NourishTextDivider("Select an option")
+
+                                    NourishButton(
+                                        onClick = {
+                                            viewModel.setVisible(false)
+                                            viewModel.replaceRecipe(recipe, uiState.alteredRecipe)
+                                            viewModel.setVisible(true)
+                                            viewModel.setAlteredRecipe(null)
+                                            viewModel.setUserActionRequest("")
+                                            viewModel.setLlmActionType(LlmActionType.NONE)
+                                        },
+                                        text = "Replace recipe",
+                                    )
+                                    NourishButton(
+                                        onClick = {
+                                            viewModel.addRecipe(uiState.alteredRecipe)
+                                            viewModel.setAlteredRecipe(null)
+                                            viewModel.setLlmActionType(LlmActionType.NONE)
+                                        },
+                                        text = "Save as new recipe",
+                                    )
+                                    NourishButton(
+                                        onClick = {
+                                            viewModel.setAlteredRecipe(null)
+                                            viewModel.setUserActionRequest("")
+
+                                        },
+                                        text = "Discard recipe",
+                                    )
+                                }
+                            }
+                        }
+
+                        NourishTextDivider("Try another alteration")
+                    }
+
+                    if (uiState.actionChatStage != ActionChatStage.AWAITING_LLM_RESPONSE) {
+                        NourishTextField(
+                            value = uiState.userActionRequest,
+                            onValueChange = { actionRequest ->
+                                viewModel.setUserActionRequest(actionRequest)
+                            },
+                            placeholder = "Enter an alteration",
+                            onDone = { keyboardFocusManager.clearFocus() },
+                            leadingIcon = ImageVector.vectorResource(R.drawable.edit_note),
+                            trailingIcon = Icons.Filled.Send,
+                            onTrailingIconPress = {
+                                viewModel.setAlteredRecipe(null)
+                                viewModel.makeLlmApiCall(llmActionType)
+                                viewModel.setUserActionRequest("")
+                            },
+                            alwaysDisplayTrailingIcon = false
+                        )
+                    }
+                }
+            }
 
         }
         LlmActionType.QUESTION -> {
+            LookaheadScope() {
+                Column(
+                    modifier = Modifier.fillMaxWidth().navigationBarsPadding()
+                        .padding(bottom = 12.dp).padding(horizontal = 10.dp).animateBounds(this),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    NourishH2("Ask a Question")
 
-            Column(
-                modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom=12.dp).padding(horizontal=10.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                NourishH2("Ask a Question")
+                    val queries =
+                        viewModel.getAllQueriesForRecipe(recipe.id)
+                            .collectAsState(initial = null).value
 
-                val queries =
-                    viewModel.getAllQueriesForRecipe(recipe.id).collectAsState(initial = null).value
-                
-                if (queries == null || queries.isEmpty()) {
-                    
-                    Text(
-                        "Ask the LLM a question about the recipe.",
-                        modifier = Modifier.padding(16.dp),
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        "For example, 'can I use ingredient X rather than Y?'.",
-                        modifier = Modifier.padding(16.dp),
-                        textAlign = TextAlign.Center
-                    )
-                    
-                } else {
+                    if (queries == null || queries.isEmpty()) {
 
-                    val lazyListState = rememberLazyListState()
+                        Text(
+                            "Ask the LLM a question about the recipe.",
+                            modifier = Modifier.padding(16.dp),
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            "For example, 'can I use ingredient X rather than Y?'.",
+                            modifier = Modifier.padding(16.dp),
+                            textAlign = TextAlign.Center
+                        )
 
-                    LaunchedEffect(queries.size) {
-                        lazyListState.animateScrollToItem(0) // scrolls to the llm message once it is received
-                    }
+                    } else {
 
-                    LazyColumn(
-                        modifier = Modifier.fillMaxHeight(0.6f),
-                        state = lazyListState,
-                        reverseLayout = true // so that start at bottom of the chat
-                    ){
-                        item {
-                            // the loading circle:
-                            IndeterminateCircularIndicator(uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE)
+                        val lazyListState = rememberLazyListState()
+
+                        LaunchedEffect(queries.size) {
+                            lazyListState.animateScrollToItem(0) // scrolls to the llm message once it is received
                         }
 
-                        items(queries.reversed()) { query -> // queries have to be reversed due to the reverse layout. but still required so that start at bottom of chat.
-                            if (query != null) {
-                                QueryDisplay(query)
+                        LazyColumn(
+                            modifier = Modifier.fillMaxHeight(0.6f),
+                            state = lazyListState,
+                            reverseLayout = true // so that start at bottom of the chat
+                        ) {
+                            item {
+                                // the loading circle:
+                                IndeterminateCircularIndicator(uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE)
+                            }
+
+                            items(queries.reversed()) { query -> // queries have to be reversed due to the reverse layout. but still required so that start at bottom of chat.
+                                if (query != null) {
+                                    QueryDisplay(query)
+                                }
                             }
                         }
+
+                    }
+
+                    if (uiState.actionChatStage != ActionChatStage.AWAITING_LLM_RESPONSE) {
+                        NourishTextField(
+                            value = uiState.userActionRequest,
+                            onValueChange = { actionRequest ->
+                                viewModel.setUserActionRequest(actionRequest)
+                            },
+                            placeholder = "Enter a question",
+                            onDone = { keyboardFocusManager.clearFocus() },
+                            leadingIcon = ImageVector.vectorResource(R.drawable.live_question),
+                            trailingIcon = Icons.Filled.Send,
+                            onTrailingIconPress = {
+                                viewModel.makeLlmApiCall(llmActionType)
+                            },
+                            alwaysDisplayTrailingIcon = false
+                        )
                     }
 
                 }
-
-                if (uiState.actionChatStage != ActionChatStage.AWAITING_LLM_RESPONSE) {
-                    NourishTextField(
-                        value = uiState.userActionRequest,
-                        onValueChange = { actionRequest ->
-                            viewModel.setUserActionRequest(actionRequest)
-                        },
-                        placeholder = "Enter a question",
-                        onDone = { keyboardFocusManager.clearFocus() },
-                        leadingIcon = ImageVector.vectorResource(R.drawable.live_question),
-                        trailingIcon = Icons.Filled.Send,
-                        onTrailingIconPress = {
-                            viewModel.makeLlmApiCall(llmActionType)
-                        },
-                        alwaysDisplayTrailingIcon = false
-                    )
-                }
-
             }
 
         }

@@ -6,9 +6,9 @@ import uk.co.imoqen.nourish.network.request.LlmRequest
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.network.response.ApiResponse
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
-import uk.co.imoqen.nourish.network.response.LlmNutritionResponse
+import uk.co.imoqen.nourish.network.response.LlmNutrition
 import uk.co.imoqen.nourish.network.response.LlmQuestionResponse
-import uk.co.imoqen.nourish.network.response.LlmRecipeResponse
+import uk.co.imoqen.nourish.network.response.LlmRecipe
 import java.io.File
 
 interface ApiManager {
@@ -30,8 +30,8 @@ interface ApiManager {
         request: LlmActionRequest,
         bearerToken: String,
         onQuestionAnswered: (LlmQuestionResponse?) -> Unit,
-        onRecipeAltered: (LlmRecipeResponse?) -> Unit,
-        onNutritionGenerated: (LlmNutritionResponse?) -> Unit
+        onRecipeAltered: (LlmRecipe?) -> Unit,
+        onNutritionGenerated: (LlmNutrition?) -> Unit
     )
 
 }

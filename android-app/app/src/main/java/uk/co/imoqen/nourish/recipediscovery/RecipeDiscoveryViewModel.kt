@@ -534,9 +534,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 } // user is null; throw to be handled appropriately
                 // Add the recipe to the database:
                 recipeRepository.createRecipe(
-                    uid,
-                    llmRecipe,
-                    mutableUiState.value.savedImageFilename
+                    uid, llmRecipe, imagePath = mutableUiState.value.savedImageFilename
                 )
             }
                 .onSuccess {
@@ -638,27 +636,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
         ingredient: LlmIngredient
     ): String {
         runCatching {
-            val amount = ingredient.ingredientAmount
-            val ingredientUnit = IngredientUnit.valueOf(ingredient.ingredientAmountUnit)
-
-            val unit = if (determineUnitPlurality(amount)) {
-                ingredientUnit.pluralName
-            } else {
-                ingredientUnit.singularName
-            }
-
-            val ingredientPluralisedName =
-                if (determineIngredientPlurality(ingredient.ingredientAmount, ingredientUnit)) {
-                    ingredient.ingredientPlural
-                } else {
-                    ingredient.ingredientSingular
-                }
-
-            return if (unit != "") {
-                ("${formatIngredientAmount(amount)} $unit $ingredientPluralisedName")
-            } else {
-                ("${formatIngredientAmount(amount)} $ingredientPluralisedName")
-            }
+            return recipeActions.formatIngredientText(ingredient)
         }
             .onFailure {
                 viewModelScope.launch {

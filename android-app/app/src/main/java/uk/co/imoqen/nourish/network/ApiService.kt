@@ -10,10 +10,9 @@ import retrofit2.http.Part
 import uk.co.imoqen.nourish.network.request.LlmActionRequest
 import uk.co.imoqen.nourish.network.request.LlmRequest
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
-import uk.co.imoqen.nourish.network.response.LlmNutritionResponse
+import uk.co.imoqen.nourish.network.response.LlmNutrition
 import uk.co.imoqen.nourish.network.response.LlmQuestionResponse
 import uk.co.imoqen.nourish.network.response.LlmRecipe
-import uk.co.imoqen.nourish.network.response.LlmRecipeResponse
 
 /**
  * Retrofit2 API service, this declares the endpoints to the API which can be called.
@@ -67,7 +66,7 @@ interface ApiService {
     fun generateNutrition(
         @Body() request: LlmActionRequest,
         @Header("Authorization") bearer: String
-    ): Call<LlmNutritionResponse>
+    ): Call<LlmNutrition>
 
     @POST("query-recipe")
     fun generateQueryAnswer(
@@ -79,5 +78,5 @@ interface ApiService {
     fun generateAlteredRecipe(
         @Body() request: LlmActionRequest,
         @Header("Authorization") bearer: String
-    ): Call<LlmRecipeResponse>
+    ): Call<LlmRecipe>
 }

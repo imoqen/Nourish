@@ -5,6 +5,7 @@ import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.network.request.LlmActionType
+import uk.co.imoqen.nourish.network.response.LlmRecipe
 
 data class RecipeBookUiState(
     val recipeBookMap: MutableMap<RecipeType, MutableList<RecipeCardUnexpanded>>? = null,
@@ -19,7 +20,10 @@ data class RecipeBookUiState(
 
     val userActionRequest: String = "",
 
-    val actionChatStage: ActionChatStage = ActionChatStage.USER_INPUT // at start it is always user input.
+    val actionChatStage: ActionChatStage = ActionChatStage.USER_INPUT, // at start it is always user input.
+
+    val alteredRecipe: LlmRecipe? = null, // altered recipe produced by llm
+    val visible: Boolean = true
 )
 
 enum class ActionChatStage {

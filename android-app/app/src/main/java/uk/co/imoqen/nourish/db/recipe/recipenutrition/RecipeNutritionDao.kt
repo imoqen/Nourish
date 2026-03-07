@@ -21,6 +21,9 @@ interface RecipeNutritionDao {
     @Query("SELECT * FROM RecipeNutrition WHERE recipeId = :recipeId LIMIT 1")
     fun getByRecipeId(recipeId: Long): Flow<RecipeNutrition?>
 
+    @Query("DELETE FROM RecipeNutrition WHERE recipeId = :recipeId")
+    suspend fun deleteByRecipeId(recipeId: Long)
+
     @Update
     suspend fun update(recipeNutrition: RecipeNutrition)
 }

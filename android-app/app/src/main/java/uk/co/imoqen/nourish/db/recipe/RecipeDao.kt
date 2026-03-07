@@ -1,6 +1,7 @@
 package uk.co.imoqen.nourish.db.recipe
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Transaction
@@ -31,6 +32,9 @@ interface RecipeDao {
 
     @Update
     suspend fun update(recipe: Recipe)
+
+    @Delete
+    suspend fun delete(recipe: Recipe)
 
     /*@Transaction
     @Query("SELECT * FROM Recipe WHERE id = :recipeId")
