@@ -11,6 +11,7 @@ import retrofit2.Response
 import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.request.LlmActionRequest
+import uk.co.imoqen.nourish.network.request.LlmActionType
 import uk.co.imoqen.nourish.network.response.LlmError
 import uk.co.imoqen.nourish.network.request.LlmRequest
 import uk.co.imoqen.nourish.network.request.LlmRequestType
@@ -21,7 +22,6 @@ import uk.co.imoqen.nourish.network.response.LlmNutritionResponse
 import uk.co.imoqen.nourish.network.response.LlmQuestionResponse
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 import uk.co.imoqen.nourish.network.response.LlmRecipeResponse
-import uk.co.imoqen.nourish.recipebook.LlmAction
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -120,7 +120,7 @@ class ApiManagerImpl @Inject constructor(
     }
 
     override fun makeRetrofitLlmActionCall(
-        type: LlmAction,
+        type: LlmActionType,
         request: LlmActionRequest,
         bearerToken: String,
         onQuestionAnswered: (LlmQuestionResponse?) -> Unit,
@@ -131,7 +131,7 @@ class ApiManagerImpl @Inject constructor(
         try {
             when (type) {
                 // generate recipe
-                LlmAction.ALTERATION -> {
+                LlmActionType.ALTERATION -> {
                     handleActionCall(
                         apiService.generateAlteredRecipe(request, "Bearer $bearerToken"),
                         {}, onRecipeAltered, {}
@@ -139,7 +139,7 @@ class ApiManagerImpl @Inject constructor(
                 }
 
                 // generate recipe from image and the chosen dish
-                LlmAction.QUESTION -> {
+                LlmActionType.QUESTION -> {
                     handleActionCall(
                         apiService.generateQueryAnswer(request, "Bearer $bearerToken"),
                         onQuestionAnswered, {}, {}
@@ -147,14 +147,14 @@ class ApiManagerImpl @Inject constructor(
                 }
 
                 // generate 4x dishes from ingredients
-                LlmAction.NUTRITIONAL_VALUES -> {
+                LlmActionType.NUTRITIONAL_VALUES -> {
                     handleActionCall(
                         apiService.generateNutrition(request, "Bearer $bearerToken"),
                         {}, {}, onNutritionGenerated
                     )
                 }
 
-                LlmAction.NONE -> {
+                LlmActionType.NONE -> {
                     Log.e("Llm Call", "Call not made - the action was not specified.")
                 }
             }

@@ -73,6 +73,7 @@ import uk.co.imoqen.nourish.common.NourishIconTextButton
 import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.common.onBackgroundColour
 import uk.co.imoqen.nourish.db.recipe.Recipe
+import uk.co.imoqen.nourish.network.request.LlmActionType
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 import uk.co.imoqen.nourish.recipediscovery.LlmChatStage
 import java.io.File
@@ -479,7 +480,7 @@ fun RecipeCard(
 
                 NourishIconTextButton(
                     onClick = {
-                        recipeBookViewModel.setLlmAction(LlmAction.NUTRITIONAL_VALUES)
+                        recipeBookViewModel.setLlmActionType(LlmActionType.NUTRITIONAL_VALUES)
                         recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
                               },
                     painter = painterResource(R.drawable.forkchart),
@@ -490,7 +491,7 @@ fun RecipeCard(
                 NourishIconTextButton(
                     onClick = {
                         recipeBookViewModel.setUserActionRequest("")
-                        recipeBookViewModel.setLlmAction(LlmAction.ALTERATION)
+                        recipeBookViewModel.setLlmActionType(LlmActionType.ALTERATION)
                         recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
                               },
                     painter = painterResource(R.drawable.adjust),
@@ -501,7 +502,7 @@ fun RecipeCard(
                 NourishIconTextButton(
                     onClick = {
                         recipeBookViewModel.setUserActionRequest("")
-                        recipeBookViewModel.setLlmAction(LlmAction.QUESTION)
+                        recipeBookViewModel.setLlmActionType(LlmActionType.QUESTION)
                         recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
                               },
                     painter = painterResource(R.drawable.live_question),
@@ -512,10 +513,10 @@ fun RecipeCard(
 
         }
 
-        if (uiState.llmAction != LlmAction.NONE) {
+        if (uiState.llmActionType != LlmActionType.NONE) {
             ModalBottomSheet(
                 onDismissRequest = {
-                    recipeBookViewModel.setLlmAction(LlmAction.NONE)
+                    recipeBookViewModel.setLlmActionType(LlmActionType.NONE)
                 },
                 sheetState = sheetState
             ) {
@@ -534,16 +535,16 @@ fun LlmActions(
     viewModel: RecipeBookViewModel,
     keyboardFocusManager: FocusManager
 ) {
-    val llmAction = uiState.llmAction
-    when (llmAction) {
-        LlmAction.NUTRITIONAL_VALUES -> {
+    val llmActionType = uiState.llmActionType
+    when (llmActionType) {
+        LlmActionType.NUTRITIONAL_VALUES -> {
             viewModel.setUserActionRequest("Generate nutritional values for the provided dish in the provided JSON schema, for the given number of servings.")
             NourishButton(
-                onClick = { viewModel.makeLlmApiCall(llmAction) },
+                onClick = { viewModel.makeLlmApiCall(llmActionType) },
                 text = "Generate Nutritional Values",
             )
         }
-        LlmAction.ALTERATION -> {
+        LlmActionType.ALTERATION -> {
             NourishTextField(
                 value = uiState.userActionRequest,
                 onValueChange =  { actionRequest ->
@@ -554,13 +555,13 @@ fun LlmActions(
                 leadingIcon = ImageVector.vectorResource(R.drawable.edit_note),
                 trailingIcon = Icons.Filled.Send,
                 onTrailingIconPress = {
-                    viewModel.makeLlmApiCall(llmAction)
+                    viewModel.makeLlmApiCall(llmActionType)
                 },
                 alwaysDisplayTrailingIcon = false
             )
 
         }
-        LlmAction.QUESTION -> {
+        LlmActionType.QUESTION -> {
             NourishTextField(
                 value = uiState.userActionRequest,
                 onValueChange =  { actionRequest ->
@@ -571,13 +572,13 @@ fun LlmActions(
                 leadingIcon = ImageVector.vectorResource(R.drawable.live_question),
                 trailingIcon = Icons.Filled.Send,
                 onTrailingIconPress = {
-                    viewModel.makeLlmApiCall(llmAction)
+                    viewModel.makeLlmApiCall(llmActionType)
                 },
                 alwaysDisplayTrailingIcon = false
             )
 
         }
-        LlmAction.NONE -> {
+        LlmActionType.NONE -> {
             Text("An error occurred. Please try again later.")
         }
     }

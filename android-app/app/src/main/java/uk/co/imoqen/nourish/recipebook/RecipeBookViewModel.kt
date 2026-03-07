@@ -36,6 +36,7 @@ import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import uk.co.imoqen.nourish.network.request.LlmActionRequest
+import uk.co.imoqen.nourish.network.request.LlmActionType
 import uk.co.imoqen.nourish.network.request.LlmRequest
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
@@ -120,10 +121,10 @@ class RecipeBookViewModel @Inject constructor(
         }
     }
 
-    fun setLlmAction(llmAction: LlmAction) {
+    fun setLlmActionType(llmActionType: LlmActionType) {
         mutableUiState.update { currentState ->
             currentState.copy(
-                llmAction = llmAction
+                llmActionType = llmActionType
             )
         }
     }
@@ -489,7 +490,7 @@ class RecipeBookViewModel @Inject constructor(
     }
 
     fun makeLlmApiCall(
-        type: LlmAction,
+        type: LlmActionType,
     ) {
         setActionChatStage(ActionChatStage.AWAITING_LLM_RESPONSE)
         viewModelScope.launch() {

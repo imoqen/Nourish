@@ -4,6 +4,7 @@ import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.tag.Tag
+import uk.co.imoqen.nourish.network.request.LlmActionType
 
 data class RecipeBookUiState(
     val recipeBookMap: MutableMap<RecipeType, MutableList<RecipeCardUnexpanded>>? = null,
@@ -14,19 +15,12 @@ data class RecipeBookUiState(
     val recipeTags: List<TagSelection>? = null, // all of the recipe tags
     val recipeTypes: List<TypeSelection>? = null, // all of the recipe types
 
-    val llmAction: LlmAction = LlmAction.NONE,
+    val llmActionType: LlmActionType = LlmActionType.NONE,
 
     val userActionRequest: String = "",
 
     val actionChatStage: ActionChatStage = ActionChatStage.USER_INPUT // at start it is always user input.
 )
-
-enum class LlmAction {
-    NONE,
-    NUTRITIONAL_VALUES,
-    ALTERATION,
-    QUESTION
-}
 
 enum class ActionChatStage {
     USER_INPUT,
