@@ -7,8 +7,11 @@ import retrofit2.http.Header
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
+import uk.co.imoqen.nourish.network.request.LlmActionRequest
 import uk.co.imoqen.nourish.network.request.LlmRequest
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
+import uk.co.imoqen.nourish.network.response.LlmNutrition
+import uk.co.imoqen.nourish.network.response.LlmQuestionResponse
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 
 /**
@@ -57,4 +60,23 @@ interface ApiService {
         @Header("Authorization") bearer: String
     ): Call<LlmDishesProposed>
 
+    // llm actions:
+
+    @POST("recipe-nutrition")
+    fun generateNutrition(
+        @Body() request: LlmActionRequest,
+        @Header("Authorization") bearer: String
+    ): Call<LlmNutrition>
+
+    @POST("query-recipe")
+    fun generateQueryAnswer(
+        @Body() request: LlmActionRequest,
+        @Header("Authorization") bearer: String
+    ): Call<LlmQuestionResponse>
+
+    @POST("alter-recipe")
+    fun generateAlteredRecipe(
+        @Body() request: LlmActionRequest,
+        @Header("Authorization") bearer: String
+    ): Call<LlmRecipe>
 }

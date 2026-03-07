@@ -28,6 +28,13 @@ const LlmRequestType = {
   RECIPE_ALTERATION: "RECIPE_ALTERATION",
 };
 
+// for actions
+const LlmActionType = {
+  NUTRITIONAL_VALUES: "NUTRITIONAL_VALUES",
+  ALTERATION: "ALTERATION",
+  QUESTION: "QUESTION",
+};
+
 // For storing image in memory with 2mb limit:
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -43,14 +50,68 @@ app.use(express.json());
 initializeApp(); // admin sdk initialised, uses application default credentials
 const db = getFirestore();
 
-// Units:
-// these will be switched dynamically using user preferences
+// Units: given as metric, something to address in the future would be also adding support for imperial which the software has the capacity to do but was not implemented for simplicity.
 const metricUnits =
   "TSP, TBSP, ML, L, G, KG, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, CM, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit)";
-const imperialUnits =
-  "TSP, TBSP, FL_OZ, CUP, PINT, QUART, GALLON, OZ, LB, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, CM, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit)";
-
 // Schemas:
+
+// for nutrition:
+const NutritionSchemaZod = z.object({
+  servings: z
+    .number()
+    .int()
+    .describe(
+      "The number of servings must be 1. In the provided recipe, if servings != 1, then the nutritional information should be calculated for that many servings of the recipe, and then scaled to 1 accordingly, in your result. Use the provided ingredients and amounts to calculate the nutrition.",
+    ),
+  calories: z
+    .number()
+    .int()
+    .describe(
+      "The estimated number of calories, in kcal, in this dish for 1 serving. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
+    ),
+  fat: z
+    .number()
+    .describe(
+      "The estimated amount of fat, in grams, in this dish for 1 serving. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
+    ),
+  saturates: z
+    .number()
+    .describe(
+      "The estimated amount of saturated fat ('of which saturates' so fill this in after the fat field), in grams, in this dish for 1 serving. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
+    ),
+  carbohydrate: z
+    .number()
+    .describe(
+      "The estimated amount of carbohydrates, in grams, in this dish for 1 serving. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
+    ),
+  sugars: z
+    .number()
+    .describe(
+      "The estimated amount of sugars ('of which sugars' so fill this in after the carbohydrate field), in grams, in this dish for 1 serving. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
+    ),
+  protein: z
+    .number()
+    .describe(
+      "The estimated amount of protein, in grams, in this dish for 1 serving. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
+    ),
+  salt: z
+    .number()
+    .describe(
+      "The estimated amount of salt, in grams, in this dish for 1 serving. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
+    ),
+});
+
+// for question:
+const QuestionAnswerSchemaZod = z.object({
+  answer: z
+    .string()
+    .describe(
+      "The answer to the user's question about the provided recipe. Keep it clear and concise, but ensure to go into as much detail as necessary to answer the question sufficiently. Answer in British English.",
+    ),
+});
+
+// for alteration: simply uses the existing recipe schema.
+
 // ingredients put together:
 // order is attempted to ensure that the result makes the most logical sense; e.g. LLM does not first fill in the amount as 1 (to use cups) but then realises cup is not an option.
 const IngredientSchemaZod = z.object({
@@ -125,6 +186,7 @@ function recipeSchemaZod(allNutritionalFilters, dishType) {
         "An array of the recipe's method, each array element being an individual step. Ensure that the array is ordered from first to last step, and do not include step numbers. " +
           "For step(s) involving heating the oven, ensure you specify Celsius and Farenheit and different oven options (Fan, Gas mark etc) " +
           "When writing the units e.g. ML, ensure they correspond with those you wrote in the sectionIngredients array, but write them in the human-readable form (e.g. ML -> ml, DASH -> dash) " +
+          "Do NOT include any absolute measurements/amounts within the steps (e.g. 100ml of ingredient X), only refer to the ingredients themselves (e.g. ingredient X) (as the recipe will be able to be scaled by the user). If you do need to state measurements, only use relative e.g. half of ingredient X etc." +
           "For the final step, include a nice, upbeat happy step such as 'Enjoy your homemade ...'",
       ),
 
@@ -148,7 +210,8 @@ function recipeSchemaZod(allNutritionalFilters, dishType) {
         "If the provided prompt is invalid for generating a human-edible recipe, " +
           "such as something which is inedible, " +
           "return 'true' here and fill in every other required field with an empty string, " +
-          "otherwise return 'false' and generate the recipe accordingly.",
+          "otherwise return 'false' and generate the recipe accordingly." +
+          " With this being said, though, still be creative and if it isn't immediately obvious how to make a dish within the constraints, BE CREATIVE and think of a way (as long as it is edible by a human). Only return true here if there really is no way.",
       ),
 
     emoji: z
@@ -191,7 +254,8 @@ function recipeListFromIngredientsSchemaZod(dishType) {
       .boolean()
       .describe(
         "If the provided ingredients are invalid for generating a human-edible recipe, such as something which is inedible, " +
-          "return 'true' here and fill in every other required field with an empty string, otherwise return 'false' and generate the dishes accordingly.",
+          "return 'true' here and fill in every other required field with an empty string, otherwise return 'false' and generate the dishes accordingly." +
+          " With this being said, though, still be creative and if it isn't immediately obvious how to make a dish within the constraints, BE CREATIVE and think of a way (as long as it is edible by a human). Only return true here if there really is no way.",
       ),
   });
 }
@@ -231,7 +295,8 @@ function recipeListFromImageIngredientsSchemaZod(dishType) {
       .boolean()
       .describe(
         "If the provided ingredients in the image are invalid for generating a human-edible recipe, such as something which is inedible, " +
-          "return 'true' here and fill in every other required field with an empty string, otherwise return 'false' and generate the dishes accordingly.",
+          "return 'true' here and fill in every other required field with an empty string, otherwise return 'false' and generate the dishes accordingly." +
+          " With this being said, though, still be creative and if it isn't immediately obvious how to make a dish within the constraints, BE CREATIVE and think of a way (as long as it is edible by a human). Only return true here if there really is no way.",
       ),
   });
 }
@@ -268,7 +333,8 @@ function recipeListFromImageSchemaZod(dishType) {
       .boolean()
       .describe(
         "If the provided image does not contain a valid dish, and thus invalid for generating a human-edible recipe, such as something which is inedible, " +
-          "return 'true' here and fill in every other required field with an empty string, otherwise return 'false' and generate the dishes accordingly.",
+          "return 'true' here and fill in every other required field with an empty string, otherwise return 'false' and generate the dishes accordingly." +
+          " With this being said, though, still be creative and if it isn't immediately obvious how to make a dish within the constraints, BE CREATIVE and think of a way (as long as it is edible by a human). Only return true here if there really is no way.",
       ),
   });
 }
@@ -358,6 +424,79 @@ async function generate(req, res, requestType) {
           GOOGLE_CLOUD_PROJECT,
           GOOGLE_CLOUD_LOCATION,
           req,
+        );
+        break;
+      }
+    }
+
+    if (result == null) {
+      console.log("Error: LLM request failed; no result.");
+      return res.status(400).json({ error: "LLM request failed; no result." });
+    }
+
+    res.json(result);
+    return res;
+  } catch (e) {
+    console.error(e);
+    // throw 500 error because error happened on the server side (Internal Server Error)
+    return res.status(500).json({ error: e.message });
+  }
+}
+
+async function generateAction(req, res, actionType) {
+  try {
+    // Extract and validate the prompt
+    const reqBody = req.body;
+    if (reqBody == null) {
+      return res.status(400).json({ error: "The request body is null." });
+    }
+
+    // extract the user's query and recipe
+    const query = reqBody.query;
+    const recipe = reqBody.recipe;
+
+    const errorMessage = await validateRequest(req);
+    if (errorMessage != "") {
+      return res.status(400).json({ error: errorMessage });
+    }
+
+    // Perform the LLM request and retrieve the response, different request depending on the request type
+    let result;
+    switch (actionType) {
+      // generate nutritional values
+      case LlmActionType.NUTRITIONAL_VALUES: {
+        result = await generateNutritionalValues(
+          GOOGLE_CLOUD_PROJECT,
+          GOOGLE_CLOUD_LOCATION,
+          recipe,
+        );
+        break;
+      }
+
+      // generate an answer to the user's question
+      case LlmActionType.QUESTION: {
+        result = await generateQuestionAnswer(
+          GOOGLE_CLOUD_PROJECT,
+          GOOGLE_CLOUD_LOCATION,
+          query,
+          recipe,
+        );
+        break;
+      }
+
+      // generate a new, altered recipe
+      case LlmActionType.ALTERATION: {
+        // only used for recipe alteration:
+        const allNutritionalFilters = reqBody.allNutritionalFilters;
+        const dishType = reqBody.dishType;
+
+        result = await generateAlteredRecipe(
+          GOOGLE_CLOUD_PROJECT,
+          GOOGLE_CLOUD_LOCATION,
+          query,
+          recipe,
+          allNutritionalFilters,
+          dishType,
         );
         break;
       }
@@ -492,6 +631,160 @@ async function validateRequest(req, prompt, requestType) {
   return "";
 }
 
+// LLM CALLS using LangChain, for the recipe actions:
+
+/**
+ * Makes the LLM request using Google Vertex AI to call the LLM and retrieve the
+ * response.
+ * @param projectId - ID of the Google Cloud project
+ * @param location - Location of the Google Cloud project
+ * @returns The LLM response.
+ */
+async function generateNutritionalValues(
+  projectId = GOOGLE_CLOUD_PROJECT,
+  location = GOOGLE_CLOUD_LOCATION,
+  recipe,
+) {
+  const llm = new ChatVertexAI({
+    project: projectId,
+    location: location,
+    model: "gemini-2.5-flash",
+  });
+
+  const agent = createAgent({
+    model: llm,
+    tools: [],
+    responseFormat: toolStrategy(NutritionSchemaZod),
+  });
+
+  console.log("Generating nutritional values for: " + JSON.stringify(recipe));
+
+  const result = await agent.invoke({
+    messages: [
+      {
+        role: "system",
+        content:
+          "Return in the required schema and ensure it is given for 1 serving, considering the servings provided in the recipe. Use British standards. " +
+          "Generate the nutritional values as requested in the schema for the provided recipe. If your answer contains a decimal, ensure it is to at most 2 decimal places.",
+      },
+      {
+        role: "user",
+        content:
+          "Generate the nutritional values for the following recipe: " +
+          JSON.stringify(recipe),
+      },
+    ],
+  });
+
+  // note: this returns the tokens. should use this value to increment the token count instead.
+  console.log(JSON.stringify(result.structuredResponse));
+  return result.structuredResponse;
+}
+
+async function generateQuestionAnswer(
+  projectId = GOOGLE_CLOUD_PROJECT,
+  location = GOOGLE_CLOUD_LOCATION,
+  query,
+  recipe,
+) {
+  const llm = new ChatVertexAI({
+    project: projectId,
+    location: location,
+    model: "gemini-2.5-flash",
+  });
+
+  const agent = createAgent({
+    model: llm,
+    tools: [],
+    responseFormat: toolStrategy(QuestionAnswerSchemaZod),
+  });
+
+  console.log(
+    "Answering the question: " +
+      query +
+      " for recipe:" +
+      JSON.stringify(recipe),
+  );
+
+  const result = await agent.invoke({
+    messages: [
+      {
+        role: "system",
+        content:
+          "Return in the required schema, write in sufficient detail but not too much (keep below 100 words). Use British English. " +
+          "Generate an answer to the question provided to the user, regarding the recipe also provided by the user." +
+          "As the question is regarding food, ensure you conform to food safety and hygiene standards but only be explicit about this if the user specifically asks something regarding food safety/hygiene/storage.",
+      },
+      {
+        role: "user",
+        content:
+          "Please answer my question: '" +
+          query +
+          "' about the following recipe: " +
+          JSON.stringify(recipe),
+      },
+    ],
+  });
+
+  // note: this returns the tokens. should use this value to increment the token count instead.
+  console.log(JSON.stringify(result.structuredResponse));
+  return result.structuredResponse;
+}
+
+async function generateAlteredRecipe(
+  projectId = GOOGLE_CLOUD_PROJECT,
+  location = GOOGLE_CLOUD_LOCATION,
+  query,
+  recipe,
+  allNutritionalFilters,
+  dishType,
+) {
+  const llm = new ChatVertexAI({
+    project: projectId,
+    location: location,
+    model: "gemini-2.5-flash",
+  });
+
+  const agent = createAgent({
+    model: llm,
+    tools: [],
+    responseFormat: toolStrategy(
+      recipeSchemaZod(allNutritionalFilters, dishType),
+    ),
+  });
+
+  console.log(
+    "Answering the question: " +
+      query +
+      " for recipe:" +
+      JSON.stringify(recipe),
+  );
+
+  const result = await agent.invoke({
+    messages: [
+      {
+        role: "system",
+        content:
+          "Return in the required schema, write in sufficient detail but not too much (keep below 250 words). Use British English. " +
+          "Generate a new recipe using the provided recipe, ensuring it is altered to the user's needs accordingly. The recipe should remain the same for any part which does not need to be altered to the request." +
+          "If the recipe cannot be altered in the way that the user wishes (e.g. inedible), fill in the recipeNotPossible field as true and all others as null. Only do this if there really is no way to alter it, otherwise be creative to meet the user's needs.",
+      },
+      {
+        role: "user",
+        content:
+          "Please create a new recipe based on the alteration: '" +
+          query +
+          "' using the following recipe: " +
+          JSON.stringify(recipe),
+      },
+    ],
+  });
+
+  // note: this returns the tokens. should use this value to increment the token count instead.
+  console.log(JSON.stringify(result.structuredResponse));
+  return result.structuredResponse;
+}
+
 // LLM CALLS USING LangChain:
 
 /**
@@ -511,12 +804,6 @@ async function generateRecipe(
   chosenNutritionalFilters,
   dishType,
 ) {
-  // these will be switched dynamically using user preferences
-  const metricUnits =
-    "ML, L, G, KG, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit)";
-  const imperialUnits =
-    "TSP, TBSP, FL_OZ, CUP, PINT, QUART, GALLON, OZ, LB, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit), not something else like None - only UNIT.";
-
   // tool strategy for formatting output:
   //https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
 
@@ -552,7 +839,7 @@ async function generateRecipe(
       {
         role: "system",
         content:
-          "Return in the required schema, write in sufficient detail but not too much (keep below 250 words). Ensure that the recipe produced conforms to the following nutritional requirements and are thus listed in the tags array of the schema (and any more tags which you deem appropriate for the recipe): " +
+          "Return in the required schema, write in sufficient detail but not too much (keep below 250 words). Use British English. Do not include absolute amounts in the method part of the schema. Ensure that the recipe produced conforms to the following nutritional requirements and are thus listed in the tags array of the schema (and any more tags which you deem appropriate for the recipe): " +
           chosenNutritionalFilters +
           " and the recipe must be of type: " +
           dishType,
@@ -571,7 +858,6 @@ async function generateRecipe(
   });
 
   // note: this returns the tokens. should use this value to increment the token count instead.
-  0;
   console.log(JSON.stringify(result.structuredResponse));
   return result.structuredResponse;
 }
@@ -611,7 +897,7 @@ async function generateDishesFromIngredients(
         role: "system",
         content:
           "Return in the required schema, with the best dish you believe can be cooked from only these ingredients in firstMostLikelyDish field " +
-          "and the other fields filled accordingly. Ensure the JSON schema is satisfied and do not include more JSON." +
+          "and the other fields filled accordingly. Ensure the JSON schema is satisfied and do not include more JSON. Use British English. " +
           "Write the name of each dish concisely; in less than 20 words per dish, but include detail if necessary e.g. flavour, type, characteristics." +
           "Ensure that every dish conforms to the nutritional filters: " +
           chosenNutritionalFilters,
@@ -683,7 +969,7 @@ async function generateRecipeFromDishImage(
       {
         role: "system",
         content:
-          "Return in the required schema, write in sufficient detail but not too much (keep below 250 words)." +
+          "Return in the required schema, write in sufficient detail but not too much (keep below 250 words). Use British English. Do not include absolute amounts in the method part of the schema. " +
           "Furthermore, a list of ingredients is supplied. The recipe must be created using only these ingredients, but the recipe does not need to " +
           "use all of these - they are simply what the user has access to and can use for the recipe. So do not use ingredients if they are not needed for the recipe." +
           "Ensure that the recipe is of type " +
@@ -772,7 +1058,7 @@ async function generateDishesFromIngredientsImage(
         content:
           "Return in the required schema, first with the ingredients that you can see present in the image in the ingredients field, and then " +
           "the dish you believe is most likely able to be cooked with these ingredients in firstMostLikelyDish field " +
-          "and the other fields filled accordingly. Ensure the JSON schema is satisfied and do not include more JSON." +
+          "and the other fields filled accordingly. Ensure the JSON schema is satisfied and do not include more JSON. Use British English. " +
           "Write the name of each dish concisely; in less than 20 words per dish, but include detail if necessary e.g. flavour, type, characteristics." +
           "Ensure the dishes are of type + " +
           dishType +
@@ -855,7 +1141,7 @@ async function generateDishesFromImage(
         role: "system",
         content:
           "Return in the required schema, with the dish you believe is most likely depicted in the image in firstMostLikelyDish field " +
-          "and the other fields filled accordingly. Ensure the JSON schema is satisfied and do not include more JSON." +
+          "and the other fields filled accordingly. Ensure the JSON schema is satisfied and do not include more JSON. Use British English. " +
           "Write the name of each dish concisely; in less than 20 words per dish, but include detail if necessary e.g. flavour, type, characteristics." +
           "Ensure the dishes are of type + " +
           dishType +
@@ -881,7 +1167,8 @@ async function generateDishesFromImage(
   return result.structuredResponse;
 }
 
-// To run the POST endpoint:
+// generate recipes:
+
 app.post("/recipe", async (req, res) => {
   await generate(req, res, LlmRequestType.RECIPE);
 });
@@ -909,6 +1196,20 @@ app.post(
     await generate(req, res, LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH);
   },
 );
+
+// actions on already generated recipes:
+
+app.post("/recipe-nutrition", async (req, res) => {
+  await generateAction(req, res, LlmActionType.NUTRITIONAL_VALUES);
+});
+
+app.post("/query-recipe", async (req, res) => {
+  await generateAction(req, res, LlmActionType.QUESTION);
+});
+
+app.post("/alter-recipe", async (req, res) => {
+  await generateAction(req, res, LlmActionType.ALTERATION);
+});
 
 const port = process.env.PORT || 8080;
 app.listen(port, () => console.log("Nourish endpoints are now live."));

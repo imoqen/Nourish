@@ -1,6 +1,7 @@
 package uk.co.imoqen.nourish.db
 
 import android.content.Context
+import android.util.Log
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
@@ -35,28 +36,37 @@ object NourishDatabaseModule {
             NourishDatabase::class.java,
             "nourish_database"
         )
+            // IMPORTANT: when i release the app, need to remove allow destructive migration AND set allowBackup back to true (set to false currently to prevent bug).
             // Seed the database using a callback https://matthiaslischka.at/2019/01/15/seed-room-database/
             .addCallback(object: RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)
-                    CoroutineScope(Dispatchers.IO).launch {
-                        val db = dbProvider.get()
-                        val recipeTypeDao = db.recipeTypeDao()
-                        val tagDao = db.tagDao()
+                    Log.i("ROOM_SEED", "Seeding the database")
 
-                        // add the recipe types:
-                        recipeTypeDao.insert(RecipeType(title = "Breakfast", ordinal=0))
-                        recipeTypeDao.insert(RecipeType(title = "Lunch", ordinal=1))
-                        recipeTypeDao.insert(RecipeType(title = "Dinner", ordinal=2))
-                        recipeTypeDao.insert(RecipeType(title = "Dessert", ordinal=3))
-                        recipeTypeDao.insert(RecipeType(title = "Side", ordinal=4))
-                        recipeTypeDao.insert(RecipeType(title = "Drink", ordinal=5))
-                    }
+                    // add the recipe types:
+                    db.execSQL(
+                        "INSERT OR IGNORE INTO RecipeType(title, ordinal) VALUES('Breakfast', 0)"
+                    )
+                    db.execSQL(
+                        "INSERT OR IGNORE INTO RecipeType(title, ordinal) VALUES('Lunch', 1)"
+                    )
+                    db.execSQL(
+                        "INSERT OR IGNORE INTO RecipeType(title, ordinal) VALUES('Dinner', 2)"
+                    )
+                    db.execSQL(
+                        "INSERT OR IGNORE INTO RecipeType(title, ordinal) VALUES('Dessert', 3)"
+                    )
+                    db.execSQL(
+                        "INSERT OR IGNORE INTO RecipeType(title, ordinal) VALUES('Side', 4)"
+                    )
+                    db.execSQL(
+                        "INSERT OR IGNORE INTO RecipeType(title, ordinal) VALUES('Drink', 5)"
+                    )
                 }
             })
+            .fallbackToDestructiveMigration(false)
             .build()
     }
-
 
     // all DAOs provided here to Hilt:
 
@@ -95,5 +105,13 @@ object NourishDatabaseModule {
     @Singleton
     @Provides
     fun provideRecipeStepDao(db: NourishDatabase) = db.recipeStepDao()
+
+    @Singleton
+    @Provides
+    fun provideRecipeNutritionDao(db: NourishDatabase) = db.recipeNutritionDao()
+
+    @Singleton
+    @Provides
+    fun provideRecipeQueryDao(db: NourishDatabase) = db.recipeQueryDao()
 
 }

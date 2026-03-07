@@ -4,6 +4,8 @@ import kotlinx.coroutines.flow.Flow
 import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeIngredient
 import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeWithRecipeIngredients
 import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSection
+import uk.co.imoqen.nourish.db.recipe.recipenutrition.RecipeNutrition
+import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQuery
 import uk.co.imoqen.nourish.db.recipe.recipestep.RecipeStep
 import uk.co.imoqen.nourish.db.recipe.recipetag.RecipeTag
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
@@ -44,8 +46,29 @@ interface RecipeRepository {
     fun getAllRecipeTags(): Flow<List<RecipeTag>>
     suspend fun insertRecipeTag(recipeTag: RecipeTag): Long
 
+    // RECIPE NUTRITION LOGIC:
+    suspend fun insertRecipeNutrition(recipeNutrition: RecipeNutrition)
+    fun getNutritionForRecipe(recipeId: Long): Flow<RecipeNutrition?>
+    suspend fun deleteNutritionForRecipeId(recipeId: Long)
+
+    // RECIPE QUERY LOGIC:
+    suspend fun insertRecipeQuery(recipeQuery: RecipeQuery): Long
+    suspend fun updateRecipeQuery(recipeQuery: RecipeQuery)
+    fun getAllQueriesForRecipe(recipeId: Long): Flow<List<RecipeQuery?>>
+
+    fun getRecipeQueryById(recipeQueryId: Long): Flow<RecipeQuery?>
+
     /**
      * Creates a recipe in the database and its corresponding entities
      */
-    suspend fun createRecipe(uid: String, llmRecipe: LlmRecipe, imagePath: String)
+    suspend fun createRecipe(uid: String, llmRecipe: LlmRecipe, recipeId: Long = -1, imagePath: String = "")
+
+    suspend fun replaceRecipe(currentRecipe: Recipe, newRecipe: LlmRecipe)
+
+    suspend fun updateRecipeIngredient(recipeIngredient: RecipeIngredient)
+
+    suspend fun scaleRecipe(recipe: Recipe, currentServingSize: Int, increase: Boolean)
+
+    suspend fun updateRecipe(recipe: Recipe)
+
 }

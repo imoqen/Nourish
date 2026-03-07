@@ -1,20 +1,25 @@
 package uk.co.imoqen.nourish.common
 
 import android.util.Log
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
+import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.db.tag.TagRepository
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
+import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.recipebook.TagSelection
 import uk.co.imoqen.nourish.recipebook.TypeSelection
+import uk.co.imoqen.nourish.recipediscovery.LlmChatStage
 import javax.inject.Inject
 import kotlin.collections.map
 
-class FilterActions @Inject constructor(
+class RecipeActions @Inject constructor(
     private val uiEventBus: UiEventBus,
     private val authenticationManager: AuthenticationManager,
     private val tagRepository: TagRepository,
@@ -196,6 +201,68 @@ class FilterActions @Inject constructor(
                 Log.i("tag delete", "tag not deleted: ${e}")
             }
 
+    }
+
+    fun determineUnitPlurality(
+        ingredientAmount: Double,
+    ): Boolean {
+        // plural form should be used in most cases; just a few cases where it shouldn't.
+        return ingredientAmount != 1.0 // if only 1, should always be singular.
+    }
+
+    fun determineIngredientPlurality(
+        ingredientAmount: Double,
+        ingredientUnit: IngredientUnit
+    ): Boolean {
+        if (ingredientAmount <= 1.0) {
+            // e.g. 1 strawberry = singular
+            // but 1 cup strawberry should be plural: 1 cup strawberries
+            if (ingredientUnit.useSingularForOne) {
+                return false // use singular
+            }
+        }
+        return true
+    }
+
+    // shaves off the decimal if it is .0, otherwise keeps it.
+    // e.g. 5.0 -> 5 but 5.5 remains -> 5.5
+    fun formatIngredientAmount(
+        ingredientAmount: Double
+    ): String {
+        if (ingredientAmount % 1.0 == 0.0) {
+            return ingredientAmount.toInt().toString()
+        }
+        return ingredientAmount.toString()
+    }
+
+    // only used for displaying llm ingredient as they are handled differently
+    fun formatIngredientText(
+        ingredient: LlmIngredient
+    ): String {
+        runCatching {
+            val amount = ingredient.ingredientAmount
+            val ingredientUnit = IngredientUnit.valueOf(ingredient.ingredientAmountUnit)
+
+            val unit = if (determineUnitPlurality(amount)) {
+                ingredientUnit.pluralName
+            } else {
+                ingredientUnit.singularName
+            }
+
+            val ingredientPluralisedName =
+                if (determineIngredientPlurality(ingredient.ingredientAmount, ingredientUnit)) {
+                    ingredient.ingredientPlural
+                } else {
+                    ingredient.ingredientSingular
+                }
+
+            return if (unit != "") {
+                ("${formatIngredientAmount(amount)} $unit $ingredientPluralisedName")
+            } else {
+                ("${formatIngredientAmount(amount)} $ingredientPluralisedName")
+            }
+        }
+        return "" // invalid if reached here
     }
 
 }

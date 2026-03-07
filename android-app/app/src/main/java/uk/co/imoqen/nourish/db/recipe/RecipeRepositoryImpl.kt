@@ -1,8 +1,8 @@
 package uk.co.imoqen.nourish.db.recipe
 
-import android.util.Log
 import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import uk.co.imoqen.nourish.db.NourishDatabase
 import uk.co.imoqen.nourish.db.ingredient.Ingredient
 import uk.co.imoqen.nourish.db.ingredient.IngredientRepositoryImpl
@@ -12,16 +12,20 @@ import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeIngredientDao
 import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeWithRecipeIngredients
 import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSection
 import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSectionDao
+import uk.co.imoqen.nourish.db.recipe.recipenutrition.RecipeNutrition
+import uk.co.imoqen.nourish.db.recipe.recipenutrition.RecipeNutritionDao
+import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQuery
+import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQueryDao
 import uk.co.imoqen.nourish.db.recipe.recipestep.RecipeStep
 import uk.co.imoqen.nourish.db.recipe.recipestep.RecipeStepDao
 import uk.co.imoqen.nourish.db.recipe.recipetag.RecipeTag
 import uk.co.imoqen.nourish.db.recipe.recipetag.RecipeTagDao
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeTypeDao
-import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.db.tag.TagRepositoryImpl
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 import javax.inject.Inject
+import kotlin.math.round
 
 class RecipeRepositoryImpl @Inject constructor(
     private val db: NourishDatabase,
@@ -33,6 +37,8 @@ class RecipeRepositoryImpl @Inject constructor(
     private val recipeIngredientSectionDao: RecipeIngredientSectionDao,
     private val recipeTagDao: RecipeTagDao,
     private val recipeStepDao: RecipeStepDao,
+    private val recipeNutritionDao: RecipeNutritionDao,
+    private val recipeQueryDao: RecipeQueryDao,
 
     // external therefore use Repositories:
     private val ingredientRepository: IngredientRepositoryImpl,
@@ -75,13 +81,44 @@ class RecipeRepositoryImpl @Inject constructor(
     override fun getAllRecipeTags(): Flow<List<RecipeTag>> = recipeTagDao.getAll()
     override suspend fun insertRecipeTag(recipeTag: RecipeTag): Long = recipeTagDao.insert(recipeTag)
 
+    // RECIPE NUTRITION LOGIC:
+    override suspend fun insertRecipeNutrition(recipeNutrition: RecipeNutrition) {
+        recipeNutritionDao.insert(recipeNutrition)
+    }
+
+    override suspend fun deleteNutritionForRecipeId(recipeId: Long){
+        recipeNutritionDao.deleteByRecipeId(recipeId)
+    }
+
+    override fun getNutritionForRecipe(recipeId: Long): Flow<RecipeNutrition?> {
+        return recipeNutritionDao.getByRecipeId(recipeId)
+    }
+
+    // RECIPE QUERY LOGIC:
+    override suspend fun insertRecipeQuery(recipeQuery: RecipeQuery): Long {
+        return recipeQueryDao.insert(recipeQuery)
+    }
+
+    override suspend fun updateRecipeQuery(recipeQuery: RecipeQuery) {
+        recipeQueryDao.update(recipeQuery)
+    }
+
+    override fun getAllQueriesForRecipe(recipeId: Long): Flow<List<RecipeQuery?>> {
+        return recipeQueryDao.getAllByRecipeId(recipeId)
+    }
+
+    override fun getRecipeQueryById(recipeQueryId: Long): Flow<RecipeQuery?> {
+        return recipeQueryDao.getById(recipeQueryId)
+    }
+
     /**
      * Creates a recipe in the database and its corresponding entitites
      */
     override suspend fun createRecipe(
         uid: String,
         llmRecipe: LlmRecipe,
-        imagePath: String // just set to "" if none, which is fine.
+        recipeId: Long,
+        imagePath: String// just set to "" if none, which is fine.
     ) {
         // if throws, it is handled accordingly where it is called.
         db.withTransaction {
@@ -95,11 +132,35 @@ class RecipeRepositoryImpl @Inject constructor(
             }
 
             // 2. Create the recipe and add it to the database
-            val recipe = Recipe(
-                authorUid = uid, title = llmRecipe.title, numberOfServings = llmRecipe.servings.toInt(),
-                colour = "todo", generated = true, imagePath = imagePath, archived = false,
-                storageInstructions = llmRecipe.storage, recipeTypeId = recipeTypeId, emoji = llmRecipe.emoji
-            )
+            var recipe: Recipe
+            if (recipeId.toInt() != -1) { // for replacing recipes, so use the original recipe id
+                recipe = Recipe(
+                    id = recipeId,
+                    authorUid = uid,
+                    title = llmRecipe.title,
+                    numberOfServings = llmRecipe.servings.toInt(),
+                    colour = "todo",
+                    generated = true,
+                    imagePath = imagePath,
+                    archived = false,
+                    storageInstructions = llmRecipe.storage,
+                    recipeTypeId = recipeTypeId,
+                    emoji = llmRecipe.emoji
+                )
+            } else {
+                recipe = Recipe(
+                    authorUid = uid,
+                    title = llmRecipe.title,
+                    numberOfServings = llmRecipe.servings.toInt(),
+                    colour = "todo",
+                    generated = true,
+                    imagePath = imagePath,
+                    archived = false,
+                    storageInstructions = llmRecipe.storage,
+                    recipeTypeId = recipeTypeId,
+                    emoji = llmRecipe.emoji
+                )
+            }
             val recipeId = recipeDao.insert(recipe)
 
             // 3. Search for each Ingredient and create it if it doesn't already exist:
@@ -160,4 +221,59 @@ class RecipeRepositoryImpl @Inject constructor(
             }
         }
     }
+
+    override suspend fun updateRecipeIngredient(recipeIngredient: RecipeIngredient) {
+        recipeIngredientDao.update(recipeIngredient)
+    }
+
+    override suspend fun updateRecipe(recipe: Recipe) {
+        recipeDao.update(recipe)
+    }
+
+    // transactional so the scale is reverted if an error occurs, so the recipe scale stays correct
+    override suspend fun scaleRecipe(recipe: Recipe, currentServingSize: Int, increase: Boolean) {
+        db.withTransaction {
+            val newServingSize = if (increase) { currentServingSize+1 } else { currentServingSize-1 }
+            val scalingFactor = newServingSize.toFloat() / currentServingSize.toFloat()
+
+            val recipeIngredients = getRecipeWithRecipeIngredients(recipe.id).first()
+
+            recipeIngredients.ingredients.forEach { recipeIngredient ->
+                // rounds so that it is to nearest 0.25 to prevent weird numbers
+                var scaledAmount = "%.2f".format(round(recipeIngredient.amount*scalingFactor*4)/4).toDouble()
+                if (scaledAmount < 0.25) {
+                    scaledAmount = 0.25 // cant go less than 0.25
+                }
+                updateRecipeIngredient(
+                    recipeIngredient.copy(amount = scaledAmount)
+                )
+            }
+
+            // then update serving size:
+            recipeDao.update(recipe.copy(numberOfServings = newServingSize))
+        }
+    }
+
+    override suspend fun replaceRecipe(currentRecipe: Recipe, newRecipe: LlmRecipe) {
+        // things to update:
+
+        // DELETE ALL AND UPLOAD NEW with the currentRecipe id:
+        // recipe ingredients
+        // ingredient sections
+        // will potentially have to add new ingredients as a result, BUT DONT DELETE THE OLD INGREDIENTS.
+        // recipe tags
+
+        // replace the recipe
+
+        // oir just save the original recipe id, then add recipe USING that recipe id.
+        val originalRecipeId = currentRecipe.id
+        val originalRecipeAuthor = currentRecipe.authorUid
+
+        // the previous nutritional values get deleted as they will no longer be accurate
+        deleteNutritionForRecipeId(originalRecipeId)
+
+        recipeDao.delete(currentRecipe)
+        createRecipe(originalRecipeAuthor,newRecipe, originalRecipeId)
+    }
+
 }

@@ -17,4 +17,6 @@ interface RecipeIngredientSectionDao {
     @Query("SELECT * FROM RecipeIngredientSection WHERE id = :id LIMIT 1")
     fun getById(id: Long): Flow<RecipeIngredientSection?>
 
+    //@Query("DELETE FROM RecipeIngredientSection")
+
 }

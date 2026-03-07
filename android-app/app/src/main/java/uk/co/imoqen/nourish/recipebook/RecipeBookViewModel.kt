@@ -1,6 +1,7 @@
 package uk.co.imoqen.nourish.recipebook
 
 import android.util.Log
+import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,7 +15,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import uk.co.imoqen.nourish.common.FilterActions
+import uk.co.imoqen.nourish.common.ErrorMessage
+import uk.co.imoqen.nourish.common.RecipeActions
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
@@ -25,14 +27,29 @@ import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.recipe.RecipeWithRecipeSteps
 import uk.co.imoqen.nourish.db.recipe.RecipeWithRecipeTags
+import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeIngredient
 import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeWithRecipeIngredients
 import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSection
+import uk.co.imoqen.nourish.db.recipe.recipenutrition.RecipeNutrition
+import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQuery
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.db.tag.TagRepository
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.apimanager.ApiManager
+import uk.co.imoqen.nourish.network.request.LlmActionRequest
+import uk.co.imoqen.nourish.network.request.LlmActionType
+import uk.co.imoqen.nourish.network.request.LlmRequest
+import uk.co.imoqen.nourish.network.request.LlmRequestType
+import uk.co.imoqen.nourish.network.response.LlmDishesProposed
+import uk.co.imoqen.nourish.network.response.LlmIngredient
+import uk.co.imoqen.nourish.network.response.LlmIngredientSection
+import uk.co.imoqen.nourish.network.response.LlmRecipe
+import uk.co.imoqen.nourish.recipediscovery.LlmChatStage
+import uk.co.imoqen.nourish.recipediscovery.LlmMode
+import java.io.File
+import java.lang.NullPointerException
 import javax.inject.Inject
 import kotlin.collections.getOrPut
 
@@ -45,7 +62,7 @@ class RecipeBookViewModel @Inject constructor(
     private val recipeRepository: RecipeRepository,
     private val ingredientRepository: IngredientRepository,
     private val tagRepository: TagRepository,
-    private val filterActions: FilterActions
+    private val recipeActions: RecipeActions
 ): ViewModel() {
 
     private val mutableUiState = MutableStateFlow(RecipeBookUiState())
@@ -108,6 +125,46 @@ class RecipeBookViewModel @Inject constructor(
         }
     }
 
+    fun setLlmActionType(llmActionType: LlmActionType) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                llmActionType = llmActionType
+            )
+        }
+    }
+
+    fun setUserActionRequest(userActionRequest: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                userActionRequest = userActionRequest
+            )
+        }
+    }
+
+    fun setActionChatStage(actionChatStage: ActionChatStage) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                actionChatStage = actionChatStage
+            )
+        }
+    }
+
+    fun setAlteredRecipe(alteredRecipe: LlmRecipe?) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                alteredRecipe = alteredRecipe
+            )
+        }
+    }
+
+    fun setVisible(visible: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                visible = visible
+            )
+        }
+    }
+
     // gets all recipes for the currently logged in user. ensures that if user not logged in, empty list returned.
     fun getAllRecipes(): Flow<List<Recipe>> {
         val uid = authenticationManager.getUid()
@@ -146,6 +203,16 @@ class RecipeBookViewModel @Inject constructor(
 
     fun getRecipeStepsForRecipe(recipeId: Long): Flow<RecipeWithRecipeSteps> {
         return recipeRepository.getRecipeWithRecipeSteps(recipeId)
+    }
+
+    // RECIPE NUTRITION LOGIC:
+    fun getNutritionForRecipe(recipeId: Long): Flow<RecipeNutrition?> {
+        return recipeRepository.getNutritionForRecipe(recipeId)
+    }
+
+    // RECIPE QUERY LOGIC:
+    fun getAllQueriesForRecipe(recipeId: Long): Flow<List<RecipeQuery?>> {
+        return recipeRepository.getAllQueriesForRecipe(recipeId)
     }
 
     fun markStepAsComplete(recipeStepId: Long, complete: Boolean) {
@@ -187,7 +254,7 @@ class RecipeBookViewModel @Inject constructor(
 
                 val recipeCard = RecipeCardExpanded(
                     title, ingredientsMap, method, serves, recipeType,
-                    recipeTags, storageInstructions, recipe.id, recipe.imagePath, recipe.emoji
+                    recipeTags, storageInstructions, recipe.imagePath, recipe.emoji
                 )
 
                 setRecipeCard(recipeCard)
@@ -196,7 +263,6 @@ class RecipeBookViewModel @Inject constructor(
                     Log.i("recipe book", "successfully parsed into recipe card")
                 }
                 .onFailure { e ->
-                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("The recipe could not be displayed. Please try again later."))
                     Log.i("recipe book", "failed: $e")
                 }
         }
@@ -256,7 +322,7 @@ class RecipeBookViewModel @Inject constructor(
             // determine pluralities
             val ingredientAmount = ingredient.amount
             val ingredientUnit = ingredient.ingredientUnit
-            val unit = if (determineUnitPlurality(ingredientAmount)) {
+            val unit = if (recipeActions.determineUnitPlurality(ingredientAmount)) {
                 ingredientUnit.pluralName
             } else {
                 ingredientUnit.singularName
@@ -266,7 +332,7 @@ class RecipeBookViewModel @Inject constructor(
 
             if (ingredientName != null && sectionTitle != null) {
                 val ingredientPluralisedName =
-                    if (determineIngredientPlurality(ingredientAmount, ingredientUnit)) {
+                    if (recipeActions.determineIngredientPlurality(ingredientAmount, ingredientUnit)) {
                         ingredientName.plural
                     } else {
                         ingredientName.singular
@@ -282,29 +348,6 @@ class RecipeBookViewModel @Inject constructor(
             }
         }
         return sectionsWithIngredients
-    }
-
-    // determine if plural form should be used or not
-// true if plural, false if singular
-    fun determineUnitPlurality(
-        ingredientAmount: Double,
-    ): Boolean {
-        // plural form should be used in most cases; just a few cases where it shouldn't.
-        return ingredientAmount != 1.0 // if only 1, should always be singular.
-    }
-
-    fun determineIngredientPlurality(
-        ingredientAmount: Double,
-        ingredientUnit: IngredientUnit
-    ): Boolean {
-        if (ingredientAmount <= 1.0) {
-            // e.g. 1 strawberry = singular
-            // but 1 cup strawberry should be plural: 1 cup strawberries
-            if (ingredientUnit.useSingularForOne) {
-                return false // use singular
-            }
-        }
-        return true
     }
 
     @OptIn(FlowPreview::class)
@@ -351,9 +394,30 @@ class RecipeBookViewModel @Inject constructor(
         }
     }
 
+    fun alterServingSize(
+        increase: Boolean // true = increase by 1, false = decrease by 1. cap at 1.
+    ) {
+        viewModelScope.launch() {
+            val recipe = mutableUiState.value.selectedRecipe
+            if (recipe == null) {
+                Log.i("Serving", "Cannot update serving size of a null recipe.")
+                return@launch
+            }
+
+            val currentServingSize = recipe.numberOfServings
+            if (currentServingSize == 1 && !increase) {
+                Log.i("Serving", "Cannot decrease serving size from 1.")
+                return@launch
+            }
+
+            // scale the recipe and save to db, reverting back if failed:
+            recipeRepository.scaleRecipe(recipe, currentServingSize, increase)
+        }
+    }
+
     fun getAllTagsForUser() {
         viewModelScope.launch() {
-            (filterActions.getAllTagsForUser(
+            (recipeActions.getAllTagsForUser(
                 mutableUiState.value.recipeTags
             ))?.let { updatedTags ->
                 setRecipeTags(updatedTags) // only sets if not null
@@ -363,7 +427,7 @@ class RecipeBookViewModel @Inject constructor(
 
     fun getAllRecipeTypes() {
         viewModelScope.launch() {
-            (filterActions.getAllRecipeTypesSelectionList(
+            (recipeActions.getAllRecipeTypesSelectionList(
                 mutableUiState.value.recipeTypes
             ))?.let { updatedTypes ->
                 Log.i("setting types", "not null: ${updatedTypes}")
@@ -375,7 +439,7 @@ class RecipeBookViewModel @Inject constructor(
     fun updateSelected(tag: Tag, status: Boolean) {
         viewModelScope.launch() {
             setRecipeTags(
-                filterActions.updateSelected(
+                recipeActions.updateSelected(
                     tag,
                     status,
                     mutableUiState.value.recipeTags
@@ -387,7 +451,7 @@ class RecipeBookViewModel @Inject constructor(
     fun updateSelected(recipeType: RecipeType, status: Boolean) {
         viewModelScope.launch() {
             setRecipeTypes(
-                filterActions.updateSelected(
+                recipeActions.updateSelected(
                     recipeType,
                     status,
                     mutableUiState.value.recipeTypes
@@ -396,5 +460,254 @@ class RecipeBookViewModel @Inject constructor(
         }
     }
 
+    // recipe actions
+    fun formatIngredientAmount(
+        ingredientAmount: Double
+    ): String {
+        return recipeActions.formatIngredientAmount(ingredientAmount)
+    }
+
+    // api
+
+    suspend fun parseRecipeToLlmRecipe(
+        recipe: Recipe
+    ): LlmRecipe {
+        val recipeIngredients = getRecipeIngredientsForRecipe(recipe.id).first()
+        val recipeType = findRecipeType(recipe.recipeTypeId)?.first ?: ""
+        val tags = getRecipeTagsForRecipe(recipe.id).first().recipeTags.map { tag ->
+            getTagByTagId(tag.tagId).first()?.identifier ?: ""
+        }
+
+        // build ingredients
+
+        val map: MutableMap<String, MutableList<LlmIngredient>> = mutableMapOf()
+        val allIngredients = getRecipeIngredientsForRecipe(recipe.id).first().ingredients
+
+        allIngredients.forEach { recipeIngredient ->
+            val section = getSectionById(recipeIngredient.sectionId).first()?.title ?: ""
+            val ingredient = getIngredientById(recipeIngredient.ingredientId).first()
+            map.getOrPut(section) { mutableListOf() }.add(LlmIngredient(
+                ingredientSingular = ingredient?.singular ?: "",
+                ingredientPlural = ingredient?.plural ?: "",
+                ingredientAmount = recipeIngredient.amount,
+                ingredientAmountUnit = recipeIngredient.ingredientUnit.name
+            ))
+        }
+
+        val ingredientsList: MutableList<LlmIngredientSection> = mutableListOf()
+        map.forEach { section, ingredients ->
+            ingredientsList.add(LlmIngredientSection(
+                section, ingredients
+            ))
+        }
+
+        val method = getRecipeStepsForRecipe(recipe.id).first().recipeSteps.map { step ->
+            step.instruction
+        }
+
+        return LlmRecipe(
+            title = recipe.title,
+            sectionIngredients = ingredientsList,
+            servings = recipe.numberOfServings,
+            mealType = recipeType,
+            method = method,
+            tags = tags,
+            storage = recipe.storageInstructions,
+            recipeNotPossible = false,
+            emoji = recipe.emoji
+        )
+    }
+
+    fun makeLlmApiCall(
+        type: LlmActionType,
+    ) {
+        setActionChatStage(ActionChatStage.AWAITING_LLM_RESPONSE)
+        viewModelScope.launch() {
+            runCatching {
+                val userPrompt = mutableUiState.value.userActionRequest
+                val recipe = mutableUiState.value.selectedRecipe
+
+                // validation
+                if (userPrompt == "") {
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("The input must not be blank to proceed."))
+                    return@launch
+                }
+                if (recipe == null) {
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("A recipe must be selected to proceed."))
+                    return@launch
+                }
+
+                var queryId: Long = -1
+                if (type == LlmActionType.QUESTION) {
+                    // create the query object in the db just with the user's question
+                    queryId = recipeRepository.insertRecipeQuery(
+                        RecipeQuery(
+                            recipeId = recipe.id,
+                            userQuestion = userPrompt,
+                            llmAnswer = ""
+                        )
+                    )
+                }
+
+                val dishType = getRecipeTypeById(recipe.recipeTypeId).first()?.title ?: ""
+                var allNutritionalFilters = mutableUiState.value.recipeTags?.joinToString(", ") { it.tag.identifier }
+                if (allNutritionalFilters == null) {
+                    allNutritionalFilters = "[]" // signifies empty list
+                }
+                // make it into a request:
+                val request = LlmActionRequest(
+                    parseRecipeToLlmRecipe(recipe), userPrompt, allNutritionalFilters, dishType
+                )
+
+                // validate the user's token:
+                val tokenResult = authenticationManager.getUserToken()
+                if (tokenResult == null) {
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
+                    // error occurred; go back to the USER_INPUT stage (MAY NOT WORK: TEST THIS).
+                    return@launch
+                }
+
+                apiManager.makeRetrofitLlmActionCall(
+                    type,
+                    request,
+                    tokenResult,
+                    onQuestionAnswered = { llmQuestionResponse ->
+                        val llmAnswer = llmQuestionResponse?.answer
+                        if (llmAnswer != null) {
+                            Log.i("LLM Answer", llmAnswer)
+                            viewModelScope.launch() {
+                                // add the answer to the DB and display to the user in the chat UI
+                                val query = recipeRepository.getRecipeQueryById(queryId).first()
+                                if (query != null) {
+                                    recipeRepository.updateRecipeQuery(query.copy(llmAnswer = llmAnswer))
+                                }
+                                setActionChatStage(ActionChatStage.RESPONSE_RECEIVED)
+                                setUserActionRequest("") // so the text doesnt still appear in their send bar
+                            }
+                        }
+
+                    },
+                    onRecipeAltered = { llmRecipe ->
+                        if (llmRecipe != null) {
+                            viewModelScope.launch() {
+                                setActionChatStage(ActionChatStage.RESPONSE_RECEIVED)
+                                if (llmRecipe.recipeNotPossible) {
+                                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Valid recipe could not be generated. Please enter something different."))
+                                    return@launch
+                                }
+                                // display the recipe to the user. there will be a button to overwrite the exising recipe, or save as a new recipe. when clicked, this will do the according process.
+                                setAlteredRecipe(llmRecipe)
+                            }
+                        }
+                    },
+                    onNutritionGenerated = { llmNutritionResponse ->
+                        if (llmNutritionResponse != null) {
+                            viewModelScope.launch() {
+                                // add nutrition to the DB and display to user.
+                                recipeRepository.insertRecipeNutrition(
+                                    RecipeNutrition(
+                                        recipeId = recipe.id,
+                                        servings = llmNutritionResponse.servings,
+                                        calories = llmNutritionResponse.calories,
+                                        fat = llmNutritionResponse.fat,
+                                        saturates = llmNutritionResponse.saturates,
+                                        carbohydrate = llmNutritionResponse.carbohydrate,
+                                        sugars = llmNutritionResponse.sugars,
+                                        protein = llmNutritionResponse.protein,
+                                        salt = llmNutritionResponse.salt
+                                    )
+                                )
+                                setActionChatStage(ActionChatStage.RESPONSE_RECEIVED)
+                            }
+                        }
+
+                    }
+                )
+            }
+                .onFailure {
+                    // error occurred
+                    setActionChatStage(ActionChatStage.USER_INPUT) // no longer awaiting - error occurred.
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
+                }
+        }
+    }
+
+    // only used for llmingredient as they are dealt with differently.
+    fun formatIngredientText(
+        ingredient: LlmIngredient
+    ): String {
+        runCatching {
+            return recipeActions.formatIngredientText(ingredient)
+        }
+            .onFailure {
+                viewModelScope.launch {
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("The recipe could not be generated. Please try again."))
+                    setActionChatStage(ActionChatStage.USER_INPUT)
+                    return@launch
+                }
+            }
+        return "" // invalid if reached here
+    }
+
+    fun addRecipe(llmRecipe: LlmRecipe) {
+        viewModelScope.launch() {
+            runCatching {
+                // Check that user is logged in validly
+                val uid = authenticationManager.getUid()
+                if (uid == null) {
+                    throw NullPointerException()
+                } // user is null; throw to be handled appropriately
+                // Add the recipe to the database:
+                recipeRepository.createRecipe(uid, llmRecipe)
+            }
+                .onSuccess {
+                    uiEventBus.enqueueEvent(
+                        UiEvent.ShowSnackbar(
+                            "The recipe has been saved."
+                        )
+                    )
+                }
+
+                .onFailure { e ->
+                    uiEventBus.enqueueEvent(
+                        UiEvent.ShowSnackbar(
+                            "The recipe could not be saved. Please try again, or enter a different alteration."
+                        )
+                    )
+                }
+        }
+    }
+
+    fun replaceRecipe(
+        originalRecipe: Recipe,
+        newRecipe: LlmRecipe
+    ) {
+        viewModelScope.launch() {
+            runCatching {
+                // Check that user is logged in validly
+                val uid = authenticationManager.getUid()
+                if (uid == null) {
+                    throw NullPointerException()
+                } // user is null; throw to be handled appropriately
+                // Add the recipe to the database:
+                recipeRepository.replaceRecipe(originalRecipe, newRecipe)
+            }
+                .onSuccess {
+                    uiEventBus.enqueueEvent(
+                        UiEvent.ShowSnackbar(
+                            "The recipe has been updated."
+                        )
+                    )
+                }
+
+                .onFailure { e ->
+                    uiEventBus.enqueueEvent(
+                        UiEvent.ShowSnackbar(
+                            "The recipe could not be updated. Please try again, or enter a different alteration."
+                        )
+                    )
+                }
+        }
+    }
 
 }

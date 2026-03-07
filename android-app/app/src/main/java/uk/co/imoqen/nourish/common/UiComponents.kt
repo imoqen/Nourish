@@ -14,12 +14,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -170,8 +172,11 @@ fun NourishH2(
         text = text,
         fontSize = 20.sp,
         fontWeight = FontWeight.Bold,
-        modifier = modifier
-            .padding(6.dp),
+        modifier = Modifier
+            .padding(6.dp)
+            .then(
+                modifier
+            ),
         textAlign = TextAlign.Center
     )
 }
@@ -218,7 +223,8 @@ fun NourishErrorText(
 @Composable
 fun NourishButton(
     onClick: () -> Unit,
-    text: String
+    text: String,
+    enabled: Boolean = true
 ) {
     Button(
         onClick = {
@@ -226,7 +232,8 @@ fun NourishButton(
         },
         modifier = Modifier
             .padding(vertical = 4.dp)
-            .padding(horizontal = 4.dp)
+            .padding(horizontal = 4.dp),
+        enabled = enabled
     ) {
         Text(text)
     }
@@ -302,7 +309,7 @@ fun NourishIconTextButton(
                 MaterialTheme.colorScheme.primaryContainer
             }
         ),
-        modifier = if (fillMaxWidth) { modifier.fillMaxWidth().fillMaxHeight() } else Modifier,
+        modifier = if (fillMaxWidth) { modifier.fillMaxWidth().fillMaxHeight() } else modifier,
         enabled = enabled
     ) {
         Row(
@@ -400,11 +407,14 @@ fun NourishTextDivider(
 }
 
 @Composable
-fun NourishDivider() {
+fun NourishDivider(
+    modifier: Modifier = Modifier
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp),
+            .padding(vertical = 16.dp)
+            .then( modifier ),
         verticalAlignment = Alignment.CenterVertically
     ) {
         HorizontalDivider(
@@ -623,17 +633,42 @@ fun NourishConfirmationDialog (
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     NourishButton(
-                        text = "Confirm",
-                        onClick = { onConfirmation(); onDismiss() } // confirm then dismsis it
-                    )
-                    NourishButton(
                         text = "Cancel",
                         onClick = { onDismiss() }
+                    )
+                    NourishButton(
+                        text = "Confirm",
+                        onClick = { onConfirmation(); onDismiss() } // confirm then dismsis it
                     )
                 }
             },
 
             modifier = Modifier.padding(32.dp)
+        )
+    }
+}
+
+// Progress bar:
+// https://developer.android.com/develop/ui/compose/components/progress
+@Composable
+fun IndeterminateCircularIndicator(
+    awaiting: Boolean
+) {
+    // if awaiting anything, need to show the loading screen
+    if (!awaiting) return
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 40.dp)
+            .padding(top = 10.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.width(64.dp),
+            color = MaterialTheme.colorScheme.secondary,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant,
         )
     }
 }
