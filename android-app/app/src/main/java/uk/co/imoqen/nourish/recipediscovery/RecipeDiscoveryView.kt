@@ -80,6 +80,7 @@ import coil3.request.ImageRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import uk.co.imoqen.nourish.common.IndeterminateCircularIndicator
 import uk.co.imoqen.nourish.common.NourishButton
 import uk.co.imoqen.nourish.common.NourishConfirmationDialog
 import uk.co.imoqen.nourish.common.NourishColour
@@ -695,7 +696,7 @@ fun RecipeGenerationResult(
     }
 
     // the loading circle:
-    IndeterminateCircularIndicator()
+    IndeterminateCircularIndicator(uiState.llmChatStage == LlmChatStage.AWAITING_LLM_RESPONSE)
 
 }
 
@@ -1447,31 +1448,4 @@ fun sendToLlm(
         viewModel.setLlmChatStage(LlmChatStage.AWAITING_LLM_RESPONSE)
     }
 
-}
-
-// Progress bar:
-// https://developer.android.com/develop/ui/compose/components/progress
-@Composable
-fun IndeterminateCircularIndicator(
-    viewModel: RecipeDiscoveryViewModel = hiltViewModel()
-) {
-    val uiState by viewModel.uiState.collectAsState()
-
-    // if awaiting anything, need to show the loading screen
-    if (uiState.llmChatStage != LlmChatStage.AWAITING_LLM_RESPONSE) return
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 40.dp)
-            .padding(top = 10.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        CircularProgressIndicator(
-            modifier = Modifier.width(64.dp),
-            color = MaterialTheme.colorScheme.secondary,
-            trackColor = MaterialTheme.colorScheme.surfaceVariant,
-        )
-    }
 }

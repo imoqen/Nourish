@@ -17,6 +17,8 @@ data class RecipeBookUiState(
     val llmAction: LlmAction = LlmAction.NONE,
 
     val userActionRequest: String = "",
+
+    val actionChatStage: ActionChatStage = ActionChatStage.USER_INPUT // at start it is always user input.
 )
 
 enum class LlmAction {
@@ -24,6 +26,12 @@ enum class LlmAction {
     NUTRITIONAL_VALUES,
     ALTERATION,
     QUESTION
+}
+
+enum class ActionChatStage {
+    USER_INPUT,
+    AWAITING_LLM_RESPONSE,
+    RESPONSE_RECEIVED
 }
 
 data class TagSelection(

@@ -1,7 +1,6 @@
 package uk.co.imoqen.nourish.network.apimanager
 
 import uk.co.imoqen.nourish.network.request.LlmActionRequest
-import uk.co.imoqen.nourish.network.request.LlmActionType
 import uk.co.imoqen.nourish.network.request.LlmRequest
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.network.response.ApiResponse
@@ -9,6 +8,7 @@ import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import uk.co.imoqen.nourish.network.response.LlmNutritionResponse
 import uk.co.imoqen.nourish.network.response.LlmQuestionResponse
 import uk.co.imoqen.nourish.network.response.LlmRecipeResponse
+import uk.co.imoqen.nourish.recipebook.LlmAction
 import java.io.File
 
 interface ApiManager {
@@ -26,7 +26,7 @@ interface ApiManager {
 
     // for llm actions, which are things that can be done AFTER the recipe is generated, from the recipe book screen in a recipe card.
     fun makeRetrofitLlmActionCall(
-        type: LlmActionType,
+        type: LlmAction,
         request: LlmActionRequest,
         bearerToken: String,
         onQuestionAnswered: (LlmQuestionResponse?) -> Unit,

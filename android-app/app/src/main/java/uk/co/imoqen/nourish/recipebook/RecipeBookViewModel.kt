@@ -36,7 +36,6 @@ import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import uk.co.imoqen.nourish.network.request.LlmActionRequest
-import uk.co.imoqen.nourish.network.request.LlmActionType
 import uk.co.imoqen.nourish.network.request.LlmRequest
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
@@ -125,6 +124,22 @@ class RecipeBookViewModel @Inject constructor(
         mutableUiState.update { currentState ->
             currentState.copy(
                 llmAction = llmAction
+            )
+        }
+    }
+
+    fun setUserActionRequest(userActionRequest: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                userActionRequest = userActionRequest
+            )
+        }
+    }
+
+    fun setActionChatStage(actionChatStage: ActionChatStage) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                actionChatStage = actionChatStage
             )
         }
     }
@@ -474,8 +489,9 @@ class RecipeBookViewModel @Inject constructor(
     }
 
     fun makeLlmApiCall(
-        type: LlmActionType,
+        type: LlmAction,
     ) {
+        setActionChatStage(ActionChatStage.AWAITING_LLM_RESPONSE)
         viewModelScope.launch() {
             runCatching {
                 val userPrompt = mutableUiState.value.userActionRequest
@@ -511,6 +527,7 @@ class RecipeBookViewModel @Inject constructor(
                         if (llmAnswer != null) {
                             viewModelScope.launch() {
                                 // add the answer to the DB and display to the user in the chat UI
+                                setActionChatStage(ActionChatStage.RESPONSE_RECEIVED)
                             }
                         }
 
@@ -519,6 +536,7 @@ class RecipeBookViewModel @Inject constructor(
                         val llmRecipe = llmRecipeResponse?.llmRecipe
                         if (llmRecipe != null) {
                             viewModelScope.launch() {
+                                setActionChatStage(ActionChatStage.RESPONSE_RECEIVED)
                                 if (llmRecipe.recipeNotPossible) {
                                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Valid recipe could not be generated. Please enter something different."))
                                     return@launch
@@ -531,6 +549,7 @@ class RecipeBookViewModel @Inject constructor(
                         val llmNutrition = llmNutritionResponse?.llmNutrition
                         if (llmNutrition != null) {
                             viewModelScope.launch() {
+                                setActionChatStage(ActionChatStage.RESPONSE_RECEIVED)
                                 // add nutrition to the DB and display to user.
                             }
                         }

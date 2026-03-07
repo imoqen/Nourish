@@ -14,12 +14,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -642,6 +644,31 @@ fun NourishConfirmationDialog (
             },
 
             modifier = Modifier.padding(32.dp)
+        )
+    }
+}
+
+// Progress bar:
+// https://developer.android.com/develop/ui/compose/components/progress
+@Composable
+fun IndeterminateCircularIndicator(
+    awaiting: Boolean
+) {
+    // if awaiting anything, need to show the loading screen
+    if (!awaiting) return
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 40.dp)
+            .padding(top = 10.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.width(64.dp),
+            color = MaterialTheme.colorScheme.secondary,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant,
         )
     }
 }

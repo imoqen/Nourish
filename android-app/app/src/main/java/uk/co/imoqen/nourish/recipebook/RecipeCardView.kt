@@ -24,7 +24,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
@@ -40,13 +42,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -56,14 +62,19 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import kotlinx.coroutines.flow.emptyFlow
+import uk.co.imoqen.nourish.common.IndeterminateCircularIndicator
+import uk.co.imoqen.nourish.common.NourishButton
 import uk.co.imoqen.nourish.common.NourishDivider
 import uk.co.imoqen.nourish.common.NourishH1
 import uk.co.imoqen.nourish.common.NourishH2
 import uk.co.imoqen.nourish.common.NourishH3
 import uk.co.imoqen.nourish.common.NourishIconButton
 import uk.co.imoqen.nourish.common.NourishIconTextButton
+import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.common.onBackgroundColour
 import uk.co.imoqen.nourish.db.recipe.Recipe
+import uk.co.imoqen.nourish.network.response.LlmRecipe
+import uk.co.imoqen.nourish.recipediscovery.LlmChatStage
 import java.io.File
 
 @Composable
@@ -75,6 +86,7 @@ fun RecipeCardScreen(
 ) {
 
     val scrollState = rememberScrollState()
+    val keyboardFocusManager = LocalFocusManager.current
 
     Column(
         modifier = Modifier
@@ -85,7 +97,7 @@ fun RecipeCardScreen(
         // should constrain it to only return recipe made by that user, for security. address in a future stepping stone ^
         if (recipe != null) {
             recipeBookViewModel.setSelectedRecipe(recipe)
-            RecipeCard(recipeBookViewModel, onBack, uiState)
+            RecipeCard(recipeBookViewModel, onBack, uiState, keyboardFocusManager)
         }
     }
 }
@@ -95,7 +107,8 @@ fun RecipeCardScreen(
 fun RecipeCard(
     recipeBookViewModel: RecipeBookViewModel,
     onBack: () -> Unit,
-    uiState: RecipeBookUiState
+    uiState: RecipeBookUiState,
+    keyboardFocusManager: FocusManager
 ) {
     val recipe = recipeBookViewModel.uiState.collectAsState().value.selectedRecipe
     recipeBookViewModel.buildRecipeCard()
@@ -109,7 +122,10 @@ fun RecipeCard(
 
         ) {
             Column(
-                modifier = Modifier.fillMaxSize().background(color = MaterialTheme.colorScheme.background).padding(bottom=8.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(color = MaterialTheme.colorScheme.background)
+                    .padding(bottom = 8.dp),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -155,14 +171,15 @@ fun RecipeCard(
                                 painter = painter,
                                 contentDescription = null,
                                 modifier = Modifier
-                                    .height(320.dp - 92.dp + 64.dp+32.dp) // total size of card - size of text bit (200 - 90) + extra for the rounded corner shape (32.dp)
+                                    .height(320.dp - 92.dp + 64.dp + 32.dp) // total size of card - size of text bit (200 - 90) + extra for the rounded corner shape (32.dp)
                                     .fillMaxWidth(), // 2/3 of the card height - maybe use consts for this in future to ensure they match upon changes
                                 contentScale = ContentScale.Crop
                             )
                         } else {
                             Box(
-                                modifier = Modifier.fillMaxWidth() // matches the card width
-                                    .height(160.dp - 92.dp + 64.dp+32.dp) // takes up much less space because no image
+                                modifier = Modifier
+                                    .fillMaxWidth() // matches the card width
+                                    .height(160.dp - 92.dp + 64.dp + 32.dp) // takes up much less space because no image
                                     .background(MaterialTheme.colorScheme.error) // put the chosen colour
                             )
                         }
@@ -185,7 +202,9 @@ fun RecipeCard(
                     ) {
                         NourishH2(
                             recipeCard.title,
-                            modifier = Modifier.align(Alignment.Center).fillMaxWidth(0.8f)
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .fillMaxWidth(0.8f)
                         )
 
                         // back button:
@@ -218,7 +237,8 @@ fun RecipeCard(
 
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth().fillMaxHeight()
+                            .fillMaxWidth()
+                            .fillMaxHeight()
                     ) {
                         // Emoji:
                         Text(
@@ -226,10 +246,12 @@ fun RecipeCard(
                             fontSize = 48.sp,
                             // center emoji if no image, otherwise put at bottom center
                             modifier = if (displayImage) {
-                                Modifier.align(Alignment.BottomCenter)
+                                Modifier
+                                    .align(Alignment.BottomCenter)
                                     .offset(y = (-2).dp) // offsets are added to account for the img displayed for the rounded corner shape
                             } else {
-                                Modifier.align(Alignment.Center)
+                                Modifier
+                                    .align(Alignment.Center)
                                     .offset(y = (28).dp) // offsets are added to account for the bg displayed for the rounded corner shape
                             },
                             style = TextStyle(
@@ -256,7 +278,9 @@ fun RecipeCard(
                             .weight(1f) // tags takes up all remaining space, serving size takes up as much as it needs.
                     ) {
                         Column(
-                            modifier = Modifier.padding(8.dp).fillMaxWidth() // for inner padding of the total item
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .fillMaxWidth() // for inner padding of the total item
                         ) {
                             val tags = recipeCard.recipeTags
                             if (tags.isEmpty()) {
@@ -378,7 +402,9 @@ fun RecipeCard(
                     HorizontalDivider()
 
                     Column(
-                        modifier = Modifier.padding(8.dp).padding(bottom=8.dp) // for inner padding of the total item
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .padding(bottom = 8.dp) // for inner padding of the total item
                     ) {
                         recipeCard.method.forEachIndexed { i, (instruction, complete, id) ->
                             Row(
@@ -407,7 +433,8 @@ fun RecipeCard(
 
                             if (i != recipeCard.method.size-1) {
                                 HorizontalDivider(
-                                    modifier = Modifier.padding(horizontal = 12.dp)
+                                    modifier = Modifier
+                                        .padding(horizontal = 12.dp)
                                         .padding(top = 12.dp)
                                 )
                             }
@@ -442,27 +469,39 @@ fun RecipeCard(
             HorizontalDivider(modifier = Modifier.padding(top=4.dp))
 
             Column(
-                modifier = Modifier.fillMaxSize().background(color = MaterialTheme.colorScheme.background).padding(vertical=10.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(color = MaterialTheme.colorScheme.background)
+                    .padding(vertical = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
                 NourishIconTextButton(
-                    onClick = { recipeBookViewModel.setLlmAction(LlmAction.NUTRITIONAL_VALUES) },
+                    onClick = {
+                        recipeBookViewModel.setLlmAction(LlmAction.NUTRITIONAL_VALUES)
+                        recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
+                              },
                     painter = painterResource(R.drawable.forkchart),
                     description = "Nutritional Values",
                     modifier = Modifier.fillMaxWidth(0.7f)
                 )
 
                 NourishIconTextButton(
-                    onClick = { recipeBookViewModel.setLlmAction(LlmAction.ALTERATION) },
+                    onClick = {
+                        recipeBookViewModel.setLlmAction(LlmAction.ALTERATION)
+                        recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
+                              },
                     painter = painterResource(R.drawable.adjust),
                     description = "Make an alteration",
                     modifier = Modifier.fillMaxWidth(0.7f)
                 )
 
                 NourishIconTextButton(
-                    onClick = { recipeBookViewModel.setLlmAction(LlmAction.QUESTION) },
+                    onClick = {
+                        recipeBookViewModel.setLlmAction(LlmAction.QUESTION)
+                        recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
+                              },
                     painter = painterResource(R.drawable.live_question),
                     description = "Ask a question",
                     modifier = Modifier.fillMaxWidth(0.7f)
@@ -478,13 +517,66 @@ fun RecipeCard(
                 },
                 sheetState = sheetState
             ) {
-                LlmActions()
+                LlmActions(uiState, recipeBookViewModel, keyboardFocusManager)
+                // the loading circle:
+                IndeterminateCircularIndicator(uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE)
+
             }
         }
     }
 }
 
 @Composable
-fun LlmActions() {
-    Text("hello world!")
+fun LlmActions(
+    uiState: RecipeBookUiState,
+    viewModel: RecipeBookViewModel,
+    keyboardFocusManager: FocusManager
+) {
+    val llmAction = uiState.llmAction
+    when (llmAction) {
+        LlmAction.NUTRITIONAL_VALUES -> {
+            viewModel.setUserActionRequest("Generate nutritional values for the provided dish in the provided JSON schema, for the given number of servings.")
+            NourishButton(
+                onClick = { viewModel.makeLlmApiCall(llmAction) },
+                text = "Generate Nutritional Values",
+            )
+        }
+        LlmAction.ALTERATION -> {
+            NourishTextField(
+                value = uiState.userActionRequest,
+                onValueChange =  { actionRequest ->
+                    viewModel.setUserActionRequest(actionRequest)
+                },
+                placeholder = "Enter an alteration",
+                onDone = { keyboardFocusManager.clearFocus() },
+                leadingIcon = ImageVector.vectorResource(R.drawable.edit_note),
+                trailingIcon = Icons.Filled.Send,
+                onTrailingIconPress = {
+                    viewModel.makeLlmApiCall(llmAction)
+                },
+                alwaysDisplayTrailingIcon = false
+            )
+
+        }
+        LlmAction.QUESTION -> {
+            NourishTextField(
+                value = uiState.userActionRequest,
+                onValueChange =  { actionRequest ->
+                    viewModel.setUserActionRequest(actionRequest)
+                },
+                placeholder = "Enter a question",
+                onDone = { keyboardFocusManager.clearFocus() },
+                leadingIcon = ImageVector.vectorResource(R.drawable.live_question),
+                trailingIcon = Icons.Filled.Send,
+                onTrailingIconPress = {
+                    viewModel.makeLlmApiCall(llmAction)
+                },
+                alwaysDisplayTrailingIcon = false
+            )
+
+        }
+        LlmAction.NONE -> {
+            Text("An error occurred. Please try again later.")
+        }
+    }
 }
