@@ -264,6 +264,7 @@ class ApiManagerImpl @Inject constructor(
     ) {
         try {
             val error = response.errorBody()?.string()
+            Log.i("Server error llm", "$error")
             val errorJson = Gson().fromJson(error, LlmError::class.java)
             Log.i("Server Error LLM", errorJson.error)
         } catch (e: Exception) {

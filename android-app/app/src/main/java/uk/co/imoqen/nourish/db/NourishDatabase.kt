@@ -11,6 +11,8 @@ import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeIngredient
 import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeIngredientDao
 import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSection
 import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSectionDao
+import uk.co.imoqen.nourish.db.recipe.recipenutrition.RecipeNutritionDao
+import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQueryDao
 import uk.co.imoqen.nourish.db.recipe.recipestep.RecipeStep
 import uk.co.imoqen.nourish.db.recipe.recipestep.RecipeStepDao
 import uk.co.imoqen.nourish.db.recipe.recipetag.RecipeTag
@@ -42,4 +44,6 @@ abstract class NourishDatabase : RoomDatabase() {
     abstract fun recipeStepDao(): RecipeStepDao
     abstract fun recipeTagDao(): RecipeTagDao
     abstract fun tagDao(): TagDao
+    abstract fun recipeNutritionDao(): RecipeNutritionDao
+    abstract fun recipeQueryDao(): RecipeQueryDao
 }

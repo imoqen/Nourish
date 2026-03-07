@@ -1,6 +1,5 @@
 package uk.co.imoqen.nourish.db.recipe
 
-import android.util.Log
 import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -13,13 +12,16 @@ import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeIngredientDao
 import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeWithRecipeIngredients
 import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSection
 import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSectionDao
+import uk.co.imoqen.nourish.db.recipe.recipenutrition.RecipeNutrition
+import uk.co.imoqen.nourish.db.recipe.recipenutrition.RecipeNutritionDao
+import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQuery
+import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQueryDao
 import uk.co.imoqen.nourish.db.recipe.recipestep.RecipeStep
 import uk.co.imoqen.nourish.db.recipe.recipestep.RecipeStepDao
 import uk.co.imoqen.nourish.db.recipe.recipetag.RecipeTag
 import uk.co.imoqen.nourish.db.recipe.recipetag.RecipeTagDao
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeTypeDao
-import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.db.tag.TagRepositoryImpl
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 import javax.inject.Inject
@@ -35,6 +37,8 @@ class RecipeRepositoryImpl @Inject constructor(
     private val recipeIngredientSectionDao: RecipeIngredientSectionDao,
     private val recipeTagDao: RecipeTagDao,
     private val recipeStepDao: RecipeStepDao,
+    private val recipeNutritionDao: RecipeNutritionDao,
+    private val recipeQueryDao: RecipeQueryDao,
 
     // external therefore use Repositories:
     private val ingredientRepository: IngredientRepositoryImpl,
@@ -76,6 +80,28 @@ class RecipeRepositoryImpl @Inject constructor(
     // RECIPE TAG LOGIC:
     override fun getAllRecipeTags(): Flow<List<RecipeTag>> = recipeTagDao.getAll()
     override suspend fun insertRecipeTag(recipeTag: RecipeTag): Long = recipeTagDao.insert(recipeTag)
+
+    // RECIPE NUTRITION LOGIC:
+    override suspend fun insertRecipeNutrition(recipeNutrition: RecipeNutrition) {
+        recipeNutritionDao.insert(recipeNutrition)
+    }
+
+    override fun getNutritionForRecipe(recipeId: Long): Flow<RecipeNutrition?> {
+        return recipeNutritionDao.getByRecipeId(recipeId)
+    }
+
+    // RECIPE QUERY LOGIC:
+    override suspend fun insertRecipeQuery(recipeQuery: RecipeQuery) {
+        recipeQueryDao.insert(recipeQuery)
+    }
+
+    override suspend fun updateRecipeQuery(recipeQuery: RecipeQuery) {
+        recipeQueryDao.update(recipeQuery)
+    }
+
+    override fun getAllQueriesForRecipe(recipeId: Long): Flow<RecipeQuery?> {
+        return recipeQueryDao.getAllByRecipeId(recipeId)
+    }
 
     /**
      * Creates a recipe in the database and its corresponding entitites

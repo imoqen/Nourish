@@ -96,4 +96,12 @@ object NourishDatabaseModule {
     @Provides
     fun provideRecipeStepDao(db: NourishDatabase) = db.recipeStepDao()
 
+    @Singleton
+    @Provides
+    fun provideRecipeNutritionDao(db: NourishDatabase) = db.recipeNutritionDao()
+
+    @Singleton
+    @Provides
+    fun provideRecipeQueryDao(db: NourishDatabase) = db.recipeQueryDao()
+
 }

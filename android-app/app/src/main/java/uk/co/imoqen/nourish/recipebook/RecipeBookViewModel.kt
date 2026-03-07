@@ -29,6 +29,8 @@ import uk.co.imoqen.nourish.db.recipe.RecipeWithRecipeTags
 import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeIngredient
 import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeWithRecipeIngredients
 import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSection
+import uk.co.imoqen.nourish.db.recipe.recipenutrition.RecipeNutrition
+import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQuery
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.db.tag.TagRepository
@@ -183,6 +185,17 @@ class RecipeBookViewModel @Inject constructor(
 
     fun getRecipeStepsForRecipe(recipeId: Long): Flow<RecipeWithRecipeSteps> {
         return recipeRepository.getRecipeWithRecipeSteps(recipeId)
+    }
+
+    // RECIPE NUTRITION LOGIC:
+
+    fun getNutritionForRecipe(recipeId: Long): Flow<RecipeNutrition?> {
+        return recipeRepository.getNutritionForRecipe(recipeId)
+    }
+
+    // RECIPE QUERY LOGIC:
+    fun getAllQueriesForRecipe(recipeId: Long): Flow<RecipeQuery?> {
+        return recipeRepository.getAllQueriesForRecipe(recipeId)
     }
 
     fun markStepAsComplete(recipeStepId: Long, complete: Boolean) {
@@ -508,8 +521,15 @@ class RecipeBookViewModel @Inject constructor(
                     return@launch
                 }
 
+                val dishType = getRecipeTypeById(recipe.recipeTypeId).first()?.title ?: ""
+                var allNutritionalFilters = mutableUiState.value.recipeTags?.joinToString(", ") { it.tag.identifier }
+                if (allNutritionalFilters == null) {
+                    allNutritionalFilters = "[]" // signifies empty list
+                }
                 // make it into a request:
-                val request = LlmActionRequest(parseRecipeToLlmRecipe(recipe), userPrompt)
+                val request = LlmActionRequest(
+                    parseRecipeToLlmRecipe(recipe), userPrompt, allNutritionalFilters, dishType
+                )
 
                 // validate the user's token:
                 val tokenResult = authenticationManager.getUserToken()
@@ -560,6 +580,7 @@ class RecipeBookViewModel @Inject constructor(
             }
                 .onFailure {
                     // error occurred
+                    setActionChatStage(ActionChatStage.USER_INPUT) // no longer awaiting - error occurred.
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
                 }
         }
