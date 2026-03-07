@@ -1,7 +1,7 @@
 package uk.co.imoqen.nourish.network.response
 
 data class LlmNutrition(
-    val numberOfServings: Int, // so the nutrition is given for this serving amount
+    val servings: Int, // so the nutrition is given for this serving amount
     val calories: Int,
     val fat: Double,
     val saturates: Double, // "of which saturates" ^
