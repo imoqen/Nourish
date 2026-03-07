@@ -274,11 +274,9 @@ fun RecipeList(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(vertical = 16.dp),
-                                    //contentPadding = PaddingValues(rhorizontal = 8.dp),
-                                    //horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     items(
-                                        recipeCardsUnexpanded,
+                                        recipeCardsUnexpanded.reversed(), // reversed so most recent recipes first
                                         key = { it.recipeId }) { recipeCardUnexpanded ->
                                         AnimatedVisibility(
                                             visible = (recipeCardUnexpanded.title.contains(

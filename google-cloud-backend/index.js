@@ -106,8 +106,7 @@ const QuestionAnswerSchemaZod = z.object({
   answer: z
     .string()
     .describe(
-      "The answer to the user's question about the provided recipe. Keep it clear and concise, but ensure to go into as much detail as necessary to answer the question sufficiently." +
-        "As the question is regarding food, ensure you conform to food safety and hygiene standards. Answer in British English.",
+      "The answer to the user's question about the provided recipe. Keep it clear and concise, but ensure to go into as much detail as necessary to answer the question sufficiently. Answer in British English.",
     ),
 });
 
@@ -714,7 +713,7 @@ async function generateQuestionAnswer(
         content:
           "Return in the required schema, write in sufficient detail but not too much (keep below 100 words). Use British English. " +
           "Generate an answer to the question provided to the user, regarding the recipe also provided by the user." +
-          "As the question is regarding food, ensure you conform to food safety and hygiene standards",
+          "As the question is regarding food, ensure you conform to food safety and hygiene standards but only be explicit about this if the user specifically asks something regarding food safety/hygiene/storage.",
       },
       {
         role: "user",

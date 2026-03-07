@@ -22,8 +22,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -44,6 +47,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -81,6 +85,7 @@ import uk.co.imoqen.nourish.common.NourishIconTextButton
 import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.common.NourishTextMessage
+import uk.co.imoqen.nourish.common.TextSender
 import uk.co.imoqen.nourish.common.onBackgroundColour
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQuery
@@ -530,8 +535,6 @@ fun RecipeCard(
                 sheetState = sheetState,
             ) {
                 LlmActions(uiState.selectedRecipe, uiState, recipeBookViewModel, keyboardFocusManager)
-                // the loading circle:
-                IndeterminateCircularIndicator(uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE)
 
             }
         }
@@ -582,6 +585,8 @@ fun LlmActions(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
+                // the loading circle:
+                IndeterminateCircularIndicator(uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE)
 
                 val nutrition =
                     viewModel.getNutritionForRecipe(recipe.id).collectAsState(initial = null).value
@@ -684,30 +689,60 @@ fun LlmActions(
                 
                 if (queries == null || queries.isEmpty()) {
                     
-                    Text("Ask the LLM a question about the recipe.")
+                    Text(
+                        "Ask the LLM a question about the recipe.",
+                        modifier = Modifier.padding(16.dp),
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        "For example, 'can I use ingredient X rather than Y?'.",
+                        modifier = Modifier.padding(16.dp),
+                        textAlign = TextAlign.Center
+                    )
                     
                 } else {
-                    queries.forEach { query ->
-                        if (query != null) {
-                            QueryDisplay(query)
+
+                    val lazyListState = rememberLazyListState()
+
+                    LaunchedEffect(queries.size) {
+                        lazyListState.animateScrollToItem(0) // scrolls to the llm message once it is received
+                    }
+
+                    LazyColumn(
+                        modifier = Modifier.fillMaxHeight(0.6f),
+                        state = lazyListState,
+                        reverseLayout = true // so that start at bottom of the chat
+                    ){
+                        item {
+                            // the loading circle:
+                            IndeterminateCircularIndicator(uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE)
+                        }
+
+                        items(queries.reversed()) { query -> // queries have to be reversed due to the reverse layout. but still required so that start at bottom of chat.
+                            if (query != null) {
+                                QueryDisplay(query)
+                            }
                         }
                     }
+
                 }
 
-                NourishTextField(
-                    value = uiState.userActionRequest,
-                    onValueChange = { actionRequest ->
-                        viewModel.setUserActionRequest(actionRequest)
-                    },
-                    placeholder = "Enter a question",
-                    onDone = { keyboardFocusManager.clearFocus() },
-                    leadingIcon = ImageVector.vectorResource(R.drawable.live_question),
-                    trailingIcon = Icons.Filled.Send,
-                    onTrailingIconPress = {
-                        viewModel.makeLlmApiCall(llmActionType)
-                    },
-                    alwaysDisplayTrailingIcon = false
-                )
+                if (uiState.actionChatStage != ActionChatStage.AWAITING_LLM_RESPONSE) {
+                    NourishTextField(
+                        value = uiState.userActionRequest,
+                        onValueChange = { actionRequest ->
+                            viewModel.setUserActionRequest(actionRequest)
+                        },
+                        placeholder = "Enter a question",
+                        onDone = { keyboardFocusManager.clearFocus() },
+                        leadingIcon = ImageVector.vectorResource(R.drawable.live_question),
+                        trailingIcon = Icons.Filled.Send,
+                        onTrailingIconPress = {
+                            viewModel.makeLlmApiCall(llmActionType)
+                        },
+                        alwaysDisplayTrailingIcon = false
+                    )
+                }
 
             }
 
@@ -722,9 +757,34 @@ fun LlmActions(
 fun QueryDisplay(
     query: RecipeQuery
 ) {
-    NourishTextMessage(
-        textSender = TODO(),
-        modifier = TODO(),
-        textMessage = TODO()
-    )
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        NourishTextMessage(
+            textSender = TextSender.USER,
+            modifier = Modifier.align(Alignment.End),
+            textMessage = {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp)
+                ) {
+                    Text("You", color = MaterialTheme.colorScheme.onBackground.copy(alpha=0.8f))
+                    Text(query.userQuestion, modifier = Modifier.padding(8.dp))
+                }
+            }
+        )
+        if (query.llmAnswer != "") {
+            NourishTextMessage(
+                textSender = TextSender.LLM,
+                modifier = Modifier.align(Alignment.Start),
+                textMessage = {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp)
+                    ) {
+                        Text("Gemini", color = MaterialTheme.colorScheme.onBackground.copy(alpha=0.8f))
+                        Text(query.llmAnswer, modifier = Modifier.padding(8.dp))
+                    }
+                }
+            )
+        }
+    }
 }

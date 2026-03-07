@@ -1,6 +1,7 @@
 package uk.co.imoqen.nourish.recipebook
 
 import android.util.Log
+import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -520,6 +521,18 @@ class RecipeBookViewModel @Inject constructor(
                     return@launch
                 }
 
+                var queryId: Long = -1
+                if (type == LlmActionType.QUESTION) {
+                    // create the query object in the db just with the user's question
+                    queryId = recipeRepository.insertRecipeQuery(
+                        RecipeQuery(
+                            recipeId = recipe.id,
+                            userQuestion = userPrompt,
+                            llmAnswer = ""
+                        )
+                    )
+                }
+
                 val dishType = getRecipeTypeById(recipe.recipeTypeId).first()?.title ?: ""
                 var allNutritionalFilters = mutableUiState.value.recipeTags?.joinToString(", ") { it.tag.identifier }
                 if (allNutritionalFilters == null) {
@@ -545,9 +558,15 @@ class RecipeBookViewModel @Inject constructor(
                     onQuestionAnswered = { llmQuestionResponse ->
                         val llmAnswer = llmQuestionResponse?.answer
                         if (llmAnswer != null) {
+                            Log.i("LLM Answer", llmAnswer)
                             viewModelScope.launch() {
                                 // add the answer to the DB and display to the user in the chat UI
+                                val query = recipeRepository.getRecipeQueryById(queryId).first()
+                                if (query != null) {
+                                    recipeRepository.updateRecipeQuery(query.copy(llmAnswer = llmAnswer))
+                                }
                                 setActionChatStage(ActionChatStage.RESPONSE_RECEIVED)
+                                setUserActionRequest("") // so the text doesnt still appear in their send bar
                             }
                         }
 

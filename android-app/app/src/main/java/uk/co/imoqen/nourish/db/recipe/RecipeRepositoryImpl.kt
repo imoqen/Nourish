@@ -91,8 +91,8 @@ class RecipeRepositoryImpl @Inject constructor(
     }
 
     // RECIPE QUERY LOGIC:
-    override suspend fun insertRecipeQuery(recipeQuery: RecipeQuery) {
-        recipeQueryDao.insert(recipeQuery)
+    override suspend fun insertRecipeQuery(recipeQuery: RecipeQuery): Long {
+        return recipeQueryDao.insert(recipeQuery)
     }
 
     override suspend fun updateRecipeQuery(recipeQuery: RecipeQuery) {
@@ -101,6 +101,10 @@ class RecipeRepositoryImpl @Inject constructor(
 
     override fun getAllQueriesForRecipe(recipeId: Long): Flow<List<RecipeQuery?>> {
         return recipeQueryDao.getAllByRecipeId(recipeId)
+    }
+
+    override fun getRecipeQueryById(recipeQueryId: Long): Flow<RecipeQuery?> {
+        return recipeQueryDao.getById(recipeQueryId)
     }
 
     /**
@@ -207,7 +211,10 @@ class RecipeRepositoryImpl @Inject constructor(
 
             recipeIngredients.ingredients.forEach { recipeIngredient ->
                 // rounds so that it is to nearest 0.25 to prevent weird numbers
-                val scaledAmount = "%.2f".format(round(recipeIngredient.amount*scalingFactor*4)/4).toDouble()
+                var scaledAmount = "%.2f".format(round(recipeIngredient.amount*scalingFactor*4)/4).toDouble()
+                if (scaledAmount < 0.25) {
+                    scaledAmount = 0.25 // cant go less than 0.25
+                }
                 updateRecipeIngredient(
                     recipeIngredient.copy(amount = scaledAmount)
                 )
