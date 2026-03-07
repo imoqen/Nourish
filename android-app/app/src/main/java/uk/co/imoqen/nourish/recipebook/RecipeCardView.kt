@@ -16,8 +16,10 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -61,6 +63,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.rememberAsyncImagePainter
@@ -72,11 +75,15 @@ import uk.co.imoqen.nourish.common.NourishDivider
 import uk.co.imoqen.nourish.common.NourishH1
 import uk.co.imoqen.nourish.common.NourishH2
 import uk.co.imoqen.nourish.common.NourishH3
+import uk.co.imoqen.nourish.common.NourishH4
 import uk.co.imoqen.nourish.common.NourishIconButton
 import uk.co.imoqen.nourish.common.NourishIconTextButton
+import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
+import uk.co.imoqen.nourish.common.NourishTextMessage
 import uk.co.imoqen.nourish.common.onBackgroundColour
 import uk.co.imoqen.nourish.db.recipe.Recipe
+import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQuery
 import uk.co.imoqen.nourish.network.request.LlmActionType
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 import uk.co.imoqen.nourish.recipediscovery.LlmChatStage
@@ -118,7 +125,7 @@ fun RecipeCard(
     val recipe = recipeBookViewModel.uiState.collectAsState().value.selectedRecipe
     recipeBookViewModel.buildRecipeCard()
     val recipeCard = recipeBookViewModel.uiState.collectAsState().value.selectedRecipeCard
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
 
     if (recipeCard != null) {
@@ -448,7 +455,6 @@ fun RecipeCard(
                 }
             }
 
-            HorizontalDivider(modifier = Modifier.padding(bottom=4.dp))
 
             Column(
                 modifier = Modifier
@@ -471,7 +477,6 @@ fun RecipeCard(
                 )
             }
 
-            HorizontalDivider(modifier = Modifier.padding(top=4.dp))
 
             Column(
                 modifier = Modifier
@@ -522,7 +527,7 @@ fun RecipeCard(
                 onDismissRequest = {
                     recipeBookViewModel.setLlmActionType(LlmActionType.NONE)
                 },
-                sheetState = sheetState
+                sheetState = sheetState,
             ) {
                 LlmActions(uiState.selectedRecipe, uiState, recipeBookViewModel, keyboardFocusManager)
                 // the loading circle:
@@ -540,7 +545,7 @@ fun NutritionalFact(
 ) {
     Box(
         modifier = Modifier
-            .size(128.dp)
+            .requiredSize(92.dp)
             .clip(CircleShape)
             .background(MaterialTheme.colorScheme.background)
             .border(
@@ -555,8 +560,8 @@ fun NutritionalFact(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(text = name, fontWeight = FontWeight.SemiBold)
-            Text(text = amount, fontWeight = FontWeight.Bold)
+            Text(text = name, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+            Text(text = amount, fontWeight = FontWeight.Bold, fontSize = 16.sp)
         }
     }
 }
@@ -573,7 +578,7 @@ fun LlmActions(
         LlmActionType.NUTRITIONAL_VALUES -> {
 
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom=12.dp).padding(horizontal=10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
@@ -588,20 +593,61 @@ fun LlmActions(
                     )
                 } else {
                     NourishH2("Nutritional Values")
-                    Text("In ${nutrition.servings} serving${if (nutrition.servings > 1) { "s" } else { "" }}")
+
+                    NourishTextDivider(
+                        text = "In ${nutrition.servings} serving${if (nutrition.servings > 1) { "s" } else { "" }}",
+                        modifier = Modifier.padding(bottom=8.dp)
+                    )
+
+                    NourishH2(
+                        text = "${nutrition.calories} kcal",
+                        modifier = Modifier.padding(bottom=10.dp)
+                    )
+
                     LazyVerticalGrid(
-                        columns = GridCells.Adaptive(minSize = 128.dp), // size of the circles inside. should add padding inside too though
-                        modifier = Modifier.fillMaxSize()
+                        columns = GridCells.Adaptive(minSize = 92.dp), // size of the circles inside. should add padding inside too though
+                        horizontalArrangement = Arrangement.spacedBy(
+                            space = 10.dp,
+                            alignment = Alignment.CenterHorizontally
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         item {
-                            NutritionalFact("Calories", "${nutrition.calories}")
-                            NutritionalFact("Fat", "${nutrition.fat}")
-                            NutritionalFact("Saturates", "${nutrition.saturates}")
-                            NutritionalFact("Carbohydrates", "${nutrition.carbohydrate}")
-                            NutritionalFact("Sugars", "${nutrition.sugars}")
-                            NutritionalFact("Protein", "${nutrition.protein}")
-                            NutritionalFact("Salt", "${nutrition.salt}")
+                            NutritionalFact("Fat", "${nutrition.fat}g")
                         }
+                        item {
+                            NutritionalFact("Saturates", "${nutrition.saturates}g")
+                        }
+                        item {
+                            NutritionalFact("Carbohydrate", "${nutrition.carbohydrate}g")
+                        }
+                        item {
+                            NutritionalFact("Sugars", "${nutrition.sugars}g")
+                        }
+                        item {
+                            NutritionalFact("Protein", "${nutrition.protein}g")
+                        }
+                        item {
+                            NutritionalFact("Salt", "${nutrition.salt}g")
+                        }
+                    }
+
+                    HorizontalDivider(modifier=Modifier.padding(vertical=16.dp))
+
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal=16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            "Please note that these nutritional values are estimates, produced by Gemini.",
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            "Consult a dietitian or doctor for personalised, accurate nutritional advice.",
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
             }
@@ -625,24 +671,60 @@ fun LlmActions(
 
         }
         LlmActionType.QUESTION -> {
-            NourishTextField(
-                value = uiState.userActionRequest,
-                onValueChange =  { actionRequest ->
-                    viewModel.setUserActionRequest(actionRequest)
-                },
-                placeholder = "Enter a question",
-                onDone = { keyboardFocusManager.clearFocus() },
-                leadingIcon = ImageVector.vectorResource(R.drawable.live_question),
-                trailingIcon = Icons.Filled.Send,
-                onTrailingIconPress = {
-                    viewModel.makeLlmApiCall(llmActionType)
-                },
-                alwaysDisplayTrailingIcon = false
-            )
+
+            Column(
+                modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom=12.dp).padding(horizontal=10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                NourishH2("Ask a Question")
+
+                val queries =
+                    viewModel.getAllQueriesForRecipe(recipe.id).collectAsState(initial = null).value
+                
+                if (queries == null || queries.isEmpty()) {
+                    
+                    Text("Ask the LLM a question about the recipe.")
+                    
+                } else {
+                    queries.forEach { query ->
+                        if (query != null) {
+                            QueryDisplay(query)
+                        }
+                    }
+                }
+
+                NourishTextField(
+                    value = uiState.userActionRequest,
+                    onValueChange = { actionRequest ->
+                        viewModel.setUserActionRequest(actionRequest)
+                    },
+                    placeholder = "Enter a question",
+                    onDone = { keyboardFocusManager.clearFocus() },
+                    leadingIcon = ImageVector.vectorResource(R.drawable.live_question),
+                    trailingIcon = Icons.Filled.Send,
+                    onTrailingIconPress = {
+                        viewModel.makeLlmApiCall(llmActionType)
+                    },
+                    alwaysDisplayTrailingIcon = false
+                )
+
+            }
 
         }
         LlmActionType.NONE -> {
             Text("An error occurred. Please try again later.")
         }
     }
+}
+
+@Composable
+fun QueryDisplay(
+    query: RecipeQuery
+) {
+    NourishTextMessage(
+        textSender = TODO(),
+        modifier = TODO(),
+        textMessage = TODO()
+    )
 }

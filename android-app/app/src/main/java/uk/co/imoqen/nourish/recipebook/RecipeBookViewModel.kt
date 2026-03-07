@@ -193,7 +193,7 @@ class RecipeBookViewModel @Inject constructor(
     }
 
     // RECIPE QUERY LOGIC:
-    fun getAllQueriesForRecipe(recipeId: Long): Flow<RecipeQuery?> {
+    fun getAllQueriesForRecipe(recipeId: Long): Flow<List<RecipeQuery?>> {
         return recipeRepository.getAllQueriesForRecipe(recipeId)
     }
 
@@ -566,21 +566,20 @@ class RecipeBookViewModel @Inject constructor(
                         }
                     },
                     onNutritionGenerated = { llmNutritionResponse ->
-                        val llmNutrition = llmNutritionResponse?.llmNutrition
-                        if (llmNutrition != null) {
+                        if (llmNutritionResponse != null) {
                             viewModelScope.launch() {
                                 // add nutrition to the DB and display to user.
                                 recipeRepository.insertRecipeNutrition(
                                     RecipeNutrition(
                                         recipeId = recipe.id,
-                                        servings = llmNutrition.servings,
-                                        calories = llmNutrition.calories,
-                                        fat = llmNutrition.fat,
-                                        saturates = llmNutrition.saturates,
-                                        carbohydrate = llmNutrition.carbohydrate,
-                                        sugars = llmNutrition.sugars,
-                                        protein = llmNutrition.protein,
-                                        salt = llmNutrition.salt
+                                        servings = llmNutritionResponse.servings,
+                                        calories = llmNutritionResponse.calories,
+                                        fat = llmNutritionResponse.fat,
+                                        saturates = llmNutritionResponse.saturates,
+                                        carbohydrate = llmNutritionResponse.carbohydrate,
+                                        sugars = llmNutritionResponse.sugars,
+                                        protein = llmNutritionResponse.protein,
+                                        salt = llmNutritionResponse.salt
                                     )
                                 )
                                 setActionChatStage(ActionChatStage.RESPONSE_RECEIVED)

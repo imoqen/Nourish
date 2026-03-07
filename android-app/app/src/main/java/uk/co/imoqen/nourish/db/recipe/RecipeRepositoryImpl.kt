@@ -99,7 +99,7 @@ class RecipeRepositoryImpl @Inject constructor(
         recipeQueryDao.update(recipeQuery)
     }
 
-    override fun getAllQueriesForRecipe(recipeId: Long): Flow<RecipeQuery?> {
+    override fun getAllQueriesForRecipe(recipeId: Long): Flow<List<RecipeQuery?>> {
         return recipeQueryDao.getAllByRecipeId(recipeId)
     }
 

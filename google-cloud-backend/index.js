@@ -61,43 +61,43 @@ const NutritionSchemaZod = z.object({
     .number()
     .int()
     .describe(
-      "The number of servings of the provided recipe which the nutrition is scaled to. For example, if servings = 2, then the nutritional information should be given for 2 servings of the recipe. For simplicity, you can make this match the servings value in the provided recipe, so use the provided ingredients and amounts to calculate the nutrition.",
+      "The number of servings must be 1. In the provided recipe, if servings != 1, then the nutritional information should be calculated for that many servings of the recipe, and then scaled to 1 accordingly, in your result. Use the provided ingredients and amounts to calculate the nutrition.",
     ),
   calories: z
     .number()
     .int()
     .describe(
-      "The estimated number of calories, in kcal, in this dish with this number of servings. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
+      "The estimated number of calories, in kcal, in this dish for 1 serving. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
     ),
   fat: z
     .number()
     .describe(
-      "The estimated amount of fat, in grams, in this dish with this number of servings. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
+      "The estimated amount of fat, in grams, in this dish for 1 serving. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
     ),
   saturates: z
     .number()
     .describe(
-      "The estimated amount of saturated fat ('of which saturates' so fill this in after the fat field), in grams, in this dish with this number of servings. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
+      "The estimated amount of saturated fat ('of which saturates' so fill this in after the fat field), in grams, in this dish for 1 serving. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
     ),
   carbohydrate: z
     .number()
     .describe(
-      "The estimated amount of carbohydrates, in grams, in this dish with this number of servings. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
+      "The estimated amount of carbohydrates, in grams, in this dish for 1 serving. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
     ),
   sugars: z
     .number()
     .describe(
-      "The estimated amount of sugars ('of which sugars' so fill this in after the carbohydrate field), in grams, in this dish with this number of servings. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
+      "The estimated amount of sugars ('of which sugars' so fill this in after the carbohydrate field), in grams, in this dish for 1 serving. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
     ),
   protein: z
     .number()
     .describe(
-      "The estimated amount of protein, in grams, in this dish with this number of servings. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
+      "The estimated amount of protein, in grams, in this dish for 1 serving. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
     ),
   salt: z
     .number()
     .describe(
-      "The estimated amount of salt, in grams, in this dish with this number of servings. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
+      "The estimated amount of salt, in grams, in this dish for 1 serving. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
     ),
 });
 
@@ -665,8 +665,8 @@ async function generateNutritionalValues(
       {
         role: "system",
         content:
-          "Return in the required schema and ensure it is scaled to the number of servings. Use British standards. " +
-          "Generate the nutritional values as requested in the schema for the provided recipe.",
+          "Return in the required schema and ensure it is given for 1 serving, considering the servings provided in the recipe. Use British standards. " +
+          "Generate the nutritional values as requested in the schema for the provided recipe. If your answer contains a decimal, ensure it is to at most 2 decimal places.",
       },
       {
         role: "user",

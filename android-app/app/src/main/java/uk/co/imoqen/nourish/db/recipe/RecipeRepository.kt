@@ -53,7 +53,7 @@ interface RecipeRepository {
     // RECIPE QUERY LOGIC:
     suspend fun insertRecipeQuery(recipeQuery: RecipeQuery)
     suspend fun updateRecipeQuery(recipeQuery: RecipeQuery)
-    fun getAllQueriesForRecipe(recipeId: Long): Flow<RecipeQuery?>
+    fun getAllQueriesForRecipe(recipeId: Long): Flow<List<RecipeQuery?>>
 
     /**
      * Creates a recipe in the database and its corresponding entities

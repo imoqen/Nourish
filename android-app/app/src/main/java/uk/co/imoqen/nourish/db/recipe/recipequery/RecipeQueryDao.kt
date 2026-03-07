@@ -5,7 +5,6 @@ import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
-import uk.co.imoqen.nourish.db.recipe.recipenutrition.RecipeNutrition
 
 @Dao
 interface RecipeQueryDao {
@@ -20,7 +19,7 @@ interface RecipeQueryDao {
     fun getById(id: Long): Flow<RecipeQuery?>
 
     @Query("SELECT * FROM RecipeQuery WHERE recipeId = :recipeId")
-    fun getAllByRecipeId(recipeId: Long): Flow<RecipeQuery?>
+    fun getAllByRecipeId(recipeId: Long): Flow<List<RecipeQuery?>>
 
     @Update
     suspend fun update(recipeQuery: RecipeQuery)
