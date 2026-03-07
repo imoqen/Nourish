@@ -50,14 +50,69 @@ app.use(express.json());
 initializeApp(); // admin sdk initialised, uses application default credentials
 const db = getFirestore();
 
-// Units:
-// these will be switched dynamically using user preferences
+// Units: given as metric, something to address in the future would be also adding support for imperial which the software has the capacity to do but was not implemented for simplicity.
 const metricUnits =
   "TSP, TBSP, ML, L, G, KG, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, CM, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit)";
-const imperialUnits =
-  "TSP, TBSP, FL_OZ, CUP, PINT, QUART, GALLON, OZ, LB, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, CM, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit)";
-
 // Schemas:
+
+// for nutrition:
+const NutritionSchemaZod = z.object({
+  servings: z
+    .number()
+    .int()
+    .describe(
+      "The number of servings of the provided recipe which the nutrition is scaled to. For example, if servings = 2, then the nutritional information should be given for 2 servings of the recipe. For simplicity, you can make this match the servings value in the provided recipe, so use the provided ingredients and amounts to calculate the nutrition.",
+    ),
+  calories: z
+    .number()
+    .int()
+    .describe(
+      "The estimated number of calories, in kcal, in this dish with this number of servings. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
+    ),
+  fat: z
+    .number()
+    .describe(
+      "The estimated amount of fat, in grams, in this dish with this number of servings. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
+    ),
+  saturates: z
+    .number()
+    .describe(
+      "The estimated amount of saturated fat ('of which saturates' so fill this in after the fat field), in grams, in this dish with this number of servings. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
+    ),
+  carbohydrate: z
+    .number()
+    .describe(
+      "The estimated amount of carbohydrates, in grams, in this dish with this number of servings. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
+    ),
+  sugars: z
+    .number()
+    .describe(
+      "The estimated amount of sugars ('of which sugars' so fill this in after the carbohydrate field), in grams, in this dish with this number of servings. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
+    ),
+  protein: z
+    .number()
+    .describe(
+      "The estimated amount of protein, in grams, in this dish with this number of servings. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
+    ),
+  salt: z
+    .number()
+    .describe(
+      "The estimated amount of salt, in grams, in this dish with this number of servings. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
+    ),
+});
+
+// for question:
+const QuestionAnswerSchemaZod = z.object({
+  answer: z
+    .string()
+    .describe(
+      "The answer to the user's question about the provided recipe. Keep it clear and concise, but ensure to go into as much detail as necessary to answer the question sufficiently." +
+        "As the question is regarding food, ensure you conform to food safety and hygiene standards. Answer in British English.",
+    ),
+});
+
+// for alteration: simply uses the existing recipe schema.
+
 // ingredients put together:
 // order is attempted to ensure that the result makes the most logical sense; e.g. LLM does not first fill in the amount as 1 (to use cups) but then realises cup is not an option.
 const IngredientSchemaZod = z.object({
@@ -392,7 +447,9 @@ async function generate(req, res, requestType) {
 async function generateAction(req, res, actionType) {
   try {
     // Extract and validate the prompt
-    const prompt = req.body?.prompt;
+    const query = req.body?.query;
+    const recipe = req.body?.recipe;
+
     const errorMessage = await validateRequest(req, prompt);
     if (errorMessage != "") {
       return res.status(400).json({ error: errorMessage });
@@ -406,7 +463,8 @@ async function generateAction(req, res, actionType) {
         result = await generateNutritionalValues(
           GOOGLE_CLOUD_PROJECT,
           GOOGLE_CLOUD_LOCATION,
-          prompt,
+          query,
+          recipe,
         );
         break;
       }
@@ -416,7 +474,8 @@ async function generateAction(req, res, actionType) {
         result = await generateQuestionAnswer(
           GOOGLE_CLOUD_PROJECT,
           GOOGLE_CLOUD_LOCATION,
-          prompt,
+          query,
+          recipe,
         );
         break;
       }
@@ -426,7 +485,8 @@ async function generateAction(req, res, actionType) {
         result = await generateAlteredRecipe(
           GOOGLE_CLOUD_PROJECT,
           GOOGLE_CLOUD_LOCATION,
-          prompt,
+          query,
+          recipe,
         );
         break;
       }
