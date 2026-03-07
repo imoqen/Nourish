@@ -416,7 +416,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
                     return@launch
                 }
 
-                apiManager.makeRetrofitCall(
+                apiManager.makeRetrofitLlmRequestCall(
                     type,
                     request,
                     tokenResult,
@@ -497,7 +497,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 LlmRequestType.RECIPE -> "Please enter a dish or description before sending the request."
                 LlmRequestType.DISHES_FROM_INGREDIENTS -> "Please enter ingredients or an image before sending the request."
                 LlmRequestType.DISHES_FROM_IMAGE, LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE, LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH -> "Please upload an image before sending the request."
-                LlmRequestType.RECIPE_QUERY, LlmRequestType.RECIPE_ALTERATION -> "" // do nothing - TODO in future.
             }
             uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(errorMessage))
             setLlmChatStage(LlmChatStage.USER_INPUT)

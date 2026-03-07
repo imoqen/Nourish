@@ -14,7 +14,9 @@ data class RecipeBookUiState(
     val recipeTags: List<TagSelection>? = null, // all of the recipe tags
     val recipeTypes: List<TypeSelection>? = null, // all of the recipe types
 
-    val llmAction: LlmAction = LlmAction.NONE
+    val llmAction: LlmAction = LlmAction.NONE,
+
+    val userActionRequest: String = "",
 )
 
 enum class LlmAction {

@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.RecipeActions
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.uievent.UiEvent
@@ -25,6 +26,7 @@ import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.recipe.RecipeWithRecipeSteps
 import uk.co.imoqen.nourish.db.recipe.RecipeWithRecipeTags
+import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeIngredient
 import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeWithRecipeIngredients
 import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSection
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
@@ -33,6 +35,17 @@ import uk.co.imoqen.nourish.db.tag.TagRepository
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.apimanager.ApiManager
+import uk.co.imoqen.nourish.network.request.LlmActionRequest
+import uk.co.imoqen.nourish.network.request.LlmActionType
+import uk.co.imoqen.nourish.network.request.LlmRequest
+import uk.co.imoqen.nourish.network.request.LlmRequestType
+import uk.co.imoqen.nourish.network.response.LlmDishesProposed
+import uk.co.imoqen.nourish.network.response.LlmIngredient
+import uk.co.imoqen.nourish.network.response.LlmIngredientSection
+import uk.co.imoqen.nourish.network.response.LlmRecipe
+import uk.co.imoqen.nourish.recipediscovery.LlmChatStage
+import uk.co.imoqen.nourish.recipediscovery.LlmMode
+import java.io.File
 import javax.inject.Inject
 import kotlin.collections.getOrPut
 
@@ -407,6 +420,129 @@ class RecipeBookViewModel @Inject constructor(
         ingredientAmount: Double
     ): String {
         return recipeActions.formatIngredientAmount(ingredientAmount)
+    }
+
+    // api
+
+    suspend fun parseRecipeToLlmRecipe(
+        recipe: Recipe
+    ): LlmRecipe {
+        val recipeIngredients = getRecipeIngredientsForRecipe(recipe.id).first()
+        val recipeType = findRecipeType(recipe.recipeTypeId)?.first ?: ""
+        val tags = getRecipeTagsForRecipe(recipe.id).first().recipeTags.map { tag ->
+            getTagByTagId(tag.tagId).first()?.identifier ?: ""
+        }
+
+        // build ingredients
+
+        val map: MutableMap<String, MutableList<LlmIngredient>> = mutableMapOf()
+        val allIngredients = getRecipeIngredientsForRecipe(recipe.id).first().ingredients
+
+        allIngredients.forEach { recipeIngredient ->
+            val section = getSectionById(recipeIngredient.sectionId).first()?.title ?: ""
+            val ingredient = getIngredientById(recipeIngredient.ingredientId).first()
+            map.getOrPut(section) { mutableListOf() }.add(LlmIngredient(
+                ingredientSingular = ingredient?.singular ?: "",
+                ingredientPlural = ingredient?.plural ?: "",
+                ingredientAmount = recipeIngredient.amount,
+                ingredientAmountUnit = recipeIngredient.ingredientUnit.name
+            ))
+        }
+
+        val ingredientsList: MutableList<LlmIngredientSection> = mutableListOf()
+        map.forEach { section, ingredients ->
+            ingredientsList.add(LlmIngredientSection(
+                section, ingredients
+            ))
+        }
+
+        val method = getRecipeStepsForRecipe(recipe.id).first().recipeSteps.map { step ->
+            step.instruction
+        }
+
+        return LlmRecipe(
+            title = recipe.title,
+            sectionIngredients = ingredientsList,
+            servings = recipe.numberOfServings,
+            mealType = recipeType,
+            method = method,
+            tags = tags,
+            storage = recipe.storageInstructions,
+            recipeNotPossible = false,
+            emoji = recipe.emoji
+        )
+    }
+
+    fun makeLlmApiCall(
+        type: LlmActionType,
+    ) {
+        viewModelScope.launch() {
+            runCatching {
+                val userPrompt = mutableUiState.value.userActionRequest
+                val recipe = mutableUiState.value.selectedRecipe
+
+                // validation
+                if (userPrompt == "") {
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("The input must not be blank to proceed."))
+                    return@launch
+                }
+                if (recipe == null) {
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("A recipe must be selected to proceed."))
+                    return@launch
+                }
+
+                // make it into a request:
+                val request = LlmActionRequest(parseRecipeToLlmRecipe(recipe), userPrompt)
+
+                // validate the user's token:
+                val tokenResult = authenticationManager.getUserToken()
+                if (tokenResult == null) {
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
+                    // error occurred; go back to the USER_INPUT stage (MAY NOT WORK: TEST THIS).
+                    return@launch
+                }
+
+                apiManager.makeRetrofitLlmActionCall(
+                    type,
+                    request,
+                    tokenResult,
+                    onQuestionAnswered = { llmQuestionResponse ->
+                        val llmAnswer = llmQuestionResponse?.answer
+                        if (llmAnswer != null) {
+                            viewModelScope.launch() {
+                                // add the answer to the DB and display to the user in the chat UI
+                            }
+                        }
+
+                    },
+                    onRecipeAltered = { llmRecipeResponse ->
+                        val llmRecipe = llmRecipeResponse?.llmRecipe
+                        if (llmRecipe != null) {
+                            viewModelScope.launch() {
+                                if (llmRecipe.recipeNotPossible) {
+                                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Valid recipe could not be generated. Please enter something different."))
+                                    return@launch
+                                }
+                                // display the recipe to the user. there will be a button to overwrite the exising recipe, or save as a new recipe. when clicked, this will do the according process.
+                            }
+                        }
+                    },
+                    onNutritionGenerated = { llmNutritionResponse ->
+                        val llmNutrition = llmNutritionResponse?.llmNutrition
+                        if (llmNutrition != null) {
+                            viewModelScope.launch() {
+                                // add nutrition to the DB and display to user.
+                            }
+                        }
+
+                    }
+                )
+            }
+                .onFailure {
+                    // error occurred
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
+                }
+        }
     }
 
 }
