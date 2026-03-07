@@ -28,6 +28,13 @@ const LlmRequestType = {
   RECIPE_ALTERATION: "RECIPE_ALTERATION",
 };
 
+// for actions
+const LlmActionType = {
+  NUTRITIONAL_VALUES: "NUTRITIONAL_VALUES",
+  ALTERATION: "ALTERATION",
+  QUESTION: "QUESTION",
+};
+
 // For storing image in memory with 2mb limit:
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -363,6 +370,63 @@ async function generate(req, res, requestType) {
           GOOGLE_CLOUD_PROJECT,
           GOOGLE_CLOUD_LOCATION,
           req,
+        );
+        break;
+      }
+    }
+
+    if (result == null) {
+      console.log("Error: LLM request failed; no result.");
+      return res.status(400).json({ error: "LLM request failed; no result." });
+    }
+
+    res.json(result);
+    return res;
+  } catch (e) {
+    console.error(e);
+    // throw 500 error because error happened on the server side (Internal Server Error)
+    return res.status(500).json({ error: e.message });
+  }
+}
+
+async function generateAction(req, res, actionType) {
+  try {
+    // Extract and validate the prompt
+    const prompt = req.body?.prompt;
+    const errorMessage = await validateRequest(req, prompt);
+    if (errorMessage != "") {
+      return res.status(400).json({ error: errorMessage });
+    }
+
+    // Perform the LLM request and retrieve the response, different request depending on the request type
+    let result;
+    switch (actionType) {
+      // generate nutritional values
+      case LlmActionType.NUTRITIONAL_VALUES: {
+        result = await generateNutritionalValues(
+          GOOGLE_CLOUD_PROJECT,
+          GOOGLE_CLOUD_LOCATION,
+          prompt,
+        );
+        break;
+      }
+
+      // generate an answer to the user's question
+      case LlmActionType.QUESTION: {
+        result = await generateQuestionAnswer(
+          GOOGLE_CLOUD_PROJECT,
+          GOOGLE_CLOUD_LOCATION,
+          prompt,
+        );
+        break;
+      }
+
+      // generate a new, altered recipe
+      case LlmActionType.ALTERATION: {
+        result = await generateAlteredRecipe(
+          GOOGLE_CLOUD_PROJECT,
+          GOOGLE_CLOUD_LOCATION,
+          prompt,
         );
         break;
       }
@@ -886,7 +950,8 @@ async function generateDishesFromImage(
   return result.structuredResponse;
 }
 
-// To run the POST endpoint:
+// generate recipes:
+
 app.post("/recipe", async (req, res) => {
   await generate(req, res, LlmRequestType.RECIPE);
 });
@@ -914,6 +979,20 @@ app.post(
     await generate(req, res, LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH);
   },
 );
+
+// actions on already generated recipes:
+
+app.post("/recipe-nutrition", async (req, res) => {
+  await generateAction(req, res, LlmActionType.NUTRITIONAL_VALUES);
+});
+
+app.post("query-recipe", async (req, res) => {
+  await generateAction(req, res, LlmActionType.QUESTION);
+});
+
+app.post("/alter-recipe", async (req, res) => {
+  await generateAction(req, res, LlmActionType.ALTERATION);
+});
 
 const port = process.env.PORT || 8080;
 app.listen(port, () => console.log("Nourish endpoints are now live."));
