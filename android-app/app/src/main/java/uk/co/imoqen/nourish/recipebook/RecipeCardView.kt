@@ -489,6 +489,7 @@ fun RecipeCard(
 
                 NourishIconTextButton(
                     onClick = {
+                        recipeBookViewModel.setUserActionRequest("")
                         recipeBookViewModel.setLlmAction(LlmAction.ALTERATION)
                         recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
                               },
@@ -499,6 +500,7 @@ fun RecipeCard(
 
                 NourishIconTextButton(
                     onClick = {
+                        recipeBookViewModel.setUserActionRequest("")
                         recipeBookViewModel.setLlmAction(LlmAction.QUESTION)
                         recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
                               },
