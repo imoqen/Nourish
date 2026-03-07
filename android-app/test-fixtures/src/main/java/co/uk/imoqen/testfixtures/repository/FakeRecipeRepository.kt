@@ -8,6 +8,8 @@ import uk.co.imoqen.nourish.db.recipe.RecipeWithRecipeTags
 import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeIngredient
 import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeWithRecipeIngredients
 import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSection
+import uk.co.imoqen.nourish.db.recipe.recipenutrition.RecipeNutrition
+import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQuery
 import uk.co.imoqen.nourish.db.recipe.recipestep.RecipeStep
 import uk.co.imoqen.nourish.db.recipe.recipetag.RecipeTag
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
@@ -97,11 +99,63 @@ class FakeRecipeRepository(): RecipeRepository {
         TODO("Not yet implemented")
     }
 
+    override suspend fun insertRecipeNutrition(recipeNutrition: RecipeNutrition) {
+        TODO("Not yet implemented")
+    }
+
+    override fun getNutritionForRecipe(recipeId: Long): Flow<RecipeNutrition?> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun deleteNutritionForRecipeId(recipeId: Long) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun insertRecipeQuery(recipeQuery: RecipeQuery): Long {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun updateRecipeQuery(recipeQuery: RecipeQuery) {
+        TODO("Not yet implemented")
+    }
+
+    override fun getAllQueriesForRecipe(recipeId: Long): Flow<List<RecipeQuery?>> {
+        TODO("Not yet implemented")
+    }
+
+    override fun getRecipeQueryById(recipeQueryId: Long): Flow<RecipeQuery?> {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun createRecipe(
         uid: String,
         llmRecipe: LlmRecipe,
+        recipeId: Long,
         imagePath: String
     ) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun replaceRecipe(
+        currentRecipe: Recipe,
+        newRecipe: LlmRecipe
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun updateRecipeIngredient(recipeIngredient: RecipeIngredient) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun scaleRecipe(
+        recipe: Recipe,
+        currentServingSize: Int,
+        increase: Boolean
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun updateRecipe(recipe: Recipe) {
         TODO("Not yet implemented")
     }
 }

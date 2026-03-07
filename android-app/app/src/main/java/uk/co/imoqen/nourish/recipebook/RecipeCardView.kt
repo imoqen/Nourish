@@ -691,6 +691,24 @@ fun AlterationLlmAction(
                                 )
                             }
                         }
+                        item {
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                HorizontalDivider(modifier = Modifier.padding(bottom=8.dp))
+                                Text(
+                                    "Please note that all answers are produced by Gemini; as such, there may be mistakes.",
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    "Consult a dietitian or doctor for personalised, accurate nutritional advice.",
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
                     }
                     NourishTextDivider("Try another alteration")
                 }

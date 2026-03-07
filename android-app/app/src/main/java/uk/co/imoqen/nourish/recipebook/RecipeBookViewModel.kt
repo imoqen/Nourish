@@ -263,7 +263,6 @@ class RecipeBookViewModel @Inject constructor(
                     Log.i("recipe book", "successfully parsed into recipe card")
                 }
                 .onFailure { e ->
-                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("The recipe could not be displayed. Please try again later."))
                     Log.i("recipe book", "failed: $e")
                 }
         }
