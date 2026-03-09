@@ -79,6 +79,7 @@ import uk.co.imoqen.nourish.common.TypesDisplayForFiltering
 import uk.co.imoqen.nourish.common.backgroundColour
 import uk.co.imoqen.nourish.common.dimmedBackgroundColour
 import uk.co.imoqen.nourish.common.onBackgroundColour
+import uk.co.imoqen.nourish.common.recipeColour
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import java.io.File
 import kotlin.enumValueOf
@@ -309,7 +310,15 @@ fun RecipeList(
                                                             ImageCardHeader(
                                                                 recipeCardUnexpanded.imagePath,
                                                                 recipeCardUnexpanded.emoji,
-                                                                context
+                                                                context,
+                                                                enumValueOf<NourishColour>(
+                                                                    if (recipeCardUnexpanded.colour == "") {
+                                                                        "RED" // colour not defined
+                                                                    }
+                                                                    else {
+                                                                        recipeCardUnexpanded.colour.uppercase()
+                                                                    }
+                                                                ).recipeColour()
                                                             )
 
                                                             Column(
@@ -412,6 +421,7 @@ fun ImageCardHeader(
     imagePath: String,
     emoji: String,
     context: Context,
+    colour: Color,
     fillMaxWidth: Boolean = false
 ) {
     Box(
@@ -458,7 +468,7 @@ fun ImageCardHeader(
                 modifier = if (fillMaxWidth) { Modifier.fillMaxWidth() } else { Modifier.width(240.dp)  }// matches the card width
                     .height(100.dp)
                     .background(
-                        MaterialTheme.colorScheme.error
+                        color = colour
                     ) // put the chosen colour
             )
         }

@@ -91,6 +91,7 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.IndeterminateCircularIndicator
 import uk.co.imoqen.nourish.common.NourishButton
+import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.NourishDivider
 import uk.co.imoqen.nourish.common.NourishH1
 import uk.co.imoqen.nourish.common.NourishH2
@@ -103,6 +104,7 @@ import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.common.NourishTextMessage
 import uk.co.imoqen.nourish.common.TextSender
 import uk.co.imoqen.nourish.common.onBackgroundColour
+import uk.co.imoqen.nourish.common.recipeColour
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQuery
 import uk.co.imoqen.nourish.network.request.LlmActionType
@@ -158,6 +160,11 @@ fun RecipeCard(
 
         if (recipeCard != null) {
             val imagePath = recipeCard.imagePath
+            val colour = if (uiState.selectedRecipe != null && uiState.selectedRecipe.colour != "") {
+                enumValueOf<NourishColour>(uiState.selectedRecipe.colour.uppercase()).recipeColour()
+            } else {
+                enumValueOf<NourishColour>("RED").recipeColour() // colour not defined
+            }
             Card(
 
             ) {
@@ -220,7 +227,7 @@ fun RecipeCard(
                                     modifier = Modifier
                                         .fillMaxWidth() // matches the card width
                                         .height(160.dp - 92.dp + 64.dp + 32.dp) // takes up much less space because no image
-                                        .background(MaterialTheme.colorScheme.error) // put the chosen colour
+                                        .background(colour) // put the chosen colour
                                 )
                             }
                         }

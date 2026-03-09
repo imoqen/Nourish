@@ -53,6 +53,7 @@ const db = getFirestore();
 // Units: given as metric, something to address in the future would be also adding support for imperial which the software has the capacity to do but was not implemented for simplicity.
 const metricUnits =
   "TSP, TBSP, ML, L, G, KG, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, CM, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit)";
+const ingredientUnitList = metricUnits.split(",").map((v) => v.trim());
 // Schemas:
 
 // for nutrition:
@@ -130,7 +131,7 @@ const IngredientSchemaZod = z.object({
         "Do not include the amount or unit here; this will go in ingredientAmount and ingredientAmountsUnit, respectively.",
     ),
   ingredientAmountUnit: z
-    .enum(metricUnits)
+    .enum(ingredientUnitList)
     .describe(
       "Fill this in third. The unit of the ingredient corresponding to ingredientSingular, and the amount given in ingredientAmount. " +
         "Ensure that the unit makes sense, for example only use an approximate unit (such as splash, sprinkle, dash, etc) if the corresponding amount itself is a whole number - otherwise use a unit reflective of the precision (e.g. tsp, tbsp, ml)" +
@@ -153,7 +154,7 @@ function recipeSchemaZod(allNutritionalFilters, dishType) {
     .map((v) => v.trim());
   const dishTypeList = dishType.split(",").map((v) => v.trim());
   console.log("nutritional filter list: ", nutritionalFilterList);
-  console.log("dish type list: ", nutritionalFilterList);
+  console.log("dish type list: ", dishTypeList);
 
   return z.object({
     title: z

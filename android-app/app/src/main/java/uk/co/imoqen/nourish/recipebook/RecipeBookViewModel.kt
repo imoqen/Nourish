@@ -372,7 +372,8 @@ class RecipeBookViewModel @Inject constructor(
                         recipeTags = buildRecipeTags(recipe.id),
                         imagePath = recipe.imagePath,
                         emoji = recipe.emoji,
-                        recipeId = recipe.id
+                        recipeId = recipe.id,
+                        colour = recipe.colour
                     )
 
                     if (type == null) {
@@ -514,7 +515,8 @@ class RecipeBookViewModel @Inject constructor(
             tags = tags,
             storage = recipe.storageInstructions,
             recipeNotPossible = false,
-            emoji = recipe.emoji
+            emoji = recipe.emoji,
+            colour = recipe.colour
         )
     }
 

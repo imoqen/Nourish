@@ -62,7 +62,8 @@ data class RecipeCardUnexpanded(
     val recipeTags: MutableList<Pair<String, NourishColour>>,
     val imagePath: String,
     val emoji: String,
-    val recipeId: Long
+    val recipeId: Long,
+    val colour: String // from the NourishColour enum then will be read using enum.valueof<nourishcolour>
 )
 
 data class UiRecipeTag(

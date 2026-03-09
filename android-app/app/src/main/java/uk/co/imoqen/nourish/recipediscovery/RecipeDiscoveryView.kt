@@ -103,6 +103,7 @@ import uk.co.imoqen.nourish.common.TypesDisplayForMutuallyExclusiveFiltering
 import uk.co.imoqen.nourish.common.backgroundColour
 import uk.co.imoqen.nourish.common.dimmedBackgroundColour
 import uk.co.imoqen.nourish.common.onBackgroundColour
+import uk.co.imoqen.nourish.common.recipeColour
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
@@ -774,6 +775,14 @@ fun RecipeCardPreview(
             imageFilename,
             recipe.emoji,
             context,
+            enumValueOf<NourishColour>(
+                if (recipe.colour == "") {
+                    "RED" // colour not defined
+                }
+                else {
+                    recipe.colour.uppercase()
+                }
+            ).recipeColour(),
             fillMaxWidth = true // fill the width of the llm response.
         )
 

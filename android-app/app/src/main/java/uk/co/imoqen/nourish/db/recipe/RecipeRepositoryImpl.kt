@@ -3,6 +3,8 @@ package uk.co.imoqen.nourish.db.recipe
 import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import uk.co.imoqen.nourish.common.NourishColour
+import uk.co.imoqen.nourish.common.recipeColour
 import uk.co.imoqen.nourish.db.NourishDatabase
 import uk.co.imoqen.nourish.db.ingredient.Ingredient
 import uk.co.imoqen.nourish.db.ingredient.IngredientRepositoryImpl
@@ -139,7 +141,7 @@ class RecipeRepositoryImpl @Inject constructor(
                     authorUid = uid,
                     title = llmRecipe.title,
                     numberOfServings = llmRecipe.servings.toInt(),
-                    colour = "todo",
+                    colour = llmRecipe.colour.uppercase(),
                     generated = true,
                     imagePath = imagePath,
                     archived = false,
