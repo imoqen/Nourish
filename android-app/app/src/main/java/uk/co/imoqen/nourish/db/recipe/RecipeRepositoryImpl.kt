@@ -268,12 +268,13 @@ class RecipeRepositoryImpl @Inject constructor(
         // oir just save the original recipe id, then add recipe USING that recipe id.
         val originalRecipeId = currentRecipe.id
         val originalRecipeAuthor = currentRecipe.authorUid
+        val originalRecipeImagePath = currentRecipe.imagePath
 
         // the previous nutritional values get deleted as they will no longer be accurate
         deleteNutritionForRecipeId(originalRecipeId)
 
         recipeDao.delete(currentRecipe)
-        createRecipe(originalRecipeAuthor,newRecipe, originalRecipeId)
+        createRecipe(originalRecipeAuthor,newRecipe, originalRecipeId, originalRecipeImagePath)
     }
 
 }
