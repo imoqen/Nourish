@@ -56,7 +56,7 @@ data class RecipeDiscoveryUiState(
 
     val llmChatStage: LlmChatStage = LlmChatStage.USER_SELECT_OPTION, // begsina t the first stage
 
-    val llmGeneratedRecipe: LlmRecipe? = null
+    val llmGeneratedRecipe: LlmRecipe? = null,
 )
 
 data class Mipmap(

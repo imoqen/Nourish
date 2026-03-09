@@ -60,13 +60,13 @@ fun NourishColour.onBackgroundColour(): Color = when (this) { // used for backgr
 
 @Composable
 fun NourishColour.recipeColour(): Color = when (this) {
-    NourishColour.RED -> Color(0xFFD58888)
-    NourishColour.PINK -> Color(0xFFC889CC)
-    NourishColour.ORANGE -> Color(0xFFD5A17A)
-    NourishColour.YELLOW -> Color(0xFFDAD28B)
-    NourishColour.GREEN -> Color(0xFF8CCB82)
-    NourishColour.BLUE -> Color(0xFF7FC7C3)
-    NourishColour.PURPLE -> Color(0xFF8F81CC)
+    NourishColour.RED -> Color(0xFFFFB9B9)
+    NourishColour.PINK -> Color(0xFFFAC0FF)
+    NourishColour.ORANGE -> Color(0xFFFFD09C)
+    NourishColour.YELLOW -> Color(0xFFFFF69D)
+    NourishColour.GREEN -> Color(0xFFC2FFB9)
+    NourishColour.BLUE -> Color(0xFFBBFFF9)
+    NourishColour.PURPLE -> Color(0xFFC8BBFF)
     NourishColour.GREY -> Color(0xFFC0C0C0)
-    NourishColour.BROWN -> Color(0xFFB68371)
+    NourishColour.BROWN -> Color(0xFFC99380)
 }

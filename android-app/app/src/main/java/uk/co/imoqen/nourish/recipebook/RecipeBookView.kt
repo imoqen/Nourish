@@ -311,14 +311,7 @@ fun RecipeList(
                                                                 recipeCardUnexpanded.imagePath,
                                                                 recipeCardUnexpanded.emoji,
                                                                 context,
-                                                                enumValueOf<NourishColour>(
-                                                                    if (recipeCardUnexpanded.colour == "") {
-                                                                        "RED" // colour not defined
-                                                                    }
-                                                                    else {
-                                                                        recipeCardUnexpanded.colour.uppercase()
-                                                                    }
-                                                                ).recipeColour()
+                                                                recipeCardUnexpanded.colour.recipeColour()
                                                             )
 
                                                             Column(

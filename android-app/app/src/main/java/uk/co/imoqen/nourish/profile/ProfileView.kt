@@ -188,7 +188,7 @@ fun ProfileScreen(
                         }
                         // Case: Google-provider account
                         else {
-                            NourishText("Confirm by signing back in to google")
+                            NourishText("Confirm by signing back in to Google")
                             val activity = LocalActivity.current
 
                             NourishDangerButton(

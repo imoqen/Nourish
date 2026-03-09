@@ -160,14 +160,9 @@ fun RecipeCard(
 
         if (recipeCard != null) {
             val imagePath = recipeCard.imagePath
-            val colour = if (uiState.selectedRecipe != null && uiState.selectedRecipe.colour != "") {
-                enumValueOf<NourishColour>(uiState.selectedRecipe.colour.uppercase()).recipeColour()
-            } else {
-                enumValueOf<NourishColour>("RED").recipeColour() // colour not defined
-            }
-            Card(
+            val colour = recipeCard.colour.recipeColour()
 
-            ) {
+            Card() {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -656,7 +651,7 @@ fun AlterationLlmAction(
                                     uiState.alteredRecipe,
                                     viewModel::formatIngredientText,
                                     imageFilename = recipe.imagePath,
-                                    context = LocalContext.current
+                                    context = LocalContext.current,
                                 )
 
                             }

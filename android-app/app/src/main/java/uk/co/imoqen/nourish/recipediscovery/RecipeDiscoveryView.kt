@@ -775,14 +775,7 @@ fun RecipeCardPreview(
             imageFilename,
             recipe.emoji,
             context,
-            enumValueOf<NourishColour>(
-                if (recipe.colour == "") {
-                    "RED" // colour not defined
-                }
-                else {
-                    recipe.colour.uppercase()
-                }
-            ).recipeColour(),
+            enumValueOf<NourishColour>(recipe.colour.uppercase()).recipeColour(),
             fillMaxWidth = true // fill the width of the llm response.
         )
 
