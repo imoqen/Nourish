@@ -18,10 +18,11 @@ import java.util.UUID
 // and for saving: https://github.com/philipplackner/ImageCompression/blob/master/app/src/main/java/com/plcoding/imagecompression/FileManager.kt
 
 // compress the image to ensure low file size for sending to cloud run service and LLM
-fun compressImage(
+// returns a mipmap of pair low qual, high qual
+fun produceMipmap(
     uri: Uri,
     contentResolver: ContentResolver
-): ByteArray? {
+): Pair<ByteArray, ByteArray>? {
     // Get the bitmap from the uri of the image:
     var bitmap: Bitmap? = null
     try {
@@ -45,19 +46,32 @@ fun compressImage(
             bitmap = bitmap.scale(newWidth, newHeight, false)
         }
         // Compress: 2nd param is compression quality 0-100; 25 is highly compressed.
-        val byteArrayOutputStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 25, byteArrayOutputStream)
-        val fileInBytes: ByteArray = byteArrayOutputStream.toByteArray()
-        return fileInBytes
+        // MIP MAPPING APPROACH: the highly compressed (25) is used to send to the LLM. the less compressed (50) is used to
+        // be displayed to the user.
+        val lowQuality = compressImage(bitmap, 25) // 25% of original quality
+        val highQuality = compressImage(bitmap, 75) // 75% of original quality
+        if (lowQuality != null && highQuality != null) {
+            return Pair(lowQuality, highQuality) // first is low qual, second is high qual
+        }
     }
     return null
 }
 
+fun compressImage(
+    bitmap: Bitmap,
+    quality: Int // val from 0 to 100: 100 is 100% of original quality, 25 is 25% of original quality etc. so lower = lower quality.
+): ByteArray? {
+    val byteArrayOutputStream = ByteArrayOutputStream()
+    bitmap.compress(Bitmap.CompressFormat.JPEG, quality, byteArrayOutputStream)
+    val fileInBytes: ByteArray = byteArrayOutputStream.toByteArray()
+    return fileInBytes
+}
+
 // save the image locally to be used when making the llm call
-suspend fun saveImage(
+suspend fun saveMipmap(
     uri: Uri?,
     context: Context,
-    onSave: (String) -> Unit
+    onSave: (String, String) -> Unit
 ) {
     if (uri != null) {
         Log.d("PhotoPicker", "Selected URI: $uri")
@@ -67,25 +81,36 @@ suspend fun saveImage(
         val mimeType = contentResolver.getType(uri)
         // gets the file type:
         val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
-        val compressedByteArray = compressImage(uri, contentResolver)
+        val compressedByteArrayMipmap = produceMipmap(uri, contentResolver)
 
-        if (compressedByteArray != null) {
+        if (compressedByteArrayMipmap != null) {
             val time = System.currentTimeMillis()
-            val filename = "compressed-recipe-image-$time-${UUID.randomUUID()}.$extension"
-            withContext(Dispatchers.IO) {
-                Log.d("IMG", "Saving $filename exists=${context.getFileStreamPath(filename).exists()}")
-                context
-                    // save to internal storage
-                    // filename, context mode, then writes to the byte array
-                    .openFileOutput(filename, Context.MODE_PRIVATE)
-                    .use { outputStream ->
-                        outputStream.write(compressedByteArray)
-                    }
-                    onSave(filename)
-            }
+            val lowQualityFilename = "compressed-low-quality-recipe-image-$time.$extension"
+            val highQualityFilename = "compressed-high-quality-recipe-image-$time.$extension"
+            saveImage(lowQualityFilename, compressedByteArrayMipmap.first, context)
+            saveImage(highQualityFilename, compressedByteArrayMipmap.second, context)
+            onSave(lowQualityFilename, highQualityFilename)
         }
     } else {
         Log.d("PhotoPicker", "No media selected")
     }
 }
+
+suspend fun saveImage(
+    filename: String,
+    byteArray: ByteArray,
+    context: Context
+) {
+    withContext(Dispatchers.IO) {
+        Log.d("IMG", "Saving $filename exists=${context.getFileStreamPath(filename).exists()}")
+        context
+            // save to internal storage
+            // filename, context mode, then writes to the byte array
+            .openFileOutput(filename, Context.MODE_PRIVATE)
+            .use { outputStream ->
+                outputStream.write(byteArray)
+            }
+    }
+}
+
 

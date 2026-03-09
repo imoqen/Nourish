@@ -242,9 +242,10 @@ fun RecipeDiscoveryScreen(
                 modifier = Modifier.fillMaxSize()
             ) {
 
-                if (uiState.savedImageFilename != "") {
+                // display the higher quality image
+                if (uiState.savedImageMipmap.highQualityFilename != "") {
                     val context = LocalContext.current
-                    val imageFile = File(context.filesDir, uiState.savedImageFilename)
+                    val imageFile = File(context.filesDir, uiState.savedImageMipmap.highQualityFilename)
                     if (imageFile.exists()) {
                         //Use Coil to display the selected image
                         val painter = rememberAsyncImagePainter(
@@ -713,8 +714,9 @@ fun GeneratedRecipe(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // higher quality image is displayed
         RecipeCardPreview(
-            recipe, viewModel::formatIngredientText, uiState.savedImageFilename,
+            recipe, viewModel::formatIngredientText, uiState.savedImageMipmap.highQualityFilename,
             context, uiState.recipeTags
         )
 
@@ -914,14 +916,15 @@ fun generateRecipeFromChosenDish(
     }
 
     // Make the LLM API call depending on whether an image or ingredients were included
-    if (uiState.savedImageFilename == "") {
+    // lower quality image is sent to llm rather than high quality; mipmapping
+    if (uiState.savedImageMipmap.lowQualityFilename == "") {
         // generate without image
         viewModel.makeLlmApiCall(LlmRequestType.RECIPE)
     } else {
         // generate with image
         viewModel.makeLlmApiCall(
             LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH,
-            uiState.savedImageFilename,
+            uiState.savedImageMipmap.lowQualityFilename,
             context.filesDir
         )
     }
@@ -971,7 +974,7 @@ fun UserInputSection(
                 modifier = Modifier
                     .fillMaxWidth(
                         // if image, only take up half the screen to allow the image to have space.
-                        if (uiState.savedImageFilename != "") {
+                        if (uiState.savedImageMipmap.highQualityFilename != "") {
                             0.6f
                         } else {
                             1.0f
@@ -1304,7 +1307,7 @@ fun UserInputSection(
                     onDone = { keyboardFocusManager.clearFocus() },
                     modifier =
                         // make the search bar fill the max width if: in from_description mode (cannot upload image), or an image has been uploaded (so cannot upload another)
-                        if (uiState.userChoice == LlmMode.FROM_DESCRIPTION || uiState.savedImageFilename != "") {
+                        if (uiState.userChoice == LlmMode.FROM_DESCRIPTION || uiState.savedImageMipmap != Mipmap("","")) {
                             Modifier.fillMaxWidth()
                         } // only leaves space for cam if needed
                         else {
@@ -1324,7 +1327,7 @@ fun UserInputSection(
                     alwaysDisplayTrailingIcon = true
                 )
                 // only allow image upload if not exist already
-                if (uiState.savedImageFilename == "" && uiState.userChoice != LlmMode.FROM_DESCRIPTION) {
+                if (uiState.savedImageMipmap == Mipmap("","") && uiState.userChoice != LlmMode.FROM_DESCRIPTION) {
                     NourishIconButton(
                         onClick = {
                             pickMedia.launch(
@@ -1353,8 +1356,10 @@ fun UserUploadedImage(
     allowDelete: Boolean = false
 ) {
     // image is above if selected:
-    if (uiState.savedImageFilename != "") {
-        val imageFile = File(context.filesDir, uiState.savedImageFilename)
+    val mipmapImageFilenames = uiState.savedImageMipmap
+    if (mipmapImageFilenames != Mipmap("","")) {
+        // display higher quality image to user
+        val imageFile = File(context.filesDir, mipmapImageFilenames.highQualityFilename)
         if (imageFile.exists()) {
             //Use Coil to display the selected image
             val painter = rememberAsyncImagePainter(
@@ -1415,9 +1420,14 @@ fun UserUploadedImage(
                     if (allowDelete) {
                         NourishIconButton(
                             onClick = {
-                                imageFile.delete(); viewModel.setSavedImageFilename(
-                                ""
-                            )
+                                imageFile.delete(); // deletes higher quality image
+                                // also delete lower quality image if it exists
+                                val lowQualityImageFile = File(context.filesDir, mipmapImageFilenames.lowQualityFilename)
+                                if (lowQualityImageFile.exists()) {
+                                    lowQualityImageFile.delete()
+                                }
+                                viewModel.setSavedImageMipmap(Mipmap("",""))
+
                                 // revert back to normal ingredient mode if in ingredient mode:
                                 if (uiState.userChoice == LlmMode.FROM_INGREDIENTS) {
                                     viewModel.setRequestType(LlmRequestType.DISHES_FROM_INGREDIENTS)
@@ -1446,35 +1456,42 @@ fun sendToLlm(
     context: Context
 ) {
     var validRequest = false
+    val lowQualityFilename = uiState.savedImageMipmap.lowQualityFilename
 
-    if (uiState.savedImageFilename == "" && uiState.requestType == LlmRequestType.RECIPE && uiState.userRequest != "") {
+    if (lowQualityFilename == "" && uiState.requestType == LlmRequestType.RECIPE && uiState.userRequest != "") {
         // generate recipe from text
         viewModel.makeLlmApiCall(uiState.requestType) // make llm call
         validRequest = true
+        // then as the data has been sent and not needed anymore (as recipe generated), can delete the compressed image (low quality image file): as only need high quality after this.
+        val lowQualityImageFile = File(context.filesDir, lowQualityFilename)
+        if (lowQualityImageFile.exists()) {
+            lowQualityImageFile.delete()
+            // note that the compressed image can only be deleted here, not after dish generation etc as it will be reused when sending to the llm to generate the chosen recipe. so this is the only safe place to delete it.
+        }
     }
 
     // generate potential dishes from ingredients list:
-    else if (uiState.savedImageFilename == "" && uiState.requestType == LlmRequestType.DISHES_FROM_INGREDIENTS && uiState.userRequest != "") {
+    else if (lowQualityFilename == "" && uiState.requestType == LlmRequestType.DISHES_FROM_INGREDIENTS && uiState.userRequest != "") {
         viewModel.makeLlmApiCall(uiState.requestType)
         validRequest = true
     }
 
     // generate potential dishes from image of ingredients, e.g. image of contents of a fridge:
-    else if (uiState.savedImageFilename != "" && uiState.requestType == LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE) {
+    else if (lowQualityFilename != "" && uiState.requestType == LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE) {
         viewModel.makeLlmApiCall(
             uiState.requestType,
-            uiState.savedImageFilename,
+            lowQualityFilename,
             context.filesDir
         )
         validRequest = true
     }
 
     // generate potential dishes from an image of a dish, e.g. image of pasta:
-    else if (uiState.savedImageFilename != "" && uiState.requestType == LlmRequestType.DISHES_FROM_IMAGE) {
+    else if (lowQualityFilename != "" && uiState.requestType == LlmRequestType.DISHES_FROM_IMAGE) {
         // generate recipe from image
         viewModel.makeLlmApiCall(
             uiState.requestType,
-            uiState.savedImageFilename,
+            lowQualityFilename,
             context.filesDir
         )
         validRequest = true
