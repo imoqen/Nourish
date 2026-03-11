@@ -208,7 +208,7 @@ class RecipeActions @Inject constructor(
         ingredientAmount: Double,
     ): Boolean {
         // plural form should be used in most cases; just a few cases where it shouldn't.
-        return ingredientAmount != 1.0 // if only 1, should always be singular.
+        return "%.2f".format(round(ingredientAmount*4)/4).toDouble() != 1.0 // if only 1, should always be singular.
     }
 
     fun determineIngredientPlurality(

@@ -210,13 +210,8 @@ class RecipeBookViewModel @Inject constructor(
                         return@launch // error
                     }
 
-                    //TODO if the ingredient amount is very small like tsp, then should simply store this as unit AND
-                    // ignore the amount. as only should need to ever buy one ofthese (e..g tsp salt -> salt.) so set amount to 1g always if tsp. and dont let them add up.
-                    // potentially do same for very small g values too etc e.g. 5g salt -> just salt. no one is going to buy just 5g of salt
-                    // lets say if the amount is less than 15g then just say buy the item itself.
-
                     val unit = recipeIngredient.ingredientUnit
-                    val amount = recipeIngredient.amount
+                    val amount = recipeIngredient.amount * recipe.numberOfServings // multiply by the desired serving size of the user
 
                     val existingIngredientIndex =
                         (shoppingListIngredients.indexOfFirst {
@@ -468,6 +463,8 @@ class RecipeBookViewModel @Inject constructor(
         recipeIngredients: RecipeWithRecipeIngredients?
     ): MutableMap<String, MutableList<Triple<String, Double, Long>>>? {
         if (recipeIngredients == null) { return null }
+        val recipe = mutableUiState.value.selectedRecipe
+        if (recipe == null) { return null }
 
         // map with key sectionTitle and value of list of pair of ingredient string and ingredient id (so it can be referenced in future)
         val sectionsWithIngredients: MutableMap<String, MutableList<Triple<String, Double, Long>>> = mutableMapOf()
@@ -482,7 +479,7 @@ class RecipeBookViewModel @Inject constructor(
             // determine pluralities
             val ingredientAmount = ingredient.amount
             val ingredientUnit = ingredient.ingredientUnit
-            val unit = if (recipeActions.determineUnitPlurality(ingredientAmount)) {
+            val unit = if (recipeActions.determineUnitPlurality(ingredientAmount*recipe.numberOfServings)) { // scaled to num servings
                 ingredientUnit.pluralName
             } else {
                 ingredientUnit.singularName
@@ -623,10 +620,11 @@ class RecipeBookViewModel @Inject constructor(
 
     // recipe actions
     fun formatAndScaleIngredientAmount(
-        ingredientAmount: Double
+        ingredientAmount: Double,
+        scale: Boolean = true // so that not scale in shopping list, as the scale is computed BEFORE outputting, unlike for recipe where the original values should remain.
     ): String {
         // scale the ingredient amount by the desired number of servings set by user:
-        val numServings = mutableUiState.value.selectedRecipe?.numberOfServings ?: 1
+        val numServings = if (scale) { mutableUiState.value.selectedRecipe?.numberOfServings ?: 1 } else 1
         var scaledAmount = ingredientAmount*numServings
         if (scaledAmount < 0.25) {
             scaledAmount = 0.25 // cant go less than 0.25

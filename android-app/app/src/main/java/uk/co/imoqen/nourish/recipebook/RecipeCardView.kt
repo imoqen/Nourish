@@ -437,7 +437,7 @@ fun RecipeCard(
 
                                                     // if the unit is tsp or plural, dont display it.
                                                     Row() {
-                                                        Text("${ingredient.plural} ${recipeBookViewModel.formatAndScaleIngredientAmount(ingredient.amount)} ${ingredient.unit}")
+                                                        Text("${ingredient.plural} ${recipeBookViewModel.formatAndScaleIngredientAmount(ingredient.amount, scale=false)} ${ingredient.unit}")
                                                         Checkbox(
                                                             modifier = Modifier.padding(0.dp),
                                                             checked = selected,
