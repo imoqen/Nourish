@@ -209,37 +209,46 @@ class RecipeBookViewModel @Inject constructor(
                     if (ingredient == null) {
                         return@launch // error
                     }
+                    // dont add water - dont need to buy that (in UK)
+                    if (ingredient.singular.lowercase() != "water") {
 
-                    val unit = recipeIngredient.ingredientUnit
-                    val amount = recipeIngredient.amount * recipe.numberOfServings // multiply by the desired serving size of the user
+                        val unit = recipeIngredient.ingredientUnit
+                        val amount =
+                            recipeIngredient.amount * recipe.numberOfServings // multiply by the desired serving size of the user
 
-                    val existingIngredientIndex =
-                        (shoppingListIngredients.indexOfFirst {
-                            it.ingredientId == recipeIngredient.ingredientId && it.unit == unit
-                        })
+                        val existingIngredientIndex =
+                            (shoppingListIngredients.indexOfFirst {
+                                it.ingredientId == recipeIngredient.ingredientId && it.unit == unit
+                            })
 
-                    if (existingIngredientIndex != -1) {// check if the ingredient is already in the list and only update it if the amount needs to change (i.e. not tsp etc)
-                        val existingIngredient = shoppingListIngredients[existingIngredientIndex]
-                        // if it is, then alter the existing list entry
-                        // stays same but amount just gets changed
-                        val updatedIngredient =
+                        if (existingIngredientIndex != -1) {// check if the ingredient is already in the list and only update it if the amount needs to change (i.e. not tsp etc)
+                            val existingIngredient =
+                                shoppingListIngredients[existingIngredientIndex]
+                            // if it is, then alter the existing list entry
+                            // stays same but amount just gets changed
+                            val updatedIngredient =
                                 existingIngredient.copy(
                                     // sets amount to added amount if  unit is large, otherwise just remains as 1.
-                                    amount = if (unit.keepUnitInShoppingList) { existingIngredient.amount + recipeIngredient.amount } else { amount }
+                                    amount = if (unit.keepUnitInShoppingList) {
+                                        existingIngredient.amount + amount
+                                    } else {
+                                        amount
+                                    } // add the scasled amount
                                 )
-                        // then overwrite it
-                        shoppingListIngredients[existingIngredientIndex] = updatedIngredient
-                    } else {
-                        // if it doesn't already exist in the list, then simply add it:
-                        shoppingListIngredients.add(
-                            ShoppingListIngredient(
-                                ingredient.id,
-                                ingredient.plural,
-                                unit,
-                                amount
+                            // then overwrite it
+                            shoppingListIngredients[existingIngredientIndex] = updatedIngredient
+                        } else {
+                            // if it doesn't already exist in the list, then simply add it:
+                            shoppingListIngredients.add(
+                                ShoppingListIngredient(
+                                    ingredient.id,
+                                    ingredient.plural,
+                                    unit,
+                                    amount
+                                )
                             )
-                        )
 
+                        }
                     }
                 }
 
@@ -477,15 +486,16 @@ class RecipeBookViewModel @Inject constructor(
             val sectionTitle = getSectionById(sectionId).first()?.title // this may fail if the values stored in the db update while user is looking at it. for this, would need to use .collect(). consider this if issues occur in future.
 
             // determine pluralities
-            val ingredientAmount = ingredient.amount
+            val ingredientAmount = ingredient.amount * recipe.numberOfServings
             val ingredientUnit = ingredient.ingredientUnit
-            val unit = if (recipeActions.determineUnitPlurality(ingredientAmount*recipe.numberOfServings)) { // scaled to num servings
+
+            val unit = if (recipeActions.determineUnitPlurality(ingredientAmount)) { // scaled to num servings
                 ingredientUnit.pluralName
             } else {
                 ingredientUnit.singularName
             }
             val ingredientName = getIngredientById(ingredient.ingredientId).first()
-
+            Log.i("plur", "unit plurality for: $ingredientName ^^^")
 
             if (ingredientName != null && sectionTitle != null) {
                 val ingredientPluralisedName =
@@ -619,17 +629,15 @@ class RecipeBookViewModel @Inject constructor(
     }
 
     // recipe actions
-    fun formatAndScaleIngredientAmount(
+    fun formatIngredientAmount(
         ingredientAmount: Double,
-        scale: Boolean = true // so that not scale in shopping list, as the scale is computed BEFORE outputting, unlike for recipe where the original values should remain.
     ): String {
         // scale the ingredient amount by the desired number of servings set by user:
-        val numServings = if (scale) { mutableUiState.value.selectedRecipe?.numberOfServings ?: 1 } else 1
-        var scaledAmount = ingredientAmount*numServings
-        if (scaledAmount < 0.25) {
-            scaledAmount = 0.25 // cant go less than 0.25
+        var amount = ingredientAmount
+        if (amount < 0.25) {
+            amount = 0.25 // cant go less than 0.25
         }
-        return recipeActions.formatIngredientAmount(scaledAmount)
+        return recipeActions.formatIngredientAmount(amount)
     }
 
     // api

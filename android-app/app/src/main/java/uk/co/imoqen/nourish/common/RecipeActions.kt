@@ -207,8 +207,9 @@ class RecipeActions @Inject constructor(
     fun determineUnitPlurality(
         ingredientAmount: Double,
     ): Boolean {
+        Log.i("ingredient amount:", "$ingredientAmount , rounded: ${round(ingredientAmount*4.0)/4.0} and is not equal to 1.0: ${round(ingredientAmount*4.0)/4.0 != 1.0 }")
         // plural form should be used in most cases; just a few cases where it shouldn't.
-        return "%.2f".format(round(ingredientAmount*4)/4).toDouble() != 1.0 // if only 1, should always be singular.
+        return round(ingredientAmount*4.0)/4.0 != 1.0 // if only 1, should always be singular.
     }
 
     fun determineIngredientPlurality(

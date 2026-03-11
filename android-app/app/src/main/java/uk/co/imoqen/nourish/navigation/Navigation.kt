@@ -24,6 +24,7 @@ import uk.co.imoqen.nourish.recipebook.RecipeCardScreen
 import uk.co.imoqen.nourish.recipediscovery.RecipeDiscoveryViewModel
 import uk.co.imoqen.nourish.recipediscovery.RecipeDiscoveryScreen
 import uk.co.imoqen.nourish.shoppinglist.ShoppingListScreen
+import uk.co.imoqen.nourish.shoppinglist.ShoppingListViewModel
 
 
 /**
@@ -55,7 +56,10 @@ fun AppNavHost(
             val recipeBookViewModel: RecipeBookViewModel = hiltViewModel()
             RecipeBookScreen(recipeBookViewModel, onViewRecipeCard = { id -> navController.navigate("recipe-card/$id") })
         }
-        composable(TabDestination.SHOPPING_LIST.route) { ShoppingListScreen() }
+        composable(TabDestination.SHOPPING_LIST.route) {
+            val shoppingListViewModel: ShoppingListViewModel = hiltViewModel()
+            ShoppingListScreen(shoppingListViewModel)
+        }
         composable(TabDestination.PROFILE.route) {
             val profileViewModel: ProfileViewModel = hiltViewModel()
             ProfileScreen(profileViewModel)

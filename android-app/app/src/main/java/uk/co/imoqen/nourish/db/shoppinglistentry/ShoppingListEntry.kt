@@ -26,7 +26,8 @@ import uk.co.imoqen.nourish.db.user.User
         )
     ],
     indices = [
-        Index("ingredientId", "purchaserUid")
+        Index("ingredientId"),
+        Index("purchaserUid")
     ]
 )
 data class ShoppingListEntry(
