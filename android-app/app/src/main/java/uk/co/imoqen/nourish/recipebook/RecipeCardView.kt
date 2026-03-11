@@ -428,27 +428,35 @@ fun RecipeCard(
                             }
                             NourishIconTextButton(
                                 onClick = {
-                                    recipeBookViewModel.setShowShoppingListDialog(true)
-                                    recipeBookViewModel.formatIngredientsForShoppingList()
+                                    //recipeBookViewModel.setShowShoppingListDialog(true)
+                                    recipeBookViewModel.formatIngredientsForShoppingList() // this sets it not to null, so the dialog will be triggered to display (if successful).
                                 },
                                 painter = painterResource(R.drawable.shopping_cart_add),
                                 description = "Add to Shopping List",
                             )
 
                             // show shopping list dialog:
-                            Dialog(
-                                onDismissRequest = {
-                                    recipeBookViewModel.setShowShoppingListDialog(false)
-                                }
-                            ) {
-                                Surface(
-                                    shape = RoundedCornerShape(24.dp)
+                            if (uiState.ingredientsToAddToShoppingList != null) {
+                                Dialog(
+                                    onDismissRequest = {
+                                        recipeBookViewModel.setIngredientsToAddToShoppingList(null)
+                                    }
                                 ) {
-                                    NourishH3("Items to be added to the Shopping List")
+                                    Surface(
+                                        shape = RoundedCornerShape(24.dp)
+                                    ) {
+                                        Column() {
+                                            NourishH3("Items to be added to the Shopping List")
 
-                                    HorizontalDivider()
+                                            HorizontalDivider()
 
+                                            uiState.ingredientsToAddToShoppingList.forEach { ingredient ->
+                                                // if the unit is tsp or plural, dont display it.
+                                                Text("${ingredient.plural} ${ingredient.amount} ${ingredient.unit}")
+                                            }
+                                        }
 
+                                    }
                                 }
                             }
                         }

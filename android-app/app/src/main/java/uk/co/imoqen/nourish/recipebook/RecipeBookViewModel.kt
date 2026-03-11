@@ -204,16 +204,30 @@ class RecipeBookViewModel @Inject constructor(
                         return@launch // error
                     }
 
+                    //TODO if the ingredient amount is very small like tsp, then should simply store this as unit AND
+                    // ignore the amount. as only should need to ever buy one ofthese (e..g tsp salt -> salt.) so set amount to 1g always if tsp. and dont let them add up.
+                    // potentially do same for very small g values too etc e.g. 5g salt -> just salt. no one is going to buy just 5g of salt
+                    // lets say if the amount is less than 50g then just say buy the item itself.
+
                     val existingIngredientIndex =
                         (shoppingListIngredients.indexOfFirst {
                             it.ingredientId == recipeIngredient.ingredientId && it.unit == recipeIngredient.ingredientUnit
                         })
 
-                    if (existingIngredientIndex != -1) {// check if the ingredient is already in the list
+                    var unit = recipeIngredient.ingredientUnit
+                    var amount = recipeIngredient.amount
+                    if (!unit.keepUnitInShoppingList) {
+                        unit = IngredientUnit.UNIT
+                        amount = 1.0
+                    }
+
+                    if (existingIngredientIndex != -1 && !unit.keepUnitInShoppingList) {// check if the ingredient is already in the list and only update it if the amount needs to change (i.e. not tsp etc)
                         val existingIngredient = shoppingListIngredients[existingIngredientIndex]
                         // if it is, then alter the existing list entry
                         // stays same but amount just gets changed
-                        val updatedIngredient = existingIngredient.copy(amount = existingIngredient.amount + recipeIngredient.amount)
+                        val updatedIngredient = existingIngredient.copy(
+                            amount = existingIngredient.amount + recipeIngredient.amount
+                        )
                         // then overwrite it
                         shoppingListIngredients[existingIngredientIndex] = updatedIngredient
                     } else {
@@ -222,8 +236,8 @@ class RecipeBookViewModel @Inject constructor(
                             ShoppingListIngredient(
                                 ingredient.id,
                                 ingredient.plural,
-                                recipeIngredient.ingredientUnit,
-                                recipeIngredient.amount
+                                unit,
+                                amount
                             )
                         )
                     }
