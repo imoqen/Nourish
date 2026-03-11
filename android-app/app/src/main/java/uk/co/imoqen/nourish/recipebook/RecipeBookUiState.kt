@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish.recipebook
 
+import androidx.compose.ui.graphics.Color
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
@@ -51,7 +52,8 @@ data class RecipeCardExpanded(
     val recipeTags: MutableList<Pair<String, NourishColour>>,
     val storageInstructions: String,
     val imagePath: String,
-    val emoji: String
+    val emoji: String,
+    val colour: NourishColour
 )
 
 // condensed version of RecipeCardExpanded, so only the data that's necessary to display on the
@@ -62,7 +64,8 @@ data class RecipeCardUnexpanded(
     val recipeTags: MutableList<Pair<String, NourishColour>>,
     val imagePath: String,
     val emoji: String,
-    val recipeId: Long
+    val recipeId: Long,
+    val colour: NourishColour // from the NourishColour enum then will be read using enum.valueof<nourishcolour>
 )
 
 data class UiRecipeTag(

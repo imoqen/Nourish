@@ -52,7 +52,8 @@ const db = getFirestore();
 
 // Units: given as metric, something to address in the future would be also adding support for imperial which the software has the capacity to do but was not implemented for simplicity.
 const metricUnits =
-  "TSP, TBSP, ML, L, G, KG, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, CM, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR. use UNIT if the ingredient has no unit (e.g. carrot has no unit)";
+  "TSP, TBSP, ML, L, G, KG, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, CM, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR, UNIT";
+const ingredientUnitList = metricUnits.split(",").map((v) => v.trim());
 // Schemas:
 
 // for nutrition:
@@ -130,14 +131,13 @@ const IngredientSchemaZod = z.object({
         "Do not include the amount or unit here; this will go in ingredientAmount and ingredientAmountsUnit, respectively.",
     ),
   ingredientAmountUnit: z
-    .string()
+    .enum(ingredientUnitList)
     .describe(
       "Fill this in third. The unit of the ingredient corresponding to ingredientSingular, and the amount given in ingredientAmount. " +
         "Ensure that the unit makes sense, for example only use an approximate unit (such as splash, sprinkle, dash, etc) if the corresponding amount itself is a whole number - otherwise use a unit reflective of the precision (e.g. tsp, tbsp, ml)" +
-        "Return only a value from the following list, exactly as it is in the list (as it will be mapped using a predefined enum); the value you return MUST be in the following list: " +
-        metricUnits +
-        "If you think that an imperial unit would be required, then give its value in g/kg instead (e.g. rather than using cup, as this is not used in Europe/UK). " +
-        " Only use UNIT if the ingredient has no measurement; it is a piece itself (e.g. egg, whole fruit, whole vegetable). In particular, if it is a spice, baking agent or herb, do not use UNIT.",
+        "Return only a value from the following list, exactly as it is in the list (as it will be mapped using a predefined enum); the value you return MUST be in the list." +
+        " If you think that an imperial unit would be required, then give its value in g/kg instead (e.g. rather than using cup, as this is not used in Europe/UK). " +
+        " Only use UNIT if the ingredient has no measurement/unit; it is a piece itself (e.g. egg, whole fruit, whole vegetable). In particular, if it is a spice, baking agent or herb, do not use UNIT.",
     ),
   ingredientAmount: z
     .number()
@@ -149,6 +149,13 @@ const IngredientSchemaZod = z.object({
 
 // recipe generation:
 function recipeSchemaZod(allNutritionalFilters, dishType) {
+  const nutritionalFilterList = allNutritionalFilters
+    .split(",")
+    .map((v) => v.trim());
+  const dishTypeList = dishType.split(",").map((v) => v.trim());
+  console.log("nutritional filter list: ", nutritionalFilterList);
+  console.log("dish type list: ", dishTypeList);
+
   return z.object({
     title: z
       .string()
@@ -174,10 +181,9 @@ function recipeSchemaZod(allNutritionalFilters, dishType) {
       ),
 
     mealType: z
-      .string()
+      .enum(dishTypeList)
       .describe(
-        "The type of meal that this corresponds to, returned exactly and with the same capitalisation as ONE element from the following list: " +
-          dishType,
+        "The type of meal that this corresponds to, returned exactly and with the same capitalisation as ONE element from the list ",
       ),
 
     method: z
@@ -190,11 +196,15 @@ function recipeSchemaZod(allNutritionalFilters, dishType) {
           "For the final step, include a nice, upbeat happy step such as 'Enjoy your homemade ...'",
       ),
 
-    tags: z.array(z.string()).describe(
-      "Fill this in once the recipe has been generated, do not fill this in first and then fill in the recipe based on it: " +
-        "A list of 'tags' which apply to this recipe, as a comma separated list e.g. 'a, b, c' " +
-        "Each tag must be from the following list, do not include more (Be strict with this; e.g. it is only NO-ADDED-SUGAR if no extra sugar has been added - sugar sources such as maple syrup, honey etc still count as added sugar.): " +
-        allNutritionalFilters, // nutrients
+    tags: z.array(
+      z
+        .enum(nutritionalFilterList)
+        .describe(
+          "Fill this in once the recipe has been generated, do not fill this in first and then fill in the recipe based on it: " +
+            "A list of 'tags' which apply to this recipe, as a comma separated list e.g. 'a, b, c' " +
+            "Each tag must be from the list, do not include more (Be strict with this; e.g. it is only NO-ADDED-SUGAR if no extra sugar has been added - sugar sources such as maple syrup, honey etc still count as added sugar.) ",
+        ),
+      //allNutritionalFilters, // nutrients
       // need to put all user specified tags here in the future
     ),
 
@@ -218,6 +228,22 @@ function recipeSchemaZod(allNutritionalFilters, dishType) {
       .string()
       .describe(
         "A single emoji which best describes this dish. Consider the recipe/ingredients when choosing the emoji; don't just base the emoji on the name of the dish.",
+      ),
+
+    colour: z
+      .enum([
+        "RED",
+        "PINK",
+        "ORANGE",
+        "YELLOW",
+        "GREEN",
+        "BLUE",
+        "PURPLE",
+        "GREY",
+        "BROWN",
+      ])
+      .describe(
+        "The colour which best suits the recipe, preferably matching or going well with the emoji you provide. First create the recipe, then choose its emoji, then the colour accordingly.",
       ),
   });
 }

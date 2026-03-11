@@ -22,6 +22,7 @@ import uk.co.imoqen.nourish.network.request.LlmRequest
 import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import javax.inject.Inject
 import uk.co.imoqen.nourish.common.saveImage
+import uk.co.imoqen.nourish.common.saveMipmap
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
@@ -85,10 +86,10 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
-    fun setSavedImageFilename(savedImageFilename: String) {
+    fun setSavedImageMipmap(savedImageMipmap: Mipmap) {
         mutableUiState.update { currentState ->
             currentState.copy(
-                savedImageFilename = savedImageFilename
+                savedImageMipmap = savedImageMipmap
             )
         }
     }
@@ -265,7 +266,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
 
         if (userChoice == LlmMode.FROM_DESCRIPTION) { // no image can be uploaded in this mode
             // ensure no image can be uploaded:
-            setSavedImageFilename("")
+            setSavedImageMipmap(Mipmap("", ""))
         }
 
         // allow user input:
@@ -509,10 +510,12 @@ class RecipeDiscoveryViewModel @Inject constructor(
     ) {
         viewModelScope.launch() {
             runCatching {
-                saveImage(
+                saveMipmap(
                     uri,
                     context
-                ) { filename -> setSavedImageFilename(filename) }
+                ) { lowQualityFilename, highQualityFilename ->
+                    setSavedImageMipmap(Mipmap(lowQualityFilename, highQualityFilename))
+                }
             }
                 .onSuccess {
                     Log.i("PhotoPicker", "image saved successfully")
@@ -534,7 +537,8 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 } // user is null; throw to be handled appropriately
                 // Add the recipe to the database:
                 recipeRepository.createRecipe(
-                    uid, llmRecipe, imagePath = mutableUiState.value.savedImageFilename
+                    // recipe is saved with the higher quality image, which is stored in second place
+                    uid, llmRecipe, imagePath = mutableUiState.value.savedImageMipmap.highQualityFilename
                 )
             }
                 .onSuccess {
@@ -605,7 +609,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
         setLlmChatStage(LlmChatStage.USER_SELECT_OPTION) // the starting stage
         setRequestType(LlmRequestType.RECIPE)
 
-        setSavedImageFilename("")
+        setSavedImageMipmap(Mipmap("",""))
         setPlaceholderText("")
 
         setLlmGeneratedRecipe(null)

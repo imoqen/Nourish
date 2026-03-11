@@ -12,7 +12,8 @@ data class LlmRecipe(
     val tags: List<String>,
     val storage: String,
     val recipeNotPossible: Boolean,
-    val emoji: String
+    val emoji: String,
+    val colour: String
 )
 
 data class LlmIngredientSection(

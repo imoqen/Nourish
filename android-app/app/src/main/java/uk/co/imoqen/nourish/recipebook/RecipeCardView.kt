@@ -91,6 +91,7 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.IndeterminateCircularIndicator
 import uk.co.imoqen.nourish.common.NourishButton
+import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.NourishDivider
 import uk.co.imoqen.nourish.common.NourishH1
 import uk.co.imoqen.nourish.common.NourishH2
@@ -103,6 +104,7 @@ import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.common.NourishTextMessage
 import uk.co.imoqen.nourish.common.TextSender
 import uk.co.imoqen.nourish.common.onBackgroundColour
+import uk.co.imoqen.nourish.common.recipeColour
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQuery
 import uk.co.imoqen.nourish.network.request.LlmActionType
@@ -158,9 +160,9 @@ fun RecipeCard(
 
         if (recipeCard != null) {
             val imagePath = recipeCard.imagePath
-            Card(
+            val colour = recipeCard.colour.recipeColour()
 
-            ) {
+            Card() {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -220,7 +222,7 @@ fun RecipeCard(
                                     modifier = Modifier
                                         .fillMaxWidth() // matches the card width
                                         .height(160.dp - 92.dp + 64.dp + 32.dp) // takes up much less space because no image
-                                        .background(MaterialTheme.colorScheme.error) // put the chosen colour
+                                        .background(colour) // put the chosen colour
                                 )
                             }
                         }
@@ -555,23 +557,24 @@ fun RecipeCard(
 
             }
 
-            if (uiState.llmActionType != LlmActionType.NONE && uiState.selectedRecipe != null && uiState.llmActionType != LlmActionType.ALTERATION) {
-                // NON-ALTERATION ACTIONS
+            if (uiState.llmActionType == LlmActionType.NUTRITIONAL_VALUES && uiState.selectedRecipe != null) {
                 ModalBottomSheet(
                     onDismissRequest = {
                         recipeBookViewModel.setLlmActionType(LlmActionType.NONE)
                     },
                     sheetState = sheetState
                 ) {
-                    LlmActions(
-                        uiState.selectedRecipe,
-                        uiState,
-                        recipeBookViewModel,
-                        keyboardFocusManager
-                    )
+                    if (uiState.llmActionType == LlmActionType.NUTRITIONAL_VALUES) {
+                        NutritionLlmAction(
+                            uiState.selectedRecipe,
+                            uiState,
+                            recipeBookViewModel,
+                        )
+                    }
 
                 }
-            } else if (uiState.llmActionType != LlmActionType.NONE && uiState.selectedRecipe != null) {
+            } else if ((uiState.llmActionType == LlmActionType.ALTERATION || uiState.llmActionType == LlmActionType.QUESTION)
+                && uiState.selectedRecipe != null) {
                 // ALTERATION ACTION
                 Dialog(
                     onDismissRequest = {
@@ -581,11 +584,126 @@ fun RecipeCard(
                     Surface(
                         shape = RoundedCornerShape(24.dp)
                     ) {
-                        AlterationLlmAction(uiState, recipeBookViewModel, uiState.selectedRecipe, keyboardFocusManager)
+                        if (uiState.llmActionType == LlmActionType.ALTERATION) {
+                            AlterationLlmAction(
+                                uiState,
+                                recipeBookViewModel,
+                                uiState.selectedRecipe,
+                                keyboardFocusManager
+                            )
+                        } else if (uiState.llmActionType == LlmActionType.QUESTION) {
+                            QueryLlmAction(
+                                uiState,
+                                recipeBookViewModel,
+                                uiState.selectedRecipe,
+                                keyboardFocusManager
+                            )
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun QueryLlmAction(
+    uiState: RecipeBookUiState,
+    viewModel: RecipeBookViewModel,
+    recipe: Recipe,
+    keyboardFocusManager: FocusManager
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth().navigationBarsPadding().fillMaxHeight(0.8f)
+            .padding(bottom = 12.dp).padding(horizontal = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Top
+    ) {
+        NourishH2("Ask a Question", modifier = Modifier.padding(top = 16.dp))
+
+        HorizontalDivider(modifier = Modifier.padding(top = 10.dp))
+
+        val queries =
+            viewModel.getAllQueriesForRecipe(recipe.id)
+                .collectAsState(initial = null).value
+
+        if (queries == null || queries.isEmpty()) {
+
+            Text(
+                "Ask Gemini a question about the recipe.",
+                modifier = Modifier.padding(16.dp),
+                textAlign = TextAlign.Center
+            )
+
+        } else {
+
+            val lazyListState = rememberLazyListState()
+
+            LaunchedEffect(queries.size) {
+                lazyListState.animateScrollToItem(0) // scrolls to the llm message once it is received
+            }
+
+            LookaheadScope() {
+                LazyColumn(
+                    modifier = Modifier.fillMaxHeight(0.85f).animateBounds(this),
+                    state = lazyListState,
+                    reverseLayout = true // so that start at bottom of the chat
+                ) {
+                    item {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            HorizontalDivider(modifier = Modifier.padding(bottom=8.dp))
+                            Text(
+                                "Please note that all answers are produced by Gemini; as such, there may be mistakes.",
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                "Consult a dietitian or doctor for personalised, accurate nutritional advice.",
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                    item {
+                        // the loading circle:
+                        IndeterminateCircularIndicator(uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE)
+                    }
+
+                    items(queries.reversed()) { query -> // queries have to be reversed due to the reverse layout. but still required so that start at bottom of chat.
+                        if (query != null) {
+                            QueryDisplay(query)
+                        }
+                    }
+                }
+            }
+
+        }
+
+        Spacer(modifier= Modifier.weight(1f))
+
+        AnimatedVisibility(
+            visible = uiState.actionChatStage != ActionChatStage.AWAITING_LLM_RESPONSE
+        ) {
+            NourishTextField(
+                value = uiState.userActionRequest,
+                onValueChange = { actionRequest ->
+                    viewModel.setUserActionRequest(actionRequest)
+                },
+                placeholder = "Enter a question",
+                onDone = { keyboardFocusManager.clearFocus() },
+                leadingIcon = ImageVector.vectorResource(R.drawable.live_question),
+                trailingIcon = Icons.Filled.Send,
+                onTrailingIconPress = {
+                    viewModel.makeLlmApiCall(LlmActionType.QUESTION)
+                },
+                alwaysDisplayTrailingIcon = false
+            )
+        }
+
+
     }
 }
 
@@ -649,7 +767,7 @@ fun AlterationLlmAction(
                                     uiState.alteredRecipe,
                                     viewModel::formatIngredientText,
                                     imageFilename = recipe.imagePath,
-                                    context = LocalContext.current
+                                    context = LocalContext.current,
                                 )
 
                             }
@@ -770,219 +888,113 @@ fun NutritionalFact(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LlmActions(
+fun NutritionLlmAction(
     recipe: Recipe,
     uiState: RecipeBookUiState,
     viewModel: RecipeBookViewModel,
-    keyboardFocusManager: FocusManager,
 ) {
-    val llmActionType = uiState.llmActionType
-    when (llmActionType) {
-        LlmActionType.NUTRITIONAL_VALUES -> {
-            Column(
-                modifier = Modifier.fillMaxWidth().navigationBarsPadding()
-                    .padding(bottom = 12.dp).padding(horizontal = 10.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                // the loading circle:
-                IndeterminateCircularIndicator(uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE)
+    Column(
+        modifier = Modifier.fillMaxWidth().navigationBarsPadding()
+            .padding(bottom = 12.dp).padding(horizontal = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        // the loading circle:
+        IndeterminateCircularIndicator(uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE)
 
-                val nutrition =
-                    viewModel.getNutritionForRecipe(recipe.id)
-                        .collectAsState(initial = null).value
-                if (uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE) {
-                    Text(
-                        "Estimating nutritional values...",
-                        modifier = Modifier.padding(16.dp),
-                        textAlign = TextAlign.Center
-                    )
-                }
-                if (nutrition == null && uiState.actionChatStage != ActionChatStage.AWAITING_LLM_RESPONSE) {
-                    viewModel.setUserActionRequest("Generate nutritional values for the provided dish in the provided JSON schema, for the given number of servings.")
-                    NourishButton(
-                        onClick = { viewModel.makeLlmApiCall(llmActionType) },
-                        text = "Generate Nutritional Values",
-                    )
-                } else if (nutrition != null) {
-                    LookaheadScope() {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .animateBounds(this),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-
-                            NourishH2("Nutritional Values")
-
-                            NourishTextDivider(
-                                text = "in ${nutrition.servings} serving${
-                                    if (nutrition.servings > 1) {
-                                        "s"
-                                    } else {
-                                        ""
-                                    }
-                                }",
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-
-                            NourishH2(
-                                text = "${nutrition.calories} kcal",
-                                modifier = Modifier.padding(bottom = 10.dp)
-                            )
-
-                            LazyVerticalGrid(
-                                columns = GridCells.Adaptive(minSize = 92.dp), // size of the circles inside. should add padding inside too though
-                                horizontalArrangement = Arrangement.spacedBy(
-                                    space = 10.dp,
-                                    alignment = Alignment.CenterHorizontally
-                                ),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                item {
-                                    NutritionalFact("Fat", "${nutrition.fat}g")
-                                }
-                                item {
-                                    NutritionalFact("Saturates", "${nutrition.saturates}g")
-                                }
-                                item {
-                                    NutritionalFact(
-                                        "Carbohydrate",
-                                        "${nutrition.carbohydrate}g"
-                                    )
-                                }
-                                item {
-                                    NutritionalFact("Sugars", "${nutrition.sugars}g")
-                                }
-                                item {
-                                    NutritionalFact("Protein", "${nutrition.protein}g")
-                                }
-                                item {
-                                    NutritionalFact("Salt", "${nutrition.salt}g")
-                                }
-                            }
-
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-
-                            Column(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    "Please note that these nutritional values are estimates, produced by Gemini.",
-                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                                    textAlign = TextAlign.Center
-                                )
-                                Text(
-                                    "Consult a dietitian or doctor for personalised, accurate nutritional advice.",
-                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
+        val nutrition =
+            viewModel.getNutritionForRecipe(recipe.id)
+                .collectAsState(initial = null).value
+        if (uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE) {
+            Text(
+                "Estimating nutritional values...",
+                modifier = Modifier.padding(16.dp),
+                textAlign = TextAlign.Center
+            )
         }
-        LlmActionType.ALTERATION -> {
-            // handled in the dialog as modal bottom sheet is pooor for scrolling
-
-        }
-        LlmActionType.QUESTION -> {
-            Column(
-                modifier = Modifier.fillMaxWidth().navigationBarsPadding()
-                    .padding(bottom = 12.dp).padding(horizontal = 10.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                NourishH2("Ask a Question")
-
-                val queries =
-                    viewModel.getAllQueriesForRecipe(recipe.id)
-                        .collectAsState(initial = null).value
-
-                if (queries == null || queries.isEmpty()) {
-
-                    Text(
-                        "Ask Gemini a question about the recipe.",
-                        modifier = Modifier.padding(16.dp),
-                        textAlign = TextAlign.Center
-                    )
-
-                } else {
-
-                    val lazyListState = rememberLazyListState()
-
-                    LaunchedEffect(queries.size) {
-                        lazyListState.animateScrollToItem(0) // scrolls to the llm message once it is received
-                    }
-
-                    LookaheadScope() {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxHeight(0.6f).animateBounds(this),
-                            state = lazyListState,
-                            reverseLayout = true // so that start at bottom of the chat
-                        ) {
-                            item {
-                                Column(
-                                    modifier = Modifier.fillMaxWidth().padding(8.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    HorizontalDivider(modifier = Modifier.padding(bottom=8.dp))
-                                    Text(
-                                        "Please note that all answers are produced by Gemini; as such, there may be mistakes.",
-                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                                        textAlign = TextAlign.Center
-                                    )
-                                    Text(
-                                        "Consult a dietitian or doctor for personalised, accurate nutritional advice.",
-                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
-                            }
-                            item {
-                                // the loading circle:
-                                IndeterminateCircularIndicator(uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE)
-                            }
-
-                            items(queries.reversed()) { query -> // queries have to be reversed due to the reverse layout. but still required so that start at bottom of chat.
-                                if (query != null) {
-                                    QueryDisplay(query)
-                                }
-                            }
-                        }
-                    }
-
-                }
-
-                AnimatedVisibility(
-                    visible = uiState.actionChatStage != ActionChatStage.AWAITING_LLM_RESPONSE
+        if (nutrition == null && uiState.actionChatStage != ActionChatStage.AWAITING_LLM_RESPONSE) {
+            viewModel.setUserActionRequest("Generate nutritional values for the provided dish in the provided JSON schema, for the given number of servings.")
+            NourishButton(
+                onClick = { viewModel.makeLlmApiCall(LlmActionType.NUTRITIONAL_VALUES) },
+                text = "Generate Nutritional Values",
+            )
+        } else if (nutrition != null) {
+            LookaheadScope() {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .animateBounds(this),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    NourishTextField(
-                        value = uiState.userActionRequest,
-                        onValueChange = { actionRequest ->
-                            viewModel.setUserActionRequest(actionRequest)
-                        },
-                        placeholder = "Enter a question",
-                        onDone = { keyboardFocusManager.clearFocus() },
-                        leadingIcon = ImageVector.vectorResource(R.drawable.live_question),
-                        trailingIcon = Icons.Filled.Send,
-                        onTrailingIconPress = {
-                            viewModel.makeLlmApiCall(llmActionType)
-                        },
-                        alwaysDisplayTrailingIcon = false
+
+                    NourishH2("Nutritional Values")
+
+                    NourishTextDivider(
+                        text = "in ${nutrition.servings} serving${
+                            if (nutrition.servings > 1) {
+                                "s"
+                            } else {
+                                ""
+                            }
+                        }",
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
+
+                    NourishH2(
+                        text = "${nutrition.calories} kcal",
+                        modifier = Modifier.padding(bottom = 10.dp)
+                    )
+
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(minSize = 92.dp), // size of the circles inside. should add padding inside too though
+                        horizontalArrangement = Arrangement.spacedBy(
+                            space = 10.dp,
+                            alignment = Alignment.CenterHorizontally
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        item {
+                            NutritionalFact("Fat", "${nutrition.fat}g")
+                        }
+                        item {
+                            NutritionalFact("Saturates", "${nutrition.saturates}g")
+                        }
+                        item {
+                            NutritionalFact(
+                                "Carbohydrate",
+                                "${nutrition.carbohydrate}g"
+                            )
+                        }
+                        item {
+                            NutritionalFact("Sugars", "${nutrition.sugars}g")
+                        }
+                        item {
+                            NutritionalFact("Protein", "${nutrition.protein}g")
+                        }
+                        item {
+                            NutritionalFact("Salt", "${nutrition.salt}g")
+                        }
+                    }
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            "Please note that these nutritional values are estimates, produced by Gemini.",
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            "Consult a dietitian or doctor for personalised, accurate nutritional advice.",
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
-
-
             }
-
-
-        }
-        LlmActionType.NONE -> {
-            Text("An error occurred. Please try again later.")
         }
     }
 }

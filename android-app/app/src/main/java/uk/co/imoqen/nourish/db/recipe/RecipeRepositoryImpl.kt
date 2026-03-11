@@ -3,6 +3,8 @@ package uk.co.imoqen.nourish.db.recipe
 import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import uk.co.imoqen.nourish.common.NourishColour
+import uk.co.imoqen.nourish.common.recipeColour
 import uk.co.imoqen.nourish.db.NourishDatabase
 import uk.co.imoqen.nourish.db.ingredient.Ingredient
 import uk.co.imoqen.nourish.db.ingredient.IngredientRepositoryImpl
@@ -138,8 +140,8 @@ class RecipeRepositoryImpl @Inject constructor(
                     id = recipeId,
                     authorUid = uid,
                     title = llmRecipe.title,
-                    numberOfServings = llmRecipe.servings.toInt(),
-                    colour = "todo",
+                    numberOfServings = llmRecipe.servings,
+                    colour = llmRecipe.colour.uppercase(),
                     generated = true,
                     imagePath = imagePath,
                     archived = false,
@@ -151,8 +153,8 @@ class RecipeRepositoryImpl @Inject constructor(
                 recipe = Recipe(
                     authorUid = uid,
                     title = llmRecipe.title,
-                    numberOfServings = llmRecipe.servings.toInt(),
-                    colour = "todo",
+                    numberOfServings = llmRecipe.servings,
+                    colour = llmRecipe.colour.uppercase(),
                     generated = true,
                     imagePath = imagePath,
                     archived = false,
@@ -268,12 +270,13 @@ class RecipeRepositoryImpl @Inject constructor(
         // oir just save the original recipe id, then add recipe USING that recipe id.
         val originalRecipeId = currentRecipe.id
         val originalRecipeAuthor = currentRecipe.authorUid
+        val originalRecipeImagePath = currentRecipe.imagePath
 
         // the previous nutritional values get deleted as they will no longer be accurate
         deleteNutritionForRecipeId(originalRecipeId)
 
         recipeDao.delete(currentRecipe)
-        createRecipe(originalRecipeAuthor,newRecipe, originalRecipeId)
+        createRecipe(originalRecipeAuthor,newRecipe, originalRecipeId, originalRecipeImagePath)
     }
 
 }

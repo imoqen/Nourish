@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.RecipeActions
 import uk.co.imoqen.nourish.common.NourishColour
+import uk.co.imoqen.nourish.common.recipeColour
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.db.ingredient.Ingredient
@@ -254,7 +255,8 @@ class RecipeBookViewModel @Inject constructor(
 
                 val recipeCard = RecipeCardExpanded(
                     title, ingredientsMap, method, serves, recipeType,
-                    recipeTags, storageInstructions, recipe.imagePath, recipe.emoji
+                    recipeTags, storageInstructions, recipe.imagePath, recipe.emoji,
+                    enumValueOf<NourishColour>(recipe.colour.uppercase())
                 )
 
                 setRecipeCard(recipeCard)
@@ -372,7 +374,8 @@ class RecipeBookViewModel @Inject constructor(
                         recipeTags = buildRecipeTags(recipe.id),
                         imagePath = recipe.imagePath,
                         emoji = recipe.emoji,
-                        recipeId = recipe.id
+                        recipeId = recipe.id,
+                        colour = enumValueOf<NourishColour>(recipe.colour)
                     )
 
                     if (type == null) {
@@ -514,7 +517,8 @@ class RecipeBookViewModel @Inject constructor(
             tags = tags,
             storage = recipe.storageInstructions,
             recipeNotPossible = false,
-            emoji = recipe.emoji
+            emoji = recipe.emoji,
+            colour = recipe.colour
         )
     }
 

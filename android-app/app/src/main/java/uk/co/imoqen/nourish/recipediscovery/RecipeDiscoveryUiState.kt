@@ -45,7 +45,7 @@ data class RecipeDiscoveryUiState(
 
 
     // the currently uploaded / saved image, most recent one; name of file. can find the file via File(context.filesDir, savedImageFilename):
-    val savedImageFilename: String = "",
+    val savedImageMipmap: Mipmap = Mipmap("",""),
 
     val requestType: LlmRequestType = LlmRequestType.RECIPE, // gen recipe by default
 
@@ -56,7 +56,12 @@ data class RecipeDiscoveryUiState(
 
     val llmChatStage: LlmChatStage = LlmChatStage.USER_SELECT_OPTION, // begsina t the first stage
 
-    val llmGeneratedRecipe: LlmRecipe? = null
+    val llmGeneratedRecipe: LlmRecipe? = null,
+)
+
+data class Mipmap(
+    val lowQualityFilename: String,
+    val highQualityFilename: String
 )
 
 // controls flow within the llm chat. in the report, can draw this out into a flow diagram to show all the possible flows through the chat
