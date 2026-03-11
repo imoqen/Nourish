@@ -173,7 +173,7 @@ class RecipeRepositoryImpl @Inject constructor(
                 ingredients.forEach{ingredient ->
                     val singular = ingredient.ingredientSingular
                     val plural = ingredient.ingredientPlural
-                    val amount = ingredient.ingredientAmount
+                    val amount = ingredient.ingredientAmount / recipe.numberOfServings // divide by number of servings, so ingredient is stored for 1 serving.
                     val unit = ingredient.ingredientAmountUnit
                     // add it to ingredient table if doesn't already exist in its singular form:
                     var ingredientId = ingredientRepository.getIdBySingular(singular)
@@ -234,7 +234,7 @@ class RecipeRepositoryImpl @Inject constructor(
     override suspend fun scaleRecipe(recipe: Recipe, currentServingSize: Int, increase: Boolean) {
         db.withTransaction {
             val newServingSize = if (increase) { currentServingSize+1 } else { currentServingSize-1 }
-            val scalingFactor = newServingSize.toFloat() / currentServingSize.toFloat()
+           /* val scalingFactor = newServingSize.toFloat() / currentServingSize.toFloat()
 
             val recipeIngredients = getRecipeWithRecipeIngredients(recipe.id).first()
 
@@ -247,9 +247,9 @@ class RecipeRepositoryImpl @Inject constructor(
                 updateRecipeIngredient(
                     recipeIngredient.copy(amount = scaledAmount)
                 )
-            }
+            }*/
 
-            // then update serving size:
+            // update serving size:
             recipeDao.update(recipe.copy(numberOfServings = newServingSize))
         }
     }

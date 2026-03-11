@@ -20,15 +20,15 @@ class ShoppingListEntryRepositoryImpl @Inject constructor(
     }
 
     // not override as private, used as helper method for addShoppingListEntry
-    fun getByIngredientAndUidAndUnit(ingredientId: Long, uid: String, unit: IngredientUnit): Flow<ShoppingListEntry?> {
-        return shoppingListEntryDao.getByIngredientAndUidAndUnit(ingredientId, uid, unit)
+    fun getUnpurchasedByIngredientAndUidAndUnit(ingredientId: Long, uid: String, unit: IngredientUnit): Flow<ShoppingListEntry?> {
+        return shoppingListEntryDao.getByIngredientAndUidAndUnitUnpurchased(ingredientId, uid, unit)
     }
 
     override suspend fun insert(shoppingListEntry: ShoppingListEntry): Long {
         return shoppingListEntryDao.insert(shoppingListEntry)
     }
 
-    // will only
+    //TODO NEED TO MAKE SURE THAT it adds a new one if the one its found is already purchased. as dont want to update something that is purchased.
     override suspend fun addShoppingListEntry(
         shoppingListIngredient: ShoppingListIngredient,
         uid: String,
@@ -41,10 +41,10 @@ class ShoppingListEntryRepositoryImpl @Inject constructor(
         // need to check that a shopping list entry doesnt already exist for this ingredient by this uid. if it does, simply increment
         // the amount if appropriate:
 
-        val existingShoppingListEntry = getByIngredientAndUidAndUnit(ingredientId, uid, unit).first()
+        val existingShoppingListEntry = getUnpurchasedByIngredientAndUidAndUnit(ingredientId, uid, unit).first()
         if (existingShoppingListEntry != null) {
 
-            // if not null AND not UNIT unit, update it
+            // if the unit should be displayed in the shopping list, or it is added by the user, update it
             update(existingShoppingListEntry.copy(amount =
                 // only update it if the unit should be kept in the shopping list & above the threshold
                 if (unit.keepUnitInShoppingList || userAdded) { // user has more freedom, if user added it is assumed that they intend to add even if its something like oil, salt, etc.

@@ -62,7 +62,7 @@ const NutritionSchemaZod = z.object({
     .number()
     .int()
     .describe(
-      "The number of servings must be 1. In the provided recipe, if servings != 1, then the nutritional information should be calculated for that many servings of the recipe, and then scaled to 1 accordingly, in your result. Use the provided ingredients and amounts to calculate the nutrition.",
+      "The number of servings must be 1. The provided recipe amounts and ingredients are given for 1 serving, so ensure the nutrition you provide is for 1 serving.",
     ),
   calories: z
     .number()
@@ -691,7 +691,7 @@ async function generateNutritionalValues(
       {
         role: "system",
         content:
-          "Return in the required schema and ensure it is given for 1 serving, considering the servings provided in the recipe. Use British standards. " +
+          "Return in the required schema and ensure it is given for 1 serving. The ingredients and their amounts in the recipe are provided for 1 serving, so calculate the nutrition using these values - do not scale anything. Use British standards. " +
           "Generate the nutritional values as requested in the schema for the provided recipe. If your answer contains a decimal, ensure it is to at most 2 decimal places.",
       },
       {

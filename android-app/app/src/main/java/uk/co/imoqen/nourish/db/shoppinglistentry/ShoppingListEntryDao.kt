@@ -19,8 +19,8 @@ interface ShoppingListEntryDao {
     @Query("SELECT * FROM shoppingListEntry WHERE id = :id LIMIT 1")
     fun getById(id: Long): Flow<ShoppingListEntry?>
 
-    @Query("SELECT * FROM shoppinglistentry WHERE purchaserUid = :uid AND ingredientId = :ingredientId AND unit = :unit")
-    fun getByIngredientAndUidAndUnit(ingredientId: Long, uid: String, unit: IngredientUnit): Flow<ShoppingListEntry?>
+    @Query("SELECT * FROM shoppinglistentry WHERE purchaserUid = :uid AND ingredientId = :ingredientId AND unit = :unit AND purchased = 0")
+    fun getByIngredientAndUidAndUnitUnpurchased(ingredientId: Long, uid: String, unit: IngredientUnit): Flow<ShoppingListEntry?>
 
     @Insert
     suspend fun insert(shoppingListEntry: ShoppingListEntry): Long

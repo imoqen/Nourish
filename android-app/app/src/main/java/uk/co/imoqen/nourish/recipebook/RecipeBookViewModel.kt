@@ -1,8 +1,6 @@
 package uk.co.imoqen.nourish.recipebook
 
 import android.util.Log
-import androidx.compose.animation.core.updateTransition
-import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,7 +17,6 @@ import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.RecipeActions
 import uk.co.imoqen.nourish.common.NourishColour
-import uk.co.imoqen.nourish.common.recipeColour
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.db.ingredient.Ingredient
@@ -29,7 +26,6 @@ import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.recipe.RecipeWithRecipeSteps
 import uk.co.imoqen.nourish.db.recipe.RecipeWithRecipeTags
-import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeIngredient
 import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeWithRecipeIngredients
 import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSection
 import uk.co.imoqen.nourish.db.recipe.recipenutrition.RecipeNutrition
@@ -43,15 +39,9 @@ import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import uk.co.imoqen.nourish.network.request.LlmActionRequest
 import uk.co.imoqen.nourish.network.request.LlmActionType
-import uk.co.imoqen.nourish.network.request.LlmRequest
-import uk.co.imoqen.nourish.network.request.LlmRequestType
-import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.network.response.LlmIngredientSection
 import uk.co.imoqen.nourish.network.response.LlmRecipe
-import uk.co.imoqen.nourish.recipediscovery.LlmChatStage
-import uk.co.imoqen.nourish.recipediscovery.LlmMode
-import java.io.File
 import java.lang.NullPointerException
 import javax.inject.Inject
 import kotlin.collections.getOrPut
@@ -632,10 +622,16 @@ class RecipeBookViewModel @Inject constructor(
     }
 
     // recipe actions
-    fun formatIngredientAmount(
+    fun formatAndScaleIngredientAmount(
         ingredientAmount: Double
     ): String {
-        return recipeActions.formatIngredientAmount(ingredientAmount)
+        // scale the ingredient amount by the desired number of servings set by user:
+        val numServings = mutableUiState.value.selectedRecipe?.numberOfServings ?: 1
+        var scaledAmount = ingredientAmount*numServings
+        if (scaledAmount < 0.25) {
+            scaledAmount = 0.25 // cant go less than 0.25
+        }
+        return recipeActions.formatIngredientAmount(scaledAmount)
     }
 
     // api
@@ -679,7 +675,7 @@ class RecipeBookViewModel @Inject constructor(
         return LlmRecipe(
             title = recipe.title,
             sectionIngredients = ingredientsList,
-            servings = recipe.numberOfServings,
+            servings = 1, // there is always just 1 serving stored, otherwise this field is used for scaling for the user. but llm should be given 1 serving.
             mealType = recipeType,
             method = method,
             tags = tags,

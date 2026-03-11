@@ -6,13 +6,10 @@ import androidx.compose.animation.animateBounds
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import uk.co.imoqen.nourish.R
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,7 +25,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -40,11 +36,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Send
-import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -53,18 +46,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -81,38 +71,25 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.IndeterminateCircularIndicator
 import uk.co.imoqen.nourish.common.NourishButton
-import uk.co.imoqen.nourish.common.NourishColour
-import uk.co.imoqen.nourish.common.NourishDivider
-import uk.co.imoqen.nourish.common.NourishH1
 import uk.co.imoqen.nourish.common.NourishH2
 import uk.co.imoqen.nourish.common.NourishH3
-import uk.co.imoqen.nourish.common.NourishH4
 import uk.co.imoqen.nourish.common.NourishIconButton
 import uk.co.imoqen.nourish.common.NourishIconTextButton
 import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.common.NourishTextMessage
 import uk.co.imoqen.nourish.common.TextSender
-import uk.co.imoqen.nourish.common.onBackgroundColour
 import uk.co.imoqen.nourish.common.recipeColour
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQuery
 import uk.co.imoqen.nourish.network.request.LlmActionType
-import uk.co.imoqen.nourish.network.response.LlmRecipe
-import uk.co.imoqen.nourish.recipediscovery.LlmChatStage
 import uk.co.imoqen.nourish.recipediscovery.RecipeCardPreview
 import java.io.File
 
@@ -423,7 +400,7 @@ fun RecipeCard(
                                     }
 
                                     ingredients.forEach { (ingredient, amount, _) ->
-                                        Text("${recipeBookViewModel.formatIngredientAmount(amount)} $ingredient")
+                                        Text("${recipeBookViewModel.formatAndScaleIngredientAmount(amount)} $ingredient")
                                     }
                                 }
                             }
@@ -460,7 +437,7 @@ fun RecipeCard(
 
                                                     // if the unit is tsp or plural, dont display it.
                                                     Row() {
-                                                        Text("${ingredient.plural} ${recipeBookViewModel.formatIngredientAmount(ingredient.amount)} ${ingredient.unit}")
+                                                        Text("${ingredient.plural} ${recipeBookViewModel.formatAndScaleIngredientAmount(ingredient.amount)} ${ingredient.unit}")
                                                         Checkbox(
                                                             modifier = Modifier.padding(0.dp),
                                                             checked = selected,
