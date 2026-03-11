@@ -53,5 +53,10 @@ enum class IngredientUnit(
     BAR("bar of", "bars of", true, false),
 
     // for item without a prefix e.g. carrot
-    UNIT("", "", true, true)
+    UNIT("", "", true, true),
+
+    // for use in the shopping list when a small amount of something must be bought, its just there
+    // to say its there but it has no strict unit, its just a single one of that item.
+    SINGLE("", "", true, false) // difference to UNIT is that it is not something that is bought frequently e.g. oil, salt, pepper, etc. you buy 1 then use it for months
+    // so the add to shopping list will never increment it. but, users will have the option to themselves if they wish.
 }

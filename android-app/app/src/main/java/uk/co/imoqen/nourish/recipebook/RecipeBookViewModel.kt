@@ -35,6 +35,7 @@ import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSe
 import uk.co.imoqen.nourish.db.recipe.recipenutrition.RecipeNutrition
 import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQuery
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
+import uk.co.imoqen.nourish.db.shoppinglistentry.ShoppingListEntryRepository
 import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.db.tag.TagRepository
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
@@ -64,7 +65,8 @@ class RecipeBookViewModel @Inject constructor(
     private val recipeRepository: RecipeRepository,
     private val ingredientRepository: IngredientRepository,
     private val tagRepository: TagRepository,
-    private val recipeActions: RecipeActions
+    private val recipeActions: RecipeActions,
+    private val shoppingListEntryRepository: ShoppingListEntryRepository
 ): ViewModel() {
 
     private val mutableUiState = MutableStateFlow(RecipeBookUiState())
@@ -204,14 +206,66 @@ class RecipeBookViewModel @Inject constructor(
                     return@launch
                 }
 
-                // declare the list and get all ingredients:
-                val shoppingListIngredients: MutableList<Pair<ShoppingListIngredient, Boolean>> = mutableListOf()
+                // PREPROCESSING
+                // first pass of the list: add up all same ingredients so that we have totals for each ingredient + combine them if needed
+                // e.g. if multiple ingredients appear in different sections. we dont want to add them to the shopping list twice.
+                val shoppingListIngredients: MutableList<ShoppingListIngredient> = mutableListOf()
                 val recipeIngredients =
                     recipeRepository.getRecipeWithRecipeIngredients(recipe.id).first().ingredients
 
                 recipeIngredients.forEach { recipeIngredient ->
                     val ingredient =
                         ingredientRepository.getById(recipeIngredient.ingredientId).first()
+                    if (ingredient == null) {
+                        return@launch // error
+                    }
+
+                    //TODO if the ingredient amount is very small like tsp, then should simply store this as unit AND
+                    // ignore the amount. as only should need to ever buy one ofthese (e..g tsp salt -> salt.) so set amount to 1g always if tsp. and dont let them add up.
+                    // potentially do same for very small g values too etc e.g. 5g salt -> just salt. no one is going to buy just 5g of salt
+                    // lets say if the amount is less than 15g then just say buy the item itself.
+
+                    val unit = recipeIngredient.ingredientUnit
+                    val amount = recipeIngredient.amount
+
+                    val existingIngredientIndex =
+                        (shoppingListIngredients.indexOfFirst {
+                            it.ingredientId == recipeIngredient.ingredientId && it.unit == unit
+                        })
+
+                    if (existingIngredientIndex != -1) {// check if the ingredient is already in the list and only update it if the amount needs to change (i.e. not tsp etc)
+                        val existingIngredient = shoppingListIngredients[existingIngredientIndex]
+                        // if it is, then alter the existing list entry
+                        // stays same but amount just gets changed
+                        val updatedIngredient =
+                                existingIngredient.copy(
+                                    // sets amount to added amount if  unit is large, otherwise just remains as 1.
+                                    amount = if (unit.keepUnitInShoppingList) { existingIngredient.amount + recipeIngredient.amount } else { amount }
+                                )
+                        // then overwrite it
+                        shoppingListIngredients[existingIngredientIndex] = updatedIngredient
+                    } else {
+                        // if it doesn't already exist in the list, then simply add it:
+                        shoppingListIngredients.add(
+                            ShoppingListIngredient(
+                                ingredient.id,
+                                ingredient.plural,
+                                unit,
+                                amount
+                            )
+                        )
+
+                    }
+                }
+
+                // THEN go through the array containing no duplicates and add them to the selection list
+
+                // declare the list for storing the selections after preprocessing:
+                val shoppingListIngredientSelections: MutableList<Pair<ShoppingListIngredient, Boolean>> = mutableListOf()
+
+                shoppingListIngredients.forEach { shoppingListIngredient ->
+                    val ingredient =
+                        ingredientRepository.getById(shoppingListIngredient.ingredientId).first()
 
                     if (ingredient == null) {
                         return@launch // error
@@ -220,52 +274,31 @@ class RecipeBookViewModel @Inject constructor(
                     //TODO if the ingredient amount is very small like tsp, then should simply store this as unit AND
                     // ignore the amount. as only should need to ever buy one ofthese (e..g tsp salt -> salt.) so set amount to 1g always if tsp. and dont let them add up.
                     // potentially do same for very small g values too etc e.g. 5g salt -> just salt. no one is going to buy just 5g of salt
-                    // lets say if the amount is less than 50g then just say buy the item itself.
+                    // lets say if the amount is less than 15g then just say buy the item itself.
 
-                    val existingIngredientIndex =
-                        (shoppingListIngredients.indexOfFirst {
-                            it.first.ingredientId == recipeIngredient.ingredientId
-                                    && it.first.unit == recipeIngredient.ingredientUnit
-                        })
-
-                    var unit = recipeIngredient.ingredientUnit
-                    var amount = recipeIngredient.amount
-                    if (!unit.keepUnitInShoppingList) {
-                        unit = IngredientUnit.UNIT
+                    var unit = shoppingListIngredient.unit
+                    var amount = shoppingListIngredient.amount
+                    if (!unit.keepUnitInShoppingList || (unit != IngredientUnit.UNIT && amount <= 15)) { // if the unit shouldnt be kept, or the amount is inconsiderable (less than 15) then just set to buy 1.
+                        unit = IngredientUnit.SINGLE
                         amount = 1.0
                     }
 
-                    if (existingIngredientIndex != -1 && !unit.keepUnitInShoppingList) {// check if the ingredient is already in the list and only update it if the amount needs to change (i.e. not tsp etc)
-                        val existingIngredient = shoppingListIngredients[existingIngredientIndex].first
-                        // if it is, then alter the existing list entry
-                        // stays same but amount just gets changed
-                        val updatedIngredient =
-                            Pair(
-                                existingIngredient.copy(
-                                amount = existingIngredient.amount + recipeIngredient.amount
-                                ),
-                                true // by default it is true; to add to shopping list.
-                            )
-                        // then overwrite it
-                        shoppingListIngredients[existingIngredientIndex] = updatedIngredient
-                    } else {
-                        // if it doesn't already exist in the list, then simply add it:
-                        shoppingListIngredients.add(Pair(
-                            ShoppingListIngredient(
-                                ingredient.id,
-                                ingredient.plural,
-                                unit,
-                                amount
-                            ), true) // by default it is true; to add to shopping list.
-                        )
-                    }
+                    shoppingListIngredientSelections.add(Pair(
+                        ShoppingListIngredient(
+                            ingredient.id,
+                            ingredient.plural,
+                            unit,
+                            amount
+                        ), true) // by default it is true; to add to shopping list.
+                    )
+
                 }
 
                 // success:
-                setIngredientsToAddToShoppingList(shoppingListIngredients)
+                setIngredientsToAddToShoppingList(shoppingListIngredientSelections)
             }
                 .onFailure {
-                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Ingredients cannot be added. Please try another recipe."))
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Ingredients cannot be added. Please try another recipe, or add manually."))
                     Log.i("ingredient add display", "failed")
                 }
         }
@@ -278,14 +311,26 @@ class RecipeBookViewModel @Inject constructor(
                 // get all the ingredients:
                 val shoppingListIngredients = mutableUiState.value.ingredientsToAddToShoppingList
 
+                // get uid:
+                val uid = authenticationManager.getUid()
+                if (uid == null) {
+                    return@launch
+                }
+
                 // go through them all and add the ones to the db which should be added:
                 shoppingListIngredients?.forEach { (ingredient, selected) ->
                     if (selected) {
                         // add to db and account for if the ingredient is already in the db.
+                        // this is handled in the repository.
+                        shoppingListEntryRepository.addShoppingListEntry(ingredient, uid, userAdded=false)
                     }
                 }
 
             }
+                .onFailure {
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Ingredients cannot be added. Please try another recipe, or add manually."))
+                    Log.i("ingredient add to shopping list", "failed")
+                }
         }
     }
 

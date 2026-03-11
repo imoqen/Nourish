@@ -121,7 +121,7 @@ fun RecipeCardScreen(
     recipeBookViewModel: RecipeBookViewModel,
     uiState: RecipeBookUiState,
     recipeId: Long,
-    onBack: () -> Unit
+    onBack: () -> Unit,
 ) {
 
     val scrollState = rememberScrollState()
@@ -422,8 +422,7 @@ fun RecipeCard(
                                         )
                                     }
 
-                                    // id can be used if user wishes to add to shopping list
-                                    ingredients.forEach { (ingredient, amount, id) ->
+                                    ingredients.forEach { (ingredient, amount, _) ->
                                         Text("${recipeBookViewModel.formatIngredientAmount(amount)} $ingredient")
                                     }
                                 }
@@ -461,7 +460,7 @@ fun RecipeCard(
 
                                                     // if the unit is tsp or plural, dont display it.
                                                     Row() {
-                                                        Text("${ingredient.plural} ${ingredient.amount} ${ingredient.unit}")
+                                                        Text("${ingredient.plural} ${recipeBookViewModel.formatIngredientAmount(ingredient.amount)} ${ingredient.unit}")
                                                         Checkbox(
                                                             modifier = Modifier.padding(0.dp),
                                                             checked = selected,

@@ -240,7 +240,7 @@ class RecipeRepositoryImpl @Inject constructor(
 
             recipeIngredients.ingredients.forEach { recipeIngredient ->
                 // rounds so that it is to nearest 0.25 to prevent weird numbers
-                var scaledAmount = "%.2f".format(round(recipeIngredient.amount*scalingFactor*4)/4).toDouble()
+                var scaledAmount = recipeIngredient.amount*scalingFactor
                 if (scaledAmount < 0.25) {
                     scaledAmount = 0.25 // cant go less than 0.25
                 }

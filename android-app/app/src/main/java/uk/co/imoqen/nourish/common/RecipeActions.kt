@@ -18,6 +18,7 @@ import uk.co.imoqen.nourish.recipebook.TypeSelection
 import uk.co.imoqen.nourish.recipediscovery.LlmChatStage
 import javax.inject.Inject
 import kotlin.collections.map
+import kotlin.math.round
 
 class RecipeActions @Inject constructor(
     private val uiEventBus: UiEventBus,
@@ -214,7 +215,7 @@ class RecipeActions @Inject constructor(
         ingredientAmount: Double,
         ingredientUnit: IngredientUnit
     ): Boolean {
-        if (ingredientAmount <= 1.0) {
+        if ("%.2f".format(round(ingredientAmount*4)/4).toDouble() <= 1.0) { // because if 1.25 or less then it just appears as 1.0 (or less) which should always be singular
             // e.g. 1 strawberry = singular
             // but 1 cup strawberry should be plural: 1 cup strawberries
             if (ingredientUnit.useSingularForOne) {
@@ -229,11 +230,15 @@ class RecipeActions @Inject constructor(
     fun formatIngredientAmount(
         ingredientAmount: Double
     ): String {
-        if (ingredientAmount % 1.0 == 0.0) {
-            return ingredientAmount.toInt().toString()
+        // formats the amount such that it is to 2 d.p. and always rounded to the nearest 0.25
+        val amount = "%.2f".format(round(ingredientAmount*4)/4).toDouble()
+        if (amount % 1.0 == 0.0) {
+            return amount.toInt().toString()
         }
-        return ingredientAmount.toString()
+        return amount.toString()
     }
+
+
 
     // only used for displaying llm ingredient as they are handled differently
     fun formatIngredientText(
@@ -241,6 +246,7 @@ class RecipeActions @Inject constructor(
     ): String {
         runCatching {
             val amount = ingredient.ingredientAmount
+
             val ingredientUnit = IngredientUnit.valueOf(ingredient.ingredientAmountUnit)
 
             val unit = if (determineUnitPlurality(amount)) {
