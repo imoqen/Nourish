@@ -83,6 +83,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import kotlinx.coroutines.coroutineScope
@@ -157,8 +158,8 @@ fun RecipeCard(
         val recipeCard = recipeBookViewModel.uiState.collectAsState().value.selectedRecipeCard
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-
         if (recipeCard != null) {
+
             val imagePath = recipeCard.imagePath
             val colour = recipeCard.colour.recipeColour()
 
@@ -423,6 +424,31 @@ fun RecipeCard(
                                     ingredients.forEach { (ingredient, amount, id) ->
                                         Text("${recipeBookViewModel.formatIngredientAmount(amount)} $ingredient")
                                     }
+                                }
+                            }
+                            NourishIconTextButton(
+                                onClick = {
+                                    recipeBookViewModel.setShowShoppingListDialog(true)
+                                    recipeBookViewModel.formatIngredientsForShoppingList()
+                                },
+                                painter = painterResource(R.drawable.shopping_cart_add),
+                                description = "Add to Shopping List",
+                            )
+
+                            // show shopping list dialog:
+                            Dialog(
+                                onDismissRequest = {
+                                    recipeBookViewModel.setShowShoppingListDialog(false)
+                                }
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(24.dp)
+                                ) {
+                                    NourishH3("Items to be added to the Shopping List")
+
+                                    HorizontalDivider()
+
+
                                 }
                             }
                         }

@@ -166,6 +166,79 @@ class RecipeBookViewModel @Inject constructor(
         }
     }
 
+    fun setShowShoppingListDialog(showShoppingListDialog: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                showShoppingListDialog = showShoppingListDialog
+            )
+        }
+    }
+
+    fun setIngredientsToAddToShoppingList(ingredientsToAddToShoppingList: MutableList<ShoppingListIngredient>?) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                ingredientsToAddToShoppingList = ingredientsToAddToShoppingList
+            )
+        }
+    }
+
+    fun formatIngredientsForShoppingList() {
+        viewModelScope.launch() {
+            runCatching {
+                // get the recipe:
+                val recipe = mutableUiState.value.selectedRecipe
+                if (recipe == null) {
+                    return@launch
+                }
+
+                // declare the list and get all ingredients:
+                val shoppingListIngredients: MutableList<ShoppingListIngredient> = mutableListOf()
+                val recipeIngredients =
+                    recipeRepository.getRecipeWithRecipeIngredients(recipe.id).first().ingredients
+
+                recipeIngredients.forEach { recipeIngredient ->
+                    val ingredient =
+                        ingredientRepository.getById(recipeIngredient.ingredientId).first()
+
+                    if (ingredient == null) {
+                        return@launch // error
+                    }
+
+                    val existingIngredientIndex =
+                        (shoppingListIngredients.indexOfFirst {
+                            it.ingredientId == recipeIngredient.ingredientId && it.unit == recipeIngredient.ingredientUnit
+                        })
+
+                    if (existingIngredientIndex != -1) {// check if the ingredient is already in the list
+                        val existingIngredient = shoppingListIngredients[existingIngredientIndex]
+                        // if it is, then alter the existing list entry
+                        // stays same but amount just gets changed
+                        val updatedIngredient = existingIngredient.copy(amount = existingIngredient.amount + recipeIngredient.amount)
+                        // then overwrite it
+                        shoppingListIngredients[existingIngredientIndex] = updatedIngredient
+                    } else {
+                        // if it doesn't already exist in the list, then simply add it:
+                        shoppingListIngredients.add(
+                            ShoppingListIngredient(
+                                ingredient.id,
+                                ingredient.plural,
+                                recipeIngredient.ingredientUnit,
+                                recipeIngredient.amount
+                            )
+                        )
+                    }
+                }
+
+                // success:
+                setIngredientsToAddToShoppingList(shoppingListIngredients)
+            }
+                .onFailure {
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Ingredients cannot be added. Please try another recipe."))
+                    Log.i("ingredient add display", "failed")
+                }
+        }
+    }
+
     // gets all recipes for the currently logged in user. ensures that if user not logged in, empty list returned.
     fun getAllRecipes(): Flow<List<Recipe>> {
         val uid = authenticationManager.getUid()

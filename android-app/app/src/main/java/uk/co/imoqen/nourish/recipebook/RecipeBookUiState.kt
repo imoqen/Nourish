@@ -2,6 +2,8 @@ package uk.co.imoqen.nourish.recipebook
 
 import androidx.compose.ui.graphics.Color
 import uk.co.imoqen.nourish.common.NourishColour
+import uk.co.imoqen.nourish.db.ingredient.Ingredient
+import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.tag.Tag
@@ -24,7 +26,10 @@ data class RecipeBookUiState(
     val actionChatStage: ActionChatStage = ActionChatStage.USER_INPUT, // at start it is always user input.
 
     val alteredRecipe: LlmRecipe? = null, // altered recipe produced by llm
-    val visible: Boolean = true
+    val visible: Boolean = true,
+
+    val showShoppingListDialog: Boolean = false,
+    val ingredientsToAddToShoppingList: MutableList<ShoppingListIngredient>? = null
 )
 
 enum class ActionChatStage {
@@ -71,4 +76,12 @@ data class RecipeCardUnexpanded(
 data class UiRecipeTag(
     val identifier: String,
     val colour: String
+)
+
+data class ShoppingListIngredient(
+    // ingredient is stored as deconstructed as it will be used in the UI, so don't want to be calling the repository.getById in the UI.
+    val ingredientId: Long,
+    val plural: String, // the plural form will always be displayed in the shopping list. signular is not put here as its not needed.
+    val unit: IngredientUnit,
+    val amount: Double
 )

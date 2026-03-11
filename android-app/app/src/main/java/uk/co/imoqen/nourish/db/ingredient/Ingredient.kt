@@ -10,7 +10,7 @@ import androidx.room.PrimaryKey
     indices = [Index(value = ["singular"], unique = true)] // to prevent duplicate ingredients being added
 )
 data class Ingredient(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(name = "singular") val singular: String,
     @ColumnInfo(name = "plural") val plural: String,
 )

@@ -46,7 +46,7 @@ import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSe
     ]
 )
 data class RecipeIngredient(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(name = "recipeId") val recipeId: Long, // foreign key for recipe relation
     @ColumnInfo(name = "ingredientId") val ingredientId: Long, // foreign key for ingredient relation
     @ColumnInfo(name = "ingredientUnit") val ingredientUnit: IngredientUnit, // IngredientUnit is an enum and gets converted using converters class
