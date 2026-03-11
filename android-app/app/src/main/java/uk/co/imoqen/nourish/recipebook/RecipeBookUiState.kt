@@ -29,7 +29,7 @@ data class RecipeBookUiState(
     val visible: Boolean = true,
 
     val showShoppingListDialog: Boolean = false,
-    val ingredientsToAddToShoppingList: MutableList<ShoppingListIngredient>? = null
+    val ingredientsToAddToShoppingList: MutableList<Pair<ShoppingListIngredient, Boolean>>? = null // boolean outlines whether it should be added to shopping list or not. all are initially set to true and set to false only if user chooses not to add it.
 )
 
 enum class ActionChatStage {

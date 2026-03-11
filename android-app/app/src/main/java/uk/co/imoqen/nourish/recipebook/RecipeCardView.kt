@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish.recipebook
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateBounds
 import androidx.compose.animation.animateContentSize
@@ -32,6 +33,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -428,7 +430,6 @@ fun RecipeCard(
                             }
                             NourishIconTextButton(
                                 onClick = {
-                                    //recipeBookViewModel.setShowShoppingListDialog(true)
                                     recipeBookViewModel.formatIngredientsForShoppingList() // this sets it not to null, so the dialog will be triggered to display (if successful).
                                 },
                                 painter = painterResource(R.drawable.shopping_cart_add),
@@ -445,15 +446,44 @@ fun RecipeCard(
                                     Surface(
                                         shape = RoundedCornerShape(24.dp)
                                     ) {
-                                        Column() {
+                                        Column(
+                                            modifier = Modifier.fillMaxHeight(0.7f)
+                                        ) {
                                             NourishH3("Items to be added to the Shopping List")
 
                                             HorizontalDivider()
 
-                                            uiState.ingredientsToAddToShoppingList.forEach { ingredient ->
-                                                // if the unit is tsp or plural, dont display it.
-                                                Text("${ingredient.plural} ${ingredient.amount} ${ingredient.unit}")
+                                            val ingredientsToAddToShoppingList = uiState.ingredientsToAddToShoppingList
+
+                                            LazyColumn {
+                                                itemsIndexed(ingredientsToAddToShoppingList) { i, (ingredient, selected) ->
+                                                    Log.i("selected:", "$selected")
+
+                                                    // if the unit is tsp or plural, dont display it.
+                                                    Row() {
+                                                        Text("${ingredient.plural} ${ingredient.amount} ${ingredient.unit}")
+                                                        Checkbox(
+                                                            modifier = Modifier.padding(0.dp),
+                                                            checked = selected,
+                                                            onCheckedChange = {
+                                                                recipeBookViewModel.alterIngredientShoppingListStatus(
+                                                                    ingredient, i, !selected
+                                                                );
+                                                                Log.i("alter", "${uiState.ingredientsToAddToShoppingList}")
+                                                            }
+                                                        )
+                                                    }
+                                                }
                                             }
+
+                                            NourishIconTextButton(
+                                                onClick = {
+                                                    recipeBookViewModel.addIngredientsToShoppingList() // this sets it not to null, so the dialog will be triggered to display (if successful).
+                                                },
+                                                painter = painterResource(R.drawable.shopping_cart_add),
+                                                description = "Add to Shopping List",
+                                            )
+
                                         }
 
                                     }

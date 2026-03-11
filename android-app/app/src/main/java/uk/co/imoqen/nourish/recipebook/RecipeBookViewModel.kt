@@ -1,6 +1,7 @@
 package uk.co.imoqen.nourish.recipebook
 
 import android.util.Log
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -166,19 +167,31 @@ class RecipeBookViewModel @Inject constructor(
         }
     }
 
-    fun setShowShoppingListDialog(showShoppingListDialog: Boolean) {
-        mutableUiState.update { currentState ->
-            currentState.copy(
-                showShoppingListDialog = showShoppingListDialog
-            )
-        }
-    }
-
-    fun setIngredientsToAddToShoppingList(ingredientsToAddToShoppingList: MutableList<ShoppingListIngredient>?) {
+    fun setIngredientsToAddToShoppingList(ingredientsToAddToShoppingList: MutableList<Pair<ShoppingListIngredient, Boolean>>?) {
         mutableUiState.update { currentState ->
             currentState.copy(
                 ingredientsToAddToShoppingList = ingredientsToAddToShoppingList
             )
+        }
+    }
+
+    fun alterIngredientShoppingListStatus(
+        ingredientToAddToShoppingList: ShoppingListIngredient,
+        index: Int, // safe to use index because it wont change after it is populated. for safety, done in runcatching
+        selected: Boolean
+    ) {
+        viewModelScope.launch() {
+            runCatching {
+                // IMPORTANT NOTe for future: toMutableList() solves composition problems by creating a NEW list.
+                val updatedList = mutableUiState.value.ingredientsToAddToShoppingList?.toMutableList().apply {
+                    this?.set(index, Pair(ingredientToAddToShoppingList, selected))
+                }
+                setIngredientsToAddToShoppingList(updatedList)
+            }
+                .onFailure {
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Cannot edit ingredient status."))
+                    Log.i("ingredient status change", "failed")
+                }
         }
     }
 
@@ -192,7 +205,7 @@ class RecipeBookViewModel @Inject constructor(
                 }
 
                 // declare the list and get all ingredients:
-                val shoppingListIngredients: MutableList<ShoppingListIngredient> = mutableListOf()
+                val shoppingListIngredients: MutableList<Pair<ShoppingListIngredient, Boolean>> = mutableListOf()
                 val recipeIngredients =
                     recipeRepository.getRecipeWithRecipeIngredients(recipe.id).first().ingredients
 
@@ -211,7 +224,8 @@ class RecipeBookViewModel @Inject constructor(
 
                     val existingIngredientIndex =
                         (shoppingListIngredients.indexOfFirst {
-                            it.ingredientId == recipeIngredient.ingredientId && it.unit == recipeIngredient.ingredientUnit
+                            it.first.ingredientId == recipeIngredient.ingredientId
+                                    && it.first.unit == recipeIngredient.ingredientUnit
                         })
 
                     var unit = recipeIngredient.ingredientUnit
@@ -222,23 +236,27 @@ class RecipeBookViewModel @Inject constructor(
                     }
 
                     if (existingIngredientIndex != -1 && !unit.keepUnitInShoppingList) {// check if the ingredient is already in the list and only update it if the amount needs to change (i.e. not tsp etc)
-                        val existingIngredient = shoppingListIngredients[existingIngredientIndex]
+                        val existingIngredient = shoppingListIngredients[existingIngredientIndex].first
                         // if it is, then alter the existing list entry
                         // stays same but amount just gets changed
-                        val updatedIngredient = existingIngredient.copy(
-                            amount = existingIngredient.amount + recipeIngredient.amount
-                        )
+                        val updatedIngredient =
+                            Pair(
+                                existingIngredient.copy(
+                                amount = existingIngredient.amount + recipeIngredient.amount
+                                ),
+                                true // by default it is true; to add to shopping list.
+                            )
                         // then overwrite it
                         shoppingListIngredients[existingIngredientIndex] = updatedIngredient
                     } else {
                         // if it doesn't already exist in the list, then simply add it:
-                        shoppingListIngredients.add(
+                        shoppingListIngredients.add(Pair(
                             ShoppingListIngredient(
                                 ingredient.id,
                                 ingredient.plural,
                                 unit,
                                 amount
-                            )
+                            ), true) // by default it is true; to add to shopping list.
                         )
                     }
                 }
@@ -250,6 +268,24 @@ class RecipeBookViewModel @Inject constructor(
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Ingredients cannot be added. Please try another recipe."))
                     Log.i("ingredient add display", "failed")
                 }
+        }
+    }
+
+    fun addIngredientsToShoppingList() {
+        viewModelScope.launch() {
+            runCatching {
+
+                // get all the ingredients:
+                val shoppingListIngredients = mutableUiState.value.ingredientsToAddToShoppingList
+
+                // go through them all and add the ones to the db which should be added:
+                shoppingListIngredients?.forEach { (ingredient, selected) ->
+                    if (selected) {
+                        // add to db and account for if the ingredient is already in the db.
+                    }
+                }
+
+            }
         }
     }
 
