@@ -1,9 +1,6 @@
 package uk.co.imoqen.nourish.shoppinglist
 
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.remember
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
-import uk.co.imoqen.nourish.db.shoppinglistentry.ShoppingListEntry
 
 data class ShoppingListUiState(
 

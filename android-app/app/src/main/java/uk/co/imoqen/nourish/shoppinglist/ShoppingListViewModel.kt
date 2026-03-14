@@ -1,7 +1,6 @@
 package uk.co.imoqen.nourish.shoppinglist
 
 import android.util.Log
-import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.withTransaction
@@ -12,18 +11,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.RecipeActions
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.db.NourishDatabase
 import uk.co.imoqen.nourish.db.ingredient.IngredientRepository
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
-import uk.co.imoqen.nourish.db.shoppinglistentry.ShoppingListEntry
 import uk.co.imoqen.nourish.db.shoppinglistentry.ShoppingListEntryRepository
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
-import uk.co.imoqen.nourish.network.ApiService
-import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import javax.inject.Inject
 
 @HiltViewModel
@@ -41,7 +36,6 @@ class ShoppingListViewModel @Inject constructor(
     val uiState: StateFlow<ShoppingListUiState> = mutableUiState.asStateFlow()
 
     // Setters for Ui State values:
-
     fun setShoppingListEntries(shoppingListEntries: List<ShoppingListUiEntry>) {
         mutableUiState.update { currentState ->
             currentState.copy(
@@ -49,13 +43,6 @@ class ShoppingListViewModel @Inject constructor(
             )
         }
     }
-
-    /*fun updateShoppingListEntry(index: Int, ordinal: Int) {
-        val updatedList = mutableUiState.value.shoppingListEntries.toMutableList().apply {
-            this[index] = this[index].copy(ordinal = ordinal)
-        }
-    }*/
-
 
     fun populateShoppingList() {
         viewModelScope.launch() {
@@ -105,35 +92,16 @@ class ShoppingListViewModel @Inject constructor(
                     if (fromOrdinal == null || toOrdinal == null) {
                         return@withTransaction
                     }
-                    // update DB to persist the change:
+                    // update DB to persist the change. UI is simply updated in the view.
                     shoppingListEntryRepository.setOrdinal(fromKey, toOrdinal)
                     shoppingListEntryRepository.setOrdinal(toKey, fromOrdinal)
-
-                    // update UI:
-                    /*val fromIndex = mutableUiState.value.shoppingListEntries.indexOfFirst { it.id == fromKey }
-                    val toIndex = mutableUiState.value.shoppingListEntries.indexOfFirst { it.id == toKey }
-                    updateShoppingListEntry(fromIndex, toOrdinal)
-                    updateShoppingListEntry(toIndex, fromOrdinal)
-                    sortShoppingListByOrdinal()*/
                 }
             }
                 .onSuccess {
                     Log.i("successfully swapped", "success")
-                    // order if successfully swapped
                 }
         }
     }
-
-
-   /* fun sortShoppingListByOrdinal() {
-        viewModelScope.launch() {
-            runCatching {
-                setShoppingListEntries(mutableUiState.value.shoppingListEntries.sortedBy {
-                    it.ordinal
-                })
-            }
-        }
-    }*/
 
     fun formatIngredientAmount(
         ingredientAmount: Double,
