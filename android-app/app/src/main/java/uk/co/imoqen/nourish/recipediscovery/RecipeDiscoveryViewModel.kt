@@ -556,6 +556,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
                             "The recipe could not be saved. Please try again, or generate a new recipe."
                         )
                     )
+                    Log.i("RECIPE SAVE", "$e")
                 }
         }
     }

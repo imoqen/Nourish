@@ -104,6 +104,14 @@ class ShoppingListViewModel @Inject constructor(
         }
     }
 
+    fun setAddIngredientError(addIngredientError: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                addIngredientError = addIngredientError
+            )
+        }
+    }
+
     fun deleteShoppingListItem() {
         viewModelScope.launch() {
             val itemIndex = mutableUiState.value.itemIndexToDelete
@@ -250,13 +258,17 @@ class ShoppingListViewModel @Inject constructor(
                 }
 
                 val ingredientName = mutableUiState.value.addIngredientName
+                if (ingredientName == "") {
+                    setAddIngredientError("The item cannot be blank.")
+                    return@launch
+                }
                 // add it to ingredient table if doesn't already exist in either singular or plurla (as its user input, dont know whether this will be singular or plural, so both are checked)
-                var ingredientId = ingredientRepository.getIdBySingular(ingredientName)
-                Log.i("singular", "$ingredientId")
+                var ingredientId = ingredientRepository.getIdByPlural(ingredientName)
+                Log.i("plural", "$ingredientId")
                 if (ingredientId == null) {
-                    // singular search returned null, now look for plural.
-                    ingredientId = ingredientRepository.getIdByPlural(ingredientName)
-                    Log.i("plural", "$ingredientId")
+                    // plural search returned null, now look for singular.
+                    ingredientId = ingredientRepository.getIdBySingular(ingredientName)
+                    Log.i("singular", "$ingredientId")
                     if (ingredientId == null) {
                         // still null means it doesnt exist: add it
                         ingredientId = ingredientRepository.insert(
@@ -324,6 +336,7 @@ class ShoppingListViewModel @Inject constructor(
         setAddIngredientUnit(IngredientUnit.SINGLE)
         setAddIngredientName("")
         setUserInteractionStatus(UserInteractionStatus.BROWSE)
+        setAddIngredientError("")
     }
 
 }

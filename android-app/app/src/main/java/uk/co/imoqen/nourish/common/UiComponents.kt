@@ -30,6 +30,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -506,7 +507,7 @@ fun NourishBottomCard(
                     .fillMaxWidth()
                     .graphicsLayer { clip = false }  // to prevent parent clipping
             ) {
-                Box(
+                Surface(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
@@ -527,12 +528,15 @@ fun NourishBottomCard(
                                 bottomEnd = 0.dp
                             )
                         )
-                        .background(MaterialTheme.colorScheme.surface)
-                        .padding(top = 32.dp) // room for logo
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(top = 32.dp), // room for logo,
+                            tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.background)
                             .padding(16.dp)
                             .padding(bottom = 40.dp),
                         // extra padding at bottom for the built in mobile navbar

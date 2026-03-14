@@ -23,8 +23,8 @@ import uk.co.imoqen.nourish.ui.theme.PurpleGrey80
 // error: self explanatory
 
 private val NourishDarkColorScheme = darkColorScheme(
-    primary = NourishGreenDark,
-    secondary = NourishGreen,
+    primary = NourishGreen,
+    secondary = NourishGreenLight,
     tertiary = NourishGreenLight,
 
     background = PurpleGrey40,
@@ -48,7 +48,7 @@ private val NourishDarkColorScheme = darkColorScheme(
 private val NourishLightColorScheme = lightColorScheme(
     primary = NourishGreen,
     secondary = NourishGreenDark,
-    tertiary = NourishGreenLight,
+    tertiary = NourishGreenDark,
 
     background = Color.White,
     surface = Purple80,
@@ -67,7 +67,9 @@ private val NourishLightColorScheme = lightColorScheme(
     error = ErrorLight,
     errorContainer = ErrorDark,
 
-    surfaceContainer = PurpleGrey120
+    surfaceContainer = SurfaceContainerLight
+
+    //surfaceContainer = PurpleGrey120
 
     /* Other default colors to override
     background = Color(0xFFFFFBFE),

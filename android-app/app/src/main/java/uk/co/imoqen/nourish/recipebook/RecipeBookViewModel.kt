@@ -632,7 +632,6 @@ class RecipeBookViewModel @Inject constructor(
     fun formatIngredientAmount(
         ingredientAmount: Double,
     ): String {
-        // scale the ingredient amount by the desired number of servings set by user:
         var amount = ingredientAmount
         if (amount < 0.25) {
             amount = 0.25 // cant go less than 0.25

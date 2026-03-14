@@ -16,6 +16,7 @@ data class ShoppingListUiState(
     val addIngredientUnit: IngredientUnit = IngredientUnit.SINGLE, // can only be chosen from: none specified (SINGLE), unit (UNIT), ml (ML) and g (G). ADD SUPPORT FOR KG AND L just convert them to ml and g then display as kg / g if > 1000 or so
     val addIngredientAmount: String = "", // string for the UI but converted to double when inserting the shopping list entry
     // purchased will be set to false. ordinal will be the next max ordinal value.
+    val addIngredientError: String = ""
 )
 
 enum class UserInteractionStatus {

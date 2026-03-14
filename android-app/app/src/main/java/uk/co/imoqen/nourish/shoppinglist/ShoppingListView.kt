@@ -2,11 +2,13 @@ package uk.co.imoqen.nourish.shoppinglist
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -49,6 +51,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import sh.calvin.reorderable.ReorderableItem
@@ -56,6 +59,8 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 import uk.co.imoqen.nourish.R
 import uk.co.imoqen.nourish.common.NourishButton
 import uk.co.imoqen.nourish.common.NourishConfirmationDialog
+import uk.co.imoqen.nourish.common.NourishDivider
+import uk.co.imoqen.nourish.common.NourishErrorText
 import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
@@ -154,86 +159,165 @@ fun ShoppingListScreen(
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
+            if (uiState.shoppingListEntries.isEmpty()) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    Text(
+                        "There are no items in your shopping list.",
+                        modifier = Modifier.fillMaxWidth().padding(top=8.dp).padding(4.dp),
+                        textAlign = TextAlign.Center,
+                    )
+                    NourishDivider()
+                    Text(
+                        "Items can be added from the ingredients of a recipe, or manually by pressing 'Add Item' below.",
+                        modifier = Modifier.fillMaxWidth().padding(4.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
             // Shopping List
-            LazyColumn(state = lazyListState) {
+            LazyColumn(
+                state = lazyListState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 72.dp) // padding at bottom to accommodate for the space that the FAB takes up, so that all elements of the page are 100% visible by scrolling
+            ) {
+
                 // Lists the items, using the primary key as its key: stable.
                 itemsIndexed(uiState.shoppingListEntries, key = { i, shoppingListItem -> shoppingListItem.id }) { i, shoppingListItem ->
-                    if (shoppingListItem.plural.contains(uiState.searchTerm)) { // applies the search
-                        // Uses ReorderableItem library: https://github.com/Calvin-LL/Reorderable
-                        ReorderableItem(reorderableLazyListState, key = shoppingListItem.id, modifier = Modifier.fillMaxWidth().padding(2.dp)) { isDragging ->
-                            val elevation by animateDpAsState(if (isDragging) 4.dp else 0.dp)
 
-                            Surface(
-                                shadowElevation = elevation,
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row( // min height and can expand if needed, if the ingredient is very long
-                                    modifier = Modifier.heightIn(48.dp).fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically
+                    // checks whether another item under the same name exists but a small amount
+                    // e.g. in recipes when only a small amount is required (30ml or so). don't add this as irs own item, but
+                    // add it as a disclaimer under an existing item.
+                    val anotherExists =
+                        shoppingListItem.unit != IngredientUnit.SINGLE &&
+                                // checks for duplicates
+                                uiState.shoppingListEntries.count {
+                                    it.plural == shoppingListItem.plural &&
+                                            !it.purchased  &&
+                                            it.unit == IngredientUnit.SINGLE // clearly not the same because different unit, so checks >= 1 not just > 1
+                                } >= 1
+
+                    val itemIsSmallAmount =
+                        shoppingListItem.unit == IngredientUnit.SINGLE &&
+                                // checks for duplicates
+                                uiState.shoppingListEntries.count {
+                                    it.plural == shoppingListItem.plural &&
+                                            !it.purchased  &&
+                                            it.unit != IngredientUnit.SINGLE // clearly not the same because different unit, so checks >= 1 not just > 1
+                                } >= 1
+
+                    if (!itemIsSmallAmount) {
+                        if (shoppingListItem.plural.contains(uiState.searchTerm)) { // applies the search
+                            // Uses ReorderableItem library: https://github.com/Calvin-LL/Reorderable
+                            ReorderableItem(
+                                reorderableLazyListState,
+                                key = shoppingListItem.id,
+                                modifier = Modifier.fillMaxWidth().padding(2.dp).padding(horizontal=6.dp)
+                            ) { isDragging ->
+                                val elevation by animateDpAsState(if (isDragging) 4.dp else 0.dp)
+
+                                Surface(
+                                    shadowElevation = elevation,
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Checkbox(
-                                        checked = shoppingListItem.purchased,
-                                        onCheckedChange = {
-                                            val index = uiState.shoppingListEntries.indexOfFirst { it.id == shoppingListItem.id }
-                                            if (index != -1) {
-                                                // update the UI and DB with the purchase state
-                                                viewModel.updatePurchasedState(
-                                                    index,
-                                                    shoppingListItem.copy(purchased = !shoppingListItem.purchased)
+                                    Row( // min height and can expand if needed, if the ingredient is very long
+                                        modifier = Modifier.heightIn(48.dp).fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Checkbox(
+                                            checked = shoppingListItem.purchased,
+                                            onCheckedChange = {
+                                                val index =
+                                                    uiState.shoppingListEntries.indexOfFirst { it.id == shoppingListItem.id }
+                                                if (index != -1) {
+                                                    // update the UI and DB with the purchase state
+                                                    viewModel.updatePurchasedState(
+                                                        index,
+                                                        shoppingListItem.copy(purchased = !shoppingListItem.purchased)
+                                                    )
+                                                }
+                                            },
+                                        )
+
+                                        Column(
+                                            modifier = Modifier.weight(1f).fillMaxWidth() // will take all remaining space and wrap
+                                        ) {
+                                            Text(
+                                                text = shoppingListItem.plural,
+                                                textDecoration = if (shoppingListItem.purchased) {
+                                                    TextDecoration.LineThrough
+                                                } else TextDecoration.None,
+                                            )
+                                            if (anotherExists) {
+                                                Text(
+                                                    "Small, additional amount also required",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                                                 )
                                             }
-                                        },
-                                    )
-                                    Text(
-                                        "${shoppingListItem.plural} ${shoppingListItem.amount} ${shoppingListItem.unit.name}",
-                                        Modifier.padding(horizontal = 8.dp),
-                                        textDecoration = if (shoppingListItem.purchased) {
-                                            TextDecoration.LineThrough
-                                        } else TextDecoration.None,
-                                    )
+                                        }
 
-                                    Spacer(modifier = Modifier.weight(1f))
-                                    // buttons, amounts, etc, go to the very end
-                                    if (uiState.userInteractionStatus == UserInteractionStatus.EDIT) {
-                                        // delete the item
-                                        IconButton(
-                                            onClick = {
-                                                viewModel.setItemIndexToDelete(i)
-                                            },
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(R.drawable.delete),
-                                                contentDescription = "Delete Item",
-                                                tint = MaterialTheme.colorScheme.error.copy(
-                                                    alpha = 0.8f
-                                                )
+                                        // if the unit type is SINGLE, dont display the amount. only display if UNIT or others which have a unit and amount.
+                                        if (shoppingListItem.unit != IngredientUnit.SINGLE) {
+                                            Text(
+                                                modifier = Modifier
+                                                    .padding(vertical = 4.dp)
+                                                    .padding(horizontal = 8.dp)
+                                                    .background(
+                                                        shape = RoundedCornerShape(8.dp),
+                                                        color = MaterialTheme.colorScheme.background
+                                                    )
+                                                    .padding(6.dp),
+                                                text = "${
+                                                    viewModel.formatIngredientAmount(
+                                                        shoppingListItem.amount
+                                                    )
+                                                } ${if (shoppingListItem.amount > 1) {shoppingListItem.unit.pluralName} else {shoppingListItem.unit.singularName}}"
                                             )
                                         }
 
-                                        // move the item
-                                        IconButton(
-                                            modifier = Modifier.draggableHandle(
-                                                onDragStarted = {
-                                                    hapticFeedback.performHapticFeedback(
-                                                        HapticFeedbackType.GestureThresholdActivate
-                                                    )
+                                        //Spacer(modifier = Modifier.weight(1f))
+                                        // buttons, amounts, etc, go to the very end
+                                        if (uiState.userInteractionStatus == UserInteractionStatus.EDIT) {
+                                            // delete the item
+                                            IconButton(
+                                                onClick = {
+                                                    viewModel.setItemIndexToDelete(i)
                                                 },
-                                                onDragStopped = {
-                                                    hapticFeedback.performHapticFeedback(
-                                                        HapticFeedbackType.GestureEnd
+                                            ) {
+                                                Icon(
+                                                    painter = painterResource(R.drawable.delete),
+                                                    contentDescription = "Delete Item",
+                                                    tint = MaterialTheme.colorScheme.error.copy(
+                                                        alpha = 0.8f
                                                     )
-                                                },
-                                            ),
-                                            onClick = {},
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(R.drawable.drag_handle),
-                                                contentDescription = "Reorder Item",
-                                                tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(
-                                                    alpha = 0.8f
                                                 )
-                                            )
+                                            }
+
+                                            // move the item
+                                            IconButton(
+                                                modifier = Modifier.draggableHandle(
+                                                    onDragStarted = {
+                                                        hapticFeedback.performHapticFeedback(
+                                                            HapticFeedbackType.GestureThresholdActivate
+                                                        )
+                                                    },
+                                                    onDragStopped = {
+                                                        hapticFeedback.performHapticFeedback(
+                                                            HapticFeedbackType.GestureEnd
+                                                        )
+                                                    },
+                                                ),
+                                                onClick = {},
+                                            ) {
+                                                Icon(
+                                                    painter = painterResource(R.drawable.drag_handle),
+                                                    contentDescription = "Reorder Item",
+                                                    tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(
+                                                        alpha = 0.8f
+                                                    )
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -270,7 +354,8 @@ fun ShoppingListScreen(
                                         contentDescription = "Clear Shopping List",
                                         tint = MaterialTheme.colorScheme.error
                                     )
-                                }
+                                },
+                                containerColor = MaterialTheme.colorScheme.background
                             )
                         }
                         // Edit button:
@@ -314,7 +399,8 @@ fun ShoppingListScreen(
                                             tint = MaterialTheme.colorScheme.tertiary
                                         )
                                     }
-                                }
+                                },
+                                containerColor = MaterialTheme.colorScheme.background
                             )
                         }
                     }
@@ -324,20 +410,25 @@ fun ShoppingListScreen(
                     visible = uiState.userInteractionStatus == UserInteractionStatus.BROWSE || uiState.userInteractionStatus == UserInteractionStatus.ADD
                 ) {
                     if (uiState.userInteractionStatus == UserInteractionStatus.BROWSE) {
-                        FloatingActionButton(
+                        ExtendedFloatingActionButton(
                             modifier = Modifier.padding(6.dp),
                             onClick = {
                                 viewModel.setUserInteractionStatus(UserInteractionStatus.ADD)
                             },
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.add),
-                                contentDescription = "Add Item",
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(
-                                    alpha = 0.8f
+                            text = {
+                                Text("Add Item")
+                            },
+                            icon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.add),
+                                    contentDescription = "Add Item",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(
+                                        alpha = 0.8f
+                                    )
                                 )
-                            )
-                        }
+                            },
+                            containerColor = MaterialTheme.colorScheme.background
+                        )
                     }
                 }
             }
@@ -353,7 +444,7 @@ fun ShoppingListScreen(
                     val keyboardFocusManager = LocalFocusManager.current // keyboard focus manager which is local to the modal bottom sheet. doesnt work otherwise.
 
                     Column(
-                        modifier = Modifier.fillMaxWidth().padding(8.dp).padding(bottom=32.dp), // space from bottom so not cramped
+                        modifier = Modifier.fillMaxWidth().padding(8.dp).padding(bottom=20.dp), // space from bottom so not cramped
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
@@ -367,6 +458,12 @@ fun ShoppingListScreen(
                             placeholder = "Enter item to add", // user language consideration: although the app is built for ingredients, users will likely add other things. hence, "item" is used.
                             onDone = { keyboardFocusManager.clearFocus(force=true) }
                         )
+                        // Display item name error
+                        if (uiState.addIngredientError != "") {
+                            NourishErrorText(
+                                uiState.addIngredientError
+                            )
+                        }
 
                         NourishTextDivider(
                             "Enter amount (optional)",
@@ -445,22 +542,20 @@ fun UnitSelectionButton(
 ) {
     Button(
         onClick = { viewModel.setAddIngredientUnit(unit) },
-        modifier = Modifier.padding(6.dp)
-            .then(
-                if (uiState.addIngredientUnit == unit) {
-                    Modifier.border(
-                        width = 1.dp,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                } else {
-                    Modifier
-                }
-            ),
         shape = RoundedCornerShape(16.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.background
-        )
+        ),
+        modifier = Modifier.padding(6.dp),
+        border =
+            if (uiState.addIngredientUnit == unit) {
+                BorderStroke(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+            } else {
+                null
+            }
     ) {
         Text(text)
     }
