@@ -88,4 +88,23 @@ class ShoppingListEntryRepositoryImpl @Inject constructor(
         shoppingListEntryDao.delete(shoppingListEntry)
     }
 
+    override suspend fun updatePurchaseStatus(id: Long, purchased: Boolean) {
+        val existingEntry = getById(id).first()
+        if (existingEntry == null) {
+            throw NullPointerException()
+        }
+        shoppingListEntryDao.update(
+            existingEntry.copy(
+                purchased = purchased,
+                /*ordinal = if (purchased) {
+                    // if setting to purchased, then put the item at the end of the list
+                    getMaxOrdinalForUser(existingEntry.purchaserUid) + 1
+                } else {
+                    // otherwise, setting back to unpurchased so put right
+                    getMaxOrdinalForUser(existingEntry.purchaserUid)
+                }*/
+            )
+        )
+    }
+
 }

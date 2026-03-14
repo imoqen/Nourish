@@ -44,6 +44,39 @@ class ShoppingListViewModel @Inject constructor(
         }
     }
 
+    fun setSearchTerm(searchTerm: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                searchTerm = searchTerm
+            )
+        }
+    }
+
+    fun setUserInteractionStatus(userInteractionStatus: UserInteractionStatus) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                userInteractionStatus = userInteractionStatus
+            )
+        }
+    }
+
+    fun updatePurchasedState(index: Int, newItem: ShoppingListUiEntry) {
+        viewModelScope.launch() {
+            runCatching {
+                // first, update the DB:
+                shoppingListEntryRepository.updatePurchaseStatus(newItem.id, newItem.purchased)
+            }
+                .onSuccess {
+                    // if the DB update was successful, update the UI
+                    val updatedList = mutableUiState.value.shoppingListEntries.toMutableList().apply {
+                        this[index] = newItem
+                    }
+                    // update the ui state:
+                    setShoppingListEntries(updatedList)
+                }
+        }
+    }
+
     fun populateShoppingList() {
         viewModelScope.launch() {
             runCatching {
@@ -64,6 +97,7 @@ class ShoppingListViewModel @Inject constructor(
                             unit = shoppingListEntry.unit,
                             amount = shoppingListEntry.amount,
                             purchased = shoppingListEntry.purchased,
+                            ordinal = shoppingListEntry.ordinal
                         )
                     )
                 }
@@ -95,6 +129,15 @@ class ShoppingListViewModel @Inject constructor(
                     // update DB to persist the change. UI is simply updated in the view.
                     shoppingListEntryRepository.setOrdinal(fromKey, toOrdinal)
                     shoppingListEntryRepository.setOrdinal(toKey, fromOrdinal)
+
+                    // Update the ordinals in the ui so that it persists when others are moved
+                    val fromIndex = mutableUiState.value.shoppingListEntries.indexOfFirst{ it.id == fromKey }
+                    val toIndex = mutableUiState.value.shoppingListEntries.indexOfFirst{ it.id == toKey }
+                    val updatedList = mutableUiState.value.shoppingListEntries.toMutableList().apply {
+                        this[fromIndex] = this[fromIndex].copy(ordinal = toOrdinal)
+                        this[toIndex] = this[toIndex].copy(ordinal = fromOrdinal)
+                    }
+                    setShoppingListEntries(updatedList)
                 }
             }
                 .onSuccess {
