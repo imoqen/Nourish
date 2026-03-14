@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish.shoppinglist
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -86,7 +87,10 @@ fun ShoppingListScreen(
         hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
     }
 
-    Column() {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
 
         // Search Bar to search for ingredients
         Box (
@@ -142,7 +146,7 @@ fun ShoppingListScreen(
                                         },
                                     )
                                     Text(
-                                        shoppingListItem.plural,
+                                        "${shoppingListItem.plural} ${shoppingListItem.amount} ${shoppingListItem.unit.name}",
                                         Modifier.padding(horizontal = 8.dp),
                                         textDecoration = if (shoppingListItem.purchased) {
                                             TextDecoration.LineThrough
@@ -151,7 +155,23 @@ fun ShoppingListScreen(
 
                                     Spacer(modifier = Modifier.weight(1f))
                                     // buttons, amounts, etc, go to the very end
-                                    if (uiState.userInteractionStatus != UserInteractionStatus.BROWSE) {
+                                    if (uiState.userInteractionStatus == UserInteractionStatus.EDIT) {
+                                        // delete the item
+                                        IconButton(
+                                            onClick = {
+                                                viewModel.deleteShoppingListItem(shoppingListItem.id, i)
+                                            },
+                                        ) {
+                                            Icon(
+                                                painter = painterResource(R.drawable.delete),
+                                                contentDescription = "Deleye Item",
+                                                tint = MaterialTheme.colorScheme.error.copy(
+                                                    alpha = 0.8f
+                                                )
+                                            )
+                                        }
+
+                                        // move the item
                                         IconButton(
                                             modifier = Modifier.draggableHandle(
                                                 onDragStarted = {
@@ -183,35 +203,60 @@ fun ShoppingListScreen(
                 }
             }
 
-            // FAB for adding and ediitng
+            // FAB for adding and editing
             Row(
                 modifier = Modifier.align(Alignment.BottomEnd)
             ) {
-                FloatingActionButton(
-                    onClick = {
-                        viewModel.setUserInteractionStatus(UserInteractionStatus.EDIT)
-                    },
+                AnimatedVisibility(
+                    visible = uiState.userInteractionStatus == UserInteractionStatus.BROWSE || uiState.userInteractionStatus == UserInteractionStatus.EDIT
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.edit_note),
-                        contentDescription = "Edit Items",
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(
-                            alpha = 0.8f
-                        )
-                    )
+                    FloatingActionButton(
+                        modifier = Modifier.padding(6.dp),
+                        onClick = {
+                            if (uiState.userInteractionStatus == UserInteractionStatus.BROWSE) {
+                                viewModel.setUserInteractionStatus(UserInteractionStatus.EDIT)
+                            } else {
+                                viewModel.setUserInteractionStatus(UserInteractionStatus.BROWSE)
+                            }
+                        },
+                    ) {
+                        if (uiState.userInteractionStatus == UserInteractionStatus.BROWSE) {
+                            Icon(
+                                painter = painterResource(R.drawable.edit_note),
+                                contentDescription = "Edit Items",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(
+                                    alpha = 0.8f
+                                )
+                            )
+                        } else {
+                            Icon(
+                                painter = painterResource(R.drawable.tick),
+                                contentDescription = "Finish Editing Items",
+                                tint = MaterialTheme.colorScheme.tertiary
+                            )
+                        }
+                    }
                 }
-                FloatingActionButton(
-                    onClick = {
-                        viewModel.setUserInteractionStatus(UserInteractionStatus.ADD)
-                    },
+
+                AnimatedVisibility(
+                    visible = uiState.userInteractionStatus == UserInteractionStatus.BROWSE || uiState.userInteractionStatus == UserInteractionStatus.ADD
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.add),
-                        contentDescription = "Add Item",
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(
-                            alpha = 0.8f
-                        )
-                    )
+                    FloatingActionButton(
+                        modifier = Modifier.padding(6.dp),
+                        onClick = {
+                            viewModel.setUserInteractionStatus(UserInteractionStatus.ADD)
+                        },
+                    ) {
+                        if (uiState.userInteractionStatus == UserInteractionStatus.BROWSE) {
+                            Icon(
+                                painter = painterResource(R.drawable.add),
+                                contentDescription = "Add Item",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(
+                                    alpha = 0.8f
+                                )
+                            )
+                        }
+                    }
                 }
             }
 

@@ -60,6 +60,26 @@ class ShoppingListViewModel @Inject constructor(
         }
     }
 
+    fun deleteShoppingListItem(id: Long, index: Int) {
+        viewModelScope.launch() {
+            runCatching {
+                // first, update the DB:
+                val item = shoppingListEntryRepository.getById(id).first()
+                if (item == null) {
+                    return@launch
+                }
+                shoppingListEntryRepository.delete(item)
+            }
+                .onSuccess {
+                    // if the DB update was successful, update the UI
+                    val updatedList = mutableUiState.value.shoppingListEntries
+                        updatedList.toMutableList().removeAt(index)
+                    // update the ui state:
+                    setShoppingListEntries(updatedList) // NOT UPDATING
+                }
+        }
+    }
+
     fun updatePurchasedState(index: Int, newItem: ShoppingListUiEntry) {
         viewModelScope.launch() {
             runCatching {
