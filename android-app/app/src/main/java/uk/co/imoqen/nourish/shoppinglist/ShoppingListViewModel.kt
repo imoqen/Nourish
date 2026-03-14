@@ -60,11 +60,29 @@ class ShoppingListViewModel @Inject constructor(
         }
     }
 
-    fun deleteShoppingListItem(id: Long, index: Int) {
+    fun setShowDeleteAllDialog(showDeleteAllDialog: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                showDeleteAllDialog = showDeleteAllDialog
+            )
+        }
+    }
+
+    fun setItemIndexToDelete(itemIndexToDelete: Int) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                itemIndexToDelete = itemIndexToDelete
+            )
+        }
+    }
+
+    fun deleteShoppingListItem() {
         viewModelScope.launch() {
+            val itemIndex = mutableUiState.value.itemIndexToDelete
             runCatching {
                 // first, update the DB:
-                val item = shoppingListEntryRepository.getById(id).first()
+                val itemId = mutableUiState.value.shoppingListEntries[itemIndex].id
+                val item = shoppingListEntryRepository.getById(itemId).first()
                 if (item == null) {
                     return@launch
                 }
@@ -72,10 +90,28 @@ class ShoppingListViewModel @Inject constructor(
             }
                 .onSuccess {
                     // if the DB update was successful, update the UI
-                    val updatedList = mutableUiState.value.shoppingListEntries
-                        updatedList.toMutableList().removeAt(index)
+                    val updatedList = mutableUiState.value.shoppingListEntries.toMutableList()
+                    val removed = updatedList.removeAt(itemIndex)
+                    Log.i("deletion list", "$removed, $updatedList")
                     // update the ui state:
                     setShoppingListEntries(updatedList) // NOT UPDATING
+                }
+        }
+    }
+
+    // deletes every shopping list item of that user
+    fun clearShoppingList() {
+        viewModelScope.launch() {
+            runCatching {
+                val uid = authenticationManager.getUid()
+                if (uid == null) {
+                    return@launch
+                }
+                shoppingListEntryRepository.deleteAllForUser(uid)
+            }
+                .onSuccess {
+                   // now update in the UI:
+                    setShoppingListEntries(emptyList())
                 }
         }
     }

@@ -88,6 +88,10 @@ class ShoppingListEntryRepositoryImpl @Inject constructor(
         shoppingListEntryDao.delete(shoppingListEntry)
     }
 
+    override suspend fun deleteAllForUser(uid: String) {
+        shoppingListEntryDao.deleteAllForUser(uid)
+    }
+
     override suspend fun updatePurchaseStatus(id: Long, purchased: Boolean) {
         val existingEntry = getById(id).first()
         if (existingEntry == null) {

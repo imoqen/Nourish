@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,7 +43,9 @@ import androidx.compose.ui.unit.dp
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import uk.co.imoqen.nourish.R
+import uk.co.imoqen.nourish.common.NourishConfirmationDialog
 import uk.co.imoqen.nourish.common.NourishTextField
+import uk.co.imoqen.nourish.recipediscovery.restart
 
 /**
  * Shopping list view
@@ -86,6 +89,23 @@ fun ShoppingListScreen(
         // Provide haptic feedback:
         hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
     }
+
+    // for deleting all (reset)
+    NourishConfirmationDialog(
+        show = uiState.showDeleteAllDialog,
+        title = "Confirm Clear",
+        description = "Are you sure you wish to clear the shopping list?\n\nAll items in the shopping list will be deleted.",
+        onConfirmation = { viewModel.clearShoppingList(); viewModel.setShowDeleteAllDialog(false); viewModel.setUserInteractionStatus(UserInteractionStatus.BROWSE) },
+        onDismiss = { viewModel.setShowDeleteAllDialog(false) }
+    )
+    // for deleting single item
+    NourishConfirmationDialog(
+        show = (uiState.itemIndexToDelete != -1),
+        title = "Confirm Delete",
+        description = "Are you sure you wish to delete this item from the shopping list?",
+        onConfirmation = { viewModel.deleteShoppingListItem(); viewModel.setItemIndexToDelete(-1) },
+        onDismiss = { viewModel.setItemIndexToDelete(-1) }
+    )
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -159,12 +179,12 @@ fun ShoppingListScreen(
                                         // delete the item
                                         IconButton(
                                             onClick = {
-                                                viewModel.deleteShoppingListItem(shoppingListItem.id, i)
+                                                viewModel.setItemIndexToDelete(i)
                                             },
                                         ) {
                                             Icon(
                                                 painter = painterResource(R.drawable.delete),
-                                                contentDescription = "Deleye Item",
+                                                contentDescription = "Delete Item",
                                                 tint = MaterialTheme.colorScheme.error.copy(
                                                     alpha = 0.8f
                                                 )
@@ -210,31 +230,68 @@ fun ShoppingListScreen(
                 AnimatedVisibility(
                     visible = uiState.userInteractionStatus == UserInteractionStatus.BROWSE || uiState.userInteractionStatus == UserInteractionStatus.EDIT
                 ) {
-                    FloatingActionButton(
-                        modifier = Modifier.padding(6.dp),
-                        onClick = {
-                            if (uiState.userInteractionStatus == UserInteractionStatus.BROWSE) {
-                                viewModel.setUserInteractionStatus(UserInteractionStatus.EDIT)
-                            } else {
-                                viewModel.setUserInteractionStatus(UserInteractionStatus.BROWSE)
-                            }
-                        },
-                    ) {
-                        if (uiState.userInteractionStatus == UserInteractionStatus.BROWSE) {
-                            Icon(
-                                painter = painterResource(R.drawable.edit_note),
-                                contentDescription = "Edit Items",
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(
-                                    alpha = 0.8f
-                                )
-                            )
-                        } else {
-                            Icon(
-                                painter = painterResource(R.drawable.tick),
-                                contentDescription = "Finish Editing Items",
-                                tint = MaterialTheme.colorScheme.tertiary
+                    Row() {
+                        // Delete All button:
+                        if (uiState.userInteractionStatus == UserInteractionStatus.EDIT) {
+                            ExtendedFloatingActionButton(
+                                modifier = Modifier.padding(6.dp),
+                                text = {
+                                    Text(
+                                        text = "Clear List",
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                },
+                                onClick = {
+                                    viewModel.setShowDeleteAllDialog(true)
+                                },
+                                icon = {
+                                    Icon(
+                                        painter = painterResource(R.drawable.delete),
+                                        contentDescription = "Clear Shopping List",
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                }
                             )
                         }
+                        // Edit button:
+                        ExtendedFloatingActionButton(
+                            modifier = Modifier.padding(6.dp),
+                            text = {
+                                Text(
+                                    text = if (uiState.userInteractionStatus == UserInteractionStatus.BROWSE) {
+                                        "Edit List"
+                                    } else {
+                                        "Finish Editing" },
+                                    color = if (uiState.userInteractionStatus == UserInteractionStatus.BROWSE) {
+                                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                    } else { MaterialTheme.colorScheme.tertiary }
+                                )
+                            },
+                            onClick = {
+                                if (uiState.userInteractionStatus == UserInteractionStatus.BROWSE) {
+                                    viewModel.setUserInteractionStatus(UserInteractionStatus.EDIT)
+                                } else {
+                                    viewModel.setUserInteractionStatus(UserInteractionStatus.BROWSE)
+                                }
+                            },
+                            icon = {
+                                if (uiState.userInteractionStatus == UserInteractionStatus.BROWSE) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.edit_note),
+                                        contentDescription = "Edit Items",
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(
+                                            alpha = 0.8f
+                                        )
+                                    )
+                                } else {
+                                    Icon(
+                                        painter = painterResource(R.drawable.tick),
+                                        contentDescription = "Finish Editing Items",
+                                        tint = MaterialTheme.colorScheme.tertiary
+                                    )
+                                }
+                            }
+                        )
                     }
                 }
 

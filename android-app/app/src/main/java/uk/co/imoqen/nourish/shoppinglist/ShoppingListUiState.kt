@@ -4,9 +4,11 @@ import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 
 data class ShoppingListUiState(
 
-    val shoppingListEntries: List<ShoppingListUiEntry> = emptyList(),
+    val shoppingListEntries: List<ShoppingListUiEntry> = emptyList(), // list must be used,so when it is updated then the whole list is updated to trigger recomposition
     val searchTerm: String = "",
-    val userInteractionStatus: UserInteractionStatus = UserInteractionStatus.BROWSE
+    val userInteractionStatus: UserInteractionStatus = UserInteractionStatus.BROWSE,
+    val showDeleteAllDialog: Boolean = false,
+    val itemIndexToDelete: Int = -1
 
 )
 
