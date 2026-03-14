@@ -350,6 +350,8 @@ fun ShoppingListScreen(
                     },
                     sheetState = modalBottomSheetState
                 ) {
+                    val keyboardFocusManager = LocalFocusManager.current // keyboard focus manager which is local to the modal bottom sheet. doesnt work otherwise.
+
                     Column(
                         modifier = Modifier.fillMaxWidth().padding(8.dp).padding(bottom=32.dp), // space from bottom so not cramped
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -363,7 +365,7 @@ fun ShoppingListScreen(
                             value = uiState.addIngredientName,
                             onValueChange = { viewModel.setAddIngredientName(it) },
                             placeholder = "Enter item to add", // user language consideration: although the app is built for ingredients, users will likely add other things. hence, "item" is used.
-                            onDone = { keyboardFocusManager.clearFocus() }
+                            onDone = { keyboardFocusManager.clearFocus(force=true) }
                         )
 
                         NourishTextDivider(
@@ -378,7 +380,7 @@ fun ShoppingListScreen(
                                 viewModel.setAddIngredientAmount(it)
                                             },
                             placeholder = "Enter amount", // user language consideration: although the app is built for ingredients, users will likely add other things. hence, "item" is used.
-                            onDone = { keyboardFocusManager.clearFocus() },
+                            onDone = { keyboardFocusManager.clearFocus(force=true) },
                             keyboardType = KeyboardType.Number // only allows numeric input
                         )
 

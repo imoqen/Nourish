@@ -46,7 +46,6 @@ fun ProfileScreen(
 
     val keyboardFocusManager =
         LocalFocusManager.current
-    val keyboard = LocalSoftwareKeyboardController.current
 
     val passwordChangeSheetState = rememberModalBottomSheetState()
 
@@ -113,7 +112,6 @@ fun ProfileScreen(
                                 placeholder = "Enter a new password",
                                 leadingIcon = Icons.Filled.Lock,
                                 onDone = {
-                                    keyboard?.hide()
                                     keyboardFocusManager.clearFocus(force = true)
                                 },
                                 visualTransformation = PasswordVisualTransformation()
@@ -155,6 +153,7 @@ fun ProfileScreen(
                     sheetState = deleteAccountSheetState,
                     modifier = Modifier.fillMaxSize().padding(bottom = 20.dp)
                 ) {
+                    val keyboardFocusManager = LocalFocusManager.current // local to modal bottom sheet, otherwise wont close
                     // Bottom sheet for account deletion:
                     Column(
                         modifier = Modifier.fillMaxSize(),
@@ -175,7 +174,6 @@ fun ProfileScreen(
                                 leadingIcon = Icons.Filled.Lock,
                                 visualTransformation = PasswordVisualTransformation(),
                                 onDone = {
-                                    keyboard?.hide()
                                     keyboardFocusManager.clearFocus(force = true)
                                 }
                             )
