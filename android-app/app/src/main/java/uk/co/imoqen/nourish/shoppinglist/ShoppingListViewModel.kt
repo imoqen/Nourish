@@ -1,8 +1,10 @@
 package uk.co.imoqen.nourish.shoppinglist
 
+import android.util.Log
 import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.room.withTransaction
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,6 +16,7 @@ import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.RecipeActions
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
+import uk.co.imoqen.nourish.db.NourishDatabase
 import uk.co.imoqen.nourish.db.ingredient.IngredientRepository
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.shoppinglistentry.ShoppingListEntry
@@ -25,6 +28,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ShoppingListViewModel @Inject constructor(
+    private val db: NourishDatabase,
     private val authenticationManager: AuthenticationManager,
     private val uiEventBus: UiEventBus,
     private val recipeRepository: RecipeRepository,
@@ -46,13 +50,6 @@ class ShoppingListViewModel @Inject constructor(
         }
     }
 
-    fun setShoppingListSliderState(slideStates: MutableMap<ShoppingListUiEntry, SlideState>?) {
-        mutableUiState.update { currentState ->
-            currentState.copy(
-                slideStates = slideStates
-            )
-        }
-    }
 
     fun populateShoppingList() {
         viewModelScope.launch() {
@@ -73,17 +70,49 @@ class ShoppingListViewModel @Inject constructor(
                             plural = ingredientRepository.getById(shoppingListEntry.ingredientId).first()?.plural ?: "",
                             unit = shoppingListEntry.unit,
                             amount = shoppingListEntry.amount,
-                            purchased = shoppingListEntry.purchased
+                            purchased = shoppingListEntry.purchased,
+                            ordinal = shoppingListEntry.ordinal
                         )
                     )
                 }
 
                 setShoppingListEntries(shoppingListUiEntries)
+                sortShoppingListByOrdinal()
             }
-                .onFailure {
+                .onFailure { e ->
+                    Log.i("SHOPPING LIST ERROR", "$e")
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Shopping list could not be obtained. Please try again later."))
                 }
         }
+    }
+
+    fun reorderShoppingList(fromKey: Long?, toKey: Long?) {
+        viewModelScope.launch() {
+            runCatching {
+                if (fromKey == null || toKey == null) {
+                    return@launch
+                }
+                db.withTransaction {
+                    // get the ordinals
+                    val fromOrdinal = shoppingListEntryRepository.getById(fromKey).first()?.ordinal
+                    val toOrdinal = shoppingListEntryRepository.getById(toKey).first()?.ordinal
+                    // swap the ordinals only if they are valid
+                    if (fromOrdinal == null || toOrdinal == null) {
+                        return@withTransaction
+                    }
+                    shoppingListEntryRepository.setOrdinal(fromKey, toOrdinal)
+                    shoppingListEntryRepository.setOrdinal(toKey, fromOrdinal)
+                }
+            }
+                .onSuccess {
+                    // order if successfully swapped
+                    sortShoppingListByOrdinal()
+                }
+        }
+    }
+
+    fun sortShoppingListByOrdinal() {
+        setShoppingListEntries(mutableUiState.value.shoppingListEntries.sortedBy { it.ordinal })
     }
 
     fun formatIngredientAmount(

@@ -291,9 +291,9 @@ class RecipeBookViewModel @Inject constructor(
                 // success:
                 setIngredientsToAddToShoppingList(shoppingListIngredientSelections)
             }
-                .onFailure {
+                .onFailure { e ->
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Ingredients cannot be added. Please try another recipe, or add manually."))
-                    Log.i("ingredient add display", "failed")
+                    Log.i("INGREDIENT DISPLAY ERROR", "$e")
                 }
         }
     }
@@ -321,9 +321,9 @@ class RecipeBookViewModel @Inject constructor(
                 }
 
             }
-                .onFailure {
+                .onFailure { e ->
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Ingredients cannot be added. Please try another recipe, or add manually."))
-                    Log.i("ingredient add to shopping list", "failed")
+                    Log.i("INGREDIENT ADD ERROR", "$e")
                 }
         }
     }

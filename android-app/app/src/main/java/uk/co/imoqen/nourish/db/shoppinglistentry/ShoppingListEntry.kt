@@ -37,4 +37,5 @@ data class ShoppingListEntry(
     @ColumnInfo(name = "unit") val unit: IngredientUnit, // optional, not all users want to enter a unit
     @ColumnInfo(name = "amount") val amount: Double, // optional, not all users want to enter an amount
     @ColumnInfo(name = "purchased") val purchased: Boolean,
+    @ColumnInfo(name = "ordinal") val ordinal: Int // will get incremented from the current max ordinal when adding, so this represents a position in the list.
 )

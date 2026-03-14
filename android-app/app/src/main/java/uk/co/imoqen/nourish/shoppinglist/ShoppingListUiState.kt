@@ -9,9 +9,6 @@ data class ShoppingListUiState(
 
     val shoppingListEntries: List<ShoppingListUiEntry> = emptyList(),
 
-    val slideStates: MutableMap<ShoppingListUiEntry, SlideState>? = null
-
-
 )
 
 data class ShoppingListUiEntry(
@@ -19,5 +16,6 @@ data class ShoppingListUiEntry(
     val plural: String,
     val unit: IngredientUnit,
     val amount: Double,
-    val purchased: Boolean
+    val purchased: Boolean,
+    val ordinal: Int // to determine its order in the list
 )

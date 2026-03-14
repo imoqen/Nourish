@@ -63,10 +63,21 @@ class ShoppingListEntryRepositoryImpl @Inject constructor(
                     purchaserUid = uid,
                     unit = unit,
                     amount = amount,
-                    purchased = false // setby default to not have been purchased.
+                    purchased = false, // setby default to not have been purchased.
+                    ordinal = getMaxOrdinalForUser(uid) + 1 // increment max to get next val (put it at the end of the list by default)
                 )
             )
         }
+    }
+
+    // private helper method to find the max ordinal, this incremented will be the position of
+    // the next item to add.
+    suspend fun getMaxOrdinalForUser(uid: String): Int {
+        return shoppingListEntryDao.getMaxOrdinalForUser(uid)
+    }
+
+    override suspend fun setOrdinal(id: Long, ordinal: Int) {
+        shoppingListEntryDao.setOrdinal(id, ordinal)
     }
 
     override suspend fun update(shoppingListEntry: ShoppingListEntry) {
