@@ -42,7 +42,7 @@ class ShoppingListEntryRepositoryImpl @Inject constructor(
         // the amount if appropriate:
 
         val existingShoppingListEntry = getUnpurchasedByIngredientAndUidAndUnit(ingredientId, uid, unit).first()
-        if (existingShoppingListEntry != null) {
+        if (existingShoppingListEntry != null && !existingShoppingListEntry.purchased) {
 
             // if the unit should be displayed in the shopping list, or it is added by the user, update it
             update(existingShoppingListEntry.copy(amount =
@@ -63,7 +63,7 @@ class ShoppingListEntryRepositoryImpl @Inject constructor(
                     purchaserUid = uid,
                     unit = unit,
                     amount = amount,
-                    purchased = false, // setby default to not have been purchased.
+                    purchased = false, // set by default to not have been purchased.
                     ordinal = getMaxOrdinalForUser(uid) + 1 // increment max to get next val (put it at the end of the list by default)
                 )
             )

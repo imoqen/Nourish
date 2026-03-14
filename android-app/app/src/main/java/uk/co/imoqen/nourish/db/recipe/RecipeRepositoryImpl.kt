@@ -175,11 +175,24 @@ class RecipeRepositoryImpl @Inject constructor(
                     val plural = ingredient.ingredientPlural
                     val amount = ingredient.ingredientAmount / recipe.numberOfServings // divide by number of servings, so ingredient is stored for 1 serving.
                     val unit = ingredient.ingredientAmountUnit
-                    // add it to ingredient table if doesn't already exist in its singular form:
-                    var ingredientId = ingredientRepository.getIdBySingular(singular)
+                    // add it to ingredient table if doesn't already exist in its plural form, check both values due to human error:
+                    var ingredientId = ingredientRepository.getIdByPlural(plural)
+
                     if (ingredientId == null) {
-                        ingredientId = ingredientRepository.insert(Ingredient(singular = singular, plural = plural))
+                        // if plural doesn't match, singular is checked to ensure it doesnt exist: (against plural - as this is the field populated by the user when adding an ingredient)
+                        ingredientId = ingredientRepository.getIdByPlural(singular)
+                        if (ingredientId == null) {
+                            // if still null, it doesnt exist so add the ingredient
+                            ingredientId = ingredientRepository.insert(Ingredient(singular = singular, plural = plural))
+                        }
                     }
+
+                    // SANITISE the user inputted. user inputted always has singular = "". so check this, if it is then update it and the plural value accordingly.
+                    val ingredient = ingredientRepository.getById(ingredientId).first()
+                    if (ingredient != null && ingredient.singular == "") {
+                        ingredientRepository.update(ingredient.copy(plural = plural, singular = singular))
+                    }
+
                     // Ingredient unit: find the corresponding unit in the enum
                     val ingredientUnit = IngredientUnit.valueOf(unit)
                     // Then create a RecipeIngredient with the Recipe, Ingredient and the newly added RecipeSection:

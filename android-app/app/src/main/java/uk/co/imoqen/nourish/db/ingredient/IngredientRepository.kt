@@ -11,4 +11,7 @@ interface IngredientRepository {
 
     suspend fun getIdBySingular(singular: String): Long?
     suspend fun getIdByPlural(plural: String): Long?
+
+    suspend fun update(ingredient: Ingredient)
+
 }

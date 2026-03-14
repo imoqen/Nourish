@@ -252,9 +252,11 @@ class ShoppingListViewModel @Inject constructor(
                 val ingredientName = mutableUiState.value.addIngredientName
                 // add it to ingredient table if doesn't already exist in either singular or plurla (as its user input, dont know whether this will be singular or plural, so both are checked)
                 var ingredientId = ingredientRepository.getIdBySingular(ingredientName)
+                Log.i("singular", "$ingredientId")
                 if (ingredientId == null) {
                     // singular search returned null, now look for plural.
                     ingredientId = ingredientRepository.getIdByPlural(ingredientName)
+                    Log.i("plural", "$ingredientId")
                     if (ingredientId == null) {
                         // still null means it doesnt exist: add it
                         ingredientId = ingredientRepository.insert(
@@ -263,6 +265,7 @@ class ShoppingListViewModel @Inject constructor(
                                 plural = ingredientName
                             )
                         )
+                        Log.i("created", "$ingredientId")
                     }
                 }
 
@@ -298,8 +301,29 @@ class ShoppingListViewModel @Inject constructor(
                     uid = uid,
                     userAdded = true
                 )
+
+                // then reset the ui for adding:
+                resetIngredientAdditionUI()
+
+                // and repopulate the list with the new ingredient:
+                populateShoppingList()
             }
+                .onSuccess {
+
+                }
+                .onFailure {  e ->
+                    Log.i("shopping list add", "error: $e")
+
+                }
         }
+
+    }
+
+    fun resetIngredientAdditionUI() {
+        setAddIngredientAmount("")
+        setAddIngredientUnit(IngredientUnit.SINGLE)
+        setAddIngredientName("")
+        setUserInteractionStatus(UserInteractionStatus.BROWSE)
     }
 
 }

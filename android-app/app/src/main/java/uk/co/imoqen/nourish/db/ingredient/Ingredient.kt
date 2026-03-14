@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "Ingredient",
-    indices = [Index(value = ["singular"], unique = true)] // to prevent duplicate ingredients being added
+    indices = [Index(value = ["plural"], unique = true)] // to prevent duplicate ingredients being added, always the plural form as this is what is used in the shopping list.
 )
 data class Ingredient(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,

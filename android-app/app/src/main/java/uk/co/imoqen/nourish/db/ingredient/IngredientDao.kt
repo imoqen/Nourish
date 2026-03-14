@@ -4,7 +4,9 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
+import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQuery
 
 @Dao
 interface IngredientDao {
@@ -22,4 +24,7 @@ interface IngredientDao {
 
     @Query("SELECT * FROM ingredient WHERE id = :id LIMIT 1")
     fun getById(id: Long): Flow<Ingredient?>
+
+    @Update
+    suspend fun update(ingredient: Ingredient)
 }
