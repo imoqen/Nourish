@@ -46,6 +46,14 @@ class ShoppingListViewModel @Inject constructor(
         }
     }
 
+    fun setShoppingListSliderState(slideStates: MutableMap<ShoppingListUiEntry, SlideState>?) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                slideStates = slideStates
+            )
+        }
+    }
+
     fun populateShoppingList() {
         viewModelScope.launch() {
             runCatching {

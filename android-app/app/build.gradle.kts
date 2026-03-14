@@ -85,6 +85,10 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
+    // drag and drop lists
+    implementation("sh.calvin.reorderable:reorderable:3.0.0")
+
+
     // Navigation:
     val nav_version = "2.9.6"
     implementation("androidx.navigation:navigation-compose:$nav_version")
