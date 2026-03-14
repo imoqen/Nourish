@@ -404,7 +404,7 @@ fun RecipeList(
             }
         } else {
             // display loading for when app first starts then display error msg for when no recipes yet
-            RecipeLoadingBar()
+            RecipeLoadingBar("Loading your recipes...", { Text("You have not saved any recipes!") })
         }
     }
 }
@@ -488,7 +488,10 @@ fun ImageCardHeader(
 
 // holds the loading bar and a message for if no recipes exist yet after loading
 @Composable
-fun RecipeLoadingBar() {
+fun RecipeLoadingBar(
+    loadingMessage: String,
+    noContentPresent: @Composable () -> Unit
+) {
     var noRecipes by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(true) }
 
@@ -505,7 +508,7 @@ fun RecipeLoadingBar() {
         modifier = Modifier.fillMaxWidth()
     ) {
         if (loading) {
-            Text("Loading your recipes...")
+            Text(loadingMessage)
             LinearProgressIndicator(
                 modifier = Modifier.fillMaxWidth(0.6f),
                 color = MaterialTheme.colorScheme.secondary,
@@ -513,8 +516,7 @@ fun RecipeLoadingBar() {
             )
         }
         if (noRecipes) {
-            Text("You have not yet saved any recipes.")
-
+            noContentPresent.invoke()
         }
     }
 }

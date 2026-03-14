@@ -112,6 +112,22 @@ class ShoppingListViewModel @Inject constructor(
         }
     }
 
+    fun setIngredientIndexToEdit(ingredientIndexToEdit: Int){
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                ingredientIndexToEdit = ingredientIndexToEdit
+            )
+        }
+    }
+
+    fun setEditIngredientAmount(editIngredientAmount: String){
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                editIngredientAmount = editIngredientAmount
+            )
+        }
+    }
+
     fun deleteShoppingListItem() {
         viewModelScope.launch() {
             val itemIndex = mutableUiState.value.itemIndexToDelete
@@ -329,6 +345,37 @@ class ShoppingListViewModel @Inject constructor(
                 }
         }
 
+    }
+
+    fun updateIngredientAmount() {
+        viewModelScope.launch() {
+            runCatching {
+                val shoppingListUiEntry =
+                    mutableUiState.value.shoppingListEntries[mutableUiState.value.ingredientIndexToEdit]
+                val shoppingListEntry =
+                    shoppingListEntryRepository.getById(shoppingListUiEntry.id).first()
+
+                if (shoppingListEntry == null) {
+                    throw NullPointerException()
+                }
+                Log.i("amount: ", mutableUiState.value.editIngredientAmount)
+                shoppingListEntryRepository.update(
+                    shoppingListEntry.copy(
+                        amount = mutableUiState.value.editIngredientAmount.toDoubleOrNull() ?: 1.0 // 1.0 if the input is invalid.
+                    )
+                )
+                // and repopulate the list with the newly edited ingredient:
+                populateShoppingList()
+
+                // reset in UI:
+                setIngredientIndexToEdit(-1)
+                setEditIngredientAmount("")
+            } .onFailure {
+                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
+                    "Couldn't update the item amount. Please try again later."
+                ))
+            }
+        }
     }
 
     fun resetIngredientAdditionUI() {

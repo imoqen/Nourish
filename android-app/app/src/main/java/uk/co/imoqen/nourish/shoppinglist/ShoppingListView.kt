@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -64,8 +65,10 @@ import uk.co.imoqen.nourish.common.NourishErrorText
 import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
+import uk.co.imoqen.nourish.recipebook.RecipeLoadingBar
 import uk.co.imoqen.nourish.recipediscovery.FilterState
 import uk.co.imoqen.nourish.recipediscovery.restart
+import kotlin.math.ceil
 
 /**
  * Shopping list view
@@ -159,7 +162,7 @@ fun ShoppingListScreen(
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
-            if (uiState.shoppingListEntries.isEmpty()) {
+            RecipeLoadingBar("Loading your shopping list...") {
                 Column(modifier = Modifier.fillMaxSize()) {
                     Text(
                         "There are no items in your shopping list.",
@@ -174,15 +177,18 @@ fun ShoppingListScreen(
                     )
                 }
             }
-            // Shopping List
-            LazyColumn(
-                state = lazyListState,
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 72.dp) // padding at bottom to accommodate for the space that the FAB takes up, so that all elements of the page are 100% visible by scrolling
-            ) {
+
+                // Shopping List
+                LazyColumn(
+                    state = lazyListState,
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 72.dp) // padding at bottom to accommodate for the space that the FAB takes up, so that all elements of the page are 100% visible by scrolling
+                ) {
 
                 // Lists the items, using the primary key as its key: stable.
-                itemsIndexed(uiState.shoppingListEntries, key = { i, shoppingListItem -> shoppingListItem.id }) { i, shoppingListItem ->
+                itemsIndexed(
+                    uiState.shoppingListEntries,
+                    key = { i, shoppingListItem -> shoppingListItem.id }) { i, shoppingListItem ->
 
                     // checks whether another item under the same name exists but a small amount
                     // e.g. in recipes when only a small amount is required (30ml or so). don't add this as irs own item, but
@@ -192,7 +198,7 @@ fun ShoppingListScreen(
                                 // checks for duplicates
                                 uiState.shoppingListEntries.count {
                                     it.plural == shoppingListItem.plural &&
-                                            !it.purchased  &&
+                                            !it.purchased &&
                                             it.unit == IngredientUnit.SINGLE // clearly not the same because different unit, so checks >= 1 not just > 1
                                 } >= 1
 
@@ -201,7 +207,7 @@ fun ShoppingListScreen(
                                 // checks for duplicates
                                 uiState.shoppingListEntries.count {
                                     it.plural == shoppingListItem.plural &&
-                                            !it.purchased  &&
+                                            !it.purchased &&
                                             it.unit != IngredientUnit.SINGLE // clearly not the same because different unit, so checks >= 1 not just > 1
                                 } >= 1
 
@@ -211,7 +217,8 @@ fun ShoppingListScreen(
                             ReorderableItem(
                                 reorderableLazyListState,
                                 key = shoppingListItem.id,
-                                modifier = Modifier.fillMaxWidth().padding(2.dp).padding(horizontal=6.dp)
+                                modifier = Modifier.fillMaxWidth().padding(2.dp)
+                                    .padding(horizontal = 6.dp)
                             ) { isDragging ->
                                 val elevation by animateDpAsState(if (isDragging) 4.dp else 0.dp)
 
@@ -240,7 +247,8 @@ fun ShoppingListScreen(
                                         )
 
                                         Column(
-                                            modifier = Modifier.weight(1f).fillMaxWidth() // will take all remaining space and wrap
+                                            modifier = Modifier.weight(1f)
+                                                .fillMaxWidth() // will take all remaining space and wrap
                                         ) {
                                             Text(
                                                 text = shoppingListItem.plural,
@@ -252,28 +260,53 @@ fun ShoppingListScreen(
                                                 Text(
                                                     "Small, additional amount also required",
                                                     style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                                                    color = MaterialTheme.colorScheme.onBackground.copy(
+                                                        alpha = 0.7f
+                                                    )
                                                 )
                                             }
                                         }
 
                                         // if the unit type is SINGLE, dont display the amount. only display if UNIT or others which have a unit and amount.
                                         if (shoppingListItem.unit != IngredientUnit.SINGLE) {
-                                            Text(
-                                                modifier = Modifier
-                                                    .padding(vertical = 4.dp)
-                                                    .padding(horizontal = 8.dp)
-                                                    .background(
-                                                        shape = RoundedCornerShape(8.dp),
-                                                        color = MaterialTheme.colorScheme.background
-                                                    )
-                                                    .padding(6.dp),
-                                                text = "${
-                                                    viewModel.formatIngredientAmount(
-                                                        shoppingListItem.amount
-                                                    )
-                                                } ${if (shoppingListItem.amount > 1) {shoppingListItem.unit.pluralName} else {shoppingListItem.unit.singularName}}"
-                                            )
+                                            Row() {
+                                                Text(
+                                                    modifier = Modifier
+                                                        .padding(vertical = 4.dp)
+                                                        .padding(horizontal = 8.dp)
+                                                        .background(
+                                                            shape = RoundedCornerShape(8.dp),
+                                                            color = MaterialTheme.colorScheme.background
+                                                        )
+                                                        .padding(6.dp),
+                                                    text = "${
+                                                        viewModel.formatIngredientAmount(
+                                                            ceil(shoppingListItem.amount) // gets ceiled because cant buy 0.5 of a lemon e.g.. BUT should still store the decimal because required for calc e.g. ifuser adds 0.5 lemon twice, it shuold still say 1 lemon.
+                                                        )
+                                                    } ${
+                                                        if (ceil(shoppingListItem.amount) > 1) {
+                                                            shoppingListItem.unit.pluralName
+                                                        } else {
+                                                            shoppingListItem.unit.singularName
+                                                        }
+                                                    }"
+                                                )
+                                                if (uiState.userInteractionStatus == UserInteractionStatus.EDIT) {
+                                                    IconButton(
+                                                        onClick = {
+                                                            viewModel.setIngredientIndexToEdit(i)
+                                                            viewModel.setEditIngredientAmount("${shoppingListItem.amount}") // so the user can updte the existing
+                                                        }
+                                                    ) {
+                                                        Icon(
+                                                            painter = painterResource(R.drawable.edit),
+                                                            contentDescription = "Edit Item Amount",
+                                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                            modifier = Modifier.size(20.dp),
+                                                        )
+                                                    }
+                                                }
+                                            }
                                         }
 
                                         //Spacer(modifier = Modifier.weight(1f))
@@ -326,6 +359,7 @@ fun ShoppingListScreen(
                     }
                 }
             }
+
 
             // FAB for adding and editing
             Row(
@@ -523,6 +557,44 @@ fun ShoppingListScreen(
                                 viewModel.addIngredientToShoppingList()
                             },
                             text = "Add to Shopping List",
+                        )
+                    }
+                }
+            }
+
+            if (
+                uiState.ingredientIndexToEdit != -1
+            ) {
+                ModalBottomSheet(
+                    onDismissRequest = {
+                        viewModel.setIngredientIndexToEdit(-1)
+                    },
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(bottom=12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+
+                        NourishTextDivider("Edit the amount")
+
+                        NourishTextField(
+                            value = uiState.editIngredientAmount,
+                            onValueChange = {
+                                // Only allow valid double inputs
+                                viewModel.setEditIngredientAmount(it)
+                            },
+                            placeholder = "Enter new amount", // user language consideration: although the app is built for ingredients, users will likely add other things. hence, "item" is used.
+                            onDone = { keyboardFocusManager.clearFocus(force = true) },
+                            keyboardType = KeyboardType.Number // only allows numeric input
+                        )
+
+                        NourishButton(
+                            onClick = {
+                                // add the ingredient
+                                viewModel.updateIngredientAmount()
+                            },
+                            text = "Update Amount",
                         )
                     }
                 }

@@ -426,7 +426,7 @@ fun RecipeCard(
                                             modifier = Modifier.fillMaxHeight(0.7f)
                                         ) {
                                             Column() {
-                                                NourishH3("Items to be added to the Shopping List")
+                                                NourishH3("Items to add to the Shopping List")
 
                                                 HorizontalDivider()
 
