@@ -15,10 +15,14 @@ import uk.co.imoqen.nourish.common.RecipeActions
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.db.NourishDatabase
+import uk.co.imoqen.nourish.db.ingredient.Ingredient
 import uk.co.imoqen.nourish.db.ingredient.IngredientRepository
+import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
+import uk.co.imoqen.nourish.db.shoppinglistentry.ShoppingListEntry
 import uk.co.imoqen.nourish.db.shoppinglistentry.ShoppingListEntryRepository
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
+import uk.co.imoqen.nourish.recipebook.ShoppingListIngredient
 import javax.inject.Inject
 
 @HiltViewModel
@@ -72,6 +76,30 @@ class ShoppingListViewModel @Inject constructor(
         mutableUiState.update { currentState ->
             currentState.copy(
                 itemIndexToDelete = itemIndexToDelete
+            )
+        }
+    }
+
+    fun setAddIngredientName(addIngredientName: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                addIngredientName = addIngredientName
+            )
+        }
+    }
+
+    fun setAddIngredientUnit(addIngredientUnit: IngredientUnit) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                addIngredientUnit = addIngredientUnit
+            )
+        }
+    }
+
+    fun setAddIngredientAmount(addIngredientAmount: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                addIngredientAmount = addIngredientAmount
             )
         }
     }
@@ -211,6 +239,67 @@ class ShoppingListViewModel @Inject constructor(
             amount = 0.25 // cant go less than 0.25
         }
         return recipeActions.formatIngredientAmount(amount)
+    }
+
+    fun addIngredientToShoppingList() {
+        viewModelScope.launch() {
+            runCatching {
+                val uid = authenticationManager.getUid()
+                if (uid == null) {
+                    return@launch
+                }
+
+                val ingredientName = mutableUiState.value.addIngredientName
+                // add it to ingredient table if doesn't already exist in either singular or plurla (as its user input, dont know whether this will be singular or plural, so both are checked)
+                var ingredientId = ingredientRepository.getIdBySingular(ingredientName)
+                if (ingredientId == null) {
+                    // singular search returned null, now look for plural.
+                    ingredientId = ingredientRepository.getIdByPlural(ingredientName)
+                    if (ingredientId == null) {
+                        // still null means it doesnt exist: add it
+                        ingredientId = ingredientRepository.insert(
+                            Ingredient(
+                                singular = "", // singular is "" and this will be checked when the LLM adds a new ingredient. LLM searches by plurality. if it finds a match where singular is null, it can then replace it.
+                                plural = ingredientName
+                            )
+                        )
+                    }
+                }
+
+                // dynamically determine when UNIT should be used: if no unit was selected, but an amount was entered, it is UNIT.
+                val amount = mutableUiState.value.addIngredientAmount
+                val unit = if (
+                    mutableUiState.value.addIngredientUnit == IngredientUnit.SINGLE && amount != ""
+                ) {
+                    IngredientUnit.UNIT
+                } else {
+                    mutableUiState.value.addIngredientUnit
+                }
+
+                // then insert the shopping list entry with the found, or newly added ingredient:
+                /*shoppingListEntryRepository.insert(
+                    ShoppingListEntry(
+                        ingredientId = ingredientId,
+                        purchaserUid = uid,
+                        unit = unit,
+                        amount = amount,
+                        purchased = false, // always false - user only just added it!
+                        ordinal =
+                    )
+                )*/
+
+                shoppingListEntryRepository.addShoppingListEntry(
+                    ShoppingListIngredient(
+                        ingredientId = ingredientId,
+                        plural = ingredientName,
+                        unit = unit,
+                        amount = amount.replace(',', '.').toDoubleOrNull() ?: 1.0, // "," is replaced with . as some languages e.g. German, Swiss use , for decimals instead
+                    ),
+                    uid = uid,
+                    userAdded = true
+                )
+            }
+        }
     }
 
 }

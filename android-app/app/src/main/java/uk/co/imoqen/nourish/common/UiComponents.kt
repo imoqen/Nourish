@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -67,6 +68,7 @@ fun NourishTextField(
     trailingIcon: ImageVector? = null, // optional: for clearing input
     onTrailingIconPress: () -> Unit = {}, // optional: for clearing input
     alwaysDisplayTrailingIcon: Boolean = false,
+    keyboardType: KeyboardType = KeyboardType.Text
 ) {
     OutlinedTextField(
         value = value,
@@ -113,9 +115,9 @@ fun NourishTextField(
         shape = RoundedCornerShape(24.dp),
         visualTransformation = visualTransformation,
 
-        // binds the enter button to the done action
         keyboardOptions = KeyboardOptions(
-            imeAction = ImeAction.Done
+            keyboardType = keyboardType, // allows different keyboard e.g. for entering only numbers
+            imeAction = ImeAction.Done // binds the enter button to the done action
         ),
         // performs done function (closes keyboard)
         keyboardActions = KeyboardActions(

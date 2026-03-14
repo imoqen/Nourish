@@ -17,6 +17,9 @@ interface IngredientDao {
     @Query("SELECT id FROM ingredient WHERE singular = :singular LIMIT 1")
     suspend fun getIdBySingular(singular: String): Long?
 
+    @Query("SELECT id FROM ingredient WHERE plural = :plural LIMIT 1")
+    suspend fun getIdByPlural(plural: String): Long?
+
     @Query("SELECT * FROM ingredient WHERE id = :id LIMIT 1")
     fun getById(id: Long): Flow<Ingredient?>
 }

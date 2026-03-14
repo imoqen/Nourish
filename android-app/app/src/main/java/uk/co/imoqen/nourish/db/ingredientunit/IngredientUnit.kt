@@ -14,6 +14,11 @@ enum class IngredientUnit(
     TSP("tsp", "tsp", false, false),
     TBSP("Tbsp", "Tbsp", false, false), // convention to put capital T on tbsp to differentiate from tsp
 
+    // extra for user input IN SHOPPING LIST, not supported in the LLM
+    L("l", "l", false, true),
+    KG("kg", "kg", false, true),
+    PINT("pint", "pints", false, true),
+
     // metric, not currently supported as the app's primary unit is ml, g. but support could be added this in the future.
     /*FL_OZ("fl oz", "fl oz", false, true),
     CUP("cup", "cups", false),
