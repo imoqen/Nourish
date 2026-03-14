@@ -73,10 +73,13 @@ fun ShoppingListScreen(
     val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
 
         Log.i("reord", "ering")
-        /*val list = uiState.shoppingListEntries.toMutableList().apply {
+        // Update the UI:
+        val list = uiState.shoppingListEntries.toMutableList().apply {
             add(to.index, removeAt(from.index))
         }
-        viewModel.setShoppingListEntries(list)*/
+        viewModel.setShoppingListEntries(list)
+
+        // Persist the change locally:
         val fromKey = from.key as? Long
         val toKey = to.key as? Long
         viewModel.reorderShoppingList(fromKey, toKey)

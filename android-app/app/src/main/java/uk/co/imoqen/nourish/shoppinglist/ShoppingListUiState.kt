@@ -17,5 +17,4 @@ data class ShoppingListUiEntry(
     val unit: IngredientUnit,
     val amount: Double,
     val purchased: Boolean,
-    val ordinal: Int // to determine its order in the list
 )

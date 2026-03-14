@@ -50,6 +50,12 @@ class ShoppingListViewModel @Inject constructor(
         }
     }
 
+    /*fun updateShoppingListEntry(index: Int, ordinal: Int) {
+        val updatedList = mutableUiState.value.shoppingListEntries.toMutableList().apply {
+            this[index] = this[index].copy(ordinal = ordinal)
+        }
+    }*/
+
 
     fun populateShoppingList() {
         viewModelScope.launch() {
@@ -59,7 +65,7 @@ class ShoppingListViewModel @Inject constructor(
                     return@launch
                 }
 
-                val shoppingListEntries = shoppingListEntryRepository.getAll(uid).first()
+                val shoppingListEntries = shoppingListEntryRepository.getAll(uid).first() // gets them sorted
 
                 // required for the ui, to get the ingredients for each from the ingredient id.
                 val shoppingListUiEntries: MutableList<ShoppingListUiEntry> = mutableListOf()
@@ -71,13 +77,12 @@ class ShoppingListViewModel @Inject constructor(
                             unit = shoppingListEntry.unit,
                             amount = shoppingListEntry.amount,
                             purchased = shoppingListEntry.purchased,
-                            ordinal = shoppingListEntry.ordinal
                         )
                     )
                 }
 
                 setShoppingListEntries(shoppingListUiEntries)
-                sortShoppingListByOrdinal()
+                //sortShoppingListByOrdinal()
             }
                 .onFailure { e ->
                     Log.i("SHOPPING LIST ERROR", "$e")
@@ -100,20 +105,35 @@ class ShoppingListViewModel @Inject constructor(
                     if (fromOrdinal == null || toOrdinal == null) {
                         return@withTransaction
                     }
+                    // update DB to persist the change:
                     shoppingListEntryRepository.setOrdinal(fromKey, toOrdinal)
                     shoppingListEntryRepository.setOrdinal(toKey, fromOrdinal)
+
+                    // update UI:
+                    /*val fromIndex = mutableUiState.value.shoppingListEntries.indexOfFirst { it.id == fromKey }
+                    val toIndex = mutableUiState.value.shoppingListEntries.indexOfFirst { it.id == toKey }
+                    updateShoppingListEntry(fromIndex, toOrdinal)
+                    updateShoppingListEntry(toIndex, fromOrdinal)
+                    sortShoppingListByOrdinal()*/
                 }
             }
                 .onSuccess {
+                    Log.i("successfully swapped", "success")
                     // order if successfully swapped
-                    sortShoppingListByOrdinal()
                 }
         }
     }
 
-    fun sortShoppingListByOrdinal() {
-        setShoppingListEntries(mutableUiState.value.shoppingListEntries.sortedBy { it.ordinal })
-    }
+
+   /* fun sortShoppingListByOrdinal() {
+        viewModelScope.launch() {
+            runCatching {
+                setShoppingListEntries(mutableUiState.value.shoppingListEntries.sortedBy {
+                    it.ordinal
+                })
+            }
+        }
+    }*/
 
     fun formatIngredientAmount(
         ingredientAmount: Double,

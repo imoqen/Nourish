@@ -13,13 +13,13 @@ import uk.co.imoqen.nourish.db.recipe.Recipe
 interface ShoppingListEntryDao {
 
     // gets all for a specific user, no instance where would need to get for every user.
-    @Query("SELECT * FROM shoppingListEntry WHERE purchaserUid = :uid")
+    @Query("SELECT * FROM shoppingListEntry WHERE purchaserUid = :uid ORDER BY ordinal ASC")
     fun getAll(uid: String): Flow<List<ShoppingListEntry>>
 
     @Query("SELECT * FROM shoppingListEntry WHERE id = :id LIMIT 1")
     fun getById(id: Long): Flow<ShoppingListEntry?>
 
-    @Query("SELECT * FROM shoppingListEntry WHERE purchaserUid = :uid AND ingredientId = :ingredientId AND unit = :unit AND purchased = 0")
+    @Query("SELECT * FROM shoppingListEntry WHERE purchaserUid = :uid AND ingredientId = :ingredientId AND unit = :unit AND purchased = 0 ORDER BY ordinal ASC")
     fun getByIngredientAndUidAndUnitUnpurchased(ingredientId: Long, uid: String, unit: IngredientUnit): Flow<ShoppingListEntry?>
 
     @Insert
