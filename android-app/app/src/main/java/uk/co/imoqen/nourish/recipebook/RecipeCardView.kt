@@ -92,6 +92,7 @@ import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQuery
 import uk.co.imoqen.nourish.network.request.LlmActionType
 import uk.co.imoqen.nourish.recipediscovery.RecipeCardPreview
+import uk.co.imoqen.nourish.shoppinglist.IngredientAmount
 import java.io.File
 
 @Composable
@@ -385,7 +386,9 @@ fun RecipeCard(
 
                         Column(
                             modifier = Modifier
-                                .animateContentSize()
+                                .animateContentSize().fillMaxWidth().padding(vertical=8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             // then output the ingredients by section
                             recipeCard.sectionsWithIngredients.forEach { (section, ingredients) ->
@@ -401,7 +404,7 @@ fun RecipeCard(
                                     }
 
                                     ingredients.forEach { (ingredient, amount, _) ->
-                                        val round = !(amount >= 1000)
+                                        val round = !(ingredient.startsWith("kg") || ingredient.startsWith("L")) // if kg or L, do not round.
                                         Text("${recipeBookViewModel.formatIngredientAmount(amount, round)} $ingredient")
                                     }
                                 }
@@ -427,8 +430,12 @@ fun RecipeCard(
                                         Column(
                                             modifier = Modifier.fillMaxHeight(0.7f)
                                         ) {
-                                            Column() {
-                                                NourishH3("Items to add to the Shopping List")
+                                            Column(
+                                                modifier = Modifier.fillMaxWidth().padding(vertical=12.dp),
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                NourishH3("Add to Shopping List", modifier = Modifier.fillMaxWidth())
 
                                                 HorizontalDivider()
 
@@ -439,18 +446,36 @@ fun RecipeCard(
                                                     modifier = Modifier.weight(1f) // takes up as much space as possible; all other things have space then this uses up all the rest of the space.
                                                 ) {
                                                     itemsIndexed(ingredientsToAddToShoppingList) { i, (ingredient, selected) ->
-                                                        Log.i("selected:", "$selected")
 
-                                                        // if the unit is tsp or plural, dont display it.
-                                                        Row() {
-                                                            // only round to nearest quarter if not KG or L
-                                                            val roundToNearestQuarter = !(ingredient.amount >= 1000 && (ingredient.unit == IngredientUnit.G || ingredient.unit == IngredientUnit.ML))
-                                                                Text(
-                                                                "${ingredient.plural} ${
-                                                                    recipeBookViewModel.formatIngredientAmount(
-                                                                        ingredient.amount, roundToNearestQuarter
-                                                                    )
-                                                                } ${ingredient.unit}"
+                                                        Row(
+                                                            modifier = Modifier.fillMaxWidth().padding(horizontal=8.dp),
+                                                            horizontalArrangement = Arrangement.Center,
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+                                                            Text(
+                                                                ingredient.plural
+                                                            )
+
+                                                            var amount = ingredient.amount
+                                                            var unit = ingredient.unit
+
+                                                            // convert the amounts in the UI if g and kg and >= 1000
+                                                            // only in the UI - not in the db so everything is still stored as G / ML so easy to compare and bundle together.
+                                                            if (amount >= 1000 && (unit == IngredientUnit.G || unit == IngredientUnit.ML)) {
+                                                                when (unit) {
+                                                                    IngredientUnit.G -> { unit = IngredientUnit.KG }
+                                                                    IngredientUnit.ML -> { unit = IngredientUnit.L }
+                                                                    else -> {} // make no change
+                                                                }
+                                                                amount = amount / 1000
+                                                            }
+
+                                                            Spacer(modifier= Modifier.weight(1f))
+
+                                                            IngredientAmount(
+                                                                unit = unit,
+                                                                amount = amount,
+                                                                formatIngredientAmount = recipeBookViewModel::formatIngredientAmount
                                                             )
                                                             Checkbox(
                                                                 modifier = Modifier.padding(0.dp),
@@ -472,7 +497,7 @@ fun RecipeCard(
                                                 NourishIconTextButton(
                                                     onClick = {
                                                         recipeBookViewModel.addIngredientsToShoppingList() // this sets it not to null, so the dialog will be triggered to display (if successful).
-                                                    },
+                                                              },
                                                     painter = painterResource(R.drawable.shopping_cart_add),
                                                     description = "Add to Shopping List",
                                                 )

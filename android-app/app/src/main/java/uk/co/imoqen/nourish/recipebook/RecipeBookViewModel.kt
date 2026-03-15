@@ -345,6 +345,12 @@ class RecipeBookViewModel @Inject constructor(
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Ingredients cannot be added. Please try another recipe, or add manually."))
                     Log.i("INGREDIENT ADD ERROR", "$e")
                 }
+                .onSuccess {
+                    // reset the selection and notify the user
+                    setIngredientsToAddToShoppingList(null)
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Ingredients have been added to your shopping list."))
+
+                }
         }
     }
 

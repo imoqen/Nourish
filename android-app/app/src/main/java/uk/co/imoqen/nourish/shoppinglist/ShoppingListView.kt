@@ -268,61 +268,28 @@ fun ShoppingListScreen(
                                     }
 
                                     // if the unit type is SINGLE, dont display the amount. only display if UNIT or others which have a unit and amount.
-                                    if (shoppingListItem.unit != IngredientUnit.SINGLE) {
-                                        Row(
-                                            modifier = Modifier.fillMaxHeight()
-                                                .padding(vertical = 4.dp)
-                                                .padding(horizontal = 8.dp)
-                                                .background(
-                                                    shape = RoundedCornerShape(8.dp),
-                                                    color = MaterialTheme.colorScheme.background
-                                                )
-                                                .clip(RoundedCornerShape(8.dp))
-                                                .then(
-                                                    if (uiState.userInteractionStatus == UserInteractionStatus.EDIT) {
-                                                        Modifier
-                                                            .clickable(
-                                                                onClick = {
-                                                                    viewModel.setIngredientIndexToEdit(
-                                                                        i
-                                                                    )
-                                                                    viewModel.setEditIngredientAmount(
-                                                                        "${shoppingListItem.amount}"
-                                                                    ) // so the user can updte the existing
-                                                                }
+
+                                    IngredientAmount(
+                                        unit = shoppingListItem.unit,
+                                        amount = shoppingListItem.amount,
+                                        editModifierFunctionality = {
+                                            if (uiState.userInteractionStatus == UserInteractionStatus.EDIT) {
+                                                Modifier
+                                                    .clickable(
+                                                        onClick = {
+                                                            viewModel.setIngredientIndexToEdit(
+                                                                i
                                                             )
-                                                    } else {
-                                                        Modifier
-                                                    }
-                                                ),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            val round = !(shoppingListItem.unit == IngredientUnit.KG || shoppingListItem.unit == IngredientUnit.L)
-                                            Text(
-                                                modifier = Modifier
-                                                    .padding(6.dp),
-                                                text = "${
-                                                    viewModel.formatIngredientAmount(
-                                                        if (round) {
-                                                        ceil(shoppingListItem.amount) // gets ceiled because cant buy 0.5 of a lemon e.g.. BUT should still store the decimal because required for calc e.g. ifuser adds 0.5 lemon twice, it shuold still say 1 lemon.
-                                                        } else {
-                                                            // dont ceil if kg or L - these need to be precise.
-                                                            shoppingListItem.amount
-                                                        },
-                                                        round
-                                                    )
-                                                }${
-                                                    if (shoppingListItem.unit == IngredientUnit.UNIT) {
-                                                        ""
-                                                    } else {
-                                                        if (ceil(shoppingListItem.amount) > 1) {
-                                                            " " + shoppingListItem.unit.pluralName
-                                                        } else {
-                                                            " " + shoppingListItem.unit.singularName
+                                                            viewModel.setEditIngredientAmount(
+                                                                "${shoppingListItem.amount}"
+                                                            ) // so the user can updte the existing
                                                         }
-                                                    }
-                                                }"
-                                            )
+                                                    )
+                                            } else {
+                                                Modifier
+                                            }
+                                        },
+                                        editContent = {
                                             if (uiState.userInteractionStatus == UserInteractionStatus.EDIT) {
                                                 Icon(
                                                     painter = painterResource(R.drawable.edit),
@@ -332,8 +299,9 @@ fun ShoppingListScreen(
                                                         .padding(end=6.dp)
                                                 )
                                             }
-                                        }
-                                    }
+                                        },
+                                        formatIngredientAmount = viewModel::formatIngredientAmount
+                                    )
 
                                     //Spacer(modifier = Modifier.weight(1f))
                                     // buttons, amounts, etc, go to the very end
@@ -695,4 +663,59 @@ fun UnitSelectionButton(
     ) {
         Text(text)
     }
+}
+
+@Composable
+fun IngredientAmount(
+    unit: IngredientUnit,
+    amount: Double,
+    formatIngredientAmount: (Double, Boolean) -> String,
+    editModifierFunctionality: () -> Modifier = { Modifier },
+    editContent: @Composable () -> Unit = {},
+) {
+    if (unit != IngredientUnit.SINGLE) {
+        Row(
+            modifier = Modifier.fillMaxHeight()
+                .padding(vertical = 4.dp)
+                .padding(horizontal = 8.dp)
+                .background(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.background
+                )
+                .clip(RoundedCornerShape(8.dp))
+                .then(
+                    editModifierFunctionality()
+                ),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val round = !(unit == IngredientUnit.KG || unit == IngredientUnit.L)
+            Text(
+                modifier = Modifier
+                    .padding(6.dp),
+                text = "${
+                    formatIngredientAmount(
+                        if (round) {
+                            ceil(amount) // gets ceiled because cant buy 0.5 of a lemon e.g.. BUT should still store the decimal because required for calc e.g. ifuser adds 0.5 lemon twice, it shuold still say 1 lemon.
+                        } else {
+                            // dont ceil if kg or L - these need to be precise.
+                            amount
+                        },
+                        round
+                    )
+                }${
+                    if (unit == IngredientUnit.UNIT) {
+                        ""
+                    } else {
+                        if (ceil(amount) > 1) {
+                            " " + unit.pluralName
+                        } else {
+                            " " + unit.singularName
+                        }
+                    }
+                }"
+            )
+            editContent.invoke()
+        }
+    }
+
 }
