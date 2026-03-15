@@ -209,7 +209,7 @@ class RecipeActions @Inject constructor(
     ): Boolean {
         Log.i("ingredient amount:", "$ingredientAmount , rounded: ${round(ingredientAmount*4.0)/4.0} and is not equal to 1.0: ${round(ingredientAmount*4.0)/4.0 != 1.0 }")
         // plural form should be used in most cases; just a few cases where it shouldn't.
-        return round(ingredientAmount*4.0)/4.0 != 1.0 // if only 1, should always be singular.
+        return round(ingredientAmount*4)/4 != 1.0 // if only 1, should always be singular. and dont care about the kg or L  instance here, because the unit doesnt change pluralities for kg or l.
     }
 
     fun determineIngredientPlurality(
@@ -229,10 +229,15 @@ class RecipeActions @Inject constructor(
     // shaves off the decimal if it is .0, otherwise keeps it.
     // e.g. 5.0 -> 5 but 5.5 remains -> 5.5
     fun formatIngredientAmount(
-        ingredientAmount: Double
+        ingredientAmount: Double,
+        roundToQuarter: Boolean = true // true by default, only false for kg / l as they need to be more precise.
     ): String {
         // formats the amount such that it is to 2 d.p. and always rounded to the nearest 0.25
-        val amount = "%.2f".format(round(ingredientAmount*4)/4).toDouble()
+
+        val amount = if (roundToQuarter) { "%.2f".format(round(ingredientAmount*4)/4).toDouble() }
+        else {
+            "%.2f".format(ingredientAmount).toDouble()
+        }
         if (amount % 1.0 == 0.0) {
             return amount.toInt().toString()
         }

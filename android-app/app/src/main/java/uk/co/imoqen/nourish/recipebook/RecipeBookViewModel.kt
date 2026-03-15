@@ -652,12 +652,13 @@ class RecipeBookViewModel @Inject constructor(
     // recipe actions
     fun formatIngredientAmount(
         ingredientAmount: Double,
+        roundToNearestQuarter: Boolean = true
     ): String {
         var amount = ingredientAmount
         if (amount < 0.25) {
             amount = 0.25 // cant go less than 0.25
         }
-        return recipeActions.formatIngredientAmount(amount)
+        return recipeActions.formatIngredientAmount(amount, roundToNearestQuarter)
     }
 
     // api

@@ -631,9 +631,10 @@ class RecipeDiscoveryViewModel @Inject constructor(
     }
 
     fun formatIngredientAmount(
-        ingredientAmount: Double
+        ingredientAmount: Double,
+        roundToNearestQuarter: Boolean = true
     ): String {
-        return recipeActions.formatIngredientAmount(ingredientAmount)
+        return recipeActions.formatIngredientAmount(ingredientAmount, roundToNearestQuarter)
     }
 
     // only used for llmingredient as they are dealt with differently.

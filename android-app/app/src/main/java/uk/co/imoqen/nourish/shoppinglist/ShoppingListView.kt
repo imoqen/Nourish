@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish.shoppinglist
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.BorderStroke
@@ -270,6 +271,8 @@ fun ShoppingListScreen(
                                         // if the unit type is SINGLE, dont display the amount. only display if UNIT or others which have a unit and amount.
                                         if (shoppingListItem.unit != IngredientUnit.SINGLE) {
                                             Row() {
+                                                val round = !(shoppingListItem.unit == IngredientUnit.KG || shoppingListItem.unit == IngredientUnit.L)
+                                                Log.i("should round", "$round")
                                                 Text(
                                                     modifier = Modifier
                                                         .padding(vertical = 4.dp)
@@ -279,14 +282,15 @@ fun ShoppingListScreen(
                                                             color = MaterialTheme.colorScheme.background
                                                         )
                                                         .padding(6.dp),
-                                                    text = "${
+                                                text = "${
                                                         viewModel.formatIngredientAmount(
-                                                            if (shoppingListItem.unit != IngredientUnit.KG && shoppingListItem.unit != IngredientUnit.L) {
+                                                            if (round) {
                                                             ceil(shoppingListItem.amount) // gets ceiled because cant buy 0.5 of a lemon e.g.. BUT should still store the decimal because required for calc e.g. ifuser adds 0.5 lemon twice, it shuold still say 1 lemon.
                                                             } else {
                                                                 // dont ceil if kg or L - these need to be precise.
                                                                 shoppingListItem.amount
-                                                            }
+                                                            },
+                                                            round
                                                         )
                                                     } ${
                                                         if (ceil(shoppingListItem.amount) > 1) {

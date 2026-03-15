@@ -87,6 +87,7 @@ import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.common.NourishTextMessage
 import uk.co.imoqen.nourish.common.TextSender
 import uk.co.imoqen.nourish.common.recipeColour
+import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQuery
 import uk.co.imoqen.nourish.network.request.LlmActionType
@@ -400,7 +401,8 @@ fun RecipeCard(
                                     }
 
                                     ingredients.forEach { (ingredient, amount, _) ->
-                                        Text("${recipeBookViewModel.formatIngredientAmount(amount)} $ingredient")
+                                        val round = !(amount >= 1000)
+                                        Text("${recipeBookViewModel.formatIngredientAmount(amount, round)} $ingredient")
                                     }
                                 }
                             }
@@ -441,10 +443,12 @@ fun RecipeCard(
 
                                                         // if the unit is tsp or plural, dont display it.
                                                         Row() {
-                                                            Text(
+                                                            // only round to nearest quarter if not KG or L
+                                                            val roundToNearestQuarter = !(ingredient.amount >= 1000 && (ingredient.unit == IngredientUnit.G || ingredient.unit == IngredientUnit.ML))
+                                                                Text(
                                                                 "${ingredient.plural} ${
                                                                     recipeBookViewModel.formatIngredientAmount(
-                                                                        ingredient.amount
+                                                                        ingredient.amount, roundToNearestQuarter
                                                                     )
                                                                 } ${ingredient.unit}"
                                                             )
