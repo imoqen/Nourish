@@ -138,7 +138,7 @@ const IngredientSchemaZod = z.object({
         "Ensure that the unit makes sense, for example only use an approximate unit (such as splash, sprinkle, dash, etc) if the corresponding amount itself is a whole number - otherwise use a unit reflective of the precision (e.g. tsp, tbsp, ml)" +
         "Return only a value from the provided list, exactly as it is in the list (as it will be mapped using a predefined enum); the value you return MUST be in the list." +
         " If you think that an imperial unit would be required, then give its value in g/kg instead (e.g. rather than using cup, as this is not used in Europe/UK). " +
-        " Only use UNIT if the ingredient has no measurement/unit; it is a piece itself (e.g. egg, whole fruit, whole vegetable). In particular, if it is a spice, baking agent or herb, do not use UNIT. For these you should use tsp/tbsp as this is most common and easy to measure, unless you believe another unit is more appropriate.",
+        " If the ingredient requires KG, then convert the value to G and use that. Likewise, if the ingredient requires L, then convert the value to ML and use that. Only use UNIT if the ingredient has no measurement/unit; it is a piece itself (e.g. egg, whole fruit, whole vegetable). In particular, if it is a spice, baking agent or herb, do not use UNIT. For these you should use tsp/tbsp as this is most common and easy to measure, unless you believe another unit is more appropriate.",
     ),
   ingredientAmount: z
     .number()
@@ -793,7 +793,7 @@ async function generateAlteredRecipe(
         role: "system",
         content:
           "Return in the required schema, write in sufficient detail but not too much (keep below 250 words). Use British English. " +
-          "Generate a new recipe using the provided recipe, ensuring it is altered to the user's needs accordingly. The recipe should remain the same for any part which does not need to be altered to the request." +
+          "Generate a new recipe using the provided recipe, ensuring it is altered to the user's needs accordingly and produces the same number of servings as the servings field. The recipe should remain the same for any part which does not need to be altered to the request." +
           "If the recipe cannot be altered in the way that the user wishes (e.g. inedible), fill in the recipeNotPossible field as true and all others as null. Only do this if there really is no way to alter it, otherwise be creative to meet the user's needs.",
       },
       {

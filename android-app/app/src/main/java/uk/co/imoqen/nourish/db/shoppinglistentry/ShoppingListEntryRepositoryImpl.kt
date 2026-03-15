@@ -85,11 +85,27 @@ class ShoppingListEntryRepositoryImpl @Inject constructor(
 
     override suspend fun delete(shoppingListEntry: ShoppingListEntry) {
         shoppingListEntryDao.delete(shoppingListEntry)
+        // also delete any small additional items corresponding to it:
+        /*val smallAmountItems = identifySmallAmounts(shoppingListEntry)
+        smallAmountItems.forEach { smallAmountItem ->
+            shoppingListEntryDao.delete(smallAmountItem)
+        }*/
     }
 
     override suspend fun deleteAllForUser(uid: String) {
         shoppingListEntryDao.deleteAllForUser(uid)
     }
+
+    override suspend fun deletePurchasedForUser(uid: String) {
+        shoppingListEntryDao.deletePurchasedForUser(uid)
+    }
+
+    /*suspend fun identifySmallAmounts(shoppingListEntry: ShoppingListEntry): List<ShoppingListEntry> {
+        if (shoppingListEntry.unit == IngredientUnit.SINGLE) {
+            return emptyList()
+        }
+        val allEntries = getAll(shoppingListEntry.purchaserUid).first()
+    }*/
 
     override suspend fun updatePurchaseStatus(id: Long, purchased: Boolean) {
         val existingEntry = getById(id).first()
@@ -108,6 +124,19 @@ class ShoppingListEntryRepositoryImpl @Inject constructor(
                 }*/
             )
         )
+        // then look for the "small amount additionally required" items, and update these accordingly too:
+        // e.g. need to buy 500ml of oil but also 5ml of oil is required too. instead of them being separate,
+        // they are put together. so if you check off the 500ml of oil, it should also count as the 5ml being checked too and not
+        // separate them at this point. same if unchecking them.
+        /*val smallAmountItems = identifySmallAmounts(existingEntry)
+        smallAmountItems.forEach { smallAmountItem ->
+            shoppingListEntryDao.update(
+                smallAmountItem.copy(
+                    purchased = purchased
+                )
+            )
+        }*/
+        // have removed the small additional amounts - i think its just overcomplicating things too much
     }
 
 }

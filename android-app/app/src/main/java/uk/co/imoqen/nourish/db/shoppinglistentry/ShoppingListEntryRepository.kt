@@ -20,6 +20,8 @@ interface ShoppingListEntryRepository {
 
     suspend fun deleteAllForUser(uid: String)
 
+    suspend fun deletePurchasedForUser(uid: String)
+
     suspend fun setOrdinal(id: Long, ordinal: Int)
 
     suspend fun updatePurchaseStatus(id: Long, purchased: Boolean)

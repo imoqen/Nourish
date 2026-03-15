@@ -8,6 +8,7 @@ data class ShoppingListUiState(
     val searchTerm: String = "",
     val userInteractionStatus: UserInteractionStatus = UserInteractionStatus.BROWSE,
     val showDeleteAllDialog: Boolean = false,
+    val showDeletePurchasedDialog: Boolean = false,
     val itemIndexToDelete: Int = -1,
 
     // adding item to shopping list:

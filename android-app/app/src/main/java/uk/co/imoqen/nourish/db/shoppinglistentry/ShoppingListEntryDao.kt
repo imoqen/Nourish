@@ -35,6 +35,10 @@ interface ShoppingListEntryDao {
     @Query("DELETE FROM shoppingListEntry WHERE purchaserUid = :uid")
     suspend fun deleteAllForUser(uid: String)
 
+    // deletes only the purchased items
+    @Query("DELETE FROM shoppingListEntry WHERE purchaserUid = :uid AND purchased = 1")
+    suspend fun deletePurchasedForUser(uid: String)
+
     @Query("SELECT MAX(ordinal) FROM shoppingListEntry WHERE purchaserUid = :uid")
     suspend fun getMaxOrdinalForUser(uid: String): Int
 

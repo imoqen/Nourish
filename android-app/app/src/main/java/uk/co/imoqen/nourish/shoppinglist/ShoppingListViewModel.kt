@@ -72,6 +72,14 @@ class ShoppingListViewModel @Inject constructor(
         }
     }
 
+    fun setShowDeletePurchasedDialog(showDeletePurchasedDialog: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                showDeletePurchasedDialog = showDeletePurchasedDialog
+            )
+        }
+    }
+
     fun setItemIndexToDelete(itemIndexToDelete: Int) {
         mutableUiState.update { currentState ->
             currentState.copy(
@@ -151,19 +159,25 @@ class ShoppingListViewModel @Inject constructor(
         }
     }
 
-    // deletes every shopping list item of that user
-    fun clearShoppingList() {
+    // deletes every shopping list item of that user, or only the purchased ones if specified.
+    fun clearShoppingList(
+        onlyDeletePurchased: Boolean = false
+    ) {
         viewModelScope.launch() {
             runCatching {
                 val uid = authenticationManager.getUid()
                 if (uid == null) {
                     return@launch
                 }
-                shoppingListEntryRepository.deleteAllForUser(uid)
+                if (onlyDeletePurchased) {
+                    shoppingListEntryRepository.deletePurchasedForUser(uid)
+                } else {
+                    shoppingListEntryRepository.deleteAllForUser(uid)
+                }
             }
                 .onSuccess {
                    // now update in the UI:
-                    setShoppingListEntries(emptyList())
+                    populateShoppingList()
                 }
         }
     }
@@ -374,9 +388,15 @@ class ShoppingListViewModel @Inject constructor(
                     throw NullPointerException()
                 }
                 Log.i("amount: ", mutableUiState.value.editIngredientAmount)
+
+                var amount = mutableUiState.value.editIngredientAmount.replace(',','.').toDoubleOrNull() ?: 1.0 // 1.0 if the input is invalid.
+                if (shoppingListUiEntry.unit == IngredientUnit.KG || shoppingListUiEntry.unit == IngredientUnit.L) {
+                    // multiply the value by 1000 as it will be stored in the db as G or ML.
+                    amount = amount * 1000
+                }
                 shoppingListEntryRepository.update(
                     shoppingListEntry.copy(
-                        amount = mutableUiState.value.editIngredientAmount.toDoubleOrNull() ?: 1.0 // 1.0 if the input is invalid.
+                        amount = amount
                     )
                 )
                 // and repopulate the list with the newly edited ingredient:
