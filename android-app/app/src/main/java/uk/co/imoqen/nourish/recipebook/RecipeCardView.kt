@@ -787,6 +787,21 @@ fun AlterationLlmAction(
 
                 HorizontalDivider(modifier = Modifier.padding(top = 10.dp))
 
+                if (uiState.userActionRequest != "" && uiState.actionChatStage != ActionChatStage.USER_INPUT) {
+                    NourishTextMessage(
+                        textSender = TextSender.USER,
+                        modifier = Modifier.align(Alignment.End),
+                        textMessage = {
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp)
+                            ) {
+                                Text("You", color = MaterialTheme.colorScheme.onBackground.copy(alpha=0.8f))
+                                Text(uiState.userActionRequest, modifier = Modifier.padding(8.dp))
+                            }
+                        }
+                    )
+                }
+
                 // the loading circle:
                 IndeterminateCircularIndicator(uiState.llmAwaitActionType != LlmActionType.NONE)
 
@@ -906,7 +921,7 @@ fun AlterationLlmAction(
                         onTrailingIconPress = {
                             viewModel.setAlteredRecipe(null)
                             viewModel.makeLlmApiCall(LlmActionType.ALTERATION)
-                            viewModel.setUserActionRequest("")
+                            //viewModel.setUserActionRequest("")
                         },
                         alwaysDisplayTrailingIcon = false
                     )

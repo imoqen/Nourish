@@ -673,7 +673,8 @@ class RecipeBookViewModel @Inject constructor(
     // api
 
     suspend fun parseRecipeToLlmRecipe(
-        recipe: Recipe
+        recipe: Recipe,
+        includeServings: Boolean
     ): LlmRecipe {
         val recipeType = findRecipeType(recipe.recipeTypeId)?.first ?: ""
         val tags = getRecipeTagsForRecipe(recipe.id).first().recipeTags.map { tag ->
@@ -710,7 +711,7 @@ class RecipeBookViewModel @Inject constructor(
         return LlmRecipe(
             title = recipe.title,
             sectionIngredients = ingredientsList,
-            servings = recipe.numberOfServings, // values are given for 1 serving, but the llm should preserve this value as it was set by the user for scaling.
+            servings = if (includeServings) { recipe.numberOfServings } else 1, // values are given for 1 serving, but the llm should preserve this value as it was set by the user for scaling.
             mealType = recipeType,
             method = method,
             tags = tags,
@@ -725,7 +726,7 @@ class RecipeBookViewModel @Inject constructor(
         type: LlmActionType,
     ) {
         setLlmAwaitActionType(type)
-        //setActionChatStage(ActionChatStage.AWAITING_LLM_RESPONSE)
+        setActionChatStage(ActionChatStage.AWAITING_LLM_RESPONSE)
         viewModelScope.launch() {
             runCatching {
                 val userPrompt = mutableUiState.value.userActionRequest
@@ -759,8 +760,9 @@ class RecipeBookViewModel @Inject constructor(
                     allNutritionalFilters = "[]" // signifies empty list
                 }
                 // make it into a request:
+                val includeServings = (type == LlmActionType.ALTERATION) // only include servings in alteration
                 val request = LlmActionRequest(
-                    parseRecipeToLlmRecipe(recipe), userPrompt, allNutritionalFilters, dishType
+                    parseRecipeToLlmRecipe(recipe, includeServings), userPrompt, allNutritionalFilters, dishType
                 )
 
                 // validate the user's token:
@@ -803,6 +805,7 @@ class RecipeBookViewModel @Inject constructor(
                                 }
                                 // display the recipe to the user. there will be a button to overwrite the exising recipe, or save as a new recipe. when clicked, this will do the according process.
                                 setAlteredRecipe(llmRecipe)
+                                setUserActionRequest("")
                             }
                         }
                     },
@@ -825,6 +828,7 @@ class RecipeBookViewModel @Inject constructor(
                                 )
                                 setActionChatStage(ActionChatStage.RESPONSE_RECEIVED)
                                 setLlmAwaitActionType(LlmActionType.NONE)
+                                setUserActionRequest("")
                             }
                         }
 
