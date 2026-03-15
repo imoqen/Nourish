@@ -6,12 +6,14 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,8 +31,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.rounded.Build
+import androidx.compose.material3.BottomAppBarDefaults.ContentPadding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ButtonDefaults.ContentPadding
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -48,6 +52,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -262,16 +267,37 @@ fun ShoppingListScreen(
 
                                     // if the unit type is SINGLE, dont display the amount. only display if UNIT or others which have a unit and amount.
                                     if (shoppingListItem.unit != IngredientUnit.SINGLE) {
-                                        Row() {
+                                        Row(
+                                            modifier = Modifier.fillMaxHeight()
+                                                .padding(vertical = 4.dp)
+                                                .padding(horizontal = 8.dp)
+                                                .background(
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    color = MaterialTheme.colorScheme.background
+                                                )
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .then(
+                                                    if (uiState.userInteractionStatus == UserInteractionStatus.EDIT) {
+                                                        Modifier
+                                                            .clickable(
+                                                                onClick = {
+                                                                    viewModel.setIngredientIndexToEdit(
+                                                                        i
+                                                                    )
+                                                                    viewModel.setEditIngredientAmount(
+                                                                        "${shoppingListItem.amount}"
+                                                                    ) // so the user can updte the existing
+                                                                }
+                                                            )
+                                                    } else {
+                                                        Modifier
+                                                    }
+                                                ),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
                                             val round = !(shoppingListItem.unit == IngredientUnit.KG || shoppingListItem.unit == IngredientUnit.L)
                                             Text(
                                                 modifier = Modifier
-                                                    .padding(vertical = 4.dp)
-                                                    .padding(horizontal = 8.dp)
-                                                    .background(
-                                                        shape = RoundedCornerShape(8.dp),
-                                                        color = MaterialTheme.colorScheme.background
-                                                    )
                                                     .padding(6.dp),
                                             text = "${
                                                     viewModel.formatIngredientAmount(
@@ -292,19 +318,13 @@ fun ShoppingListScreen(
                                                 }"
                                             )
                                             if (uiState.userInteractionStatus == UserInteractionStatus.EDIT) {
-                                                IconButton(
-                                                    onClick = {
-                                                        viewModel.setIngredientIndexToEdit(i)
-                                                        viewModel.setEditIngredientAmount("${shoppingListItem.amount}") // so the user can updte the existing
-                                                    }
-                                                ) {
-                                                    Icon(
-                                                        painter = painterResource(R.drawable.edit),
-                                                        contentDescription = "Edit Item Amount",
-                                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                        modifier = Modifier.size(20.dp),
-                                                    )
-                                                }
+                                                Icon(
+                                                    painter = painterResource(R.drawable.edit),
+                                                    contentDescription = "Edit Item Amount",
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier
+                                                        .padding(end=6.dp)
+                                                )
                                             }
                                         }
                                     }
@@ -313,44 +333,41 @@ fun ShoppingListScreen(
                                     // buttons, amounts, etc, go to the very end
                                     if (uiState.userInteractionStatus == UserInteractionStatus.EDIT) {
                                         // delete the item
-                                        IconButton(
-                                            onClick = {
-                                                viewModel.setItemIndexToDelete(i)
-                                            },
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(R.drawable.delete),
-                                                contentDescription = "Delete Item",
-                                                tint = MaterialTheme.colorScheme.error.copy(
-                                                    alpha = 0.8f
-                                                )
+                                        Icon(
+                                            painter = painterResource(R.drawable.delete),
+                                            contentDescription = "Delete Item",
+                                            tint = MaterialTheme.colorScheme.error.copy(
+                                                alpha = 0.8f
+                                            ),
+                                            modifier = Modifier.clickable(
+                                                onClick = { viewModel.setItemIndexToDelete(i) }
                                             )
-                                        }
+                                        )
 
                                         // move the item
-                                        IconButton(
-                                            modifier = Modifier.draggableHandle(
-                                                onDragStarted = {
-                                                    hapticFeedback.performHapticFeedback(
-                                                        HapticFeedbackType.GestureThresholdActivate
-                                                    )
-                                                },
-                                                onDragStopped = {
-                                                    hapticFeedback.performHapticFeedback(
-                                                        HapticFeedbackType.GestureEnd
-                                                    )
-                                                },
-                                            ),
-                                            onClick = {},
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(R.drawable.drag_handle),
-                                                contentDescription = "Reorder Item",
-                                                tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(
-                                                    alpha = 0.8f
+                                        Icon(
+                                            modifier = Modifier
+                                                .draggableHandle(
+                                                    onDragStarted = {
+                                                        hapticFeedback.performHapticFeedback(
+                                                            HapticFeedbackType.GestureThresholdActivate
+                                                        )
+                                                    },
+                                                    onDragStopped = {
+                                                        hapticFeedback.performHapticFeedback(
+                                                            HapticFeedbackType.GestureEnd
+                                                        )
+                                                    }
                                                 )
+                                                .padding(
+                                                  end=6.dp
+                                                ),
+                                            painter = painterResource(R.drawable.drag_handle),
+                                            contentDescription = "Reorder Item",
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(
+                                                alpha = 0.8f
                                             )
-                                        }
+                                        )
                                     }
                                 }
                             }
@@ -561,7 +578,7 @@ fun ShoppingListScreen(
                                 UnitSelectionButton(viewModel, uiState, "ml", IngredientUnit.ML)
                             }
                             item {
-                                UnitSelectionButton(viewModel, uiState, "l", IngredientUnit.L)
+                                UnitSelectionButton(viewModel, uiState, "L", IngredientUnit.L)
                             }
                             item {
                                 UnitSelectionButton(viewModel, uiState, "g", IngredientUnit.G)

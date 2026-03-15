@@ -327,13 +327,27 @@ class ShoppingListViewModel @Inject constructor(
                 }
 
                 // dynamically determine when UNIT should be used: if no unit was selected, but an amount was entered, it is UNIT.
-                val amount = mutableUiState.value.addIngredientAmount
-                val unit = if (
-                    mutableUiState.value.addIngredientUnit == IngredientUnit.SINGLE && amount != ""
-                ) {
-                    IngredientUnit.UNIT
-                } else {
-                    mutableUiState.value.addIngredientUnit
+                var unit = mutableUiState.value.addIngredientUnit
+                var amount = mutableUiState.value.addIngredientAmount
+                // overwriting to compensate for different cases:
+
+                // distinguish between SINGLE and UNIT: single is if there is no amount, otherwise it is unit.
+                if (unit == IngredientUnit.SINGLE && amount != "") {
+                    unit = IngredientUnit.UNIT
+                }
+
+                // cast the amount to double and also handle , case (for swiss / german numbers etc)
+                var doubleAmount = amount.replace(',', '.').toDoubleOrNull() ?: 1.0
+
+                if (unit == IngredientUnit.KG) {
+                    // convert to g and scale
+                    unit = IngredientUnit.G
+                    doubleAmount = doubleAmount * 1000
+                }
+                if (unit == IngredientUnit.L) {
+                    // convert to ml and scale
+                    unit = IngredientUnit.ML
+                    doubleAmount = doubleAmount * 1000
                 }
 
                 // then insert the shopping list entry with the found, or newly added ingredient:
@@ -353,7 +367,7 @@ class ShoppingListViewModel @Inject constructor(
                         ingredientId = ingredientId,
                         plural = ingredientName,
                         unit = unit,
-                        amount = amount.replace(',', '.').toDoubleOrNull() ?: 1.0, // "," is replaced with . as some languages e.g. German, Swiss use , for decimals instead
+                        amount = doubleAmount,
                     ),
                     uid = uid,
                     userAdded = true

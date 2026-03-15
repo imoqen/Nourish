@@ -23,8 +23,8 @@ import uk.co.imoqen.nourish.ui.theme.PurpleGrey80
 // error: self explanatory
 
 private val NourishDarkColorScheme = darkColorScheme(
-    primary = NourishGreen,
-    secondary = NourishGreenLight,
+    primary = NourishGreenDark,
+    secondary = NourishGreenDark,
     tertiary = NourishGreenLight,
 
     background = PurpleGrey40,
