@@ -281,7 +281,12 @@ fun ShoppingListScreen(
                                                         .padding(6.dp),
                                                     text = "${
                                                         viewModel.formatIngredientAmount(
+                                                            if (shoppingListItem.unit != IngredientUnit.KG && shoppingListItem.unit != IngredientUnit.L) {
                                                             ceil(shoppingListItem.amount) // gets ceiled because cant buy 0.5 of a lemon e.g.. BUT should still store the decimal because required for calc e.g. ifuser adds 0.5 lemon twice, it shuold still say 1 lemon.
+                                                            } else {
+                                                                // dont ceil if kg or L - these need to be precise.
+                                                                shoppingListItem.amount
+                                                            }
                                                         )
                                                     } ${
                                                         if (ceil(shoppingListItem.amount) > 1) {

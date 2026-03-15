@@ -15,7 +15,9 @@ enum class IngredientUnit(
     TBSP("Tbsp", "Tbsp", false, false), // convention to put capital T on tbsp to differentiate from tsp
 
     // extra for user input IN SHOPPING LIST, not supported in the LLM
-    L("l", "l", false, true),
+    // l and kg are purely for output or user input. not send by the llm
+    // and not stored in the db as this as it makes ingredient scaling harder.
+    L("L", "L", false, true),
     KG("kg", "kg", false, true),
     PINT("pint", "pints", false, true),
 

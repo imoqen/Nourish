@@ -212,7 +212,18 @@ class RecipeBookViewModel @Inject constructor(
                     // dont add water - dont need to buy that (in UK)
                     if (ingredient.singular.lowercase() != "water") {
 
-                        val unit = recipeIngredient.ingredientUnit
+                        // get the unit and if it is a unit to convert into UNIT type, then do that now
+                        // this is so that ingredients e.g. "head of, sprig of, ..." are still countable
+                        // as this pretty much converts to 1 of those ingredients.
+                        var unit = recipeIngredient.ingredientUnit
+                        val toConvertToUnit: List<IngredientUnit> = listOf(
+                            IngredientUnit.HEAD, IngredientUnit.BUNCH, IngredientUnit.BULB,
+                            IngredientUnit.STALK, IngredientUnit.STICK, IngredientUnit.LOAF, IngredientUnit.ROLL,
+                            IngredientUnit.SHEET, IngredientUnit.BLOCK, IngredientUnit.BAR
+                        )
+                        if (toConvertToUnit.contains(unit)) {
+                            unit = IngredientUnit.UNIT // so it converts to a countable
+                        }
                         val amount =
                             recipeIngredient.amount * recipe.numberOfServings // multiply by the desired serving size of the user
 
@@ -486,8 +497,18 @@ class RecipeBookViewModel @Inject constructor(
             val sectionTitle = getSectionById(sectionId).first()?.title // this may fail if the values stored in the db update while user is looking at it. for this, would need to use .collect(). consider this if issues occur in future.
 
             // determine pluralities
-            val ingredientAmount = ingredient.amount * recipe.numberOfServings
-            val ingredientUnit = ingredient.ingredientUnit
+            var ingredientAmount = ingredient.amount * recipe.numberOfServings
+            var ingredientUnit = ingredient.ingredientUnit
+
+            // edge case: if g or ml and >= 1000, use kg and l respectively and scale the amount.
+            if (ingredientAmount >= 1000 && (ingredientUnit == IngredientUnit.G || ingredientUnit == IngredientUnit.ML)) {
+                when (ingredientUnit) {
+                    IngredientUnit.G -> { ingredientUnit = IngredientUnit.KG }
+                    IngredientUnit.ML -> { ingredientUnit = IngredientUnit.L }
+                    else -> {} // make no change
+                }
+                ingredientAmount = ingredientAmount / 1000
+            }
 
             val unit = if (recipeActions.determineUnitPlurality(ingredientAmount)) { // scaled to num servings
                 ingredientUnit.pluralName
@@ -495,7 +516,6 @@ class RecipeBookViewModel @Inject constructor(
                 ingredientUnit.singularName
             }
             val ingredientName = getIngredientById(ingredient.ingredientId).first()
-            Log.i("plur", "unit plurality for: $ingredientName ^^^")
 
             if (ingredientName != null && sectionTitle != null) {
                 val ingredientPluralisedName =
@@ -505,6 +525,7 @@ class RecipeBookViewModel @Inject constructor(
                         ingredientName.singular
                     }
                 var ingredientText = ""
+
                 ingredientText = if (unit != "") {
                     ("$unit $ingredientPluralisedName")
                 } else {

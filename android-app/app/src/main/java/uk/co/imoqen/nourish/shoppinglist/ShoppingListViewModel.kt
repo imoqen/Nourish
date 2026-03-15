@@ -198,12 +198,27 @@ class ShoppingListViewModel @Inject constructor(
                 // required for the ui, to get the ingredients for each from the ingredient id.
                 val shoppingListUiEntries: MutableList<ShoppingListUiEntry> = mutableListOf()
                 shoppingListEntries.forEach { shoppingListEntry ->
+
+                    var amount = shoppingListEntry.amount
+                    var unit = shoppingListEntry.unit
+
+                    // convert the amounts in the UI if g and kg and >= 1000
+                    // only in the UI - not in the db so everything is still stored as G / ML so easy to compare and bundle together.
+                    if (amount >= 1000 && (unit == IngredientUnit.G || unit == IngredientUnit.ML)) {
+                        when (unit) {
+                            IngredientUnit.G -> { unit = IngredientUnit.KG }
+                            IngredientUnit.ML -> { unit = IngredientUnit.L }
+                            else -> {} // make no change
+                        }
+                        amount = amount / 1000
+                    }
+
                     shoppingListUiEntries.add(
                         ShoppingListUiEntry(
                             id = shoppingListEntry.id, // maybe need to store ingredient id in here in future but maybe not.
                             plural = ingredientRepository.getById(shoppingListEntry.ingredientId).first()?.plural ?: "",
-                            unit = shoppingListEntry.unit,
-                            amount = shoppingListEntry.amount,
+                            unit = unit,
+                            amount = amount,
                             purchased = shoppingListEntry.purchased,
                             ordinal = shoppingListEntry.ordinal
                         )

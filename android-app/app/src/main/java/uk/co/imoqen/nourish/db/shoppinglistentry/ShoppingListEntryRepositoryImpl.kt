@@ -28,7 +28,6 @@ class ShoppingListEntryRepositoryImpl @Inject constructor(
         return shoppingListEntryDao.insert(shoppingListEntry)
     }
 
-    //TODO NEED TO MAKE SURE THAT it adds a new one if the one its found is already purchased. as dont want to update something that is purchased.
     override suspend fun addShoppingListEntry(
         shoppingListIngredient: ShoppingListIngredient,
         uid: String,
