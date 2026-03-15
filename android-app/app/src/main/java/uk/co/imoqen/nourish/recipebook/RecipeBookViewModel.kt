@@ -45,6 +45,7 @@ import uk.co.imoqen.nourish.network.response.LlmRecipe
 import java.lang.NullPointerException
 import javax.inject.Inject
 import kotlin.collections.getOrPut
+import kotlin.math.round
 
 @HiltViewModel
 class RecipeBookViewModel @Inject constructor(
@@ -123,6 +124,14 @@ class RecipeBookViewModel @Inject constructor(
         mutableUiState.update { currentState ->
             currentState.copy(
                 llmActionType = llmActionType
+            )
+        }
+    }
+
+    fun setLlmAwaitActionType(llmAwaitActionType: LlmActionType) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                llmAwaitActionType = llmAwaitActionType
             )
         }
     }
@@ -666,7 +675,6 @@ class RecipeBookViewModel @Inject constructor(
     suspend fun parseRecipeToLlmRecipe(
         recipe: Recipe
     ): LlmRecipe {
-        val recipeIngredients = getRecipeIngredientsForRecipe(recipe.id).first()
         val recipeType = findRecipeType(recipe.recipeTypeId)?.first ?: ""
         val tags = getRecipeTagsForRecipe(recipe.id).first().recipeTags.map { tag ->
             getTagByTagId(tag.tagId).first()?.identifier ?: ""
@@ -683,7 +691,7 @@ class RecipeBookViewModel @Inject constructor(
             map.getOrPut(section) { mutableListOf() }.add(LlmIngredient(
                 ingredientSingular = ingredient?.singular ?: "",
                 ingredientPlural = ingredient?.plural ?: "",
-                ingredientAmount = recipeIngredient.amount,
+                ingredientAmount = round(recipeIngredient.amount * 100) / 100, // so that value is not too many digits long; saves tokens.
                 ingredientAmountUnit = recipeIngredient.ingredientUnit.name
             ))
         }
@@ -702,7 +710,7 @@ class RecipeBookViewModel @Inject constructor(
         return LlmRecipe(
             title = recipe.title,
             sectionIngredients = ingredientsList,
-            servings = 1, // there is always just 1 serving stored, otherwise this field is used for scaling for the user. but llm should be given 1 serving.
+            servings = recipe.numberOfServings, // values are given for 1 serving, but the llm should preserve this value as it was set by the user for scaling.
             mealType = recipeType,
             method = method,
             tags = tags,
@@ -716,7 +724,8 @@ class RecipeBookViewModel @Inject constructor(
     fun makeLlmApiCall(
         type: LlmActionType,
     ) {
-        setActionChatStage(ActionChatStage.AWAITING_LLM_RESPONSE)
+        setLlmAwaitActionType(type)
+        //setActionChatStage(ActionChatStage.AWAITING_LLM_RESPONSE)
         viewModelScope.launch() {
             runCatching {
                 val userPrompt = mutableUiState.value.userActionRequest
@@ -777,6 +786,7 @@ class RecipeBookViewModel @Inject constructor(
                                     recipeRepository.updateRecipeQuery(query.copy(llmAnswer = llmAnswer))
                                 }
                                 setActionChatStage(ActionChatStage.RESPONSE_RECEIVED)
+                                setLlmAwaitActionType(LlmActionType.NONE)
                                 setUserActionRequest("") // so the text doesnt still appear in their send bar
                             }
                         }
@@ -786,6 +796,7 @@ class RecipeBookViewModel @Inject constructor(
                         if (llmRecipe != null) {
                             viewModelScope.launch() {
                                 setActionChatStage(ActionChatStage.RESPONSE_RECEIVED)
+                                setLlmAwaitActionType(LlmActionType.NONE)
                                 if (llmRecipe.recipeNotPossible) {
                                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Valid recipe could not be generated. Please enter something different."))
                                     return@launch
@@ -813,6 +824,7 @@ class RecipeBookViewModel @Inject constructor(
                                     )
                                 )
                                 setActionChatStage(ActionChatStage.RESPONSE_RECEIVED)
+                                setLlmAwaitActionType(LlmActionType.NONE)
                             }
                         }
 
@@ -822,6 +834,7 @@ class RecipeBookViewModel @Inject constructor(
                 .onFailure {
                     // error occurred
                     setActionChatStage(ActionChatStage.USER_INPUT) // no longer awaiting - error occurred.
+                    setLlmAwaitActionType(LlmActionType.NONE)
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
                 }
         }
@@ -844,7 +857,7 @@ class RecipeBookViewModel @Inject constructor(
         return "" // invalid if reached here
     }
 
-    fun addRecipe(llmRecipe: LlmRecipe) {
+    fun addRecipe(llmRecipe: LlmRecipe, alteration: Boolean = false) {
         viewModelScope.launch() {
             runCatching {
                 // Check that user is logged in validly
@@ -853,7 +866,7 @@ class RecipeBookViewModel @Inject constructor(
                     throw NullPointerException()
                 } // user is null; throw to be handled appropriately
                 // Add the recipe to the database:
-                recipeRepository.createRecipe(uid, llmRecipe)
+                recipeRepository.createRecipe(uid, llmRecipe, alteration = alteration)
             }
                 .onSuccess {
                     uiEventBus.enqueueEvent(

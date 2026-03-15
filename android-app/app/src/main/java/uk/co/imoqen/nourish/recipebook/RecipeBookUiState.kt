@@ -20,6 +20,7 @@ data class RecipeBookUiState(
     val recipeTypes: List<TypeSelection>? = null, // all of the recipe types
 
     val llmActionType: LlmActionType = LlmActionType.NONE,
+    val llmAwaitActionType: LlmActionType = LlmActionType.NONE, // to define which is being awaited for - to display the loading bar and make sure it stays even if the dialog etc is closed and then returned to.
 
     val userActionRequest: String = "",
 
@@ -34,7 +35,7 @@ data class RecipeBookUiState(
 
 enum class ActionChatStage {
     USER_INPUT,
-    AWAITING_LLM_RESPONSE,
+    AWAITING_LLM_RESPONSE, // maybe remove
     RESPONSE_RECEIVED
 }
 

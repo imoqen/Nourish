@@ -117,6 +117,7 @@ class RecipeRepositoryImpl @Inject constructor(
     override suspend fun createRecipe(
         uid: String,
         llmRecipe: LlmRecipe,
+        alteration: Boolean, // purpose of alteration is to ensure that altered recipes dont get divided by serving size. only new reicpes should have this.
         recipeId: Long,
         imagePath: String// just set to "" if none, which is fine.
     ) {
@@ -173,7 +174,8 @@ class RecipeRepositoryImpl @Inject constructor(
                 ingredients.forEach{ingredient ->
                     val singular = ingredient.ingredientSingular
                     val plural = ingredient.ingredientPlural
-                    val amount = ingredient.ingredientAmount / recipe.numberOfServings // divide by number of servings, so ingredient is stored for 1 serving.
+                    // purpose of alteration is to ensure that altered recipes dont get divided by serving size. only new reicpes should have this.
+                    val amount = if (alteration) {ingredient.ingredientAmount} else { ingredient.ingredientAmount / recipe.numberOfServings }// divide by number of servings, so ingredient is stored for 1 serving.
                     val unit = ingredient.ingredientAmountUnit
                     // add it to ingredient table if doesn't already exist in its plural form, check both values due to human error:
                     var ingredientId = ingredientRepository.getIdByPlural(plural)
@@ -287,7 +289,7 @@ class RecipeRepositoryImpl @Inject constructor(
         deleteNutritionForRecipeId(originalRecipeId)
 
         recipeDao.delete(currentRecipe)
-        createRecipe(originalRecipeAuthor,newRecipe, originalRecipeId, originalRecipeImagePath)
+        createRecipe(originalRecipeAuthor,newRecipe, alteration = true, originalRecipeId, originalRecipeImagePath)
     }
 
 }

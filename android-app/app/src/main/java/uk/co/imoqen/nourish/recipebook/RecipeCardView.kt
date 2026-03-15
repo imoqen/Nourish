@@ -726,7 +726,7 @@ fun QueryLlmAction(
                     }
                     item {
                         // the loading circle:
-                        IndeterminateCircularIndicator(uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE)
+                        IndeterminateCircularIndicator(uiState.llmAwaitActionType != LlmActionType.NONE) // only show if the await type is not none, as this indicates loading if not none.
                     }
 
                     items(queries.reversed()) { query -> // queries have to be reversed due to the reverse layout. but still required so that start at bottom of chat.
@@ -742,7 +742,7 @@ fun QueryLlmAction(
         Spacer(modifier= Modifier.weight(1f))
 
         AnimatedVisibility(
-            visible = uiState.actionChatStage != ActionChatStage.AWAITING_LLM_RESPONSE
+            visible = uiState.llmAwaitActionType == LlmActionType.NONE // only visible if not currently awaiting an LLM response
         ) {
             NourishTextField(
                 value = uiState.userActionRequest,
@@ -788,10 +788,10 @@ fun AlterationLlmAction(
                 HorizontalDivider(modifier = Modifier.padding(top = 10.dp))
 
                 // the loading circle:
-                IndeterminateCircularIndicator(uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE)
+                IndeterminateCircularIndicator(uiState.llmAwaitActionType != LlmActionType.NONE)
 
                 if (uiState.alteredRecipe == null) {
-                    if (uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE) {
+                    if (uiState.llmAwaitActionType == LlmActionType.ALTERATION) {
                         Text(
                             "Altering the recipe...",
                             modifier = Modifier.padding(16.dp),
@@ -825,6 +825,7 @@ fun AlterationLlmAction(
                                     viewModel::formatIngredientText,
                                     imageFilename = recipe.imagePath,
                                     context = LocalContext.current,
+                                    alteredRecipe = true
                                 )
 
                             }
@@ -850,7 +851,7 @@ fun AlterationLlmAction(
                                 )
                                 NourishButton(
                                     onClick = {
-                                        viewModel.addRecipe(uiState.alteredRecipe)
+                                        viewModel.addRecipe(uiState.alteredRecipe, alteration = true) // alteration flag ensures that ingredients get scaled correctly when parsing to the db
                                         viewModel.setAlteredRecipe(null)
                                         viewModel.setLlmActionType(LlmActionType.NONE)
                                     },
@@ -891,7 +892,7 @@ fun AlterationLlmAction(
                 Spacer(modifier= Modifier.weight(1f))
 
                 AnimatedVisibility(
-                    visible = uiState.actionChatStage != ActionChatStage.AWAITING_LLM_RESPONSE
+                    visible = uiState.llmAwaitActionType == LlmActionType.NONE
                 ) {
                     NourishTextField(
                         value = uiState.userActionRequest,
@@ -957,19 +958,19 @@ fun NutritionLlmAction(
         verticalArrangement = Arrangement.Center
     ) {
         // the loading circle:
-        IndeterminateCircularIndicator(uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE)
+        IndeterminateCircularIndicator(uiState.llmAwaitActionType != LlmActionType.NONE)
 
         val nutrition =
             viewModel.getNutritionForRecipe(recipe.id)
                 .collectAsState(initial = null).value
-        if (uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE) {
+        if (uiState.llmAwaitActionType == LlmActionType.NUTRITIONAL_VALUES) {
             Text(
                 "Estimating nutritional values...",
                 modifier = Modifier.padding(16.dp),
                 textAlign = TextAlign.Center
             )
         }
-        if (nutrition == null && uiState.actionChatStage != ActionChatStage.AWAITING_LLM_RESPONSE) {
+        if (nutrition == null && uiState.llmAwaitActionType == LlmActionType.NONE) {
             viewModel.setUserActionRequest("Generate nutritional values for the provided dish in the provided JSON schema, for the given number of servings.")
             NourishButton(
                 onClick = { viewModel.makeLlmApiCall(LlmActionType.NUTRITIONAL_VALUES) },

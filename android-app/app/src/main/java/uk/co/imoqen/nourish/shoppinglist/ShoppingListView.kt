@@ -176,24 +176,26 @@ fun ShoppingListScreen(
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
-            RecipeLoadingBar("Loading your shopping list...") {
-                Column(modifier = Modifier.fillMaxSize()) {
-                    Text(
-                        "There are no items in your shopping list.",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp)
-                            .padding(4.dp),
-                        textAlign = TextAlign.Center,
-                    )
-                    NourishDivider()
-                    Text(
-                        "Items can be added from the ingredients of a recipe, or manually by pressing 'Add Item' below.",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(4.dp),
-                        textAlign = TextAlign.Center
-                    )
+            if (uiState.shoppingListEntries.isEmpty()) {
+                RecipeLoadingBar("Loading your shopping list...") {
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        Text(
+                            "There are no items in your shopping list.",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp)
+                                .padding(4.dp),
+                            textAlign = TextAlign.Center,
+                        )
+                        NourishDivider()
+                        Text(
+                            "Items can be added from the ingredients of a recipe, or manually by pressing 'Add Item' below.",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(4.dp),
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
 
@@ -299,7 +301,7 @@ fun ShoppingListScreen(
                                             Text(
                                                 modifier = Modifier
                                                     .padding(6.dp),
-                                            text = "${
+                                                text = "${
                                                     viewModel.formatIngredientAmount(
                                                         if (round) {
                                                         ceil(shoppingListItem.amount) // gets ceiled because cant buy 0.5 of a lemon e.g.. BUT should still store the decimal because required for calc e.g. ifuser adds 0.5 lemon twice, it shuold still say 1 lemon.
@@ -309,11 +311,15 @@ fun ShoppingListScreen(
                                                         },
                                                         round
                                                     )
-                                                } ${
-                                                    if (ceil(shoppingListItem.amount) > 1) {
-                                                        shoppingListItem.unit.pluralName
+                                                }${
+                                                    if (shoppingListItem.unit == IngredientUnit.UNIT) {
+                                                        ""
                                                     } else {
-                                                        shoppingListItem.unit.singularName
+                                                        if (ceil(shoppingListItem.amount) > 1) {
+                                                            " " + shoppingListItem.unit.pluralName
+                                                        } else {
+                                                            " " + shoppingListItem.unit.singularName
+                                                        }
                                                     }
                                                 }"
                                             )
@@ -331,43 +337,47 @@ fun ShoppingListScreen(
 
                                     //Spacer(modifier = Modifier.weight(1f))
                                     // buttons, amounts, etc, go to the very end
-                                    if (uiState.userInteractionStatus == UserInteractionStatus.EDIT) {
-                                        // delete the item
-                                        Icon(
-                                            painter = painterResource(R.drawable.delete),
-                                            contentDescription = "Delete Item",
-                                            tint = MaterialTheme.colorScheme.error.copy(
-                                                alpha = 0.8f
-                                            ),
-                                            modifier = Modifier.clickable(
-                                                onClick = { viewModel.setItemIndexToDelete(i) }
-                                            )
-                                        )
-
-                                        // move the item
-                                        Icon(
-                                            modifier = Modifier
-                                                .draggableHandle(
-                                                    onDragStarted = {
-                                                        hapticFeedback.performHapticFeedback(
-                                                            HapticFeedbackType.GestureThresholdActivate
-                                                        )
-                                                    },
-                                                    onDragStopped = {
-                                                        hapticFeedback.performHapticFeedback(
-                                                            HapticFeedbackType.GestureEnd
-                                                        )
-                                                    }
-                                                )
-                                                .padding(
-                                                  end=6.dp
+                                    AnimatedVisibility(
+                                        visible = uiState.userInteractionStatus == UserInteractionStatus.EDIT
+                                    ) {
+                                        Row() {
+                                            // delete the item
+                                            Icon(
+                                                painter = painterResource(R.drawable.delete),
+                                                contentDescription = "Delete Item",
+                                                tint = MaterialTheme.colorScheme.error.copy(
+                                                    alpha = 0.8f
                                                 ),
-                                            painter = painterResource(R.drawable.drag_handle),
-                                            contentDescription = "Reorder Item",
-                                            tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(
-                                                alpha = 0.8f
+                                                modifier = Modifier.clickable(
+                                                    onClick = { viewModel.setItemIndexToDelete(i) }
+                                                )
                                             )
-                                        )
+
+                                            // move the item
+                                            Icon(
+                                                modifier = Modifier
+                                                    .draggableHandle(
+                                                        onDragStarted = {
+                                                            hapticFeedback.performHapticFeedback(
+                                                                HapticFeedbackType.GestureThresholdActivate
+                                                            )
+                                                        },
+                                                        onDragStopped = {
+                                                            hapticFeedback.performHapticFeedback(
+                                                                HapticFeedbackType.GestureEnd
+                                                            )
+                                                        }
+                                                    )
+                                                    .padding(
+                                                        end = 6.dp
+                                                    ),
+                                                painter = painterResource(R.drawable.drag_handle),
+                                                contentDescription = "Reorder Item",
+                                                tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(
+                                                    alpha = 0.8f
+                                                )
+                                            )
+                                        }
                                     }
                                 }
                             }

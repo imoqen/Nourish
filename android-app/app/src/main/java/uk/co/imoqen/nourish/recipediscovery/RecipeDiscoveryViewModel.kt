@@ -538,7 +538,8 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 // Add the recipe to the database:
                 recipeRepository.createRecipe(
                     // recipe is saved with the higher quality image, which is stored in second place
-                    uid, llmRecipe, imagePath = mutableUiState.value.savedImageMipmap.highQualityFilename
+                    uid, llmRecipe, imagePath = mutableUiState.value.savedImageMipmap.highQualityFilename,
+                    alteration = false // not an alteration; it is a new recipe.
                 )
             }
                 .onSuccess {

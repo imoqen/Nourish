@@ -765,7 +765,8 @@ fun RecipeCardPreview(
     formatIngredientText: (LlmIngredient) -> String,
     imageFilename: String,
     context: Context,
-    tags: List<TagSelection>? = emptyList()
+    tags: List<TagSelection>? = emptyList(),
+    alteredRecipe: Boolean = false
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -803,7 +804,12 @@ fun RecipeCardPreview(
                     Log.i("LLM RECIPE", "ingredients: ${ingredientSection.ingredients}")
 
                     ingredientSection.ingredients.forEach { ingredient ->
-                        val ingredientText = formatIngredientText(ingredient)
+                        val ingredientText = if (alteredRecipe) {
+                            // scale the ingredient if it is an alteration, because it is returned for 1 sevring unlike others which return for the actual number of servings.
+                            formatIngredientText(ingredient.copy(ingredientAmount = ingredient.ingredientAmount * recipe.servings))
+                        } else {
+                            formatIngredientText(ingredient)
+                        }
                         Text(ingredientText)
                     }
 

@@ -793,7 +793,8 @@ async function generateAlteredRecipe(
         role: "system",
         content:
           "Return in the required schema, write in sufficient detail but not too much (keep below 250 words). Use British English. " +
-          "Generate a new recipe using the provided recipe, ensuring it is altered to the user's needs accordingly and produces the same number of servings as the servings field. The recipe should remain the same for any part which does not need to be altered to the request." +
+          "Generate a new recipe using the provided recipe, ensuring it is altered to the user's needs accordingly." + 
+          " The provided amounts in the recipe make 1 serving. Create your recipe for 1 serving too, but preserve the 'serving' field as the SAME value given, as this is used for recipe scaling separately. The recipe should remain the same for any part which does not need to be altered to the request." +
           "If the recipe cannot be altered in the way that the user wishes (e.g. inedible), fill in the recipeNotPossible field as true and all others as null. Only do this if there really is no way to alter it, otherwise be creative to meet the user's needs.",
       },
       {
