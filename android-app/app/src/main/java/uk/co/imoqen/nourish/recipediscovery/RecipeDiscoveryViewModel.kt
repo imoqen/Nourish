@@ -538,7 +538,8 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 // Add the recipe to the database:
                 recipeRepository.createRecipe(
                     // recipe is saved with the higher quality image, which is stored in second place
-                    uid, llmRecipe, imagePath = mutableUiState.value.savedImageMipmap.highQualityFilename
+                    uid, llmRecipe, imagePath = mutableUiState.value.savedImageMipmap.highQualityFilename,
+                    alteration = false // not an alteration; it is a new recipe.
                 )
             }
                 .onSuccess {
@@ -556,6 +557,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
                             "The recipe could not be saved. Please try again, or generate a new recipe."
                         )
                     )
+                    Log.i("RECIPE SAVE", "$e")
                 }
         }
     }
@@ -630,9 +632,10 @@ class RecipeDiscoveryViewModel @Inject constructor(
     }
 
     fun formatIngredientAmount(
-        ingredientAmount: Double
+        ingredientAmount: Double,
+        roundToNearestQuarter: Boolean = true
     ): String {
-        return recipeActions.formatIngredientAmount(ingredientAmount)
+        return recipeActions.formatIngredientAmount(ingredientAmount, roundToNearestQuarter)
     }
 
     // only used for llmingredient as they are dealt with differently.

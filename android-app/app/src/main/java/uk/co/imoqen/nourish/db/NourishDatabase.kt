@@ -21,6 +21,8 @@ import uk.co.imoqen.nourish.db.recipe.recipetag.RecipeTag
 import uk.co.imoqen.nourish.db.recipe.recipetag.RecipeTagDao
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeTypeDao
+import uk.co.imoqen.nourish.db.shoppinglistentry.ShoppingListEntry
+import uk.co.imoqen.nourish.db.shoppinglistentry.ShoppingListEntryDao
 import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.db.tag.TagDao
 import uk.co.imoqen.nourish.db.user.User
@@ -33,7 +35,7 @@ import uk.co.imoqen.nourish.db.user.UserDao
         RecipeIngredientSection::class, RecipeStep::class,
         RecipeNutrition::class, RecipeQuery::class,
         // other classes:
-        User::class, Ingredient::class, Tag::class],
+        User::class, Ingredient::class, Tag::class, ShoppingListEntry::class],
     version = 12
 )
 @TypeConverters(Converters::class)
@@ -50,4 +52,5 @@ abstract class NourishDatabase : RoomDatabase() {
     abstract fun tagDao(): TagDao
     abstract fun recipeNutritionDao(): RecipeNutritionDao
     abstract fun recipeQueryDao(): RecipeQueryDao
+    abstract fun shoppingListEntryDao(): ShoppingListEntryDao
 }

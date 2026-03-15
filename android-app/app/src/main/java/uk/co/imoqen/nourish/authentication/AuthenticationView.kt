@@ -176,6 +176,7 @@ fun LoginScreen(
                             },
                             sheetState = sheetState,
                         ) {
+                            val keyboardFocusManager = LocalFocusManager.current // local to modal bottom sheet
                             Column(
                                 modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally

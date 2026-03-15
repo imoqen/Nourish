@@ -1,17 +1,15 @@
 package uk.co.imoqen.nourish.recipebook
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateBounds
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import uk.co.imoqen.nourish.R
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,22 +25,19 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Send
-import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -51,18 +46,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -79,38 +71,28 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.IndeterminateCircularIndicator
 import uk.co.imoqen.nourish.common.NourishButton
-import uk.co.imoqen.nourish.common.NourishColour
-import uk.co.imoqen.nourish.common.NourishDivider
-import uk.co.imoqen.nourish.common.NourishH1
 import uk.co.imoqen.nourish.common.NourishH2
 import uk.co.imoqen.nourish.common.NourishH3
-import uk.co.imoqen.nourish.common.NourishH4
 import uk.co.imoqen.nourish.common.NourishIconButton
 import uk.co.imoqen.nourish.common.NourishIconTextButton
 import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.common.NourishTextMessage
 import uk.co.imoqen.nourish.common.TextSender
-import uk.co.imoqen.nourish.common.onBackgroundColour
 import uk.co.imoqen.nourish.common.recipeColour
+import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQuery
 import uk.co.imoqen.nourish.network.request.LlmActionType
-import uk.co.imoqen.nourish.network.response.LlmRecipe
-import uk.co.imoqen.nourish.recipediscovery.LlmChatStage
 import uk.co.imoqen.nourish.recipediscovery.RecipeCardPreview
+import uk.co.imoqen.nourish.shoppinglist.IngredientAmount
 import java.io.File
 
 @Composable
@@ -118,7 +100,7 @@ fun RecipeCardScreen(
     recipeBookViewModel: RecipeBookViewModel,
     uiState: RecipeBookUiState,
     recipeId: Long,
-    onBack: () -> Unit
+    onBack: () -> Unit,
 ) {
 
     val scrollState = rememberScrollState()
@@ -157,8 +139,8 @@ fun RecipeCard(
         val recipeCard = recipeBookViewModel.uiState.collectAsState().value.selectedRecipeCard
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-
         if (recipeCard != null) {
+
             val imagePath = recipeCard.imagePath
             val colour = recipeCard.colour.recipeColour()
 
@@ -404,7 +386,9 @@ fun RecipeCard(
 
                         Column(
                             modifier = Modifier
-                                .animateContentSize()
+                                .animateContentSize().fillMaxWidth().padding(vertical=8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             // then output the ingredients by section
                             recipeCard.sectionsWithIngredients.forEach { (section, ingredients) ->
@@ -419,9 +403,107 @@ fun RecipeCard(
                                         )
                                     }
 
-                                    // id can be used if user wishes to add to shopping list
-                                    ingredients.forEach { (ingredient, amount, id) ->
-                                        Text("${recipeBookViewModel.formatIngredientAmount(amount)} $ingredient")
+                                    ingredients.forEach { (ingredient, amount, _) ->
+                                        val round = !(ingredient.startsWith("kg") || ingredient.startsWith("L")) // if kg or L, do not round.
+                                        Text("${recipeBookViewModel.formatIngredientAmount(amount, round)} $ingredient")
+                                    }
+                                }
+                            }
+                            NourishIconTextButton(
+                                onClick = {
+                                    recipeBookViewModel.formatIngredientsForShoppingList() // this sets it not to null, so the dialog will be triggered to display (if successful).
+                                },
+                                painter = painterResource(R.drawable.shopping_cart_add),
+                                description = "Add to Shopping List",
+                            )
+
+                            // show shopping list dialog:
+                            if (uiState.ingredientsToAddToShoppingList != null) {
+                                Dialog(
+                                    onDismissRequest = {
+                                        recipeBookViewModel.setIngredientsToAddToShoppingList(null)
+                                    }
+                                ) {
+                                    Surface(
+                                        shape = RoundedCornerShape(24.dp)
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.fillMaxHeight(0.7f)
+                                        ) {
+                                            Column(
+                                                modifier = Modifier.fillMaxWidth().padding(vertical=12.dp),
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                NourishH3("Add to Shopping List", modifier = Modifier.fillMaxWidth())
+
+                                                HorizontalDivider()
+
+                                                val ingredientsToAddToShoppingList =
+                                                    uiState.ingredientsToAddToShoppingList
+
+                                                LazyColumn(
+                                                    modifier = Modifier.weight(1f) // takes up as much space as possible; all other things have space then this uses up all the rest of the space.
+                                                ) {
+                                                    itemsIndexed(ingredientsToAddToShoppingList) { i, (ingredient, selected) ->
+
+                                                        Row(
+                                                            modifier = Modifier.fillMaxWidth().padding(horizontal=8.dp),
+                                                            horizontalArrangement = Arrangement.Center,
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+                                                            Text(
+                                                                ingredient.plural
+                                                            )
+
+                                                            var amount = ingredient.amount
+                                                            var unit = ingredient.unit
+
+                                                            // convert the amounts in the UI if g and kg and >= 1000
+                                                            // only in the UI - not in the db so everything is still stored as G / ML so easy to compare and bundle together.
+                                                            if (amount >= 1000 && (unit == IngredientUnit.G || unit == IngredientUnit.ML)) {
+                                                                when (unit) {
+                                                                    IngredientUnit.G -> { unit = IngredientUnit.KG }
+                                                                    IngredientUnit.ML -> { unit = IngredientUnit.L }
+                                                                    else -> {} // make no change
+                                                                }
+                                                                amount = amount / 1000
+                                                            }
+
+                                                            Spacer(modifier= Modifier.weight(1f))
+
+                                                            IngredientAmount(
+                                                                unit = unit,
+                                                                amount = amount,
+                                                                formatIngredientAmount = recipeBookViewModel::formatIngredientAmount
+                                                            )
+                                                            Checkbox(
+                                                                modifier = Modifier.padding(0.dp),
+                                                                checked = selected,
+                                                                onCheckedChange = {
+                                                                    recipeBookViewModel.alterIngredientShoppingListStatus(
+                                                                        ingredient, i, !selected
+                                                                    );
+                                                                    Log.i(
+                                                                        "alter",
+                                                                        "${uiState.ingredientsToAddToShoppingList}"
+                                                                    )
+                                                                }
+                                                            )
+                                                        }
+                                                    }
+                                                }
+
+                                                NourishIconTextButton(
+                                                    onClick = {
+                                                        recipeBookViewModel.addIngredientsToShoppingList() // this sets it not to null, so the dialog will be triggered to display (if successful).
+                                                              },
+                                                    painter = painterResource(R.drawable.shopping_cart_add),
+                                                    description = "Add to Shopping List",
+                                                )
+                                            }
+                                        }
+
                                     }
                                 }
                             }
@@ -669,7 +751,7 @@ fun QueryLlmAction(
                     }
                     item {
                         // the loading circle:
-                        IndeterminateCircularIndicator(uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE)
+                        IndeterminateCircularIndicator(uiState.llmAwaitActionType != LlmActionType.NONE) // only show if the await type is not none, as this indicates loading if not none.
                     }
 
                     items(queries.reversed()) { query -> // queries have to be reversed due to the reverse layout. but still required so that start at bottom of chat.
@@ -685,7 +767,7 @@ fun QueryLlmAction(
         Spacer(modifier= Modifier.weight(1f))
 
         AnimatedVisibility(
-            visible = uiState.actionChatStage != ActionChatStage.AWAITING_LLM_RESPONSE
+            visible = uiState.llmAwaitActionType == LlmActionType.NONE // only visible if not currently awaiting an LLM response
         ) {
             NourishTextField(
                 value = uiState.userActionRequest,
@@ -730,11 +812,26 @@ fun AlterationLlmAction(
 
                 HorizontalDivider(modifier = Modifier.padding(top = 10.dp))
 
+                if (uiState.userActionRequest != "" && uiState.actionChatStage != ActionChatStage.USER_INPUT) {
+                    NourishTextMessage(
+                        textSender = TextSender.USER,
+                        modifier = Modifier.align(Alignment.End),
+                        textMessage = {
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp)
+                            ) {
+                                Text("You", color = MaterialTheme.colorScheme.onBackground.copy(alpha=0.8f))
+                                Text(uiState.userActionRequest, modifier = Modifier.padding(8.dp))
+                            }
+                        }
+                    )
+                }
+
                 // the loading circle:
-                IndeterminateCircularIndicator(uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE)
+                IndeterminateCircularIndicator(uiState.llmAwaitActionType != LlmActionType.NONE)
 
                 if (uiState.alteredRecipe == null) {
-                    if (uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE) {
+                    if (uiState.llmAwaitActionType == LlmActionType.ALTERATION) {
                         Text(
                             "Altering the recipe...",
                             modifier = Modifier.padding(16.dp),
@@ -768,6 +865,7 @@ fun AlterationLlmAction(
                                     viewModel::formatIngredientText,
                                     imageFilename = recipe.imagePath,
                                     context = LocalContext.current,
+                                    alteredRecipe = true
                                 )
 
                             }
@@ -793,7 +891,7 @@ fun AlterationLlmAction(
                                 )
                                 NourishButton(
                                     onClick = {
-                                        viewModel.addRecipe(uiState.alteredRecipe)
+                                        viewModel.addRecipe(uiState.alteredRecipe, alteration = true) // alteration flag ensures that ingredients get scaled correctly when parsing to the db
                                         viewModel.setAlteredRecipe(null)
                                         viewModel.setLlmActionType(LlmActionType.NONE)
                                     },
@@ -834,7 +932,7 @@ fun AlterationLlmAction(
                 Spacer(modifier= Modifier.weight(1f))
 
                 AnimatedVisibility(
-                    visible = uiState.actionChatStage != ActionChatStage.AWAITING_LLM_RESPONSE
+                    visible = uiState.llmAwaitActionType == LlmActionType.NONE
                 ) {
                     NourishTextField(
                         value = uiState.userActionRequest,
@@ -848,7 +946,7 @@ fun AlterationLlmAction(
                         onTrailingIconPress = {
                             viewModel.setAlteredRecipe(null)
                             viewModel.makeLlmApiCall(LlmActionType.ALTERATION)
-                            viewModel.setUserActionRequest("")
+                            //viewModel.setUserActionRequest("")
                         },
                         alwaysDisplayTrailingIcon = false
                     )
@@ -900,19 +998,19 @@ fun NutritionLlmAction(
         verticalArrangement = Arrangement.Center
     ) {
         // the loading circle:
-        IndeterminateCircularIndicator(uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE)
+        IndeterminateCircularIndicator(uiState.llmAwaitActionType != LlmActionType.NONE)
 
         val nutrition =
             viewModel.getNutritionForRecipe(recipe.id)
                 .collectAsState(initial = null).value
-        if (uiState.actionChatStage == ActionChatStage.AWAITING_LLM_RESPONSE) {
+        if (uiState.llmAwaitActionType == LlmActionType.NUTRITIONAL_VALUES) {
             Text(
                 "Estimating nutritional values...",
                 modifier = Modifier.padding(16.dp),
                 textAlign = TextAlign.Center
             )
         }
-        if (nutrition == null && uiState.actionChatStage != ActionChatStage.AWAITING_LLM_RESPONSE) {
+        if (nutrition == null && uiState.llmAwaitActionType == LlmActionType.NONE) {
             viewModel.setUserActionRequest("Generate nutritional values for the provided dish in the provided JSON schema, for the given number of servings.")
             NourishButton(
                 onClick = { viewModel.makeLlmApiCall(LlmActionType.NUTRITIONAL_VALUES) },

@@ -8,6 +8,8 @@ import uk.co.imoqen.nourish.db.ingredient.IngredientRepository
 import uk.co.imoqen.nourish.db.ingredient.IngredientRepositoryImpl
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.recipe.RecipeRepositoryImpl
+import uk.co.imoqen.nourish.db.shoppinglistentry.ShoppingListEntryRepository
+import uk.co.imoqen.nourish.db.shoppinglistentry.ShoppingListEntryRepositoryImpl
 import uk.co.imoqen.nourish.db.tag.TagRepository
 import uk.co.imoqen.nourish.db.tag.TagRepositoryImpl
 import uk.co.imoqen.nourish.db.user.UserRepository
@@ -37,4 +39,9 @@ abstract class RepositoryModule {
     abstract fun bindIngredientRepository(
         impl: IngredientRepositoryImpl
     ): IngredientRepository
+
+    @Binds
+    abstract fun bindShoppingListEntryRepository(
+        impl: ShoppingListEntryRepositoryImpl
+    ): ShoppingListEntryRepository
 }

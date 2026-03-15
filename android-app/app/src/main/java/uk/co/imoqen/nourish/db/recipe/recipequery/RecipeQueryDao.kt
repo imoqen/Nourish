@@ -19,7 +19,7 @@ interface RecipeQueryDao {
     fun getById(id: Long): Flow<RecipeQuery?>
 
     @Query("SELECT * FROM RecipeQuery WHERE recipeId = :recipeId")
-    fun getAllByRecipeId(recipeId: Long): Flow<List<RecipeQuery?>>
+    fun getAllByRecipeId(recipeId: Long): Flow<List<RecipeQuery>>
 
     @Update
     suspend fun update(recipeQuery: RecipeQuery)

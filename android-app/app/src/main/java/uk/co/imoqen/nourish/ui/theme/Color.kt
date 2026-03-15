@@ -4,17 +4,19 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFFFFFFF)
+val Purple80 = Color(0xFFF0F0F5)
 val PurpleGrey80 = Color(0xFFF0F0F5)
 
 val PurpleGrey120 = Color(0xFFF5F5F8)
 
-val TextBoxColourLight = Color(0xFFEEEEEE)
+val TextBoxColourLight = Color(0xFFEAE5F1)
 
 val Purple40 = Color(0xFF1A1A21)
 val PurpleGrey40 = Color(0xFF27242F)
 
 val TextBoxColourDark = Color(0xFF393544)
+
+val SurfaceContainerLight = Color(0xFFF9F5FD)
 
 // 0xFF6BAB90
 

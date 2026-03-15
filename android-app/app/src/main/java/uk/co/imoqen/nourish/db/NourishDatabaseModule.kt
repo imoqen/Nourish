@@ -114,4 +114,8 @@ object NourishDatabaseModule {
     @Provides
     fun provideRecipeQueryDao(db: NourishDatabase) = db.recipeQueryDao()
 
+    @Singleton
+    @Provides
+    fun provideShoppingListEntryDao(db: NourishDatabase) = db.shoppingListEntryDao()
+
 }

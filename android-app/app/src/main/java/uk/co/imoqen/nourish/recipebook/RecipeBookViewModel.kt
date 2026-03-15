@@ -1,7 +1,6 @@
 package uk.co.imoqen.nourish.recipebook
 
 import android.util.Log
-import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,7 +17,6 @@ import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.RecipeActions
 import uk.co.imoqen.nourish.common.NourishColour
-import uk.co.imoqen.nourish.common.recipeColour
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.db.ingredient.Ingredient
@@ -28,12 +26,12 @@ import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.recipe.RecipeWithRecipeSteps
 import uk.co.imoqen.nourish.db.recipe.RecipeWithRecipeTags
-import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeIngredient
 import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeWithRecipeIngredients
 import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSection
 import uk.co.imoqen.nourish.db.recipe.recipenutrition.RecipeNutrition
 import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQuery
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
+import uk.co.imoqen.nourish.db.shoppinglistentry.ShoppingListEntryRepository
 import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.db.tag.TagRepository
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
@@ -41,18 +39,13 @@ import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import uk.co.imoqen.nourish.network.request.LlmActionRequest
 import uk.co.imoqen.nourish.network.request.LlmActionType
-import uk.co.imoqen.nourish.network.request.LlmRequest
-import uk.co.imoqen.nourish.network.request.LlmRequestType
-import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.network.response.LlmIngredientSection
 import uk.co.imoqen.nourish.network.response.LlmRecipe
-import uk.co.imoqen.nourish.recipediscovery.LlmChatStage
-import uk.co.imoqen.nourish.recipediscovery.LlmMode
-import java.io.File
 import java.lang.NullPointerException
 import javax.inject.Inject
 import kotlin.collections.getOrPut
+import kotlin.math.round
 
 @HiltViewModel
 class RecipeBookViewModel @Inject constructor(
@@ -63,7 +56,8 @@ class RecipeBookViewModel @Inject constructor(
     private val recipeRepository: RecipeRepository,
     private val ingredientRepository: IngredientRepository,
     private val tagRepository: TagRepository,
-    private val recipeActions: RecipeActions
+    private val recipeActions: RecipeActions,
+    private val shoppingListEntryRepository: ShoppingListEntryRepository
 ): ViewModel() {
 
     private val mutableUiState = MutableStateFlow(RecipeBookUiState())
@@ -134,6 +128,14 @@ class RecipeBookViewModel @Inject constructor(
         }
     }
 
+    fun setLlmAwaitActionType(llmAwaitActionType: LlmActionType) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                llmAwaitActionType = llmAwaitActionType
+            )
+        }
+    }
+
     fun setUserActionRequest(userActionRequest: String) {
         mutableUiState.update { currentState ->
             currentState.copy(
@@ -163,6 +165,192 @@ class RecipeBookViewModel @Inject constructor(
             currentState.copy(
                 visible = visible
             )
+        }
+    }
+
+    fun setIngredientsToAddToShoppingList(ingredientsToAddToShoppingList: MutableList<Pair<ShoppingListIngredient, Boolean>>?) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                ingredientsToAddToShoppingList = ingredientsToAddToShoppingList
+            )
+        }
+    }
+
+    fun alterIngredientShoppingListStatus(
+        ingredientToAddToShoppingList: ShoppingListIngredient,
+        index: Int, // safe to use index because it wont change after it is populated. for safety, done in runcatching
+        selected: Boolean
+    ) {
+        viewModelScope.launch() {
+            runCatching {
+                // IMPORTANT NOTe for future: toMutableList() solves composition problems by creating a NEW list.
+                val updatedList = mutableUiState.value.ingredientsToAddToShoppingList?.toMutableList().apply {
+                    this?.set(index, Pair(ingredientToAddToShoppingList, selected))
+                }
+                setIngredientsToAddToShoppingList(updatedList)
+            }
+                .onFailure {
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Cannot edit ingredient status."))
+                    Log.i("ingredient status change", "failed")
+                }
+        }
+    }
+
+    fun formatIngredientsForShoppingList() {
+        viewModelScope.launch() {
+            runCatching {
+                // get the recipe:
+                val recipe = mutableUiState.value.selectedRecipe
+                if (recipe == null) {
+                    return@launch
+                }
+
+                // PREPROCESSING
+                // first pass of the list: add up all same ingredients so that we have totals for each ingredient + combine them if needed
+                // e.g. if multiple ingredients appear in different sections. we dont want to add them to the shopping list twice.
+                val shoppingListIngredients: MutableList<ShoppingListIngredient> = mutableListOf()
+                val recipeIngredients =
+                    recipeRepository.getRecipeWithRecipeIngredients(recipe.id).first().ingredients
+
+                recipeIngredients.forEach { recipeIngredient ->
+                    val ingredient =
+                        ingredientRepository.getById(recipeIngredient.ingredientId).first()
+                    if (ingredient == null) {
+                        return@launch // error
+                    }
+                    // dont add water - dont need to buy that (in UK)
+                    if (ingredient.singular.lowercase() != "water") {
+
+                        // get the unit and if it is a unit to convert into UNIT type, then do that now
+                        // this is so that ingredients e.g. "head of, sprig of, ..." are still countable
+                        // as this pretty much converts to 1 of those ingredients.
+                        var unit = recipeIngredient.ingredientUnit
+                        val toConvertToUnit: List<IngredientUnit> = listOf(
+                            IngredientUnit.HEAD, IngredientUnit.BUNCH, IngredientUnit.BULB,
+                            IngredientUnit.STALK, IngredientUnit.STICK, IngredientUnit.LOAF, IngredientUnit.ROLL,
+                            IngredientUnit.SHEET, IngredientUnit.BLOCK, IngredientUnit.BAR
+                        )
+                        if (toConvertToUnit.contains(unit)) {
+                            unit = IngredientUnit.UNIT // so it converts to a countable
+                        }
+                        val amount =
+                            recipeIngredient.amount * recipe.numberOfServings // multiply by the desired serving size of the user
+
+                        val existingIngredientIndex =
+                            (shoppingListIngredients.indexOfFirst {
+                                it.ingredientId == recipeIngredient.ingredientId && it.unit == unit
+                            })
+
+                        if (existingIngredientIndex != -1) {// check if the ingredient is already in the list and only update it if the amount needs to change (i.e. not tsp etc)
+                            val existingIngredient =
+                                shoppingListIngredients[existingIngredientIndex]
+                            // if it is, then alter the existing list entry
+                            // stays same but amount just gets changed
+                            val updatedIngredient =
+                                existingIngredient.copy(
+                                    // sets amount to added amount if  unit is large, otherwise just remains as 1.
+                                    amount = if (unit.keepUnitInShoppingList) {
+                                        existingIngredient.amount + amount
+                                    } else {
+                                        amount
+                                    } // add the scasled amount
+                                )
+                            // then overwrite it
+                            shoppingListIngredients[existingIngredientIndex] = updatedIngredient
+                        } else {
+                            // if it doesn't already exist in the list, then simply add it:
+                            shoppingListIngredients.add(
+                                ShoppingListIngredient(
+                                    ingredient.id,
+                                    ingredient.plural,
+                                    unit,
+                                    amount
+                                )
+                            )
+
+                        }
+                    }
+                }
+
+                // THEN go through the array containing no duplicates and add them to the selection list
+
+                // declare the list for storing the selections after preprocessing:
+                val shoppingListIngredientSelections: MutableList<Pair<ShoppingListIngredient, Boolean>> = mutableListOf()
+
+                shoppingListIngredients.forEach { shoppingListIngredient ->
+                    val ingredient =
+                        ingredientRepository.getById(shoppingListIngredient.ingredientId).first()
+
+                    if (ingredient == null) {
+                        return@launch // error
+                    }
+
+                    //TODO if the ingredient amount is very small like tsp, then should simply store this as unit AND
+                    // ignore the amount. as only should need to ever buy one ofthese (e..g tsp salt -> salt.) so set amount to 1g always if tsp. and dont let them add up.
+                    // potentially do same for very small g values too etc e.g. 5g salt -> just salt. no one is going to buy just 5g of salt
+                    // lets say if the amount is less than 15g then just say buy the item itself.
+
+                    var unit = shoppingListIngredient.unit
+                    var amount = shoppingListIngredient.amount
+                    if (!unit.keepUnitInShoppingList || (unit != IngredientUnit.UNIT && amount <= 15)) { // if the unit shouldnt be kept, or the amount is inconsiderable (less than 15) then just set to buy 1.
+                        unit = IngredientUnit.SINGLE
+                        amount = 1.0
+                    }
+
+                    shoppingListIngredientSelections.add(Pair(
+                        ShoppingListIngredient(
+                            ingredient.id,
+                            ingredient.plural,
+                            unit,
+                            amount
+                        ), true) // by default it is true; to add to shopping list.
+                    )
+
+                }
+
+                // success:
+                setIngredientsToAddToShoppingList(shoppingListIngredientSelections)
+            }
+                .onFailure { e ->
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Ingredients cannot be added. Please try another recipe, or add manually."))
+                    Log.i("INGREDIENT DISPLAY ERROR", "$e")
+                }
+        }
+    }
+
+    fun addIngredientsToShoppingList() {
+        viewModelScope.launch() {
+            runCatching {
+
+                // get all the ingredients:
+                val shoppingListIngredients = mutableUiState.value.ingredientsToAddToShoppingList
+
+                // get uid:
+                val uid = authenticationManager.getUid()
+                if (uid == null) {
+                    return@launch
+                }
+
+                // go through them all and add the ones to the db which should be added:
+                shoppingListIngredients?.forEach { (ingredient, selected) ->
+                    if (selected) {
+                        // add to db and account for if the ingredient is already in the db.
+                        // this is handled in the repository.
+                        shoppingListEntryRepository.addShoppingListEntry(ingredient, uid, userAdded=false)
+                    }
+                }
+
+            }
+                .onFailure { e ->
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Ingredients cannot be added. Please try another recipe, or add manually."))
+                    Log.i("INGREDIENT ADD ERROR", "$e")
+                }
+                .onSuccess {
+                    // reset the selection and notify the user
+                    setIngredientsToAddToShoppingList(null)
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Ingredients have been added to your shopping list."))
+
+                }
         }
     }
 
@@ -310,6 +498,8 @@ class RecipeBookViewModel @Inject constructor(
         recipeIngredients: RecipeWithRecipeIngredients?
     ): MutableMap<String, MutableList<Triple<String, Double, Long>>>? {
         if (recipeIngredients == null) { return null }
+        val recipe = mutableUiState.value.selectedRecipe
+        if (recipe == null) { return null }
 
         // map with key sectionTitle and value of list of pair of ingredient string and ingredient id (so it can be referenced in future)
         val sectionsWithIngredients: MutableMap<String, MutableList<Triple<String, Double, Long>>> = mutableMapOf()
@@ -322,15 +512,25 @@ class RecipeBookViewModel @Inject constructor(
             val sectionTitle = getSectionById(sectionId).first()?.title // this may fail if the values stored in the db update while user is looking at it. for this, would need to use .collect(). consider this if issues occur in future.
 
             // determine pluralities
-            val ingredientAmount = ingredient.amount
-            val ingredientUnit = ingredient.ingredientUnit
-            val unit = if (recipeActions.determineUnitPlurality(ingredientAmount)) {
+            var ingredientAmount = ingredient.amount * recipe.numberOfServings
+            var ingredientUnit = ingredient.ingredientUnit
+
+            // edge case: if g or ml and >= 1000, use kg and l respectively and scale the amount.
+            if (ingredientAmount >= 1000 && (ingredientUnit == IngredientUnit.G || ingredientUnit == IngredientUnit.ML)) {
+                when (ingredientUnit) {
+                    IngredientUnit.G -> { ingredientUnit = IngredientUnit.KG }
+                    IngredientUnit.ML -> { ingredientUnit = IngredientUnit.L }
+                    else -> {} // make no change
+                }
+                ingredientAmount = ingredientAmount / 1000
+            }
+
+            val unit = if (recipeActions.determineUnitPlurality(ingredientAmount)) { // scaled to num servings
                 ingredientUnit.pluralName
             } else {
                 ingredientUnit.singularName
             }
             val ingredientName = getIngredientById(ingredient.ingredientId).first()
-
 
             if (ingredientName != null && sectionTitle != null) {
                 val ingredientPluralisedName =
@@ -340,6 +540,7 @@ class RecipeBookViewModel @Inject constructor(
                         ingredientName.singular
                     }
                 var ingredientText = ""
+
                 ingredientText = if (unit != "") {
                     ("$unit $ingredientPluralisedName")
                 } else {
@@ -465,17 +666,22 @@ class RecipeBookViewModel @Inject constructor(
 
     // recipe actions
     fun formatIngredientAmount(
-        ingredientAmount: Double
+        ingredientAmount: Double,
+        roundToNearestQuarter: Boolean = true
     ): String {
-        return recipeActions.formatIngredientAmount(ingredientAmount)
+        var amount = ingredientAmount
+        if (amount < 0.25) {
+            amount = 0.25 // cant go less than 0.25
+        }
+        return recipeActions.formatIngredientAmount(amount, roundToNearestQuarter)
     }
 
     // api
 
     suspend fun parseRecipeToLlmRecipe(
-        recipe: Recipe
+        recipe: Recipe,
+        includeServings: Boolean
     ): LlmRecipe {
-        val recipeIngredients = getRecipeIngredientsForRecipe(recipe.id).first()
         val recipeType = findRecipeType(recipe.recipeTypeId)?.first ?: ""
         val tags = getRecipeTagsForRecipe(recipe.id).first().recipeTags.map { tag ->
             getTagByTagId(tag.tagId).first()?.identifier ?: ""
@@ -492,7 +698,7 @@ class RecipeBookViewModel @Inject constructor(
             map.getOrPut(section) { mutableListOf() }.add(LlmIngredient(
                 ingredientSingular = ingredient?.singular ?: "",
                 ingredientPlural = ingredient?.plural ?: "",
-                ingredientAmount = recipeIngredient.amount,
+                ingredientAmount = round(recipeIngredient.amount * 100) / 100, // so that value is not too many digits long; saves tokens.
                 ingredientAmountUnit = recipeIngredient.ingredientUnit.name
             ))
         }
@@ -511,7 +717,7 @@ class RecipeBookViewModel @Inject constructor(
         return LlmRecipe(
             title = recipe.title,
             sectionIngredients = ingredientsList,
-            servings = recipe.numberOfServings,
+            servings = if (includeServings) { recipe.numberOfServings } else 1, // values are given for 1 serving, but the llm should preserve this value as it was set by the user for scaling.
             mealType = recipeType,
             method = method,
             tags = tags,
@@ -525,6 +731,7 @@ class RecipeBookViewModel @Inject constructor(
     fun makeLlmApiCall(
         type: LlmActionType,
     ) {
+        setLlmAwaitActionType(type)
         setActionChatStage(ActionChatStage.AWAITING_LLM_RESPONSE)
         viewModelScope.launch() {
             runCatching {
@@ -559,8 +766,9 @@ class RecipeBookViewModel @Inject constructor(
                     allNutritionalFilters = "[]" // signifies empty list
                 }
                 // make it into a request:
+                val includeServings = (type == LlmActionType.ALTERATION) // only include servings in alteration
                 val request = LlmActionRequest(
-                    parseRecipeToLlmRecipe(recipe), userPrompt, allNutritionalFilters, dishType
+                    parseRecipeToLlmRecipe(recipe, includeServings), userPrompt, allNutritionalFilters, dishType
                 )
 
                 // validate the user's token:
@@ -586,6 +794,7 @@ class RecipeBookViewModel @Inject constructor(
                                     recipeRepository.updateRecipeQuery(query.copy(llmAnswer = llmAnswer))
                                 }
                                 setActionChatStage(ActionChatStage.RESPONSE_RECEIVED)
+                                setLlmAwaitActionType(LlmActionType.NONE)
                                 setUserActionRequest("") // so the text doesnt still appear in their send bar
                             }
                         }
@@ -595,12 +804,14 @@ class RecipeBookViewModel @Inject constructor(
                         if (llmRecipe != null) {
                             viewModelScope.launch() {
                                 setActionChatStage(ActionChatStage.RESPONSE_RECEIVED)
+                                setLlmAwaitActionType(LlmActionType.NONE)
                                 if (llmRecipe.recipeNotPossible) {
                                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Valid recipe could not be generated. Please enter something different."))
                                     return@launch
                                 }
                                 // display the recipe to the user. there will be a button to overwrite the exising recipe, or save as a new recipe. when clicked, this will do the according process.
                                 setAlteredRecipe(llmRecipe)
+                                setUserActionRequest("")
                             }
                         }
                     },
@@ -622,6 +833,8 @@ class RecipeBookViewModel @Inject constructor(
                                     )
                                 )
                                 setActionChatStage(ActionChatStage.RESPONSE_RECEIVED)
+                                setLlmAwaitActionType(LlmActionType.NONE)
+                                setUserActionRequest("")
                             }
                         }
 
@@ -631,6 +844,7 @@ class RecipeBookViewModel @Inject constructor(
                 .onFailure {
                     // error occurred
                     setActionChatStage(ActionChatStage.USER_INPUT) // no longer awaiting - error occurred.
+                    setLlmAwaitActionType(LlmActionType.NONE)
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
                 }
         }
@@ -653,7 +867,7 @@ class RecipeBookViewModel @Inject constructor(
         return "" // invalid if reached here
     }
 
-    fun addRecipe(llmRecipe: LlmRecipe) {
+    fun addRecipe(llmRecipe: LlmRecipe, alteration: Boolean = false) {
         viewModelScope.launch() {
             runCatching {
                 // Check that user is logged in validly
@@ -662,7 +876,7 @@ class RecipeBookViewModel @Inject constructor(
                     throw NullPointerException()
                 } // user is null; throw to be handled appropriately
                 // Add the recipe to the database:
-                recipeRepository.createRecipe(uid, llmRecipe)
+                recipeRepository.createRecipe(uid, llmRecipe, alteration = alteration)
             }
                 .onSuccess {
                     uiEventBus.enqueueEvent(

@@ -52,7 +52,7 @@ const db = getFirestore();
 
 // Units: given as metric, something to address in the future would be also adding support for imperial which the software has the capacity to do but was not implemented for simplicity.
 const metricUnits =
-  "TSP, TBSP, ML, L, G, KG, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, CM, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR, UNIT";
+  "TSP, TBSP, ML, G, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, CM, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR, UNIT";
 const ingredientUnitList = metricUnits.split(",").map((v) => v.trim());
 // Schemas:
 
@@ -62,7 +62,7 @@ const NutritionSchemaZod = z.object({
     .number()
     .int()
     .describe(
-      "The number of servings must be 1. In the provided recipe, if servings != 1, then the nutritional information should be calculated for that many servings of the recipe, and then scaled to 1 accordingly, in your result. Use the provided ingredients and amounts to calculate the nutrition.",
+      "The number of servings must be 1. The provided recipe amounts and ingredients are given for 1 serving, so ensure the nutrition you provide is for 1 serving.",
     ),
   calories: z
     .number()
@@ -122,7 +122,8 @@ const IngredientSchemaZod = z.object({
       "Fill this in first. An ingredient required for this recipeSection, in its singular form. Do not specify details such as size; simply give the ingredient " +
         "(type should be specified only if necessary, e.g. brown sugar vs granulated sugar). Also be careful if adding baking soda; ensure it is not too much and use baking powder instead if appropriate. " +
         "If the ingredient is 'garlic', only write 'garlic', not 'garlic clove' as this will be covered by the ingredientAmountUnit (CLOVE). Apply this rule to other ingredients where you see fit. " +
-        "Do not include the amount or unit here; this will go in ingredientAmount and ingredientAmountsUnit, respectively. ",
+        "Do not include the amount or unit here; this will go in ingredientAmount and ingredientAmountsUnit, respectively. " +
+        "Do not include temperature characteristics of the ingredient, write them exactly as how they would be bought in a shop / shopping list. Include any temperature details in the method instead (e.g. if there is milk and it should be warmed, the ingredient should only be 'milk' and outline the warming step in the method.)",
     ),
   ingredientPlural: z
     .string()
@@ -135,9 +136,9 @@ const IngredientSchemaZod = z.object({
     .describe(
       "Fill this in third. The unit of the ingredient corresponding to ingredientSingular, and the amount given in ingredientAmount. " +
         "Ensure that the unit makes sense, for example only use an approximate unit (such as splash, sprinkle, dash, etc) if the corresponding amount itself is a whole number - otherwise use a unit reflective of the precision (e.g. tsp, tbsp, ml)" +
-        "Return only a value from the following list, exactly as it is in the list (as it will be mapped using a predefined enum); the value you return MUST be in the list." +
+        "Return only a value from the provided list, exactly as it is in the list (as it will be mapped using a predefined enum); the value you return MUST be in the list." +
         " If you think that an imperial unit would be required, then give its value in g/kg instead (e.g. rather than using cup, as this is not used in Europe/UK). " +
-        " Only use UNIT if the ingredient has no measurement/unit; it is a piece itself (e.g. egg, whole fruit, whole vegetable). In particular, if it is a spice, baking agent or herb, do not use UNIT.",
+        " If the ingredient requires KG, then convert the value to G and use that. Likewise, if the ingredient requires L, then convert the value to ML and use that. Only use UNIT if the ingredient has no measurement/unit; it is a piece itself (e.g. egg, whole fruit, whole vegetable). In particular, if it is a spice, baking agent or herb, do not use UNIT. For these you should use tsp/tbsp as this is most common and easy to measure, unless you believe another unit is more appropriate.",
     ),
   ingredientAmount: z
     .number()
@@ -690,7 +691,7 @@ async function generateNutritionalValues(
       {
         role: "system",
         content:
-          "Return in the required schema and ensure it is given for 1 serving, considering the servings provided in the recipe. Use British standards. " +
+          "Return in the required schema and ensure it is given for 1 serving. The ingredients and their amounts in the recipe are provided for 1 serving, so calculate the nutrition using these values - do not scale anything. Use British standards. " +
           "Generate the nutritional values as requested in the schema for the provided recipe. If your answer contains a decimal, ensure it is to at most 2 decimal places.",
       },
       {
@@ -792,7 +793,8 @@ async function generateAlteredRecipe(
         role: "system",
         content:
           "Return in the required schema, write in sufficient detail but not too much (keep below 250 words). Use British English. " +
-          "Generate a new recipe using the provided recipe, ensuring it is altered to the user's needs accordingly. The recipe should remain the same for any part which does not need to be altered to the request." +
+          "Generate a new recipe using the provided recipe, ensuring it is altered to the user's needs accordingly." + 
+          " The provided amounts in the recipe make 1 serving. Create your recipe for 1 serving too, but preserve the 'serving' field as the SAME value given, as this is used for recipe scaling separately. The recipe should remain the same for any part which does not need to be altered to the request." +
           "If the recipe cannot be altered in the way that the user wishes (e.g. inedible), fill in the recipeNotPossible field as true and all others as null. Only do this if there really is no way to alter it, otherwise be creative to meet the user's needs.",
       },
       {

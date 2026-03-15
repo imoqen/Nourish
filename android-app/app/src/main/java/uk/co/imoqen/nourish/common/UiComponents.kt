@@ -30,6 +30,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -48,6 +49,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -67,6 +69,7 @@ fun NourishTextField(
     trailingIcon: ImageVector? = null, // optional: for clearing input
     onTrailingIconPress: () -> Unit = {}, // optional: for clearing input
     alwaysDisplayTrailingIcon: Boolean = false,
+    keyboardType: KeyboardType = KeyboardType.Text
 ) {
     OutlinedTextField(
         value = value,
@@ -113,9 +116,9 @@ fun NourishTextField(
         shape = RoundedCornerShape(24.dp),
         visualTransformation = visualTransformation,
 
-        // binds the enter button to the done action
         keyboardOptions = KeyboardOptions(
-            imeAction = ImeAction.Done
+            keyboardType = keyboardType, // allows different keyboard e.g. for entering only numbers
+            imeAction = ImeAction.Done // binds the enter button to the done action
         ),
         // performs done function (closes keyboard)
         keyboardActions = KeyboardActions(
@@ -504,7 +507,7 @@ fun NourishBottomCard(
                     .fillMaxWidth()
                     .graphicsLayer { clip = false }  // to prevent parent clipping
             ) {
-                Box(
+                Surface(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
@@ -525,12 +528,15 @@ fun NourishBottomCard(
                                 bottomEnd = 0.dp
                             )
                         )
-                        .background(MaterialTheme.colorScheme.surface)
-                        .padding(top = 32.dp) // room for logo
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(top = 32.dp), // room for logo,
+                            tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.background)
                             .padding(16.dp)
                             .padding(bottom = 40.dp),
                         // extra padding at bottom for the built in mobile navbar

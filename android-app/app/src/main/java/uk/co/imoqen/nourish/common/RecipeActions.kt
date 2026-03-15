@@ -18,6 +18,7 @@ import uk.co.imoqen.nourish.recipebook.TypeSelection
 import uk.co.imoqen.nourish.recipediscovery.LlmChatStage
 import javax.inject.Inject
 import kotlin.collections.map
+import kotlin.math.round
 
 class RecipeActions @Inject constructor(
     private val uiEventBus: UiEventBus,
@@ -206,15 +207,16 @@ class RecipeActions @Inject constructor(
     fun determineUnitPlurality(
         ingredientAmount: Double,
     ): Boolean {
+        Log.i("ingredient amount:", "$ingredientAmount , rounded: ${round(ingredientAmount*4.0)/4.0} and is not equal to 1.0: ${round(ingredientAmount*4.0)/4.0 != 1.0 }")
         // plural form should be used in most cases; just a few cases where it shouldn't.
-        return ingredientAmount != 1.0 // if only 1, should always be singular.
+        return round(ingredientAmount*4)/4 != 1.0 // if only 1, should always be singular. and dont care about the kg or L  instance here, because the unit doesnt change pluralities for kg or l.
     }
 
     fun determineIngredientPlurality(
         ingredientAmount: Double,
         ingredientUnit: IngredientUnit
     ): Boolean {
-        if (ingredientAmount <= 1.0) {
+        if ("%.2f".format(round(ingredientAmount*4)/4).toDouble() <= 1.0) { // because if 1.25 or less then it just appears as 1.0 (or less) which should always be singular
             // e.g. 1 strawberry = singular
             // but 1 cup strawberry should be plural: 1 cup strawberries
             if (ingredientUnit.useSingularForOne) {
@@ -227,13 +229,22 @@ class RecipeActions @Inject constructor(
     // shaves off the decimal if it is .0, otherwise keeps it.
     // e.g. 5.0 -> 5 but 5.5 remains -> 5.5
     fun formatIngredientAmount(
-        ingredientAmount: Double
+        ingredientAmount: Double,
+        roundToQuarter: Boolean = true // true by default, only false for kg / l as they need to be more precise.
     ): String {
-        if (ingredientAmount % 1.0 == 0.0) {
-            return ingredientAmount.toInt().toString()
+        // formats the amount such that it is to 2 d.p. and always rounded to the nearest 0.25
+
+        val amount = if (roundToQuarter) { "%.2f".format(round(ingredientAmount*4)/4).toDouble() }
+        else {
+            "%.2f".format(ingredientAmount).toDouble()
         }
-        return ingredientAmount.toString()
+        if (amount % 1.0 == 0.0) {
+            return amount.toInt().toString()
+        }
+        return amount.toString()
     }
+
+
 
     // only used for displaying llm ingredient as they are handled differently
     fun formatIngredientText(
@@ -241,6 +252,7 @@ class RecipeActions @Inject constructor(
     ): String {
         runCatching {
             val amount = ingredient.ingredientAmount
+
             val ingredientUnit = IngredientUnit.valueOf(ingredient.ingredientAmountUnit)
 
             val unit = if (determineUnitPlurality(amount)) {

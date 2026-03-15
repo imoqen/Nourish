@@ -10,4 +10,8 @@ interface IngredientRepository {
     suspend fun insert(ingredient: Ingredient): Long
 
     suspend fun getIdBySingular(singular: String): Long?
+    suspend fun getIdByPlural(plural: String): Long?
+
+    suspend fun update(ingredient: Ingredient)
+
 }

@@ -3,8 +3,6 @@ package uk.co.imoqen.nourish.db.recipe
 import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import uk.co.imoqen.nourish.common.NourishColour
-import uk.co.imoqen.nourish.common.recipeColour
 import uk.co.imoqen.nourish.db.NourishDatabase
 import uk.co.imoqen.nourish.db.ingredient.Ingredient
 import uk.co.imoqen.nourish.db.ingredient.IngredientRepositoryImpl
@@ -119,6 +117,7 @@ class RecipeRepositoryImpl @Inject constructor(
     override suspend fun createRecipe(
         uid: String,
         llmRecipe: LlmRecipe,
+        alteration: Boolean, // purpose of alteration is to ensure that altered recipes dont get divided by serving size. only new reicpes should have this.
         recipeId: Long,
         imagePath: String// just set to "" if none, which is fine.
     ) {
@@ -175,13 +174,27 @@ class RecipeRepositoryImpl @Inject constructor(
                 ingredients.forEach{ingredient ->
                     val singular = ingredient.ingredientSingular
                     val plural = ingredient.ingredientPlural
-                    val amount = ingredient.ingredientAmount
+                    // purpose of alteration is to ensure that altered recipes dont get divided by serving size. only new reicpes should have this.
+                    val amount = if (alteration) {ingredient.ingredientAmount} else { ingredient.ingredientAmount / recipe.numberOfServings }// divide by number of servings, so ingredient is stored for 1 serving.
                     val unit = ingredient.ingredientAmountUnit
-                    // add it to ingredient table if doesn't already exist in its singular form:
-                    var ingredientId = ingredientRepository.getIdBySingular(singular)
+                    // add it to ingredient table if doesn't already exist in its plural form, check both values due to human error:
+                    var ingredientId = ingredientRepository.getIdByPlural(plural)
+
                     if (ingredientId == null) {
-                        ingredientId = ingredientRepository.insert(Ingredient(singular = singular, plural = plural))
+                        // if plural doesn't match, singular is checked to ensure it doesnt exist: (against plural - as this is the field populated by the user when adding an ingredient)
+                        ingredientId = ingredientRepository.getIdByPlural(singular)
+                        if (ingredientId == null) {
+                            // if still null, it doesnt exist so add the ingredient
+                            ingredientId = ingredientRepository.insert(Ingredient(singular = singular, plural = plural))
+                        }
                     }
+
+                    // SANITISE the user inputted. user inputted always has singular = "". so check this, if it is then update it and the plural value accordingly.
+                    val ingredient = ingredientRepository.getById(ingredientId).first()
+                    if (ingredient != null && ingredient.singular == "") {
+                        ingredientRepository.update(ingredient.copy(plural = plural, singular = singular))
+                    }
+
                     // Ingredient unit: find the corresponding unit in the enum
                     val ingredientUnit = IngredientUnit.valueOf(unit)
                     // Then create a RecipeIngredient with the Recipe, Ingredient and the newly added RecipeSection:
@@ -236,22 +249,22 @@ class RecipeRepositoryImpl @Inject constructor(
     override suspend fun scaleRecipe(recipe: Recipe, currentServingSize: Int, increase: Boolean) {
         db.withTransaction {
             val newServingSize = if (increase) { currentServingSize+1 } else { currentServingSize-1 }
-            val scalingFactor = newServingSize.toFloat() / currentServingSize.toFloat()
+           /* val scalingFactor = newServingSize.toFloat() / currentServingSize.toFloat()
 
             val recipeIngredients = getRecipeWithRecipeIngredients(recipe.id).first()
 
             recipeIngredients.ingredients.forEach { recipeIngredient ->
                 // rounds so that it is to nearest 0.25 to prevent weird numbers
-                var scaledAmount = "%.2f".format(round(recipeIngredient.amount*scalingFactor*4)/4).toDouble()
+                var scaledAmount = recipeIngredient.amount*scalingFactor
                 if (scaledAmount < 0.25) {
                     scaledAmount = 0.25 // cant go less than 0.25
                 }
                 updateRecipeIngredient(
                     recipeIngredient.copy(amount = scaledAmount)
                 )
-            }
+            }*/
 
-            // then update serving size:
+            // update serving size:
             recipeDao.update(recipe.copy(numberOfServings = newServingSize))
         }
     }
@@ -276,7 +289,7 @@ class RecipeRepositoryImpl @Inject constructor(
         deleteNutritionForRecipeId(originalRecipeId)
 
         recipeDao.delete(currentRecipe)
-        createRecipe(originalRecipeAuthor,newRecipe, originalRecipeId, originalRecipeImagePath)
+        createRecipe(originalRecipeAuthor,newRecipe, alteration = true, originalRecipeId, originalRecipeImagePath)
     }
 
 }
