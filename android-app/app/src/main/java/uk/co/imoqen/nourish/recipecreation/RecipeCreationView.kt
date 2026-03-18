@@ -39,6 +39,7 @@ import uk.co.imoqen.nourish.common.TypesDisplayForMutuallyExclusiveFiltering
 import uk.co.imoqen.nourish.common.dimmedBackgroundColour
 import uk.co.imoqen.nourish.common.onBackgroundColour
 import uk.co.imoqen.nourish.recipediscovery.RecipeDiscoveryViewModel
+import uk.co.imoqen.nourish.recipediscovery.RecipeTagSelection
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -116,7 +117,24 @@ fun RecipeCreationScreen(
 
         // Tags
         NourishTextDivider("Recipe Tags")
-        
+        RecipeTagSelection(
+            setFilterDisplayState = viewModel::setFilterDisplayState,
+            sheetState = nutritionalTagSheetState,
+            tags = uiState.recipeTags,
+            filterDisplayState = uiState.filterDisplayState,
+            updateSelected = viewModel::updateSelected,
+            createdTagName = uiState.createdTagName,
+            setCreatedTagName = viewModel::setCreatedTagName,
+            createdTagColour = uiState.createdTagColour,
+            setCreatedTagColour = viewModel::setCreatedTagColour,
+            createTag = viewModel::createTag,
+            closeTagCreation = viewModel::closeTagCreation,
+            tagCreationError = uiState.tagCreationError,
+            showTagConfirmationDialog = uiState.showTagConfirmationDialog,
+            setShowTagConfirmationDialog = viewModel::setShowTagConfirmationDialog,
+            setTagToDelete = viewModel::setTagToDelete,
+            deleteTag = viewModel::deleteTag
+        )
 
         // Number of servings * (defaults to 1)
         // Ingredients *
