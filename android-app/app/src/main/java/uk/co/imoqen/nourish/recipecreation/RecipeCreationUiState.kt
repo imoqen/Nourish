@@ -1,8 +1,20 @@
 package uk.co.imoqen.nourish.recipecreation
 
+import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.recipebook.RecipeCardUnexpanded
 
-class RecipeCreationUiState(
-    val recipeBookMap: MutableMap<RecipeType, MutableList<RecipeCardUnexpanded>>? = null
+data class RecipeCreationUiState(
+    // ui state of recipe creation. nothing should be added to the DB until the user presses save.
+    val title: String = "",
+    val numberOfServings: Int = 1,
+    val recipeType: RecipeType? = null,
+    val storageGuidance: String = "",
+    val displayRecipeTypeSelector: Boolean = false,
+    val recipeTypes: List<RecipeType>? = null
+
+    // list of ingredient? todo
+    // list of method? todo
+    // recipe tag list? todo
+
 )
