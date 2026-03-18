@@ -367,7 +367,7 @@ fun ShoppingListScreen(
                         // Delete All button:
                         if (uiState.userInteractionStatus == UserInteractionStatus.EDIT) {
                             ExtendedFloatingActionButton(
-                                modifier = Modifier.padding(6.dp),
+                                modifier = Modifier.padding(vertical=12.dp,horizontal=6.dp),
                                 text = {
                                     Text(
                                         text = "All",
@@ -384,10 +384,10 @@ fun ShoppingListScreen(
                                         tint = MaterialTheme.colorScheme.error
                                     )
                                 },
-                                containerColor = MaterialTheme.colorScheme.background
+                                containerColor = MaterialTheme.colorScheme.primaryContainer
                             )
                             ExtendedFloatingActionButton(
-                                modifier = Modifier.padding(6.dp),
+                                modifier = Modifier.padding(vertical=12.dp,horizontal=6.dp),
                                 text = {
                                     Text(
                                         text = "Purchased",
@@ -404,14 +404,14 @@ fun ShoppingListScreen(
                                         tint = MaterialTheme.colorScheme.error
                                     )
                                 },
-                                containerColor = MaterialTheme.colorScheme.background
+                                containerColor = MaterialTheme.colorScheme.primaryContainer
                             )
                         }
                         // Edit button:
                         if (uiState.userInteractionStatus == UserInteractionStatus.BROWSE || uiState.userInteractionStatus == UserInteractionStatus.EDIT) {
                             if (uiState.userInteractionStatus == UserInteractionStatus.BROWSE) {
                                 ExtendedFloatingActionButton(
-                                    modifier = Modifier.padding(6.dp),
+                                    modifier = Modifier.padding(vertical=12.dp,horizontal=6.dp),
                                     text = {
                                         Text(
                                             text = "Edit List",
@@ -432,12 +432,12 @@ fun ShoppingListScreen(
                                             )
                                         )
                                     },
-                                    containerColor = MaterialTheme.colorScheme.background
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer
                                 )
                             }
                             if (uiState.userInteractionStatus == UserInteractionStatus.EDIT) {
                                 FloatingActionButton(
-                                    modifier = Modifier.padding(6.dp),
+                                    modifier = Modifier.padding(vertical=12.dp,horizontal=6.dp),
                                     onClick = {
                                             viewModel.setUserInteractionStatus(UserInteractionStatus.BROWSE)
                                     },
@@ -448,7 +448,7 @@ fun ShoppingListScreen(
                                             tint = MaterialTheme.colorScheme.tertiary
                                         )
                                     },
-                                    containerColor = MaterialTheme.colorScheme.background
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer
                                 )
                             }
                         }
@@ -460,7 +460,7 @@ fun ShoppingListScreen(
                 ) {
                     if (uiState.userInteractionStatus == UserInteractionStatus.BROWSE) {
                         ExtendedFloatingActionButton(
-                            modifier = Modifier.padding(6.dp),
+                            modifier = Modifier.padding(vertical=12.dp,horizontal=6.dp),
                             onClick = {
                                 viewModel.setUserInteractionStatus(UserInteractionStatus.ADD)
                             },
@@ -476,7 +476,7 @@ fun ShoppingListScreen(
                                     )
                                 )
                             },
-                            containerColor = MaterialTheme.colorScheme.background
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
                         )
                     }
                 }

@@ -35,6 +35,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -81,6 +82,7 @@ import uk.co.imoqen.nourish.common.dimmedBackgroundColour
 import uk.co.imoqen.nourish.common.onBackgroundColour
 import uk.co.imoqen.nourish.common.recipeColour
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
+import uk.co.imoqen.nourish.shoppinglist.UserInteractionStatus
 import java.io.File
 import kotlin.enumValueOf
 
@@ -92,7 +94,8 @@ import kotlin.enumValueOf
 @Composable
 fun RecipeBookScreen(
     recipeBookViewModel: RecipeBookViewModel,
-    onViewRecipeCard: (Long) -> Unit
+    onViewRecipeCard: (Long) -> Unit,
+    onAddRecipe: () -> Unit
 ) {
 
     val scrollState = rememberScrollState()
@@ -199,7 +202,7 @@ fun RecipeBookScreen(
                 recipeBookViewModel.getAllTagsForUser()
             }
 
-            RecipeList(recipeBookViewModel, onViewRecipeCard, scrollState)
+            RecipeList(recipeBookViewModel, onViewRecipeCard, scrollState, onAddRecipe)
 
     }
 }
@@ -209,7 +212,8 @@ fun RecipeBookScreen(
 fun RecipeList(
     recipeBookViewModel: RecipeBookViewModel,
     onViewRecipeCard: (Long) -> Unit,
-    scrollState: ScrollState
+    scrollState: ScrollState,
+    onAddRecipe: () -> Unit // to navigate to add recipe view when adding a recipe.
 ) {
     val uiState = recipeBookViewModel.uiState.collectAsState().value
     val recipeBookMap = uiState.recipeBookMap
@@ -222,6 +226,9 @@ fun RecipeList(
         targetState = (totalRecipeAmount != 0)
     ) { recipesExist ->
 
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
         if (recipesExist && recipeBookMap != null) {
 
             Column(
@@ -283,7 +290,9 @@ fun RecipeList(
                                             visible = (recipeCardUnexpanded.title.contains(
                                                 uiState.searchTerm,
                                                 true
-                                            ) && recipeCardUnexpanded.recipeTags.containsAll(list)),
+                                            ) && recipeCardUnexpanded.recipeTags.containsAll(
+                                                list
+                                            )),
                                             enter = fadeIn(tween(300)),
                                             exit = fadeOut(tween(300))
                                         ) {
@@ -322,7 +331,9 @@ fun RecipeList(
                                                                 Text(
                                                                     text = recipeCardUnexpanded.title,
                                                                     textAlign = TextAlign.Center,
-                                                                    modifier = Modifier.padding(4.dp),
+                                                                    modifier = Modifier.padding(
+                                                                        4.dp
+                                                                    ),
                                                                     fontWeight = FontWeight.Bold,
                                                                 )
                                                             }
@@ -332,7 +343,9 @@ fun RecipeList(
                                                                 contentAlignment = Alignment.Center
                                                             ) {
                                                                 FlowRow(
-                                                                    modifier = Modifier.padding(2.dp),
+                                                                    modifier = Modifier.padding(
+                                                                        2.dp
+                                                                    ),
                                                                     horizontalArrangement = Arrangement.spacedBy(
                                                                         2.dp
                                                                     ),
@@ -391,7 +404,7 @@ fun RecipeList(
                 if (!recipeBookMap.keys.containsAll(recipeTypesSelected)) {
                     val selectedTypesWithoutRecipes = (recipeTypesSelected - recipeBookMap.keys)
                     val text = if (selectedTypesWithoutRecipes.size > 1) {
-                        "You do not have any saved ${selectedTypesWithoutRecipes.joinToString(" or "){it.title}} recipes."
+                        "You do not have any saved ${selectedTypesWithoutRecipes.joinToString(" or ") { it.title }} recipes."
                     } else {
                         "You do not have any saved ${selectedTypesWithoutRecipes.joinToString("") { it.title }} recipes."
                     }
@@ -402,10 +415,39 @@ fun RecipeList(
 
                 }
             }
+
         } else {
             // display loading for when app first starts then display error msg for when no recipes yet
-            RecipeLoadingBar("Loading your recipes...", { Text("You have not saved any recipes!") })
+            RecipeLoadingBar(
+                "Loading your recipes...",
+                { Text("You have not saved any recipes!") })
         }
+
+        // Add recipe manually button, for creating a recipe
+        Row(
+            modifier = Modifier.align(Alignment.BottomEnd)
+        ) {
+            ExtendedFloatingActionButton(
+                modifier = Modifier.padding(12.dp),
+                onClick = {
+                    onAddRecipe()
+                },
+                text = {
+                    Text("Add Manually")
+                },
+                icon = {
+                    Icon(
+                        painter = painterResource(R.drawable.add),
+                        contentDescription = "Add Manually",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(
+                            alpha = 0.8f
+                        )
+                    )
+                },
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            )
+        }
+    }
     }
 }
 

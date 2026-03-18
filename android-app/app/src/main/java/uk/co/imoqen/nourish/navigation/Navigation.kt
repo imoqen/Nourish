@@ -21,6 +21,8 @@ import uk.co.imoqen.nourish.profile.ProfileViewModel
 import uk.co.imoqen.nourish.recipebook.RecipeBookScreen
 import uk.co.imoqen.nourish.recipebook.RecipeBookViewModel
 import uk.co.imoqen.nourish.recipebook.RecipeCardScreen
+import uk.co.imoqen.nourish.recipecreation.RecipeCreationScreen
+import uk.co.imoqen.nourish.recipecreation.RecipeCreationViewModel
 import uk.co.imoqen.nourish.recipediscovery.RecipeDiscoveryViewModel
 import uk.co.imoqen.nourish.recipediscovery.RecipeDiscoveryScreen
 import uk.co.imoqen.nourish.shoppinglist.ShoppingListScreen
@@ -54,7 +56,7 @@ fun AppNavHost(
         }
         composable(TabDestination.RECIPE_BOOK.route) {
             val recipeBookViewModel: RecipeBookViewModel = hiltViewModel()
-            RecipeBookScreen(recipeBookViewModel, onViewRecipeCard = { id -> navController.navigate("recipe-card/$id") })
+            RecipeBookScreen(recipeBookViewModel, onViewRecipeCard = { id -> navController.navigate("b/recipe-card/$id") }, onAddRecipe = { navController.navigate("b/add-recipe") } )
         }
         composable(TabDestination.SHOPPING_LIST.route) {
             val shoppingListViewModel: ShoppingListViewModel = hiltViewModel()
@@ -67,13 +69,20 @@ fun AppNavHost(
 
         // within the Recipe Book, can navigate to a specific Recipe Card:
         composable(
-            route = "recipe-card/{id}",
+            route = "b/recipe-card/{id}",
             arguments = listOf(navArgument("id") { type = NavType.LongType }) // the recipeId to display the recipe card of
         ) { backStackEntry ->
             val recipeId = backStackEntry.arguments?.getLong("id")!!
             val recipeBookViewModel: RecipeBookViewModel = hiltViewModel()
             val recipeBookUiState = recipeBookViewModel.uiState.collectAsState().value
             RecipeCardScreen(recipeBookViewModel, recipeBookUiState, recipeId, onBack={ navController.popBackStack() }) //TODO onEdit = { }) to move to edit page when editing recipe
+        }
+        // Within the Recipe Book, can add a new Recipe Card:
+        composable(
+            route = "b/add-recipe",
+        ) { backStackEntry ->
+            val recipeCreationViewModel: RecipeCreationViewModel = hiltViewModel()
+            RecipeCreationScreen(recipeCreationViewModel, onBack={ navController.popBackStack() })
         }
         // Can add Route destinations too (those not from tabs)
         // can add here. then can add params to them as shown in this video: https://www.youtube.com/watch?v=wJKwsI5WUI4
