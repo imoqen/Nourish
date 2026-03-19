@@ -13,12 +13,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -39,7 +41,8 @@ import uk.co.imoqen.nourish.common.TypesDisplayForMutuallyExclusiveFiltering
 import uk.co.imoqen.nourish.common.dimmedBackgroundColour
 import uk.co.imoqen.nourish.common.onBackgroundColour
 import uk.co.imoqen.nourish.recipediscovery.RecipeDiscoveryViewModel
-import uk.co.imoqen.nourish.recipediscovery.RecipeTagSelection
+import uk.co.imoqen.nourish.tag.FilterState
+import uk.co.imoqen.nourish.tag.RecipeTagSelection
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -83,8 +86,9 @@ fun RecipeCreationScreen(
 
     val uiState = viewModel.uiState.collectAsState().value
     val keyboardFocusManager = LocalFocusManager.current
-    LaunchedEffect("Get-all-recipe-types") {
+    LaunchedEffect("GET_RECIPE_TYPES_AND_TAGS") {
         viewModel.getAllRecipeTypes()
+        viewModel.getAllTagsForUser()
     }
     Column(
         modifier = Modifier.fillMaxSize().padding(top=70.dp) // room from top for the title area
@@ -117,24 +121,21 @@ fun RecipeCreationScreen(
 
         // Tags
         NourishTextDivider("Recipe Tags")
-        RecipeTagSelection(
-            setFilterDisplayState = viewModel::setFilterDisplayState,
-            sheetState = nutritionalTagSheetState,
-            tags = uiState.recipeTags,
-            filterDisplayState = uiState.filterDisplayState,
-            updateSelected = viewModel::updateSelected,
-            createdTagName = uiState.createdTagName,
-            setCreatedTagName = viewModel::setCreatedTagName,
-            createdTagColour = uiState.createdTagColour,
-            setCreatedTagColour = viewModel::setCreatedTagColour,
-            createTag = viewModel::createTag,
-            closeTagCreation = viewModel::closeTagCreation,
-            tagCreationError = uiState.tagCreationError,
-            showTagConfirmationDialog = uiState.showTagConfirmationDialog,
-            setShowTagConfirmationDialog = viewModel::setShowTagConfirmationDialog,
-            setTagToDelete = viewModel::setTagToDelete,
-            deleteTag = viewModel::deleteTag
+        val nutritionalTagSheetState = rememberModalBottomSheetState(
+            skipPartiallyExpanded = true // makes it fill the screen with the required amount rather than stuck at half the screen size
         )
+        Button(
+            onClick = { viewModel.setFilterDisplayState(FilterState.APPLY) }
+        ) {
+            "Add tags"
+        }
+        if (uiState.tagSheetState.filterDisplayState != FilterState.NONE) {
+            RecipeTagSelection(
+                sheetState = nutritionalTagSheetState,
+                tagSheetState = uiState.tagSheetState,
+                tagSheetAction = viewModel::onTagSheetAction
+            )
+        }
 
         // Number of servings * (defaults to 1)
         // Ingredients *

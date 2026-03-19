@@ -72,7 +72,6 @@ import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.recipebook.RecipeLoadingBar
-import uk.co.imoqen.nourish.recipediscovery.FilterState
 import uk.co.imoqen.nourish.recipediscovery.restart
 import kotlin.math.ceil
 

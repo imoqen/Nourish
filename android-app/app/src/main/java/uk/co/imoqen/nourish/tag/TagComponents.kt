@@ -49,20 +49,10 @@ fun RecipeTagSelection(
     sheetState: SheetState, // the modal bottom sheet state
     tagSheetState: TagSheetState, // the ui state of the tag sheet
     tagSheetAction: (TagSheetAction) -> Unit, // trying to refactor into shared actions, then just 1 function needs to be passed in. unfinished
-    setFilterDisplayState: (FilterState) -> Unit,
-    updateSelected: (Tag, Boolean) -> Unit,
-    setCreatedTagName: (String) -> Unit,
-    setCreatedTagColour: (NourishColour?) -> Unit,
-    createTag: (String, NourishColour?) -> Unit,
-    closeTagCreation: () -> Unit,
-    setShowTagConfirmationDialog: (Boolean) -> Unit,
-    setTagToDelete: (Tag?) -> Unit,
-    deleteTag: () -> Unit
 ) {
     ModalBottomSheet(
         onDismissRequest = {
-            tagSheetAction(FilterState.NONE) // not workingm need to work out how to send it will do ater
-
+            tagSheetAction(TagSheetAction.SetFilterDisplayState(FilterState.NONE)) // not workingm need to work out how to send it will do ater
         },
         sheetState = sheetState
     ) {
@@ -83,11 +73,16 @@ fun RecipeTagSelection(
 
                         TagsDisplayForFiltering(
                             tags = tagSheetState.recipeTags,
-                            onTagPressed = updateSelected,
+                            onTagPressed =  { tag, selected ->
+                                tagSheetAction(TagSheetAction.UpdateSelected(tag, selected)) },
                             displayAddButton = true,
-                            onAddButtonPressed = { setFilterDisplayState(FilterState.CREATE) },
+                            onAddButtonPressed = {
+                                tagSheetAction(TagSheetAction.SetFilterDisplayState(FilterState.CREATE))
+                            },
                             displayEditButton = true,
-                            onEditButtonPressed = { setFilterDisplayState(FilterState.EDIT) }
+                            onEditButtonPressed = {
+                                tagSheetAction(TagSheetAction.SetFilterDisplayState(FilterState.EDIT))
+                            }
                         )
                     }
                 }
@@ -109,7 +104,7 @@ fun RecipeTagSelection(
 
                         NourishTextField(
                             value = tagSheetState.createdTagName,
-                            onValueChange = { setCreatedTagName(it) },
+                            onValueChange = { tagSheetAction(TagSheetAction.SetCreatedTagName(it)) },
                             placeholder = "Enter a description, e.g. 'Vegan'",
                             onDone = { keyboardFocusManager.clearFocus() }
                         )
@@ -150,8 +145,10 @@ fun RecipeTagSelection(
                                                 shape = RoundedCornerShape(16.dp)
                                             )
                                             .clickable {
-                                                setCreatedTagColour(
-                                                    colour
+                                                tagSheetAction(
+                                                    TagSheetAction.SetCreatedTagColour(
+                                                        colour
+                                                    )
                                                 )
                                             }
                                             .then(
@@ -194,14 +191,12 @@ fun RecipeTagSelection(
                             horizontalArrangement = Arrangement.SpaceAround
                         ) {
                             NourishIconTextButton(
-                                onClick = { createTag(tagSheetState.createdTagName, tagSheetState.createdTagColour) },
+                                onClick = { tagSheetAction(TagSheetAction.CreateTag()) },
                                 painter = painterResource(R.drawable.tick),
                                 description = "Create tag"
                             )
                             NourishIconTextButton(
-                                onClick = {
-                                    closeTagCreation()
-                                },
+                                onClick = { tagSheetAction(TagSheetAction.CloseTagCreation()) },
                                 painter = painterResource(R.drawable.cross),
                                 description = "Discard tag"
                             )
@@ -226,16 +221,14 @@ fun RecipeTagSelection(
                         TagsDisplayForFiltering(
                             tags = tagSheetState.recipeTags,
                             trailingIcon = painterResource(R.drawable.delete),
-                            onTrailingIconPress = {
-                                setShowTagConfirmationDialog(true)
-                            },
-                            setTagOnTrailingIconPress = setTagToDelete
+                            onTrailingIconPress = { tagSheetAction(TagSheetAction.ShowTagConfirmationDialog(true)) },
+                            setTagOnTrailingIconPress = { tag -> tagSheetAction(TagSheetAction.SetTagToDelete(tag)) }
                         )
 
                         HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
                         NourishIconTextButton(
-                            onClick = { setFilterDisplayState(FilterState.APPLY) },
+                            onClick = { tagSheetAction(TagSheetAction.SetFilterDisplayState(FilterState.APPLY)) },
                             painter = painterResource(R.drawable.arrow_left),
                             description = "Back",
                         )
@@ -245,8 +238,8 @@ fun RecipeTagSelection(
                         show = tagSheetState.showTagConfirmationDialog,
                         title = "Confirm Tag Deletion",
                         description = "Are you sure you wish to delete this nutritional tag?\n\nThis action cannot be undone.",
-                        onConfirmation = { deleteTag() },
-                        onDismiss = { setShowTagConfirmationDialog(false) }
+                        onConfirmation = { tagSheetAction(TagSheetAction.DeleteTag()) },
+                        onDismiss = { tagSheetAction(TagSheetAction.ShowTagConfirmationDialog(false)) }
                     )
                 }
 

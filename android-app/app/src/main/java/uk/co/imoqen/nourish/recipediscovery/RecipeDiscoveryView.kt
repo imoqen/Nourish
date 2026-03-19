@@ -113,6 +113,7 @@ import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 import uk.co.imoqen.nourish.recipebook.ImageCardHeader
 import uk.co.imoqen.nourish.recipebook.TagSelection
+import uk.co.imoqen.nourish.tag.FilterState
 import uk.co.imoqen.nourish.tag.RecipeTagSelection
 
 import java.io.File
@@ -139,8 +140,8 @@ fun RecipeDiscoveryScreen(
         Log.i("size:", "${uiState.recipeTypes?.size}")
         viewModel.getAllRecipeTypes()
     }
-    LaunchedEffect(uiState.recipeTags?.size) {
-        Log.i("size:", "${uiState.recipeTags?.size}")
+    LaunchedEffect(uiState.tagSheetState.recipeTags?.size) {
+        Log.i("size:", "${uiState.tagSheetState.recipeTags?.size}")
         viewModel.getAllTagsForUser()
     }
 
@@ -381,7 +382,7 @@ fun UserRequest(
                         )
                     }
 
-                    val selectedTags = uiState.recipeTags?.filter{ it.selected }
+                    val selectedTags = uiState.tagSheetState.recipeTags?.filter{ it.selected }
                     if (selectedTags != null  && selectedTags.isNotEmpty()) {
                         NourishUserRequestComponent {
                             SelectedTags(
@@ -721,7 +722,7 @@ fun GeneratedRecipe(
         // higher quality image is displayed
         RecipeCardPreview(
             recipe, viewModel::formatIngredientText, uiState.savedImageMipmap.highQualityFilename,
-            context, uiState.recipeTags
+            context, uiState.tagSheetState.recipeTags
         )
 
         NourishDivider()
@@ -999,7 +1000,7 @@ fun UserInputSection(
                     .animateContentSize()
             ) {
                 Column() {
-                    val filtersSelected = uiState.recipeTags != null && uiState.recipeTags.any { it.selected }
+                    val filtersSelected = uiState.tagSheetState.recipeTags != null && uiState.tagSheetState.recipeTags.any { it.selected }
                     // Selected dish type:
                     Row(
                         horizontalArrangement = Arrangement.Center,
@@ -1042,7 +1043,7 @@ fun UserInputSection(
                     // Selected tags:
                     if (filtersSelected) { // only display if at least one has been selected, not if all unselected
                         SelectedTags(
-                            tags = uiState.recipeTags,
+                            tags = uiState.tagSheetState.recipeTags,
                             allowEdit = true,
                             updateSelectedTag = viewModel::updateSelected
                         )
@@ -1054,24 +1055,11 @@ fun UserInputSection(
             val nutritionalTagSheetState = rememberModalBottomSheetState(
                 skipPartiallyExpanded = true // makes it fill the screen with the required amount rather than stuck at half the screen size
             )
-            if (uiState.filterDisplayState != FilterState.NONE) {
+            if (uiState.tagSheetState.filterDisplayState != FilterState.NONE) {
                 RecipeTagSelection(
-                    setFilterDisplayState = viewModel::setFilterDisplayState,
                     sheetState = nutritionalTagSheetState,
-                    tags = uiState.recipeTags,
-                    filterDisplayState = uiState.filterDisplayState,
-                    updateSelected = viewModel::updateSelected,
-                    createdTagName = uiState.createdTagName,
-                    setCreatedTagName = viewModel::setCreatedTagName,
-                    createdTagColour = uiState.createdTagColour,
-                    setCreatedTagColour = viewModel::setCreatedTagColour,
-                    createTag = viewModel::createTag,
-                    closeTagCreation = viewModel::closeTagCreation,
-                    tagCreationError = uiState.tagCreationError,
-                    showTagConfirmationDialog = uiState.showTagConfirmationDialog,
-                    setShowTagConfirmationDialog = viewModel::setShowTagConfirmationDialog,
-                    setTagToDelete = viewModel::setTagToDelete,
-                    deleteTag = viewModel::deleteTag
+                    tagSheetState = uiState.tagSheetState,
+                    tagSheetAction = viewModel::onTagSheetAction
                 )
             }
 

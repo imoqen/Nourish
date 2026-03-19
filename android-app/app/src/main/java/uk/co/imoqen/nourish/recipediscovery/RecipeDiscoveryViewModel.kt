@@ -222,7 +222,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
     }
 
     fun setTagToDelete(tagToDelete: Tag?) {
-        Log.i("tag delete", "tag to delete: ${tagToDelete}")
         mutableUiState.update { currentState ->
             currentState.copy( // to update the sheet ui state, need to nest the copy
                 tagSheetState = currentState.tagSheetState.copy (
@@ -604,12 +603,13 @@ class RecipeDiscoveryViewModel @Inject constructor(
     }
 
     fun createTag(
-        description: String,
-        colour: NourishColour?
     ) {
         viewModelScope.launch() {
             runCatching {
-                recipeActions.createTag(description, colour, mutableUiState.value.tagSheetState.recipeTags)
+                recipeActions.createTag(
+                    mutableUiState.value.tagSheetState.createdTagName,
+                    mutableUiState.value.tagSheetState.createdTagColour,
+                    mutableUiState.value.tagSheetState.recipeTags)
             }
                 .onSuccess {
                     // when the tag has been successfully made,
@@ -652,6 +652,14 @@ class RecipeDiscoveryViewModel @Inject constructor(
     fun onTagSheetAction(action: TagSheetAction) {
         when (action) {
             is TagSheetAction.SetFilterDisplayState -> setFilterDisplayState(action.displayState)
+            is TagSheetAction.CloseTagCreation -> closeTagCreation()
+            is TagSheetAction.CreateTag -> createTag()
+            is TagSheetAction.DeleteTag -> deleteTag()
+            is TagSheetAction.SetCreatedTagColour -> setCreatedTagColour(action.colour)
+            is TagSheetAction.SetCreatedTagName -> setCreatedTagName(action.name)
+            is TagSheetAction.SetTagToDelete -> setTagToDelete(action.tag)
+            is TagSheetAction.ShowTagConfirmationDialog -> setShowTagConfirmationDialog(action.show)
+            is TagSheetAction.UpdateSelected -> updateSelected(action.tag, action.selected)
         }
     }
 

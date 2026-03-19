@@ -3,6 +3,7 @@ package uk.co.imoqen.nourish.recipecreation
 import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.recipebook.RecipeCardUnexpanded
+import uk.co.imoqen.nourish.tag.TagSheetState
 
 data class RecipeCreationUiState(
     // ui state of recipe creation. nothing should be added to the DB until the user presses save.
@@ -11,7 +12,10 @@ data class RecipeCreationUiState(
     val recipeType: RecipeType? = null,
     val storageGuidance: String = "",
     val displayRecipeTypeSelector: Boolean = false,
-    val recipeTypes: List<RecipeType>? = null
+    val recipeTypes: List<RecipeType>? = null,
+
+    // recipe tags:
+    val tagSheetState: TagSheetState = TagSheetState()
 
     // list of ingredient? todo
     // list of method? todo
