@@ -16,6 +16,7 @@ import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.recipebook.TagSelection
 import uk.co.imoqen.nourish.recipebook.TypeSelection
 import uk.co.imoqen.nourish.recipediscovery.LlmChatStage
+import uk.co.imoqen.nourish.tag.TagCreationException
 import javax.inject.Inject
 import kotlin.collections.map
 import kotlin.math.round
@@ -29,9 +30,27 @@ class RecipeActions @Inject constructor(
 
     suspend fun createTag(
         description: String,
-        colour: NourishColour
+        colour: NourishColour?,
+        allRecipeTags: List<TagSelection>?
     ) {
         runCatching {
+
+            if (description == "") {
+                throw TagCreationException("Please enter a description.")
+            }
+            if (description.length > 27) {
+                throw TagCreationException("The description is too long. It must be less than 27 characters.")
+            }
+            if (colour == null) {
+                throw TagCreationException("Please select a colour.")
+            }
+            // check that tag doesnt already exist
+            if (allRecipeTags != null && allRecipeTags.map{
+                    it.tag.identifier.uppercase()
+                }.contains(description.uppercase().replace(" ", "-"))) {
+                throw TagCreationException("Please ensure that the tag description is unique; it cannot be the same as another tag.")
+            }
+
             val uid = authenticationManager.getUid()
             if (uid == null) {
                 throw NullPointerException()
@@ -190,18 +209,15 @@ class RecipeActions @Inject constructor(
     }
 
     suspend fun deleteTag(
-        tag: Tag
+        tag: Tag?
     ) {
         runCatching {
-            // the relation uses foreignkey.cascade; this means that children are automatically deleted so referential integrity remains.
-            Log.i("tag delete", "before")
-            tagRepository.delete(tag)
-            Log.i("tag delete", "after")
-        }
-            .onFailure { e ->
-                Log.i("tag delete", "tag not deleted: ${e}")
+            if (tag == null) {
+                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Tag could not be deleted."))
+            } else {
+                tagRepository.delete(tag)
             }
-
+        }
     }
 
     fun determineUnitPlurality(

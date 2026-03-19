@@ -32,6 +32,9 @@ import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 import uk.co.imoqen.nourish.recipebook.TagSelection
+import uk.co.imoqen.nourish.tag.FilterState
+import uk.co.imoqen.nourish.tag.TagCreationException
+import uk.co.imoqen.nourish.tag.TagSheetAction
 import java.io.File
 import java.lang.NullPointerException
 import kotlin.onSuccess
@@ -136,16 +139,20 @@ class RecipeDiscoveryViewModel @Inject constructor(
 
     fun setFilterDisplayState(filterDisplayState: FilterState) {
         mutableUiState.update { currentState ->
-            currentState.copy(
-                filterDisplayState = filterDisplayState
+            currentState.copy( // to update the sheet ui state, need to nest the copy
+                tagSheetState = currentState.tagSheetState.copy (
+                    filterDisplayState = filterDisplayState
+                )
             )
         }
     }
 
     fun setRecipeTags(recipeTags: List<TagSelection>?) {
         mutableUiState.update { currentState ->
-            currentState.copy(
-                recipeTags = recipeTags
+            currentState.copy( // to update the sheet ui state, need to nest the copy
+                tagSheetState = currentState.tagSheetState.copy (
+                    recipeTags = recipeTags
+                )
             )
         }
     }
@@ -160,32 +167,40 @@ class RecipeDiscoveryViewModel @Inject constructor(
 
     fun setCreatedTagName(createdTagName: String) {
         mutableUiState.update { currentState ->
-            currentState.copy(
-                createdTagName = createdTagName
+            currentState.copy( // to update the sheet ui state, need to nest the copy
+                tagSheetState = currentState.tagSheetState.copy (
+                    createdTagName = createdTagName
+                )
             )
         }
     }
 
     fun setCreatedTagColour(createdTagColour: NourishColour?) {
         mutableUiState.update { currentState ->
-            currentState.copy(
-                createdTagColour = createdTagColour
+            currentState.copy( // to update the sheet ui state, need to nest the copy
+                tagSheetState = currentState.tagSheetState.copy (
+                    createdTagColour = createdTagColour
+                )
             )
         }
     }
 
     fun setTagCreationError(tagCreationError: String) {
         mutableUiState.update { currentState ->
-            currentState.copy(
-                tagCreationError = tagCreationError
+            currentState.copy( // to update the sheet ui state, need to nest the copy
+                tagSheetState = currentState.tagSheetState.copy (
+                    tagCreationError = tagCreationError
+                )
             )
         }
     }
 
     fun setShowTagConfirmationDialog(showTagConfirmationDialog: Boolean) {
         mutableUiState.update { currentState ->
-            currentState.copy(
-                showTagConfirmationDialog = showTagConfirmationDialog
+            currentState.copy( // to update the sheet ui state, need to nest the copy
+                tagSheetState = currentState.tagSheetState.copy (
+                    showTagConfirmationDialog = showTagConfirmationDialog
+                )
             )
         }
     }
@@ -209,8 +224,10 @@ class RecipeDiscoveryViewModel @Inject constructor(
     fun setTagToDelete(tagToDelete: Tag?) {
         Log.i("tag delete", "tag to delete: ${tagToDelete}")
         mutableUiState.update { currentState ->
-            currentState.copy(
-                tagToDelete = tagToDelete
+            currentState.copy( // to update the sheet ui state, need to nest the copy
+                tagSheetState = currentState.tagSheetState.copy (
+                    tagToDelete = tagToDelete
+                )
             )
         }
     }
@@ -273,73 +290,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
         setLlmChatStage(LlmChatStage.USER_INPUT)
     }
 
-    fun createTag(
-        description: String,
-        colour: NourishColour?
-    ) {
-        viewModelScope.launch() {
-            runCatching {
-                if (description == "") {
-                    setTagCreationError("Please enter a description.")
-                    return@launch
-                }
-                if (description.length > 27) {
-                    setTagCreationError("The description is too long. It must be less than 27 characters.")
-                    return@launch
-                }
-                if (colour == null) {
-                    setTagCreationError("Please select a colour.")
-                    return@launch
-                }
-                // check that tag doesnt already exist
-                if (mutableUiState.value.recipeTags != null &&
-                    mutableUiState.value.recipeTags!!.map{
-                        it.tag.identifier.uppercase()
-                    }.contains(description.uppercase().replace(" ", "-"))) {
-                    setTagCreationError("Please ensure that the tag description is unique; it cannot be the same as another tag.")
-                    return@launch
-                }
-                recipeActions.createTag(description, colour)
-            }
-                .onSuccess {
-                    // when the tag has been successfully made,
-                    getAllTagsForUser() // update the tags as a new one now exists
-                    closeTagCreation()
-                }
-                .onFailure {
-                    setTagCreationError("An error occurred: the tag could not be created.")
-                }
-        }
-    }
-
-    fun deleteTag() {
-        viewModelScope.launch() {
-            runCatching {
-                val tagToDelete = mutableUiState.value.tagToDelete
-                if (tagToDelete == null) {
-                    Log.i("tag delete", "null")
-                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Tag could not be deleted."))
-                    return@launch
-                }
-                Log.i("tag delete", "not null")
-                recipeActions.deleteTag(tagToDelete)
-            }
-                .onSuccess {
-                    // after tag is deleted, refresh the available tags:
-                    getAllTagsForUser()
-                }
-
-        }
-    }
-
-    // closes the tag creation area
-    fun closeTagCreation() {
-        setFilterDisplayState(FilterState.APPLY) // go back to apply filter menu
-        setCreatedTagColour(null)
-        setCreatedTagName("")
-        setTagCreationError("")
-    }
-
     /**
      * Makes the API call by forming the request, getting the user token and ensuring it is valid.
      * Then, placing this token in the Bearer Authorization header and the request in the body.
@@ -374,7 +324,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
 
                 // Get filters selected and the meal type:
                 var chosenNutritionalFilters =
-                    mutableUiState.value.recipeTags?.filter { it.selected }
+                    mutableUiState.value.tagSheetState.recipeTags?.filter { it.selected }
                         ?.joinToString(", ") { it.tag.identifier } // only gets the selected filters and puts them into a string
                 if (chosenNutritionalFilters == null) {
                     chosenNutritionalFilters = "[]" // signifies empty list
@@ -382,7 +332,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 Log.i("selected tags: ", chosenNutritionalFilters)
 
 
-                var allNutritionalFilters = mutableUiState.value.recipeTags?.joinToString(", ") { it.tag.identifier }
+                var allNutritionalFilters = mutableUiState.value.tagSheetState.recipeTags?.joinToString(", ") { it.tag.identifier }
                 if (allNutritionalFilters == null) {
                     allNutritionalFilters = "[]" // signifies empty list
                 }
@@ -562,40 +512,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
-    fun getAllTagsForUser(
-        reset: Boolean = false // to reset to get all tags as not selected; by default set to false
-    ) {
-        viewModelScope.launch() {
-            (recipeActions.getAllTagsForUser(
-                mutableUiState.value.recipeTags, reset
-            ))?.let { updatedTags ->
-                setRecipeTags(updatedTags) // only sets if not null
-            }
-        }
-    }
-
-    // only sets if the update is not null.
-    fun getAllRecipeTypes() {
-        viewModelScope.launch() {
-            (recipeActions.getAllRecipeTypes())?.let { updatedTypes ->
-                Log.i("setting types", "not null: ${updatedTypes}")
-                setRecipeTypes(updatedTypes) // only sets if not null
-            }
-        }
-    }
-
-    fun updateSelected(tag: Tag, status: Boolean) {
-        viewModelScope.launch() {
-            setRecipeTags(
-                recipeActions.updateSelected(
-                    tag,
-                    status,
-                    mutableUiState.value.recipeTags
-                )
-            )
-        }
-    }
-
     // to restart from fresh to gen a new recipe
     fun restart() {
         setApiResponse("")
@@ -653,6 +569,90 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 }
             }
         return "" // invalid if reached here
+    }
+
+    // Tag Sheet Logic: exposes the logic present in RecipeActions for tag selection.
+    // no real logic is duplicated, only "thin logic" required to expose the actual methods. this is ok
+
+    fun getAllTagsForUser(
+        reset: Boolean = false // to reset to get all tags as not selected; by default set to false
+    ) {
+        viewModelScope.launch() {
+            (recipeActions.getAllTagsForUser(
+                mutableUiState.value.tagSheetState.recipeTags, reset
+            ))?.let { updatedTags ->
+                setRecipeTags(updatedTags) // only sets if not null
+            }
+        }
+    }
+
+    // only sets if the update is not null.
+    fun getAllRecipeTypes() {
+        viewModelScope.launch() {
+            (recipeActions.getAllRecipeTypes())?.let { updatedTypes ->
+                setRecipeTypes(updatedTypes) // only sets if not null
+            }
+        }
+    }
+
+    fun updateSelected(tag: Tag, status: Boolean) {
+        viewModelScope.launch() {
+            setRecipeTags(
+                recipeActions.updateSelected(tag, status, mutableUiState.value.tagSheetState.recipeTags)
+            )
+        }
+    }
+
+    fun createTag(
+        description: String,
+        colour: NourishColour?
+    ) {
+        viewModelScope.launch() {
+            runCatching {
+                recipeActions.createTag(description, colour, mutableUiState.value.tagSheetState.recipeTags)
+            }
+                .onSuccess {
+                    // when the tag has been successfully made,
+                    getAllTagsForUser() // update the tags as a new one now exists
+                    closeTagCreation()
+                }
+                .onFailure { e ->
+                    when (e) {
+                        is TagCreationException -> setTagCreationError(
+                            e.message ?: "The tag could not be created."
+                        )
+                        else -> setTagCreationError("The tag could not be created.")
+                    }
+                }
+        }
+    }
+
+    fun deleteTag() {
+        viewModelScope.launch() {
+            runCatching {
+                recipeActions.deleteTag(mutableUiState.value.tagSheetState.tagToDelete)
+            }
+                .onSuccess {
+                    // after tag is deleted, refresh the available tags:
+                    getAllTagsForUser()
+                }
+
+        }
+    }
+
+    // closes the tag creation area. Purely for updating the UI state and does not use any shared action.
+    fun closeTagCreation() {
+        setFilterDisplayState(FilterState.APPLY) // go back to apply filter menu
+        setCreatedTagColour(null)
+        setCreatedTagName("")
+        setTagCreationError("")
+    }
+
+    // the actions for the tag sheet:
+    fun onTagSheetAction(action: TagSheetAction) {
+        when (action) {
+            is TagSheetAction.SetFilterDisplayState -> setFilterDisplayState(action.displayState)
+        }
     }
 
 }
