@@ -1,11 +1,11 @@
 package uk.co.imoqen.nourish.shoppinglist
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -30,7 +30,6 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,20 +43,18 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import uk.co.imoqen.nourish.R
-import uk.co.imoqen.nourish.common.NourishButton
 import uk.co.imoqen.nourish.common.NourishConfirmationDialog
 import uk.co.imoqen.nourish.common.NourishDivider
-import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.common.ingredient.AddIngredientBottomSheet
 import uk.co.imoqen.nourish.common.ingredient.AddIngredientSheetText
+import uk.co.imoqen.nourish.common.ingredient.EditIngredientBottomSheet
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.recipebook.RecipeLoadingBar
 import kotlin.math.ceil
@@ -482,55 +479,16 @@ fun ShoppingListScreen(
             }
 
             if (
-                uiState.ingredientIndexToEdit != -1
+                uiState.ingredientToEdit.index != -1
             ) {
-                ModalBottomSheet(
-                    onDismissRequest = {
-                        viewModel.setIngredientIndexToEdit(-1)
-                    },
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-
-                        NourishTextDivider("Edit the amount")
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            NourishTextField(
-                                modifier = Modifier.fillMaxWidth(0.6f),
-                                value = uiState.editIngredientAmount,
-                                onValueChange = {
-                                    // Only allow valid double inputs
-                                    viewModel.setEditIngredientAmount(it)
-                                },
-                                placeholder = "Enter new amount", // user language consideration: although the app is built for ingredients, users will likely add other things. hence, "item" is used.
-                                onDone = { keyboardFocusManager.clearFocus(force = true) },
-                                keyboardType = KeyboardType.Number // only allows numeric input
-                            )
-                            Text(
-                                modifier = Modifier.padding(start = 8.dp),
-                                text = uiState.shoppingListEntries.getOrNull(uiState.ingredientIndexToEdit)?.unit?.singularName
-                                    ?: ""
-                            )
-                        }
-
-                        NourishButton(
-                            onClick = {
-                                // add the ingredient
-                                viewModel.updateIngredientAmount()
-                            },
-                            text = "Update Amount",
-                        )
-                    }
-                }
+                EditIngredientBottomSheet(
+                    onDismiss = { viewModel.setIngredientIndexToEdit(-1) },
+                    unitName = uiState.shoppingListEntries.getOrNull(uiState.ingredientToEdit.index)?.unit?.singularName ?: "",
+                    amount = uiState.ingredientToEdit.amount,
+                    setAmount = viewModel::setEditIngredientAmount,
+                    persistAmountUpdate = viewModel::updateIngredientAmount,
+                    keyboardFocusManager = keyboardFocusManager
+                )
             }
 
 
@@ -605,11 +563,14 @@ fun IngredientAmount(
                     )
                 }${
                     if (unit == IngredientUnit.UNIT) {
+                        Log.i("unit", "it is unit")
                         ""
                     } else {
                         if (ceil(amount) > 1) {
+                            Log.i("plur", "plural")
                             " " + unit.pluralName
                         } else {
+                            Log.i("sing", "singular")
                             " " + unit.singularName
                         }
                     }

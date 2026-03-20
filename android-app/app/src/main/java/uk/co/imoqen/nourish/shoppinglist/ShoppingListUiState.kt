@@ -4,7 +4,6 @@ import uk.co.imoqen.nourish.common.ingredient.AddIngredientSheetState
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 
 data class ShoppingListUiState(
-
     val shoppingListEntries: List<ShoppingListUiEntry> = emptyList(), // list must be used,so when it is updated then the whole list is updated to trigger recomposition
     val searchTerm: String = "",
     val userInteractionStatus: UserInteractionStatus = UserInteractionStatus.BROWSE,
@@ -14,9 +13,13 @@ data class ShoppingListUiState(
 
     // adding item to shopping list:
     val ingredientToAdd: AddIngredientSheetState = AddIngredientSheetState(),
+    // editing ingredient:
+    val ingredientToEdit: IngredientToEdit = IngredientToEdit()
+)
 
-    val ingredientIndexToEdit: Int = -1,
-    val editIngredientAmount: String = ""
+data class IngredientToEdit(
+    val index: Int = -1,
+    val amount: String = ""
 )
 
 enum class UserInteractionStatus {

@@ -44,11 +44,13 @@ import uk.co.imoqen.nourish.common.SelectedTags
 import uk.co.imoqen.nourish.common.TypesDisplayForMutuallyExclusiveFiltering
 import uk.co.imoqen.nourish.common.ingredient.AddIngredientBottomSheet
 import uk.co.imoqen.nourish.common.ingredient.AddIngredientSheetText
+import uk.co.imoqen.nourish.common.ingredient.EditIngredientBottomSheet
 import uk.co.imoqen.nourish.recipebook.ServingSizeUpdater
 import uk.co.imoqen.nourish.common.tag.FilterState
 import uk.co.imoqen.nourish.common.tag.RecipeTagSelection
 import uk.co.imoqen.nourish.common.tag.TagSheetAction
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
+import uk.co.imoqen.nourish.shoppinglist.IngredientAmount
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -227,7 +229,44 @@ fun RecipeCreationScreen(
                     if (uiState.ingredients == null || uiState.ingredients.isEmpty()) {
                         Text("no ingredients")
                     } else {
-                        // todo output the ingredients
+                        uiState.ingredients.forEachIndexed { i, ingredient ->
+
+                            Row() {
+                                Text(
+                                    text = ingredient.ingredientPlural,
+                                )
+
+                                IngredientAmount(
+                                    unit = IngredientUnit.valueOf(
+                                        ingredient.ingredientAmountUnit
+                                    ),
+                                    amount = ingredient.ingredientAmount,
+                                    editModifierFunctionality = {
+                                        Modifier
+                                            .clickable(
+                                                onClick = {
+                                                    viewModel.setEditIngredientIndex(
+                                                        i
+                                                    )
+                                                    viewModel.setEditIngredientAmount(
+                                                        "${ingredient.ingredientAmount}"
+                                                    )
+                                                }
+                                            )
+                                    },
+                                    editContent = {
+                                        Icon(
+                                            painter = painterResource(R.drawable.edit),
+                                            contentDescription = "Edit Ingredient Amount",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier
+                                                .padding(end = 6.dp)
+                                        )
+                                    },
+                                    formatIngredientAmount = viewModel::formatIngredientAmount
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -262,6 +301,21 @@ fun RecipeCreationScreen(
             placeholder = "Enter Storage Guidance",
             onDone = { keyboardFocusManager.clearFocus() },
             leadingIcon = ImageVector.vectorResource(R.drawable.fridge),
+        )
+    }
+
+    // model bottom sheet for editing ingredient amount
+    if (
+        uiState.ingredientToEdit.index != -1
+    ) {
+        EditIngredientBottomSheet(
+            onDismiss = { viewModel.setEditIngredientIndex(-1) },
+            // gets the unit from the unit name, then its singular form
+            unitName = IngredientUnit.valueOf(uiState.ingredients?.getOrNull(uiState.ingredientToEdit.index)?.ingredientAmountUnit ?: "UNIT").singularName,
+            amount = uiState.ingredientToEdit.amount,
+            setAmount = viewModel::setEditIngredientAmount,
+            persistAmountUpdate = viewModel::updateIngredientAmount,
+            keyboardFocusManager = keyboardFocusManager
         )
     }
 

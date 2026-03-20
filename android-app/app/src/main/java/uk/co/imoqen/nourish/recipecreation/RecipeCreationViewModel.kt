@@ -1,11 +1,13 @@
 package uk.co.imoqen.nourish.recipecreation
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.NourishColour
@@ -22,7 +24,11 @@ import uk.co.imoqen.nourish.recipebook.TagSelection
 import uk.co.imoqen.nourish.common.tag.FilterState
 import uk.co.imoqen.nourish.common.tag.TagCreationException
 import uk.co.imoqen.nourish.common.tag.TagSheetAction
+import uk.co.imoqen.nourish.common.uievent.UiEvent
+import uk.co.imoqen.nourish.db.ingredient.Ingredient
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
+import uk.co.imoqen.nourish.network.response.LlmIngredient
+import uk.co.imoqen.nourish.network.response.LlmIngredientSection
 import uk.co.imoqen.nourish.shoppinglist.UserInteractionStatus
 import javax.inject.Inject
 
@@ -74,6 +80,14 @@ class RecipeCreationViewModel @Inject constructor(
         mutableUiState.update { currentState ->
             currentState.copy(
                 displayRecipeTypeSelector = displayRecipeTypeSelector
+            )
+        }
+    }
+
+    fun setIngredients(ingredients: List<LlmIngredient>?) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                ingredients = ingredients
             )
         }
     }
@@ -205,6 +219,26 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
+    // Editing Ingredient Index and Amount
+    fun setEditIngredientIndex(index: Int) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                ingredientToEdit = currentState.ingredientToEdit.copy(
+                    index = index
+                )
+            )
+        }
+    }
+    fun setEditIngredientAmount(amount: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                ingredientToEdit = currentState.ingredientToEdit.copy(
+                    amount = amount
+                )
+            )
+        }
+    }
+
     // Recipe Tag Expose methods
     fun getAllTagsForUser(
         reset: Boolean = false // to reset to get all tags as not selected; by default set to false
@@ -315,8 +349,51 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
+    // design choice: ingredients, if the same, will not be merged. this may be for if a user wants to
+    // separate amounts (e.g. 5g butter for the batter, 5g of butter for frying) etc.
     fun addIngredientToRecipe() {
+        viewModelScope.launch() {
+            runCatching {
+                // validate
+                val amount = mutableUiState.value.ingredientToAdd.amount.replace(',', '.').toDoubleOrNull()
+                val name = mutableUiState.value.ingredientToAdd.name.trim()
+                if (amount == null) {
+                    setTagCreationError("The amount cannot be blank.")
+                    return@launch
+                }
+                if (name == "") {
+                    setTagCreationError("The name cannot be blank.")
+                    return@launch
+                }
+                // then simply update the ingredients list such that it is populated correctly (with name in the plural field) for use in recipe repo createRecipe()
+                val ingredient = LlmIngredient(
+                    ingredientAmount = amount, // if user inputted invalid, it just gets set to 1.0
+                    ingredientPlural = name,
+                    ingredientAmountUnit = mutableUiState.value.ingredientToAdd.unit.name, // will always be safe as user must select, all options are ok.
+                    ingredientSingular = "" // user inputted ingredients value is always set to singular.
+                )
+                setIngredients(
+                    // adds the ingredient or makes a new list with the ingredient if it is empty
+                    (mutableUiState.value.ingredients ?: emptyList()) + ingredient
+                )
+            }
+                .onSuccess {
+                    resetIngredientAdditionUI() // close and reset the sheet
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Ingredient added to recipe."))
+                }
+                .onFailure {
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Ingredient could not be added."))
+                }
+        }
         //todo. make sure that ingredient amount is not optional
+    }
+
+    fun resetIngredientAdditionUI() {
+        setIngredientToAddAmount("")
+        setIngredientToAddUnit(IngredientUnit.SINGLE)
+        setIngredientToAddName("")
+        setShowAddIngredientSheet(false)
+        setIngredientToAddError("")
     }
 
     // the actions for the ingredient addition sheet;
@@ -328,6 +405,53 @@ class RecipeCreationViewModel @Inject constructor(
             is IngredientSheetAction.SetIngredientName -> { setIngredientToAddName(action.name) }
             is IngredientSheetAction.SetIngredientUnit -> { setIngredientToAddUnit(action.unit) }
         }
+    }
+
+    // action for persisting an ingredient amount update:
+    fun updateIngredientAmount() {
+        viewModelScope.launch() {
+            runCatching {
+                val ingredients = mutableUiState.value.ingredients
+                val index = mutableUiState.value.ingredientToEdit.index
+                if (ingredients == null) {
+                    return@launch
+                }
+                val ingredient = ingredients[index]
+                var amount = mutableUiState.value.ingredientToEdit.amount.replace(',','.').toDoubleOrNull() ?: 1.0 // 1.0 if the input is invalid.
+                if (ingredient.ingredientAmountUnit == "KG" || ingredient.ingredientAmountUnit == "L") {
+                    // multiply the value by 1000 as it will be stored in the db as G or ML.
+                    amount = amount * 1000
+                }
+                // update the ingredients list:
+                setIngredients(
+                    ingredients.toMutableList().apply {
+                        this[index] = this[index].copy(
+                            ingredientAmount = amount
+                        )
+                    }
+                )
+
+                // reset in UI:
+                setEditIngredientIndex(-1)
+                setEditIngredientAmount("")
+            } .onFailure {
+                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
+                    "Couldn't update the amount. Please try again later."
+                ))
+            }
+        }
+    }
+
+    // exposing the recipe actions format method
+    fun formatIngredientAmount(
+        ingredientAmount: Double,
+        roundToNearestQuarter: Boolean = true
+    ): String {
+        var amount = ingredientAmount
+        if (amount < 0.25) {
+            amount = 0.25 // cant go less than 0.25
+        }
+        return recipeActions.formatIngredientAmount(amount, roundToNearestQuarter)
     }
 
 }

@@ -129,18 +129,22 @@ class ShoppingListViewModel @Inject constructor(
         }
     }
 
-    fun setIngredientIndexToEdit(ingredientIndexToEdit: Int){
+    fun setIngredientIndexToEdit(index: Int){
         mutableUiState.update { currentState ->
             currentState.copy(
-                ingredientIndexToEdit = ingredientIndexToEdit
+                ingredientToEdit = currentState.ingredientToEdit.copy(
+                    index = index
+                )
             )
         }
     }
 
-    fun setEditIngredientAmount(editIngredientAmount: String){
+    fun setEditIngredientAmount(amount: String){
         mutableUiState.update { currentState ->
             currentState.copy(
-                editIngredientAmount = editIngredientAmount
+                ingredientToEdit = currentState.ingredientToEdit.copy(
+                    amount = amount
+                )
             )
         }
     }
@@ -391,16 +395,16 @@ class ShoppingListViewModel @Inject constructor(
         viewModelScope.launch() {
             runCatching {
                 val shoppingListUiEntry =
-                    mutableUiState.value.shoppingListEntries[mutableUiState.value.ingredientIndexToEdit]
+                    mutableUiState.value.shoppingListEntries[mutableUiState.value.ingredientToEdit.index]
                 val shoppingListEntry =
                     shoppingListEntryRepository.getById(shoppingListUiEntry.id).first()
 
                 if (shoppingListEntry == null) {
                     throw NullPointerException()
                 }
-                Log.i("amount: ", mutableUiState.value.editIngredientAmount)
+                Log.i("amount: ", mutableUiState.value.ingredientToEdit.amount)
 
-                var amount = mutableUiState.value.editIngredientAmount.replace(',','.').toDoubleOrNull() ?: 1.0 // 1.0 if the input is invalid.
+                var amount = mutableUiState.value.ingredientToEdit.amount.replace(',','.').toDoubleOrNull() ?: 1.0 // 1.0 if the input is invalid.
                 if (shoppingListUiEntry.unit == IngredientUnit.KG || shoppingListUiEntry.unit == IngredientUnit.L) {
                     // multiply the value by 1000 as it will be stored in the db as G or ML.
                     amount = amount * 1000
