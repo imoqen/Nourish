@@ -33,7 +33,8 @@ fun AddIngredientBottomSheet(
     ingredient: AddIngredientSheetState,
     action: (IngredientSheetAction) -> Unit,
     possibleUnits: List<IngredientUnit>,
-    text: AddIngredientSheetText
+    text: AddIngredientSheetText,
+    noneUnit: IngredientUnit // the default unit which is the none value. for the shopping list, this is SINGLE. for the recipe creation, this is UNIT.
 ) {
     val modalBottomSheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true // makes it fill the screen with the required amount rather than stuck at half the screen size
@@ -98,7 +99,7 @@ fun AddIngredientBottomSheet(
                         ingredient.unit,
                         { action(IngredientSheetAction.SetIngredientUnit(it)) },
                         "none",
-                        IngredientUnit.SINGLE
+                        noneUnit
                     ) // dynamically determined: if amount is given, then will use UNIT. otherwise will use SINGLE.
                 }
                 possibleUnits.forEach{ unit ->

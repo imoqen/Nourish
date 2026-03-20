@@ -357,19 +357,20 @@ class RecipeCreationViewModel @Inject constructor(
                 // validate
                 val amount = mutableUiState.value.ingredientToAdd.amount.replace(',', '.').toDoubleOrNull()
                 val name = mutableUiState.value.ingredientToAdd.name.trim()
-                if (amount == null) {
-                    setTagCreationError("The amount cannot be blank.")
+                val unit = mutableUiState.value.ingredientToAdd.unit
+                if (name == "") {
+                    setIngredientToAddError("The name cannot be blank.")
                     return@launch
                 }
-                if (name == "") {
-                    setTagCreationError("The name cannot be blank.")
+                if (amount == null) {
+                    setIngredientToAddError("The amount cannot be blank.")
                     return@launch
                 }
                 // then simply update the ingredients list such that it is populated correctly (with name in the plural field) for use in recipe repo createRecipe()
                 val ingredient = LlmIngredient(
                     ingredientAmount = amount, // if user inputted invalid, it just gets set to 1.0
                     ingredientPlural = name,
-                    ingredientAmountUnit = mutableUiState.value.ingredientToAdd.unit.name, // will always be safe as user must select, all options are ok.
+                    ingredientAmountUnit = unit.name, // will always be safe as user must select, all options are ok.
                     ingredientSingular = "" // user inputted ingredients value is always set to singular.
                 )
                 setIngredients(
@@ -390,7 +391,7 @@ class RecipeCreationViewModel @Inject constructor(
 
     fun resetIngredientAdditionUI() {
         setIngredientToAddAmount("")
-        setIngredientToAddUnit(IngredientUnit.SINGLE)
+        setIngredientToAddUnit(IngredientUnit.UNIT)
         setIngredientToAddName("")
         setShowAddIngredientSheet(false)
         setIngredientToAddError("")
@@ -417,11 +418,7 @@ class RecipeCreationViewModel @Inject constructor(
                     return@launch
                 }
                 val ingredient = ingredients[index]
-                var amount = mutableUiState.value.ingredientToEdit.amount.replace(',','.').toDoubleOrNull() ?: 1.0 // 1.0 if the input is invalid.
-                if (ingredient.ingredientAmountUnit == "KG" || ingredient.ingredientAmountUnit == "L") {
-                    // multiply the value by 1000 as it will be stored in the db as G or ML.
-                    amount = amount * 1000
-                }
+                val amount = mutableUiState.value.ingredientToEdit.amount.replace(',','.').toDoubleOrNull() ?: 1.0 // 1.0 if the input is invalid.
                 // update the ingredients list:
                 setIngredients(
                     ingredients.toMutableList().apply {
@@ -448,8 +445,8 @@ class RecipeCreationViewModel @Inject constructor(
         roundToNearestQuarter: Boolean = true
     ): String {
         var amount = ingredientAmount
-        if (amount < 0.25) {
-            amount = 0.25 // cant go less than 0.25
+        if (amount < 0.01) {
+            amount = 0.01 // cant go less than 0.01 in recipe creation - has a lower threshold than the others.
         }
         return recipeActions.formatIngredientAmount(amount, roundToNearestQuarter)
     }

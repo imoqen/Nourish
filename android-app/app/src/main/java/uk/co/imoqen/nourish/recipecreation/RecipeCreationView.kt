@@ -6,7 +6,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -33,8 +35,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import uk.co.imoqen.nourish.R
+import uk.co.imoqen.nourish.common.NourishConfirmationDialog
 import uk.co.imoqen.nourish.common.NourishH2
 import uk.co.imoqen.nourish.common.NourishH3
 import uk.co.imoqen.nourish.common.NourishIconTextButton
@@ -51,6 +55,7 @@ import uk.co.imoqen.nourish.common.tag.RecipeTagSelection
 import uk.co.imoqen.nourish.common.tag.TagSheetAction
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.shoppinglist.IngredientAmount
+import uk.co.imoqen.nourish.shoppinglist.UserInteractionStatus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -213,9 +218,9 @@ fun RecipeCreationScreen(
                 )
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth(0.8f),
+                modifier = Modifier.fillMaxWidth(0.8f).padding(vertical=8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 ServingSizeUpdater(uiState.numberOfServings, viewModel::alterServingSize)
                 // then print ingredients here
@@ -227,14 +232,25 @@ fun RecipeCreationScreen(
                     )
                 ) {
                     if (uiState.ingredients == null || uiState.ingredients.isEmpty()) {
-                        Text("no ingredients")
+                        Text(
+                            text = "None",
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(0.95f).padding(8.dp)
+                        )
                     } else {
                         uiState.ingredients.forEachIndexed { i, ingredient ->
 
-                            Row() {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(0.95f).padding(start=6.dp),
+                                horizontalArrangement = Arrangement.Start,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 Text(
-                                    text = ingredient.ingredientPlural,
+                                    text = "- ${ingredient.ingredientPlural}",
+                                    modifier = Modifier.weight(1f)
                                 )
+
+                                //Spacer(modifier = Modifier.weight(1f)) // amount etc goes to the end
 
                                 IngredientAmount(
                                     unit = IngredientUnit.valueOf(
@@ -263,7 +279,18 @@ fun RecipeCreationScreen(
                                                 .padding(end = 6.dp)
                                         )
                                     },
-                                    formatIngredientAmount = viewModel::formatIngredientAmount
+                                    formatIngredientAmount = viewModel::formatIngredientAmount,
+                                    round = false // don't round as its user inputted
+                                )
+                                Icon(
+                                    painter = painterResource(R.drawable.delete),
+                                    contentDescription = "Delete Item",
+                                    tint = MaterialTheme.colorScheme.error.copy(
+                                        alpha = 0.8f
+                                    ),
+                                    modifier = Modifier.clickable(
+                                        onClick = { viewModel.setIngredientIndexToDelete(i) }
+                                    )
                                 )
                             }
                         }
@@ -304,6 +331,15 @@ fun RecipeCreationScreen(
         )
     }
 
+    // Confirmation Dialogs
+    NourishConfirmationDialog(
+        show = uiState.showDeleteIngredientDialog,
+        title = "Confirm Ingredient Removal",
+        description = "Are you sure you wish to remove this ingredient?\n\n This action cannot be undone.",
+        onConfirmation = { viewModel.deleteIngredient(); viewModel.showDeleteIngredientDialog(false) },
+        onDismiss = { viewModel.showDeleteIngredientDialog(false) }
+    )
+
     // model bottom sheet for editing ingredient amount
     if (
         uiState.ingredientToEdit.index != -1
@@ -335,7 +371,8 @@ fun RecipeCreationScreen(
                 amount = "Enter amount",
                 unit = "Select unit",
                 complete = "Add to Recipe"
-            )
+            ),
+            noneUnit = IngredientUnit.UNIT
         )
     }
 

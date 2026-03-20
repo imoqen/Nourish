@@ -5,6 +5,7 @@ import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.network.response.LlmIngredientSection
 import uk.co.imoqen.nourish.common.tag.TagSheetState
 import uk.co.imoqen.nourish.db.ingredient.Ingredient
+import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.shoppinglist.IngredientToEdit
 
@@ -23,8 +24,10 @@ data class RecipeCreationUiState(
     // list of ingredients. for simplicity (not only programming, but also for the user's sake), ingredients cant be added to sections. just one section.
     val ingredients: List<LlmIngredient>? = null, // will set this to List<LlmIngredientSection> when doing createRecipe
     val showAddIngredientSheet: Boolean = false,
-    val ingredientToAdd: AddIngredientSheetState = AddIngredientSheetState(),
-    val ingredientToEdit: IngredientToEdit = IngredientToEdit()
+    val ingredientToAdd: AddIngredientSheetState = AddIngredientSheetState(unit = IngredientUnit.UNIT), // default unit is UNIT rather than SINGLE - no SINGLEs in recipes.
+    val ingredientToEdit: IngredientToEdit = IngredientToEdit(),
+    val ingredientIndexToDelete: Int = -1,
+    val showIngredientDeletionDialog: Boolean = false,
 
     // list of method? todo
 

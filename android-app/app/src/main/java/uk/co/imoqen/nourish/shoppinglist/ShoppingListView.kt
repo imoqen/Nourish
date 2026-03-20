@@ -474,7 +474,8 @@ fun ShoppingListScreen(
                         amount = "Enter amount (optional)",
                         unit = "Select unit (optional)",
                         complete = "Add to Shopping List"
-                    )
+                    ),
+                    noneUnit = IngredientUnit.SINGLE
                 )
             }
 
@@ -531,6 +532,7 @@ fun IngredientAmount(
     formatIngredientAmount: (Double, Boolean) -> String,
     editModifierFunctionality: () -> Modifier = { Modifier },
     editContent: @Composable () -> Unit = {},
+    round: Boolean = true,
 ) {
     if (unit != IngredientUnit.SINGLE) {
         Row(
@@ -547,7 +549,7 @@ fun IngredientAmount(
                 ),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val round = !(unit == IngredientUnit.KG || unit == IngredientUnit.L)
+            val round = round && !(unit == IngredientUnit.KG || unit == IngredientUnit.L)
             Text(
                 modifier = Modifier
                     .padding(6.dp),
@@ -556,7 +558,7 @@ fun IngredientAmount(
                         if (round) {
                             ceil(amount) // gets ceiled because cant buy 0.5 of a lemon e.g.. BUT should still store the decimal because required for calc e.g. ifuser adds 0.5 lemon twice, it shuold still say 1 lemon.
                         } else {
-                            // dont ceil if kg or L - these need to be precise.
+                            // dont ceil if kg or L - these need to be precise. or if in the user created recipe.
                             amount
                         },
                         round
