@@ -591,4 +591,33 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
+    fun deleteStep() {
+        viewModelScope.launch() {
+            runCatching {
+                val index = mutableUiState.value.stepIndexToDelete
+                val method = mutableUiState.value.method
+                if (method == null) {
+                    return@launch
+                }
+                // update the ingredients list by removing the ingredient
+                setMethod(
+                    method.toMutableList().apply{ removeAt(index) }
+                )
+                // then reset in the ui
+                setStepIndexToDelete(-1)
+                setStepIndexToEdit(-1)
+            } .onSuccess {
+                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
+                    "Step removed."
+                ))
+            }
+                .onFailure { e->
+                    Log.i("error step", "$e")
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
+                        "Couldn't remove the step. Please try again later."
+                    ))
+                }
+        }
+    }
+
 }

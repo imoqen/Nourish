@@ -131,8 +131,9 @@ fun RecipeCreationScreen(
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(top=70.dp).verticalScroll(rememberScrollState()), // room from top for the title area
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier = Modifier.fillMaxSize().padding(top=70.dp).padding(bottom=12.dp).verticalScroll(rememberScrollState()), // room from top for the title area
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         // Contents, * means it is mandatory:
 
@@ -150,7 +151,7 @@ fun RecipeCreationScreen(
                 onValueChange = { newRecipeTitle ->
                     viewModel.setTitle(newRecipeTitle)
                 },
-                placeholder = "Enter a Title*",
+                placeholder = "Enter Title*",
                 onDone = { keyboardFocusManager.clearFocus() },
                 leadingIcon = ImageVector.vectorResource(R.drawable.text),
             )
@@ -262,7 +263,7 @@ fun RecipeCreationScreen(
                             text = "No ingredients added yet.",
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth(0.95f).padding(8.dp)
+                            modifier = Modifier.fillMaxWidth(0.95f).padding(top=8.dp)
                         )
                     } else {
                         Column(
@@ -336,7 +337,7 @@ fun RecipeCreationScreen(
             }
         }
 
-        NourishTextDivider("These ingredients make", modifier = Modifier.padding(vertical=8.dp))
+        NourishTextDivider("Number of Servings*", modifier = Modifier.padding(vertical=8.dp))
         ServingSizeUpdater(uiState.numberOfServings, viewModel::alterServingSize)
 
         // Method *
@@ -411,10 +412,8 @@ fun RecipeCreationScreen(
 
         // Storage guidance
         NourishTextField(
-            value = uiState.title,
-            onValueChange = { newStorageGuidance ->
-                viewModel.setStorageGuidance(newStorageGuidance)
-            },
+            value = uiState.storageGuidance,
+            onValueChange = { viewModel.setStorageGuidance(it) },
             placeholder = "Enter Storage Guidance",
             onDone = { keyboardFocusManager.clearFocus() },
             leadingIcon = ImageVector.vectorResource(R.drawable.fridge),
@@ -423,12 +422,22 @@ fun RecipeCreationScreen(
 
 
     // Confirmation Dialogs
+    // ingredient deletion:
     NourishConfirmationDialog(
         show = uiState.ingredientIndexToDelete != -1,
         title = "Confirm Removal",
         description = "Are you sure you wish to remove this ingredient from the recipe?",
         onConfirmation = { viewModel.deleteIngredient() },
         onDismiss = { viewModel.setIngredientIndexToDelete(-1) }
+    )
+
+    // step deletion:
+    NourishConfirmationDialog(
+        show = uiState.stepIndexToDelete != -1,
+        title = "Confirm Removal",
+        description = "Are you sure you wish to remove this step from the recipe?",
+        onConfirmation = { viewModel.deleteStep() },
+        onDismiss = { viewModel.setStepIndexToDelete(-1) }
     )
 
     // modal bottom sheet for editing ingredient amount
@@ -577,18 +586,32 @@ fun DraggableStepsList(
 
                             if (uiState.stepIndexToEdit == i) {
                                 Box(modifier = Modifier.padding(bottom = 10.dp).align(Alignment.CenterVertically)) {
-                                    NourishTextField(
-                                        value = uiState.stepToEdit,
-                                        onValueChange = { viewModel.setStepToEdit(it) },
-                                        placeholder = "",
-                                        onDone = { keyboardFocusManager.clearFocus() },
-                                        trailingIcon = ImageVector.vectorResource(R.drawable.tick),
-                                        onTrailingIconPress = { viewModel.updateStep() }
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        NourishTextField(
+                                            value = uiState.stepToEdit,
+                                            onValueChange = { viewModel.setStepToEdit(it) },
+                                            placeholder = "",
+                                            onDone = { keyboardFocusManager.clearFocus() },
+                                            trailingIcon = ImageVector.vectorResource(R.drawable.tick),
+                                            onTrailingIconPress = { viewModel.updateStep() }
+                                        )
+                                        Icon(
+                                            painter = painterResource(R.drawable.delete),
+                                            contentDescription = "Delete Step",
+                                            tint = MaterialTheme.colorScheme.error.copy(
+                                                alpha = 0.8f
+                                            ),
+                                            modifier = Modifier.clickable(
+                                                onClick = { viewModel.setStepIndexToDelete(i) }
+                                            )
+                                        )
+                                    }
                                 }
                             } else {
                                 Text(
-                                    text = "${i+1}. ${step.step}", modifier = Modifier.weight(1f).padding(start=12.dp)
+                                    text = "${i+1}. ${step.step}", modifier = Modifier.weight(1f).padding(start=12.dp).padding(vertical=4.dp)
                                 )
                             }
 
