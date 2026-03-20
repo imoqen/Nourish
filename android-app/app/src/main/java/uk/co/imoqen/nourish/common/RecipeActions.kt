@@ -291,4 +291,14 @@ class RecipeActions @Inject constructor(
         return "" // invalid if reached here
     }
 
+    suspend fun findRecipeType(
+        recipeTypeId: Long
+    ): Pair<String, Int>? {
+        val recipeType = recipeRepository.getRecipeTypeById(recipeTypeId).first()
+        if (recipeType == null) {
+            return recipeType
+        }
+        return Pair(recipeType.title, recipeType.ordinal)
+    }
+
 }

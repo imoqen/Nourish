@@ -432,7 +432,7 @@ class RecipeBookViewModel @Inject constructor(
                     buildIngredientsMap(getRecipeIngredientsForRecipe(recipe.id).first())
                 val method = buildRecipeSteps(recipe.id)
                 val serves = recipe.numberOfServings
-                val recipeType = findRecipeType(recipe.recipeTypeId)
+                val recipeType = recipeActions.findRecipeType(recipe.recipeTypeId)
                 val recipeTags = buildRecipeTags(recipe.id)
                 val storageInstructions = recipe.storageInstructions
 
@@ -482,16 +482,6 @@ class RecipeBookViewModel @Inject constructor(
             recipeStepsList.add(Triple(step.instruction, step.complete, step.id))
         }
         return recipeStepsList
-    }
-
-    suspend fun findRecipeType(
-        recipeTypeId: Long
-    ): Pair<String, Int>? {
-        val recipeType = getRecipeTypeById(recipeTypeId).first()
-        if (recipeType == null) {
-            return recipeType
-        }
-        return Pair(recipeType.title, recipeType.ordinal)
     }
 
     suspend fun buildIngredientsMap(
@@ -682,7 +672,7 @@ class RecipeBookViewModel @Inject constructor(
         recipe: Recipe,
         includeServings: Boolean
     ): LlmRecipe {
-        val recipeType = findRecipeType(recipe.recipeTypeId)?.first ?: ""
+        val recipeType = recipeActions.findRecipeType(recipe.recipeTypeId)?.first ?: ""
         val tags = getRecipeTagsForRecipe(recipe.id).first().recipeTags.map { tag ->
             getTagByTagId(tag.tagId).first()?.identifier ?: ""
         }
@@ -908,7 +898,39 @@ class RecipeBookViewModel @Inject constructor(
                     throw NullPointerException()
                 } // user is null; throw to be handled appropriately
                 // Add the recipe to the database:
-                recipeRepository.replaceRecipe(originalRecipe, newRecipe)
+                recipeRepository.replaceRecipe(originalRecipe, newRecipe, originalRecipe.imagePath) // original image is preserved
+            }
+                .onSuccess {
+                    uiEventBus.enqueueEvent(
+                        UiEvent.ShowSnackbar(
+                            "The recipe has been updated."
+                        )
+                    )
+                }
+
+                .onFailure { e ->
+                    uiEventBus.enqueueEvent(
+                        UiEvent.ShowSnackbar(
+                            "The recipe could not be updated. Please try again, or enter a different alteration."
+                        )
+                    )
+                }
+        }
+    }
+
+    fun deleteRecipe() {
+        viewModelScope.launch() {
+            runCatching {
+                // get and delete the recipe
+                val uiRecipe = mutableUiState.value.selectedRecipe
+                if (uiRecipe == null) {
+                    return@launch
+                }
+                val recipe = recipeRepository.getRecipeById(uiRecipe.id).first()
+                if (recipe == null) {
+                    return@launch
+                }
+                recipeRepository.deleteRecipe(recipe) // delete
             }
                 .onSuccess {
                     uiEventBus.enqueueEvent(

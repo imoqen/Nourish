@@ -105,6 +105,7 @@ fun RecipeCardScreen(
     uiState: RecipeBookUiState,
     recipeId: Long,
     onBack: () -> Unit,
+    onEditRecipe: (Long) -> Unit
 ) {
 
     val scrollState = rememberScrollState()
@@ -119,7 +120,7 @@ fun RecipeCardScreen(
         // should constrain it to only return recipe made by that user, for security. address in a future stepping stone ^
         if (recipe != null) {
             recipeBookViewModel.setSelectedRecipe(recipe)
-            RecipeCard(recipeBookViewModel, onBack, uiState, keyboardFocusManager)
+            RecipeCard(recipeBookViewModel, onBack, uiState, keyboardFocusManager, onEditRecipe)
         }
     }
 }
@@ -130,7 +131,8 @@ fun RecipeCard(
     recipeBookViewModel: RecipeBookViewModel,
     onBack: () -> Unit,
     uiState: RecipeBookUiState,
-    keyboardFocusManager: FocusManager
+    keyboardFocusManager: FocusManager,
+    onEditRecipe: (Long) -> Unit
 ) {
 
     AnimatedVisibility(
@@ -634,14 +636,16 @@ fun RecipeCard(
                                 modifier = Modifier.weight(1f)
                             )
 
-                            RecipeActionButton(
-                                onClick = {
-                                    // edit
-                                },
-                                painter = painterResource(R.drawable.edit),
-                                description = "Edit Manually",
-                                modifier = Modifier.weight(1f)
-                            )
+                            if (uiState.selectedRecipe != null) {
+                                RecipeActionButton(
+                                    onClick = {
+                                        onEditRecipe(uiState.selectedRecipe.id)// edit the recipe with its id
+                                    },
+                                    painter = painterResource(R.drawable.edit),
+                                    description = "Edit Manually",
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
                         }
 
                         /*

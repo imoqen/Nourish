@@ -119,6 +119,7 @@ import java.io.File
 fun RecipeCreationScreen(
     viewModel: RecipeCreationViewModel,
     onBack: () -> Unit,
+    onFinishEdit: () -> Unit = {} // only for editing
 ) {
     val uiState = viewModel.uiState.collectAsState().value
     val keyboardFocusManager = LocalFocusManager.current
@@ -127,7 +128,11 @@ fun RecipeCreationScreen(
     )
 
     if (uiState.recipeCreated) {
-        onBack()
+        if (uiState.creationMode == CreationMode.ADD) {
+            onBack()
+        } else {
+            onFinishEdit()
+        }
     }
 
     LaunchedEffect("GET_RECIPE_TYPES_AND_TAGS") {
@@ -223,7 +228,7 @@ fun RecipeCreationScreen(
                 //contentAlignment = Alignment.Center
             ) {
                 NourishH2(
-                    "Add a Recipe",
+                    if (uiState.creationMode == CreationMode.ADD) { "Add a Recipe"} else { "Edit Recipe" },
                     modifier = Modifier
                         .align(Alignment.Center)
                         .fillMaxWidth(0.8f)
@@ -633,9 +638,15 @@ fun RecipeCreationScreen(
             }
             // Complete button
             NourishIconTextButton(
-                onClick = {viewModel.addRecipe()},
+                onClick = {
+                    if (uiState.creationMode == CreationMode.ADD) {
+                        viewModel.addRecipe()
+                    } else {
+                        viewModel.updateRecipe()
+                    }
+                },
                 painter = painterResource(R.drawable.tick),
-                description = "Create Recipe",
+                description = if (uiState.creationMode == CreationMode.ADD) { "Create Recipe"} else { "Update Recipe" },
             )
         }
 

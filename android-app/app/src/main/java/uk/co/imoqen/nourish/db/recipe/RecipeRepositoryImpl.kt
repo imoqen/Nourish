@@ -270,7 +270,7 @@ class RecipeRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun replaceRecipe(currentRecipe: Recipe, newRecipe: LlmRecipe) {
+    override suspend fun replaceRecipe(currentRecipe: Recipe, newRecipe: LlmRecipe, updatedImagePath: String, llmGenerated: Boolean) {
         // things to update:
 
         // DELETE ALL AND UPLOAD NEW with the currentRecipe id:
@@ -284,13 +284,16 @@ class RecipeRepositoryImpl @Inject constructor(
         // oir just save the original recipe id, then add recipe USING that recipe id.
         val originalRecipeId = currentRecipe.id
         val originalRecipeAuthor = currentRecipe.authorUid
-        val originalRecipeImagePath = currentRecipe.imagePath
 
         // the previous nutritional values get deleted as they will no longer be accurate
         deleteNutritionForRecipeId(originalRecipeId)
 
-        recipeDao.delete(currentRecipe)
-        createRecipe(originalRecipeAuthor,newRecipe, alteration = true, originalRecipeId, originalRecipeImagePath)
+        deleteRecipe(currentRecipe)
+        createRecipe(originalRecipeAuthor,newRecipe, alteration = true, originalRecipeId, updatedImagePath, llmGenerated = llmGenerated)
+    }
+
+    override suspend fun deleteRecipe(recipe: Recipe) {
+        recipeDao.delete(recipe)
     }
 
 }

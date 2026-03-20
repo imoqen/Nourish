@@ -75,7 +75,7 @@ fun AppNavHost(
             val recipeId = backStackEntry.arguments?.getLong("id")!!
             val recipeBookViewModel: RecipeBookViewModel = hiltViewModel()
             val recipeBookUiState = recipeBookViewModel.uiState.collectAsState().value
-            RecipeCardScreen(recipeBookViewModel, recipeBookUiState, recipeId, onBack={ navController.popBackStack() }) //TODO onEdit = { }) to move to edit page when editing recipe
+            RecipeCardScreen(recipeBookViewModel, recipeBookUiState, recipeId, onBack={ navController.popBackStack() }, onEditRecipe = {id -> navController.navigate("b/edit-recipe/$id")})
         }
         // Within the Recipe Book, can add a new Recipe Card:
         composable(
@@ -83,6 +83,16 @@ fun AppNavHost(
         ) { backStackEntry ->
             val recipeCreationViewModel: RecipeCreationViewModel = hiltViewModel()
             RecipeCreationScreen(recipeCreationViewModel, onBack={ navController.popBackStack() })
+        }
+        // Edit recipe card:
+        composable(
+            route = "b/edit-recipe/{id}",
+            arguments = listOf(navArgument("id") { type = NavType.LongType }) // the recipeId to edit
+        ) { backStackEntry ->
+            val recipeId = backStackEntry.arguments?.getLong("id")!!
+            val recipeCreationViewModel: RecipeCreationViewModel = hiltViewModel() //uses recipe creation, but just parses the recipe to be displayed within it. then user can make changes to it.
+            recipeCreationViewModel.populateFromId(recipeId)
+            RecipeCreationScreen(recipeCreationViewModel, onBack={ navController.popBackStack() }, onFinishEdit={navController.popBackStack(TabDestination.RECIPE_BOOK.route, inclusive = false)} ) // simply go back by keep popping back stack until reached back to the recipe book
         }
         // Can add Route destinations too (those not from tabs)
         // can add here. then can add params to them as shown in this video: https://www.youtube.com/watch?v=wJKwsI5WUI4

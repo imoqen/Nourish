@@ -30,7 +30,10 @@ import uk.co.imoqen.nourish.common.exception.TagCreationException
 import uk.co.imoqen.nourish.common.tag.TagSheetAction
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.db.ingredient.Ingredient
+import uk.co.imoqen.nourish.db.ingredient.IngredientRepository
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
+import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeIngredient
+import uk.co.imoqen.nourish.db.tag.TagRepository
 import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.network.response.LlmIngredientSection
 import uk.co.imoqen.nourish.network.response.LlmRecipe
@@ -39,6 +42,7 @@ import uk.co.imoqen.nourish.shoppinglist.UserInteractionStatus
 import java.lang.NullPointerException
 import java.util.UUID
 import javax.inject.Inject
+import kotlin.math.round
 
 @HiltViewModel
 class RecipeCreationViewModel @Inject constructor(
@@ -48,9 +52,27 @@ class RecipeCreationViewModel @Inject constructor(
     private val uiEventBus: UiEventBus,
     private val recipeRepository: RecipeRepository,
     private val recipeActions: RecipeActions,
+    private val tagRepository: TagRepository,
+    private val ingredientRepository: IngredientRepository
 ): ViewModel() {
     private val mutableUiState = MutableStateFlow(RecipeCreationUiState())
     val uiState: StateFlow<RecipeCreationUiState> = mutableUiState.asStateFlow()
+
+    // for editing:
+    fun setCreationMode(creationMode: CreationMode) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                creationMode = creationMode
+            )
+        }
+    }
+    fun setRecipeEditId(recipeEditId: Long) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                recipeEditId = recipeEditId
+            )
+        }
+    }
 
     // to go back if recipe created
     fun setRecipeCreated(recipeCreated: Boolean) {
@@ -712,34 +734,7 @@ class RecipeCreationViewModel @Inject constructor(
     ) {
         viewModelScope.launch() {
             runCatching {
-                val ingredients = mutableUiState.value.ingredients
-                val recipeType = mutableUiState.value.recipeType
-                val method = mutableUiState.value.method
-                if (ingredients == null || ingredients.isEmpty()) {
-                    // todo set error
-                    throw RecipeCreationException("You must enter at least 1 ingredient.")
-                }
-                if (recipeType == null) {
-                    // todo set error
-                    throw RecipeCreationException("You must select a recipe type.")
-                }
-                if (method == null || method.isEmpty()) {
-                    // todo set error
-                    throw RecipeCreationException("You must enter at least 1 method step.")
-                }
-                val servings = mutableUiState.value.numberOfServings
-                val llmRecipe = LlmRecipe(
-                    title = mutableUiState.value.title,
-                    sectionIngredients = listOf(LlmIngredientSection("For the recipe", ingredients.map { it.copy(ingredientAmount = (it.ingredientAmount / servings)) })), // scale such that it stores the amount for 1 serving.
-                    servings = servings,
-                    mealType = recipeType.title,
-                    method = method.map { it.step }, // only get the steps, remove the uuids
-                    tags = mutableUiState.value.tagSheetState.recipeTags?.filter { it.selected }?.map { it.tag.identifier } ?: listOf(""), // finds all selected tags, then gets their identifiers. tags are not mandatory so "" is ok if it is null.
-                    storage = mutableUiState.value.storageGuidance,
-                    recipeNotPossible = false,
-                    emoji = mutableUiState.value.emoji,
-                    colour = mutableUiState.value.colour?.name ?: "PINK" // default is pink if none given.
-                )
+                val llmRecipe = parseIntoLlmRecipe()
                 // Check that user is logged in validly
                 val uid = authenticationManager.getUid()
                 if (uid == null) {
@@ -775,6 +770,132 @@ class RecipeCreationViewModel @Inject constructor(
                     )
                     Log.i("RECIPE SAVE", "$e")
                 }
+        }
+    }
+
+    // updates a recipe by deleting the old recipe and replacing it with the new one.
+    fun updateRecipe() {
+        viewModelScope.launch() {
+            runCatching {
+                // Check that user is logged in validly
+                val uid = authenticationManager.getUid()
+                if (uid == null) {
+                    throw NullPointerException()
+                } // user is null; throw to be handled appropriately
+
+                val originalRecipe = recipeRepository.getRecipeById(mutableUiState.value.recipeEditId).first()
+                if (originalRecipe == null) {
+                    return@launch
+                }
+                val updatedRecipe = parseIntoLlmRecipe()
+
+                // Add the recipe to the database:
+                recipeRepository.replaceRecipe(originalRecipe, updatedRecipe, mutableUiState.value.imageFile, llmGenerated=false) // now  non llm generated, vecayse user edited it
+            }
+                .onSuccess {
+                    setRecipeCreated(true) // so the user gets forced back
+                    uiEventBus.enqueueEvent(
+                        UiEvent.ShowSnackbar(
+                            "Your recipe has been updated."
+                        )
+                    )
+                }
+
+                .onFailure { e ->
+                    uiEventBus.enqueueEvent(
+                        UiEvent.ShowSnackbar(
+                            "Your recipe could not be updated."
+                        )
+                    )
+                }
+        }
+    }
+
+    fun parseIntoLlmRecipe(): LlmRecipe {
+        val ingredients = mutableUiState.value.ingredients
+        val recipeType = mutableUiState.value.recipeType
+        val method = mutableUiState.value.method
+        if (ingredients == null || ingredients.isEmpty()) {
+            // todo set error
+            throw RecipeCreationException("You must enter at least 1 ingredient.")
+        }
+        if (recipeType == null) {
+            // todo set error
+            throw RecipeCreationException("You must select a recipe type.")
+        }
+        if (method == null || method.isEmpty()) {
+            // todo set error
+            throw RecipeCreationException("You must enter at least 1 method step.")
+        }
+        val servings = mutableUiState.value.numberOfServings
+        return LlmRecipe(
+            title = mutableUiState.value.title,
+            sectionIngredients = listOf(LlmIngredientSection("For the recipe", ingredients.map { it.copy(ingredientAmount = (it.ingredientAmount / servings)) })), // scale such that it stores the amount for 1 serving.
+            servings = servings,
+            mealType = recipeType.title,
+            method = method.map { it.step }, // only get the steps, remove the uuids
+            tags = mutableUiState.value.tagSheetState.recipeTags?.filter { it.selected }?.map { it.tag.identifier } ?: listOf(""), // finds all selected tags, then gets their identifiers. tags are not mandatory so "" is ok if it is null.
+            storage = mutableUiState.value.storageGuidance,
+            recipeNotPossible = false,
+            emoji = mutableUiState.value.emoji,
+            colour = mutableUiState.value.colour?.name ?: "PINK" // default is pink if none given.
+        )
+    }
+
+    // populates the screen with an existing recipe, so that it can be edited.
+    fun populateFromId(recipeId: Long) {
+        viewModelScope.launch() {
+            runCatching {
+                setCreationMode(CreationMode.EDIT)
+                setRecipeEditId(recipeId)
+                val recipe = recipeRepository.getRecipeById(recipeId).first()
+                if (recipe == null) {
+                    return@launch
+                }
+                val recipeType = recipeRepository.getRecipeTypeById(recipe.recipeTypeId).first()
+                val tags = recipeRepository.getRecipeWithRecipeTypes(recipe.id).first().recipeTags.map { tag ->
+                    val tag = tagRepository.getById(tag.tagId).first()
+                    TagSelection(tag!!, true)
+
+                } // this may not work - it may not get all tags, only the ones for that recipe. so would need to add in the other ones. but see.
+
+                // build ingredients
+
+                val llmIngredients: MutableList<LlmIngredient> = mutableListOf()
+                val allIngredients = recipeRepository.getRecipeWithRecipeIngredients(recipe.id).first().ingredients
+
+                // sections get just put together. in future, could improve this to keep the sections. but for now leaving it as this, not a big issue.
+                allIngredients.forEach { recipeIngredient ->
+                    val ingredient = ingredientRepository.getById(recipeIngredient.ingredientId).first()
+                    llmIngredients.add(LlmIngredient(
+                        ingredientSingular = ingredient?.singular ?: "",
+                        ingredientPlural = ingredient?.plural ?: "",
+                        ingredientAmount = round(recipeIngredient.amount * recipe.numberOfServings * 100) / 100, // gets multiplied by no. servings so that the output looks correct to usr (as it is stored in db for 1 serving). then when the user saves, it will be divided back down again by the servings.
+                        ingredientAmountUnit = recipeIngredient.ingredientUnit.name
+                    ))
+                }
+
+                val method = recipeRepository.getRecipeWithRecipeSteps(recipe.id).first().recipeSteps.map { step ->
+                    RecipeStep( step.instruction, UUID.randomUUID() ) // random UUID to use as the key in the draggable list
+                }
+
+                // do checks for null etc
+                if (recipeType == null) {
+                    return@launch
+                }
+                // then populate the ui:
+                setTitle(recipe.title)
+                setNumberOfServings(recipe.numberOfServings)
+                setRecipeType(recipeType)
+                setStorageGuidance(recipe.storageInstructions)
+                setRecipeTags(tags) // probably wont work
+                setIngredients(llmIngredients)
+                setMethod(method)
+                setImageFile(recipe.imagePath)
+                setEmoji(recipe.emoji)
+                setColour(enumValueOf<NourishColour>(recipe.colour))
+
+            }
         }
     }
 

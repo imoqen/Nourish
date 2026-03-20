@@ -46,10 +46,17 @@ data class RecipeCreationUiState(
     val showEmojiSelector: Boolean = false,
 
     val recipeCreated: Boolean = false,
-    val recipeCreationError: String = ""
+    val recipeCreationError: String = "",
+    val recipeEditId: Long = -1,
+    val creationMode: CreationMode = CreationMode.ADD // default is add,otherwise edit will be used. this is to use different actions if in edit mode.
 )
 
 data class RecipeStep(
     val step: String,
     val uuid: UUID
 )
+
+enum class CreationMode {
+    ADD,
+    EDIT
+}
