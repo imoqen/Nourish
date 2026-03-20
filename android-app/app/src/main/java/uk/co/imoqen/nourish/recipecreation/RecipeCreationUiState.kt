@@ -8,6 +8,7 @@ import uk.co.imoqen.nourish.db.ingredient.Ingredient
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.shoppinglist.IngredientToEdit
+import java.util.UUID
 
 data class RecipeCreationUiState(
     // ui state of recipe creation. nothing should be added to the DB until the user presses save.
@@ -28,6 +29,16 @@ data class RecipeCreationUiState(
     val ingredientToEdit: IngredientToEdit = IngredientToEdit(),
     val ingredientIndexToDelete: Int = -1,
 
-    // list of method? todo
+    // list of method
+    val method: List<RecipeStep>? = null, // required for the lazy list orderable (draggable) to work. because it relies on each item being unique. if a user entered two duplicate steps, the app would crash.
+    val showAddMethodSheet: Boolean = false,
+    val stepToAdd: String = "",
+    val stepIndexToEdit: Int = -1,
+    val stepIndexToDelete: Int = -1
 
+)
+
+data class RecipeStep(
+    val step: String,
+    val uuid: UUID
 )

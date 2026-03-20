@@ -30,6 +30,7 @@ import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.network.response.LlmIngredientSection
 import uk.co.imoqen.nourish.shoppinglist.UserInteractionStatus
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -43,6 +44,43 @@ class RecipeCreationViewModel @Inject constructor(
 ): ViewModel() {
     private val mutableUiState = MutableStateFlow(RecipeCreationUiState())
     val uiState: StateFlow<RecipeCreationUiState> = mutableUiState.asStateFlow()
+
+    // method setters:
+    fun setMethod(method: List<RecipeStep>) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                method = method
+            )
+        }
+    }
+    fun setShowAddMethodSheet(showAddMethodSheet: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                showAddMethodSheet = showAddMethodSheet
+            )
+        }
+    }
+    fun setStepToAdd(stepToAdd: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                stepToAdd = stepToAdd
+            )
+        }
+    }
+    fun setStepIndexToEdit(stepIndexToEdit: Int) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                stepIndexToEdit = stepIndexToEdit
+            )
+        }
+    }
+    fun setStepIndexToDelete(stepIndexToDelete: Int) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                stepIndexToDelete = stepIndexToDelete
+            )
+        }
+    }
 
     fun setTitle(title: String) {
         mutableUiState.update { currentState ->
@@ -483,6 +521,32 @@ class RecipeCreationViewModel @Inject constructor(
                     "Couldn't remove the ingredient. Please try again later."
                 ))
             }
+        }
+    }
+
+    fun addRecipeStep() {
+        viewModelScope.launch() {
+            runCatching {
+                val step = mutableUiState.value.stepToAdd.trim()
+                if (step == "") {
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
+                        "The step cannot be blank."
+                    ))
+                    return@launch
+                }
+
+                setMethod(
+                    // adds the step and makes an empty list with the step if the method has not yet been intiialised (null)
+                    mutableUiState.value.method?.toMutableList().apply {
+                        this?.add(RecipeStep(step, UUID.randomUUID()))
+                    } ?: listOf(RecipeStep(step, UUID.randomUUID()))
+                )
+            }
+                .onSuccess {
+                    // after it is successfully added, clear the ui of any of the addition
+                    setShowAddMethodSheet(false)
+                    setStepToAdd("")
+                }
         }
     }
 

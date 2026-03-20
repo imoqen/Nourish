@@ -1,44 +1,60 @@
 package uk.co.imoqen.nourish.recipecreation
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 import uk.co.imoqen.nourish.R
+import uk.co.imoqen.nourish.common.NourishButton
 import uk.co.imoqen.nourish.common.NourishConfirmationDialog
+import uk.co.imoqen.nourish.common.NourishDivider
 import uk.co.imoqen.nourish.common.NourishH2
 import uk.co.imoqen.nourish.common.NourishH3
 import uk.co.imoqen.nourish.common.NourishIconTextButton
@@ -207,7 +223,7 @@ fun RecipeCreationScreen(
             }
         }
 
-        NourishTextDivider("Ingredients")
+        NourishTextDivider("Ingredients*")
 
         Box(
             modifier = Modifier
@@ -222,9 +238,6 @@ fun RecipeCreationScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                ServingSizeUpdater(uiState.numberOfServings, viewModel::alterServingSize)
-                // then print ingredients here
-
                 Column(
                     modifier = Modifier.background(
                         shape = RoundedCornerShape(12.dp),
@@ -233,7 +246,7 @@ fun RecipeCreationScreen(
                 ) {
                     if (uiState.ingredients == null || uiState.ingredients.isEmpty()) {
                         Text(
-                            text = "None",
+                            text = "No ingredients added yet.",
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth(0.95f).padding(8.dp)
                         )
@@ -303,10 +316,60 @@ fun RecipeCreationScreen(
                     onClick = { viewModel.setShowAddIngredientSheet(true) },
                     buttonColour = MaterialTheme.colorScheme.background
                 )
+
+                HorizontalDivider()
+                Text("These ingredients make")
+
+                ServingSizeUpdater(uiState.numberOfServings, viewModel::alterServingSize)
             }
         }
 
         // Method *
+        NourishTextDivider("Method*")
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(12.dp))
+                .background(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer
+                )
+        ) {
+            Column(
+                modifier = Modifier.background(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainer
+                )
+            ) {
+
+                DraggableStepsList(viewModel, uiState)
+
+                NourishIconTextButton(
+                    description = "Add Step",
+                    painter = painterResource(R.drawable.chef),
+                    onClick = { viewModel.setShowAddMethodSheet(true) },
+                    buttonColour = MaterialTheme.colorScheme.background
+                )
+
+                // modal bottom sheet for adding method step
+                if (
+                    uiState.showAddMethodSheet
+                ) {
+                    NourishTextField(
+                        value = uiState.stepToAdd,
+                        onValueChange = { viewModel.setStepToAdd(it) },
+                        placeholder = "Enter the step",
+                        onDone = { keyboardFocusManager.clearFocus() },
+                    )
+                    NourishButton(
+                        onClick = { viewModel.addRecipeStep() },
+                        text = "Save Step"
+                    )
+                }
+
+            }
+        }
+
+        // Storage
         NourishTextDivider("Storage Guidance")
         Box(
             modifier = Modifier
@@ -340,7 +403,7 @@ fun RecipeCreationScreen(
         onDismiss = { viewModel.setIngredientIndexToDelete(-1) }
     )
 
-    // model bottom sheet for editing ingredient amount
+    // modal bottom sheet for editing ingredient amount
     if (
         uiState.ingredientToEdit.index != -1
     ) {
@@ -432,3 +495,88 @@ fun RecipeDetailSection(
         content.invoke()
     }
 }
+
+// uses calvin reorderable
+@Composable
+fun DraggableStepsList(
+    viewModel: RecipeCreationViewModel,
+    uiState: RecipeCreationUiState
+) {
+    // setup for the draggable list:
+    val hapticFeedback = LocalHapticFeedback.current
+    val lazyListState = rememberLazyListState()
+    val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
+        if (uiState.method != null) {
+            // reorder the list accordingly, and persist in the ui state:
+        viewModel.setMethod(uiState.method.toMutableList ().apply {
+            add(to.index, removeAt(from.index))
+        })
+    }
+        hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+    }
+
+    if (uiState.method == null || uiState.method.isEmpty()) {
+        Text(
+            text = "No steps added yet.",
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(0.95f).padding(8.dp)
+        )
+    } else {
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth().heightIn(max=400.dp), //scrollable so just limit its ehight
+            state = lazyListState,
+            contentPadding = PaddingValues(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(uiState.method, key = { it.uuid }) { // random uuid is assigned when the step is made, so that no collisions between keys. keys must be unique, or the app crashes
+
+                ReorderableItem(reorderableLazyListState, key = it.uuid) { isDragging ->
+                    val elevation by animateDpAsState(if (isDragging) 4.dp else 0.dp)
+
+                    Surface(shadowElevation = elevation) {
+
+                        Row {
+                            Text(it.step)
+                            IconButton(
+                                modifier = Modifier.draggableHandle(
+                                    onDragStarted = {
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                                    },
+                                    onDragStopped = {
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
+                                    }
+                                ),
+                                onClick = {}
+                            ) {
+                                Icon(painterResource(R.drawable.drag_handle), contentDescription = "Reorder")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/*@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddMethodStepBottomSheet(
+    onDismiss: () -> Unit,
+    step: String,
+    setStep: (String) -> Unit,
+    keyboardFocusManager: FocusManager
+) {
+    ModalBottomSheet(
+        onDismissRequest = {
+            onDismiss()
+        },
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+
+            NourishTextDivider("Edit the amount")*/
