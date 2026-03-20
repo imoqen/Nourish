@@ -1,7 +1,11 @@
 package uk.co.imoqen.nourish.recipecreation
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
@@ -85,6 +89,7 @@ import uk.co.imoqen.nourish.common.NourishDivider
 import uk.co.imoqen.nourish.common.NourishH2
 import uk.co.imoqen.nourish.common.NourishH3
 import uk.co.imoqen.nourish.common.NourishH4
+import uk.co.imoqen.nourish.common.NourishIconButton
 import uk.co.imoqen.nourish.common.NourishIconTextButton
 import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
@@ -101,6 +106,9 @@ import uk.co.imoqen.nourish.common.tag.RecipeTagSelection
 import uk.co.imoqen.nourish.common.tag.TagSheetAction
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.network.request.LlmActionType
+import uk.co.imoqen.nourish.network.request.LlmRequestType
+import uk.co.imoqen.nourish.recipediscovery.LlmMode
+import uk.co.imoqen.nourish.recipediscovery.Mipmap
 import uk.co.imoqen.nourish.shoppinglist.IngredientAmount
 import uk.co.imoqen.nourish.shoppinglist.UserInteractionStatus
 import java.io.File
@@ -121,6 +129,14 @@ fun RecipeCreationScreen(
         viewModel.getAllRecipeTypes()
         viewModel.getAllTagsForUser()
     }
+    // Image:
+    var displayImage = false
+    val context = LocalContext.current
+    val imageFile =
+        File(
+            context.filesDir,
+            uiState.imageFile
+        )
 
     val topOffset = if (uiState.imageFile != "") {
         320.dp + 32.dp
@@ -142,51 +158,47 @@ fun RecipeCreationScreen(
                 )
         ) {
 
-            // image:
-            var displayImage = false
-            val context = LocalContext.current
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.Center)
-            ) {
-                // Image:
-                val imageFile =
-                    File(
-                        context.filesDir,
-                        uiState.imageFile
-                    )
-                if (imageFile.exists() && uiState.imageFile != "") {
-                    displayImage = true
-                    //Use Coil to display the selected image
-                    val painter = rememberAsyncImagePainter(
-                        ImageRequest
-                            .Builder(LocalContext.current)
-                            .data(imageFile)
-                            .build()
-                    )
 
-                    Image(
-                        painter = painter,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .height(320.dp + 32.dp) // total size of card - size of text bit (200 - 90) + extra for the rounded corner shape (32.dp)
-                            .fillMaxWidth(), // 2/3 of the card height - maybe use consts for this in future to ensure they match upon changes
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth() // matches the card width
-                            .height(160.dp + 32.dp) // takes up much less space because no image
-                            .background(
-                                (uiState.colour ?: NourishColour.PINK).recipeColour()
-                            ) // put the chosen colour. pink if not chosen.
-                            .clickable(
-                                onClick = { viewModel.setShowColourSelector(true) } // for the user to change the colour
-                            )
-                    )
+            ) {
+                AnimatedContent(
+                    targetState = imageFile.exists() && uiState.imageFile != "",
+                    transitionSpec = {
+                        fadeIn() togetherWith fadeOut()
+                    },
+                ) { state ->
+                    if (state) {
+                        displayImage = true
+                        //Use Coil to display the selected image
+                        val painter = rememberAsyncImagePainter(
+                            ImageRequest
+                                .Builder(LocalContext.current)
+                                .data(imageFile)
+                                .build()
+                        )
+
+                        Image(
+                            painter = painter,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .height(320.dp + 32.dp) // total size of card - size of text bit (200 - 90) + extra for the rounded corner shape (32.dp)
+                                .fillMaxWidth(), // 2/3 of the card height - maybe use consts for this in future to ensure they match upon changes
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        displayImage = false
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth() // matches the card width
+                                .height(160.dp + 32.dp) // takes up much less space because no image
+                                .background(
+                                    (uiState.colour ?: NourishColour.PINK).recipeColour()
+                                ) // put the chosen colour. pink if not chosen.
+                        )
+                    }
                 }
             }
 
@@ -240,6 +252,58 @@ fun RecipeCreationScreen(
                     )
             )
 
+            // upload photo
+
+            // Photo picker: https://developer.android.com/training/data-storage/shared/photo-picker#compose
+            // Registers a photo picker activity launcher in single-select mode.
+            val pickMedia =
+                rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+                    // Callback is invoked after the user selects a media item or closes the
+                    // photo picker.
+                    viewModel.handleImage(uri, context)
+                }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomStart).offset(y = (-32).dp) // to go above the bottom bit which is right below, and has height of 32px.
+
+            ) {
+                Row() {
+                    NourishIconButton(
+                        onClick = {
+                            pickMedia.launch(
+                                PickVisualMediaRequest(
+                                    ActivityResultContracts.PickVisualMedia.ImageOnly
+                                )
+                            )
+
+                        },
+                        painter = painterResource(R.drawable.camera),
+                    )
+                    if (uiState.imageFile != "") {
+                        // allow user to delete image
+                        NourishIconButton(
+                            onClick = {
+                                imageFile.delete(); // deletes higher quality image
+                                viewModel.setImageFile("")
+                            },
+                            painter = painterResource(R.drawable.delete),
+                            backgroundColour = MaterialTheme.colorScheme.background,
+                            iconColour = MaterialTheme.colorScheme.error
+                        )
+                    } else {
+                        // display colour picker button
+                        NourishIconButton(
+                            onClick = {
+                                viewModel.setShowColourSelector(true)
+                            },
+                            painter = painterResource(R.drawable.palette)
+                        )
+                    }
+                }
+            }
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -278,7 +342,7 @@ fun RecipeCreationScreen(
 
         Column(
             modifier = Modifier.fillMaxSize()
-                .padding(bottom = 12.dp), // room from top for the title area
+                .padding(bottom = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -485,9 +549,6 @@ fun RecipeCreationScreen(
                 }
             }
 
-            NourishTextDivider("Number of Servings*", modifier = Modifier.padding(vertical = 8.dp))
-            ServingSizeUpdater(uiState.numberOfServings, viewModel::alterServingSize)
-
             // Method *
             NourishTextDivider("Method*", modifier = Modifier.padding(vertical = 8.dp))
             Box(
@@ -544,6 +605,10 @@ fun RecipeCreationScreen(
                 }
 
             }
+
+            // Servings *
+            NourishTextDivider("Number of Servings*", modifier = Modifier.padding(vertical = 8.dp))
+            ServingSizeUpdater(uiState.numberOfServings, viewModel::alterServingSize)
 
             // Storage
             NourishTextDivider("Storage Guidance", modifier = Modifier.padding(vertical = 8.dp))

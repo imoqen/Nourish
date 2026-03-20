@@ -1,5 +1,7 @@
 package uk.co.imoqen.nourish.recipecreation
 
+import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,6 +15,7 @@ import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.RecipeActions
 import uk.co.imoqen.nourish.common.ingredient.IngredientSheetAction
+import uk.co.imoqen.nourish.common.saveMipmap
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
@@ -29,6 +32,7 @@ import uk.co.imoqen.nourish.db.ingredient.Ingredient
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.network.response.LlmIngredientSection
+import uk.co.imoqen.nourish.recipediscovery.Mipmap
 import uk.co.imoqen.nourish.shoppinglist.UserInteractionStatus
 import java.util.UUID
 import javax.inject.Inject
@@ -657,6 +661,29 @@ class RecipeCreationViewModel @Inject constructor(
                     ))
                 }
         }
+    }
+
+    fun handleImage(
+        uri: Uri?,
+        context: Context
+    ) {
+        viewModelScope.launch() {
+            runCatching {
+                saveMipmap(
+                    uri,
+                    context
+                ) { _, highQualityFilename -> // only using high quality here
+                    setImageFile(highQualityFilename)
+                }
+            }
+                .onSuccess {
+                    Log.i("PhotoPicker", "image saved successfully")
+                }
+                .onFailure { e ->
+                    Log.i("PhotoPicker", "image not saved: $e")
+                }
+        }
+
     }
 
 }
