@@ -1,6 +1,5 @@
 package uk.co.imoqen.nourish.recipecreation
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,10 +18,9 @@ import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import uk.co.imoqen.nourish.recipebook.TagSelection
-import uk.co.imoqen.nourish.recipediscovery.RecipeDiscoveryUiState
-import uk.co.imoqen.nourish.tag.FilterState
-import uk.co.imoqen.nourish.tag.TagCreationException
-import uk.co.imoqen.nourish.tag.TagSheetAction
+import uk.co.imoqen.nourish.common.tag.FilterState
+import uk.co.imoqen.nourish.common.tag.TagCreationException
+import uk.co.imoqen.nourish.common.tag.TagSheetAction
 import javax.inject.Inject
 
 @HiltViewModel

@@ -21,7 +21,6 @@ import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.request.LlmRequest
 import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import javax.inject.Inject
-import uk.co.imoqen.nourish.common.saveImage
 import uk.co.imoqen.nourish.common.saveMipmap
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
@@ -32,9 +31,9 @@ import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 import uk.co.imoqen.nourish.recipebook.TagSelection
-import uk.co.imoqen.nourish.tag.FilterState
-import uk.co.imoqen.nourish.tag.TagCreationException
-import uk.co.imoqen.nourish.tag.TagSheetAction
+import uk.co.imoqen.nourish.common.tag.FilterState
+import uk.co.imoqen.nourish.common.tag.TagCreationException
+import uk.co.imoqen.nourish.common.tag.TagSheetAction
 import java.io.File
 import java.lang.NullPointerException
 import kotlin.onSuccess

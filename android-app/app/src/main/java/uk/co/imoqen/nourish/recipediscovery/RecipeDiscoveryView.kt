@@ -16,16 +16,13 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -34,22 +31,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Send
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -75,7 +67,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import kotlinx.coroutines.CoroutineScope
@@ -86,7 +77,6 @@ import uk.co.imoqen.nourish.common.NourishButton
 import uk.co.imoqen.nourish.common.NourishConfirmationDialog
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.NourishDivider
-import uk.co.imoqen.nourish.common.NourishErrorText
 import uk.co.imoqen.nourish.common.NourishH2
 import uk.co.imoqen.nourish.common.NourishH3
 import uk.co.imoqen.nourish.common.NourishH4
@@ -96,28 +86,20 @@ import uk.co.imoqen.nourish.common.NourishSurfaceButton
 import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.common.NourishTextMessage
-import uk.co.imoqen.nourish.common.RecipeActions
 import uk.co.imoqen.nourish.common.SelectedTags
-import uk.co.imoqen.nourish.common.TagsDisplayForFiltering
 import uk.co.imoqen.nourish.common.TextSender
 import uk.co.imoqen.nourish.common.TypesDisplayForMutuallyExclusiveFiltering
-import uk.co.imoqen.nourish.common.backgroundColour
-import uk.co.imoqen.nourish.common.dimmedBackgroundColour
-import uk.co.imoqen.nourish.common.onBackgroundColour
 import uk.co.imoqen.nourish.common.recipeColour
-import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
-import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 import uk.co.imoqen.nourish.recipebook.ImageCardHeader
 import uk.co.imoqen.nourish.recipebook.TagSelection
-import uk.co.imoqen.nourish.tag.FilterState
-import uk.co.imoqen.nourish.tag.RecipeTagSelection
+import uk.co.imoqen.nourish.common.tag.FilterState
+import uk.co.imoqen.nourish.common.tag.RecipeTagSelection
 
 import java.io.File
-import kotlin.text.lowercase
 
 /**
  * View for RecipeDiscovery, where LLM calls can be made and recipes thus generated.

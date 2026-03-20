@@ -3,7 +3,6 @@ package uk.co.imoqen.nourish.recipecreation
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,13 +11,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,20 +37,15 @@ import androidx.compose.ui.unit.dp
 import uk.co.imoqen.nourish.R
 import uk.co.imoqen.nourish.common.NourishH2
 import uk.co.imoqen.nourish.common.NourishH3
-import uk.co.imoqen.nourish.common.NourishIconButton
 import uk.co.imoqen.nourish.common.NourishIconTextButton
 import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.common.SelectedTags
 import uk.co.imoqen.nourish.common.TypesDisplayForMutuallyExclusiveFiltering
-import uk.co.imoqen.nourish.common.dimmedBackgroundColour
-import uk.co.imoqen.nourish.common.onBackgroundColour
 import uk.co.imoqen.nourish.recipebook.ServingSizeUpdater
-import uk.co.imoqen.nourish.recipediscovery.RecipeDiscoveryViewModel
-import uk.co.imoqen.nourish.tag.FilterState
-import uk.co.imoqen.nourish.tag.RecipeTagSelection
-import uk.co.imoqen.nourish.tag.TagSheetAction
-import kotlin.math.round
+import uk.co.imoqen.nourish.common.tag.FilterState
+import uk.co.imoqen.nourish.common.tag.RecipeTagSelection
+import uk.co.imoqen.nourish.common.tag.TagSheetAction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -222,6 +214,20 @@ fun RecipeCreationScreen(
             ) {
                 ServingSizeUpdater(uiState.numberOfServings, viewModel::alterServingSize)
                 // then print ingredients here
+
+                Column(
+                    modifier = Modifier.background(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainer
+                    )
+                ) {
+                    if (uiState.ingredients == null || uiState.ingredients.isEmpty()) {
+                        Text("no ingredients")
+                    } else {
+                        // todo output the ingredients
+                    }
+                }
+
                 NourishIconTextButton(
                     description = "Add Ingredient",
                     painter = painterResource(R.drawable.ingredients),

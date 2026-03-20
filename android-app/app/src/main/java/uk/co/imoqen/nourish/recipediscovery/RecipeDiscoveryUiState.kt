@@ -4,7 +4,7 @@ import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import uk.co.imoqen.nourish.network.response.LlmRecipe
-import uk.co.imoqen.nourish.tag.TagSheetState
+import uk.co.imoqen.nourish.common.tag.TagSheetState
 
 /**
  * UiState for RecipeDiscovery: accessed in the View/ViewModel and mutated in the ViewModel.

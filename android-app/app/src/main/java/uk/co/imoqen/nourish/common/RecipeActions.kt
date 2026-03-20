@@ -1,9 +1,7 @@
 package uk.co.imoqen.nourish.common
 
 import android.util.Log
-import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
@@ -15,8 +13,7 @@ import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.recipebook.TagSelection
 import uk.co.imoqen.nourish.recipebook.TypeSelection
-import uk.co.imoqen.nourish.recipediscovery.LlmChatStage
-import uk.co.imoqen.nourish.tag.TagCreationException
+import uk.co.imoqen.nourish.common.tag.TagCreationException
 import javax.inject.Inject
 import kotlin.collections.map
 import kotlin.math.round

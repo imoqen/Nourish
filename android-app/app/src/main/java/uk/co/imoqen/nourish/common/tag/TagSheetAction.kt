@@ -1,4 +1,4 @@
-package uk.co.imoqen.nourish.tag
+package uk.co.imoqen.nourish.common.tag
 
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.db.tag.Tag

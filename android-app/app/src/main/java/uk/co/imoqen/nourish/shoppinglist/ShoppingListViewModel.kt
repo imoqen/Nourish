@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.RecipeActions
+import uk.co.imoqen.nourish.common.ingredient.IngredientSheetAction
+import uk.co.imoqen.nourish.common.tag.TagSheetAction
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.db.NourishDatabase
@@ -19,7 +21,6 @@ import uk.co.imoqen.nourish.db.ingredient.Ingredient
 import uk.co.imoqen.nourish.db.ingredient.IngredientRepository
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
-import uk.co.imoqen.nourish.db.shoppinglistentry.ShoppingListEntry
 import uk.co.imoqen.nourish.db.shoppinglistentry.ShoppingListEntryRepository
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.recipebook.ShoppingListIngredient
@@ -88,34 +89,42 @@ class ShoppingListViewModel @Inject constructor(
         }
     }
 
-    fun setAddIngredientName(addIngredientName: String) {
+    fun setIngredientToAddName(name: String) {
         mutableUiState.update { currentState ->
             currentState.copy(
-                addIngredientName = addIngredientName
+                ingredientToAdd = currentState.ingredientToAdd.copy(
+                    name = name
+                )
             )
         }
     }
 
-    fun setAddIngredientUnit(addIngredientUnit: IngredientUnit) {
+    fun setIngredientToAddUnit(unit: IngredientUnit) {
         mutableUiState.update { currentState ->
             currentState.copy(
-                addIngredientUnit = addIngredientUnit
+                ingredientToAdd = currentState.ingredientToAdd.copy(
+                    unit = unit
+                )
             )
         }
     }
 
-    fun setAddIngredientAmount(addIngredientAmount: String) {
+    fun setIngredientToAddAmount(amount: String) {
         mutableUiState.update { currentState ->
             currentState.copy(
-                addIngredientAmount = addIngredientAmount
+                ingredientToAdd = currentState.ingredientToAdd.copy(
+                    amount = amount
+                )
             )
         }
     }
 
-    fun setAddIngredientError(addIngredientError: String) {
+    fun setIngredientToAddError(error: String) {
         mutableUiState.update { currentState ->
             currentState.copy(
-                addIngredientError = addIngredientError
+                ingredientToAdd = currentState.ingredientToAdd.copy(
+                    error = error
+                )
             )
         }
     }
@@ -302,9 +311,9 @@ class ShoppingListViewModel @Inject constructor(
                     return@launch
                 }
 
-                val ingredientName = mutableUiState.value.addIngredientName
+                val ingredientName = mutableUiState.value.ingredientToAdd.name.trim() // whitespace si removed
                 if (ingredientName == "") {
-                    setAddIngredientError("The item cannot be blank.")
+                    setIngredientToAddError("The item cannot be blank.")
                     return@launch
                 }
                 // add it to ingredient table if doesn't already exist in either singular or plurla (as its user input, dont know whether this will be singular or plural, so both are checked)
@@ -327,8 +336,8 @@ class ShoppingListViewModel @Inject constructor(
                 }
 
                 // dynamically determine when UNIT should be used: if no unit was selected, but an amount was entered, it is UNIT.
-                var unit = mutableUiState.value.addIngredientUnit
-                var amount = mutableUiState.value.addIngredientAmount
+                var unit = mutableUiState.value.ingredientToAdd.unit
+                val amount = mutableUiState.value.ingredientToAdd.amount
                 // overwriting to compensate for different cases:
 
                 // distinguish between SINGLE and UNIT: single is if there is no amount, otherwise it is unit.
@@ -349,18 +358,6 @@ class ShoppingListViewModel @Inject constructor(
                     unit = IngredientUnit.ML
                     doubleAmount = doubleAmount * 1000
                 }
-
-                // then insert the shopping list entry with the found, or newly added ingredient:
-                /*shoppingListEntryRepository.insert(
-                    ShoppingListEntry(
-                        ingredientId = ingredientId,
-                        purchaserUid = uid,
-                        unit = unit,
-                        amount = amount,
-                        purchased = false, // always false - user only just added it!
-                        ordinal =
-                    )
-                )*/
 
                 shoppingListEntryRepository.addShoppingListEntry(
                     ShoppingListIngredient(
@@ -428,11 +425,22 @@ class ShoppingListViewModel @Inject constructor(
     }
 
     fun resetIngredientAdditionUI() {
-        setAddIngredientAmount("")
-        setAddIngredientUnit(IngredientUnit.SINGLE)
-        setAddIngredientName("")
+        setIngredientToAddAmount("")
+        setIngredientToAddUnit(IngredientUnit.SINGLE)
+        setIngredientToAddName("")
         setUserInteractionStatus(UserInteractionStatus.BROWSE)
-        setAddIngredientError("")
+        setIngredientToAddError("")
+    }
+
+    // the actions for the ingredient addition sheet;
+    fun onIngredientSheetAction(action: IngredientSheetAction) {
+        when (action) {
+            is IngredientSheetAction.OnDismissRequest -> { setUserInteractionStatus(UserInteractionStatus.BROWSE) }
+            is IngredientSheetAction.OnComplete -> { addIngredientToShoppingList() }
+            is IngredientSheetAction.SetIngredientAmount -> { setIngredientToAddAmount(action.amount) }
+            is IngredientSheetAction.SetIngredientName -> { setIngredientToAddName(action.name) }
+            is IngredientSheetAction.SetIngredientUnit -> { setIngredientToAddUnit(action.unit) }
+        }
     }
 
 }

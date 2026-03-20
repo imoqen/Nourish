@@ -1,4 +1,4 @@
-package uk.co.imoqen.nourish.tag
+package uk.co.imoqen.nourish.common.tag
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
@@ -40,8 +40,6 @@ import uk.co.imoqen.nourish.common.TagsDisplayForFiltering
 import uk.co.imoqen.nourish.common.backgroundColour
 import uk.co.imoqen.nourish.common.dimmedBackgroundColour
 import uk.co.imoqen.nourish.common.onBackgroundColour
-import uk.co.imoqen.nourish.db.tag.Tag
-import uk.co.imoqen.nourish.recipebook.TagSelection
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

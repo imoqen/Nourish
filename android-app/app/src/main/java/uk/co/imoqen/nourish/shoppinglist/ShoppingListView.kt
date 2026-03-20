@@ -1,51 +1,38 @@
 package uk.co.imoqen.nourish.shoppinglist
 
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.rounded.Build
-import androidx.compose.material3.BottomAppBarDefaults.ContentPadding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ButtonDefaults.ContentPadding
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -67,12 +54,11 @@ import uk.co.imoqen.nourish.R
 import uk.co.imoqen.nourish.common.NourishButton
 import uk.co.imoqen.nourish.common.NourishConfirmationDialog
 import uk.co.imoqen.nourish.common.NourishDivider
-import uk.co.imoqen.nourish.common.NourishErrorText
 import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
+import uk.co.imoqen.nourish.common.ingredient.AddIngredientBottomSheet
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.recipebook.RecipeLoadingBar
-import uk.co.imoqen.nourish.recipediscovery.restart
 import kotlin.math.ceil
 
 /**
@@ -87,10 +73,6 @@ fun ShoppingListScreen(
     val lazyListState = rememberLazyListState()
     val hapticFeedback = LocalHapticFeedback.current // to provide haptic feedback when reordering list items
     val keyboardFocusManager = LocalFocusManager.current
-
-    val modalBottomSheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true // makes it fill the screen with the required amount rather than stuck at half the screen size
-    )
 
     LaunchedEffect("POPULATE_SHOPPING_LIST") {
         viewModel.populateShoppingList()
@@ -483,100 +465,14 @@ fun ShoppingListScreen(
 
             if (uiState.userInteractionStatus == UserInteractionStatus.ADD) {
 
-                ModalBottomSheet(
-                    onDismissRequest = {
-                        viewModel.setUserInteractionStatus(UserInteractionStatus.BROWSE)
-                    },
-                    sheetState = modalBottomSheetState
-                ) {
-                    val keyboardFocusManager = LocalFocusManager.current // keyboard focus manager which is local to the modal bottom sheet. doesnt work otherwise.
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp)
-                            .padding(bottom = 20.dp), // space from bottom so not cramped
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        NourishTextDivider(
-                            "Add an item to your Shopping List",
-                            modifier = Modifier.padding(top = 6.dp)
-                        )
-                        NourishTextField(
-                            value = uiState.addIngredientName,
-                            onValueChange = { viewModel.setAddIngredientName(it) },
-                            placeholder = "Enter item to add", // user language consideration: although the app is built for ingredients, users will likely add other things. hence, "item" is used.
-                            onDone = { keyboardFocusManager.clearFocus(force=true) }
-                        )
-                        // Display item name error
-                        if (uiState.addIngredientError != "") {
-                            NourishErrorText(
-                                uiState.addIngredientError
-                            )
-                        }
-
-                        NourishTextDivider(
-                            "Enter amount (optional)",
-                            modifier = Modifier.padding(top = 6.dp)
-                        )
-
-                        NourishTextField(
-                            value = uiState.addIngredientAmount,
-                            onValueChange = {
-                                // Only allow valid double inputs
-                                viewModel.setAddIngredientAmount(it)
-                                            },
-                            placeholder = "Enter amount", // user language consideration: although the app is built for ingredients, users will likely add other things. hence, "item" is used.
-                            onDone = { keyboardFocusManager.clearFocus(force=true) },
-                            keyboardType = KeyboardType.Number // only allows numeric input
-                        )
-
-                        NourishTextDivider(
-                            "Select unit (optional)",
-                            modifier = Modifier.padding(top = 6.dp)
-                        )
-
-                        LazyRow(
-                            modifier = Modifier.background(
-                                shape = RoundedCornerShape(16.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer
-                            )
-                        ) {
-                            item {
-                                UnitSelectionButton(
-                                    viewModel,
-                                    uiState,
-                                    "none",
-                                    IngredientUnit.SINGLE
-                                ) // dynamically determined: if amount is given, then will use UNIT. otherwise will use SINGLE.
-                            }
-                            item {
-                                UnitSelectionButton(viewModel, uiState, "ml", IngredientUnit.ML)
-                            }
-                            item {
-                                UnitSelectionButton(viewModel, uiState, "L", IngredientUnit.L)
-                            }
-                            item {
-                                UnitSelectionButton(viewModel, uiState, "g", IngredientUnit.G)
-                            }
-                            item {
-                                UnitSelectionButton(viewModel, uiState, "kg", IngredientUnit.KG)
-                            }
-                            item {
-                                UnitSelectionButton(viewModel, uiState, "pint", IngredientUnit.PINT)
-                            }
-                        }
-
-                        NourishButton(
-                            onClick = {
-                                // add the ingredient
-                                viewModel.addIngredientToShoppingList()
-                            },
-                            text = "Add to Shopping List",
-                        )
-                    }
-                }
+                AddIngredientBottomSheet(
+                    ingredient = uiState.ingredientToAdd,
+                    action = viewModel::onIngredientSheetAction,
+                    possibleUnits = listOf(
+                        IngredientUnit.ML, IngredientUnit.L, IngredientUnit.G, IngredientUnit.KG, IngredientUnit.PINT
+                    ),
+                    completeMessage = "Add to Shopping List"
+                )
             }
 
             if (
@@ -638,20 +534,20 @@ fun ShoppingListScreen(
 
 @Composable
 fun UnitSelectionButton(
-    viewModel: ShoppingListViewModel,
-    uiState: ShoppingListUiState,
+    selectedUnit: IngredientUnit,
+    onUnitChange: (IngredientUnit) -> Unit,
     text: String,
-    unit: IngredientUnit
+    currentUnit: IngredientUnit
 ) {
     Button(
-        onClick = { viewModel.setAddIngredientUnit(unit) },
+        onClick = { onUnitChange(currentUnit) },
         shape = RoundedCornerShape(16.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.background
         ),
         modifier = Modifier.padding(6.dp),
         border =
-            if (uiState.addIngredientUnit == unit) {
+            if (selectedUnit == currentUnit) {
                 BorderStroke(
                     width = 1.dp,
                     color = MaterialTheme.colorScheme.onBackground,
