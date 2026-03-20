@@ -1,8 +1,12 @@
 package uk.co.imoqen.nourish.recipecreation
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,6 +23,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -255,6 +260,7 @@ fun RecipeCreationScreen(
                     if (uiState.ingredients == null || uiState.ingredients.isEmpty()) {
                         Text(
                             text = "No ingredients added yet.",
+                            style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth(0.95f).padding(8.dp)
                         )
@@ -276,8 +282,6 @@ fun RecipeCreationScreen(
                                     text = "- ${ingredient.ingredientPlural}",
                                     modifier = Modifier.weight(1f)
                                 )
-
-                                //Spacer(modifier = Modifier.weight(1f)) // amount etc goes to the end
 
                                 IngredientAmount(
                                     unit = IngredientUnit.valueOf(
@@ -329,13 +333,11 @@ fun RecipeCreationScreen(
                     painter = painterResource(R.drawable.ingredients),
                     onClick = { viewModel.setShowAddIngredientSheet(true) },
                 )
-
-                HorizontalDivider()
-                Text("These ingredients make")
-
-                ServingSizeUpdater(uiState.numberOfServings, viewModel::alterServingSize)
             }
         }
+
+        NourishTextDivider("These ingredients make", modifier = Modifier.padding(vertical=8.dp))
+        ServingSizeUpdater(uiState.numberOfServings, viewModel::alterServingSize)
 
         // Method *
         NourishTextDivider("Method*", modifier = Modifier.padding(vertical=8.dp))
@@ -353,10 +355,15 @@ fun RecipeCreationScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                DraggableStepsList(viewModel, uiState)
+                DraggableStepsList(viewModel, uiState, keyboardFocusManager)
 
                 // modal bottom sheet for adding method step
-                AnimatedContent(targetState = uiState.showAddMethodSheet) { state ->
+                AnimatedContent(
+                    targetState = uiState.showAddMethodSheet,
+                    transitionSpec = {
+                        fadeIn() togetherWith fadeOut()
+                    },
+                ) { state ->
                     if (state) {
                         Column(
                             modifier = Modifier.fillMaxWidth().animateContentSize(),
@@ -522,7 +529,8 @@ fun RecipeDetailSection(
 @Composable
 fun DraggableStepsList(
     viewModel: RecipeCreationViewModel,
-    uiState: RecipeCreationUiState
+    uiState: RecipeCreationUiState,
+    keyboardFocusManager: FocusManager
 ) {
     // setup for the draggable list:
     val hapticFeedback = LocalHapticFeedback.current
@@ -540,6 +548,7 @@ fun DraggableStepsList(
     if (uiState.method == null || uiState.method.isEmpty()) {
         Text(
             text = "No steps added yet.",
+            style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(0.95f).padding(8.dp)
         )
@@ -551,9 +560,9 @@ fun DraggableStepsList(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            items(uiState.method, key = { it.uuid }) { // random uuid is assigned when the step is made, so that no collisions between keys. keys must be unique, or the app crashes
+            itemsIndexed(uiState.method, key = { _, step -> step.uuid }) { i, step -> // random uuid is assigned when the step is made, so that no collisions between keys. keys must be unique, or the app crashes
 
-                ReorderableItem(reorderableLazyListState, key = it.uuid) { isDragging ->
+                ReorderableItem(reorderableLazyListState, key = step.uuid) { isDragging ->
                     val elevation by animateDpAsState(if (isDragging) 4.dp else 0.dp)
 
                     Surface(
@@ -563,26 +572,59 @@ fun DraggableStepsList(
 
                         Row(
                             modifier = Modifier.fillMaxWidth(0.95f),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center
                         ) {
-                            Text(
-                                text = it.step,
-                                modifier = Modifier.weight(1f).padding(6.dp) // so that it wont take up all of the space
-                            )
-                            IconButton(
-                                modifier = Modifier
-                                    .padding(6.dp)
-                                    .draggableHandle(
-                                    onDragStarted = {
-                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
-                                    },
-                                    onDragStopped = {
-                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
-                                    }
-                                ),
-                                onClick = {}
-                            ) {
-                                Icon(painterResource(R.drawable.drag_handle), contentDescription = "Reorder")
+
+                            if (uiState.stepIndexToEdit == i) {
+                                Box(modifier = Modifier.padding(bottom = 10.dp).align(Alignment.CenterVertically)) {
+                                    NourishTextField(
+                                        value = uiState.stepToEdit,
+                                        onValueChange = { viewModel.setStepToEdit(it) },
+                                        placeholder = "",
+                                        onDone = { keyboardFocusManager.clearFocus() },
+                                        trailingIcon = ImageVector.vectorResource(R.drawable.tick),
+                                        onTrailingIconPress = { viewModel.updateStep() }
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    text = "${i+1}. ${step.step}", modifier = Modifier.weight(1f).padding(start=12.dp)
+                                )
+                            }
+
+                            if (uiState.stepIndexToEdit == -1) {
+                                IconButton(
+                                    modifier = Modifier
+                                        .padding(6.dp)
+                                        .draggableHandle(
+                                        onDragStarted = {
+                                            hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                                        },
+                                        onDragStopped = {
+                                            hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
+                                        }
+                                    ),
+                                    onClick = {}
+                                ) {
+                                    Icon(painterResource(R.drawable.drag_handle), contentDescription = "Reorder")
+                                }
+                                Icon(
+                                    painter = painterResource(R.drawable.edit),
+                                    contentDescription = "Edit Step",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier
+                                        .padding(end = 6.dp)
+                                        .clickable(
+                                            onClick = {
+                                                viewModel.setStepToEdit(
+                                                    step.step
+                                                )
+                                                viewModel.setStepIndexToEdit(
+                                                    i
+                                                )
+                                            }
+                                        )
+                                )
                             }
                         }
                     }

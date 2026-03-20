@@ -33,6 +33,7 @@ data class RecipeCreationUiState(
     val method: List<RecipeStep>? = null, // required for the lazy list orderable (draggable) to work. because it relies on each item being unique. if a user entered two duplicate steps, the app would crash.
     val showAddMethodSheet: Boolean = false,
     val stepToAdd: String = "",
+    val stepToEdit: String = "",
     val stepIndexToEdit: Int = -1,
     val stepIndexToDelete: Int = -1
 

@@ -67,6 +67,13 @@ class RecipeCreationViewModel @Inject constructor(
             )
         }
     }
+    fun setStepToEdit(stepToEdit: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                stepToEdit = stepToEdit
+            )
+        }
+    }
     fun setStepIndexToEdit(stepIndexToEdit: Int) {
         mutableUiState.update { currentState ->
             currentState.copy(
@@ -462,7 +469,6 @@ class RecipeCreationViewModel @Inject constructor(
                 if (ingredients == null) {
                     return@launch
                 }
-                val ingredient = ingredients[index]
                 val amount = mutableUiState.value.ingredientToEdit.amount.replace(',','.').toDoubleOrNull() ?: 1.0 // 1.0 if the input is invalid.
                 // update the ingredients list:
                 setIngredients(
@@ -552,6 +558,37 @@ class RecipeCreationViewModel @Inject constructor(
     fun resetRecipeStepAddition() {
         setShowAddMethodSheet(false)
         setStepToAdd("")
+    }
+
+    fun updateStep() {
+        viewModelScope.launch() {
+            runCatching {
+                val newStep = mutableUiState.value.stepToEdit.trim()
+                val index = mutableUiState.value.stepIndexToEdit
+                val method = mutableUiState.value.method
+                if (newStep == "") {
+                    return@launch
+                }
+                if (method == null) {
+                    return@launch
+                }
+                // Update the steps list:
+                setMethod(
+                    method.toMutableList().apply{
+                        this[index] = this[index].copy(
+                            step = newStep
+                        )
+                    }
+                )
+                // reset in UI:
+                setStepIndexToEdit(-1)
+                setStepToEdit("")
+            } .onFailure {
+                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
+                    "Couldn't update the step. Please try again later."
+                ))
+            }
+        }
     }
 
 }
