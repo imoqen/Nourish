@@ -27,7 +27,6 @@ data class RecipeCreationUiState(
     val ingredientToAdd: AddIngredientSheetState = AddIngredientSheetState(unit = IngredientUnit.UNIT), // default unit is UNIT rather than SINGLE - no SINGLEs in recipes.
     val ingredientToEdit: IngredientToEdit = IngredientToEdit(),
     val ingredientIndexToDelete: Int = -1,
-    val showIngredientDeletionDialog: Boolean = false,
 
     // list of method? todo
 

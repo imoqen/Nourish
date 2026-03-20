@@ -241,7 +241,7 @@ fun RecipeCreationScreen(
                         uiState.ingredients.forEachIndexed { i, ingredient ->
 
                             Row(
-                                modifier = Modifier.fillMaxWidth(0.95f).padding(start=6.dp),
+                                modifier = Modifier.fillMaxWidth(0.95f).padding(horizontal=6.dp),
                                 horizontalArrangement = Arrangement.Start,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -333,11 +333,11 @@ fun RecipeCreationScreen(
 
     // Confirmation Dialogs
     NourishConfirmationDialog(
-        show = uiState.showDeleteIngredientDialog,
-        title = "Confirm Ingredient Removal",
-        description = "Are you sure you wish to remove this ingredient?\n\n This action cannot be undone.",
-        onConfirmation = { viewModel.deleteIngredient(); viewModel.showDeleteIngredientDialog(false) },
-        onDismiss = { viewModel.showDeleteIngredientDialog(false) }
+        show = uiState.ingredientIndexToDelete != -1,
+        title = "Confirm Removal",
+        description = "Are you sure you wish to remove this ingredient from the recipe?",
+        onConfirmation = { viewModel.deleteIngredient() },
+        onDismiss = { viewModel.setIngredientIndexToDelete(-1) }
     )
 
     // model bottom sheet for editing ingredient amount

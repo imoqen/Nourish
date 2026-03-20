@@ -108,6 +108,14 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
+    fun setIngredientIndexToDelete(indexToDelete: Int) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                ingredientIndexToDelete = indexToDelete
+            )
+        }
+    }
+
     fun setFilterDisplayState(filterDisplayState: FilterState) {
         mutableUiState.update { currentState ->
             currentState.copy( // to update the sheet ui state, need to nest the copy
@@ -386,7 +394,6 @@ class RecipeCreationViewModel @Inject constructor(
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Ingredient could not be added."))
                 }
         }
-        //todo. make sure that ingredient amount is not optional
     }
 
     fun resetIngredientAdditionUI() {
@@ -449,6 +456,34 @@ class RecipeCreationViewModel @Inject constructor(
             amount = 0.01 // cant go less than 0.01 in recipe creation - has a lower threshold than the others.
         }
         return recipeActions.formatIngredientAmount(amount, roundToNearestQuarter)
+    }
+
+    fun deleteIngredient() {
+        viewModelScope.launch() {
+            runCatching {
+                val ingredients = mutableUiState.value.ingredients
+                val index = mutableUiState.value.ingredientIndexToDelete
+                if (ingredients == null) {
+                    return@launch
+                }
+                // update the ingredients list by removing the ingredient
+                setIngredients(
+                    ingredients.toMutableList().apply{ removeAt(index) }
+                )
+                // then reset in the ui
+                setIngredientIndexToDelete(-1)
+            } .onSuccess {
+                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
+                    "Ingredient removed."
+                ))
+            }
+                .onFailure { e->
+                Log.i("error ingredient", "$e")
+                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
+                    "Couldn't remove the ingredient. Please try again later."
+                ))
+            }
+        }
     }
 
 }
