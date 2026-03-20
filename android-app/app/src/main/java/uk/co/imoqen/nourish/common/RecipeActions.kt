@@ -13,7 +13,7 @@ import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.recipebook.TagSelection
 import uk.co.imoqen.nourish.recipebook.TypeSelection
-import uk.co.imoqen.nourish.common.tag.TagCreationException
+import uk.co.imoqen.nourish.common.exception.TagCreationException
 import javax.inject.Inject
 import kotlin.collections.map
 import kotlin.math.round

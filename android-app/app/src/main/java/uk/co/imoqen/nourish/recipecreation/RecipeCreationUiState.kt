@@ -43,7 +43,10 @@ data class RecipeCreationUiState(
     val emoji: String = "\uD83E\uDD57",
     val colour: NourishColour? = null,
     val showColourSelector: Boolean = false,
-    val showEmojiSelector: Boolean = false
+    val showEmojiSelector: Boolean = false,
+
+    val recipeCreated: Boolean = false,
+    val recipeCreationError: String = ""
 )
 
 data class RecipeStep(

@@ -86,6 +86,7 @@ import uk.co.imoqen.nourish.common.NourishButton
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.NourishConfirmationDialog
 import uk.co.imoqen.nourish.common.NourishDivider
+import uk.co.imoqen.nourish.common.NourishErrorText
 import uk.co.imoqen.nourish.common.NourishH2
 import uk.co.imoqen.nourish.common.NourishH3
 import uk.co.imoqen.nourish.common.NourishH4
@@ -119,12 +120,16 @@ fun RecipeCreationScreen(
     viewModel: RecipeCreationViewModel,
     onBack: () -> Unit,
 ) {
-
     val uiState = viewModel.uiState.collectAsState().value
     val keyboardFocusManager = LocalFocusManager.current
     val nutritionalTagSheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true // makes it fill the screen with the required amount rather than stuck at half the screen size
     )
+
+    if (uiState.recipeCreated) {
+        onBack()
+    }
+
     LaunchedEffect("GET_RECIPE_TYPES_AND_TAGS") {
         viewModel.getAllRecipeTypes()
         viewModel.getAllTagsForUser()
@@ -610,26 +615,27 @@ fun RecipeCreationScreen(
             NourishTextDivider("Number of Servings*", modifier = Modifier.padding(vertical = 8.dp))
             ServingSizeUpdater(uiState.numberOfServings, viewModel::alterServingSize)
 
-            // Storage
-            NourishTextDivider("Storage Guidance", modifier = Modifier.padding(vertical = 8.dp))
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer
-                    )
-            ) {
-
-            }
-
             // Storage guidance
+            NourishTextDivider("Storage Guidance", modifier = Modifier.padding(vertical = 8.dp))
             NourishTextField(
                 value = uiState.storageGuidance,
                 onValueChange = { viewModel.setStorageGuidance(it) },
                 placeholder = "Enter Storage Guidance",
                 onDone = { keyboardFocusManager.clearFocus() },
                 leadingIcon = ImageVector.vectorResource(R.drawable.fridge),
+            )
+
+            // Error if recipe creation fails
+            if (uiState.recipeCreationError != "") {
+                NourishErrorText(
+                    uiState.recipeCreationError
+                )
+            }
+            // Complete button
+            NourishIconTextButton(
+                onClick = {viewModel.addRecipe()},
+                painter = painterResource(R.drawable.tick),
+                description = "Create Recipe",
             )
         }
 

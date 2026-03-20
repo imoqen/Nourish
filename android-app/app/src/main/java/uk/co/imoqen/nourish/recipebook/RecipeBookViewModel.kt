@@ -292,7 +292,7 @@ class RecipeBookViewModel @Inject constructor(
 
                     var unit = shoppingListIngredient.unit
                     var amount = shoppingListIngredient.amount
-                    if (!unit.keepUnitInShoppingList || (unit != IngredientUnit.UNIT && amount <= 15)) { // if the unit shouldnt be kept, or the amount is inconsiderable (less than 15) then just set to buy 1.
+                    if (!unit.keepUnitInShoppingList || ((unit != IngredientUnit.PINT && unit != IngredientUnit.UNIT) && amount <= 15)) { // if the unit shouldnt be kept, or the amount is inconsiderable (less than 15 IF not UNIT or PINT, l and kg doesn tmatter because we store iti n ml /g anyway.) then just set to buy 1.
                         unit = IngredientUnit.SINGLE
                         amount = 1.0
                     }

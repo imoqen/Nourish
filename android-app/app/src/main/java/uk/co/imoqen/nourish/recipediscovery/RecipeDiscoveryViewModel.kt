@@ -32,7 +32,7 @@ import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 import uk.co.imoqen.nourish.recipebook.TagSelection
 import uk.co.imoqen.nourish.common.tag.FilterState
-import uk.co.imoqen.nourish.common.tag.TagCreationException
+import uk.co.imoqen.nourish.common.exception.TagCreationException
 import uk.co.imoqen.nourish.common.tag.TagSheetAction
 import java.io.File
 import java.lang.NullPointerException

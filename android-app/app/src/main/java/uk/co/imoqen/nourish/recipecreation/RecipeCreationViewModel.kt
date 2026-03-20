@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.RecipeActions
+import uk.co.imoqen.nourish.common.exception.RecipeCreationException
 import uk.co.imoqen.nourish.common.ingredient.IngredientSheetAction
 import uk.co.imoqen.nourish.common.saveMipmap
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
@@ -25,15 +26,17 @@ import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import uk.co.imoqen.nourish.recipebook.TagSelection
 import uk.co.imoqen.nourish.common.tag.FilterState
-import uk.co.imoqen.nourish.common.tag.TagCreationException
+import uk.co.imoqen.nourish.common.exception.TagCreationException
 import uk.co.imoqen.nourish.common.tag.TagSheetAction
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.db.ingredient.Ingredient
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.network.response.LlmIngredientSection
+import uk.co.imoqen.nourish.network.response.LlmRecipe
 import uk.co.imoqen.nourish.recipediscovery.Mipmap
 import uk.co.imoqen.nourish.shoppinglist.UserInteractionStatus
+import java.lang.NullPointerException
 import java.util.UUID
 import javax.inject.Inject
 
@@ -48,6 +51,24 @@ class RecipeCreationViewModel @Inject constructor(
 ): ViewModel() {
     private val mutableUiState = MutableStateFlow(RecipeCreationUiState())
     val uiState: StateFlow<RecipeCreationUiState> = mutableUiState.asStateFlow()
+
+    // to go back if recipe created
+    fun setRecipeCreated(recipeCreated: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                recipeCreated = recipeCreated
+            )
+        }
+    }
+
+    // error for recipe creation
+    fun setRecipeCreationError(recipeCreationError: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                recipeCreationError = recipeCreationError
+            )
+        }
+    }
 
     // display (image, colour, and emoji):
     fun setImageFile(imageFile: String) {
@@ -684,6 +705,77 @@ class RecipeCreationViewModel @Inject constructor(
                 }
         }
 
+    }
+
+    fun addRecipe(
+
+    ) {
+        viewModelScope.launch() {
+            runCatching {
+                val ingredients = mutableUiState.value.ingredients
+                val recipeType = mutableUiState.value.recipeType
+                val method = mutableUiState.value.method
+                if (ingredients == null || ingredients.isEmpty()) {
+                    // todo set error
+                    throw RecipeCreationException("You must enter at least 1 ingredient.")
+                }
+                if (recipeType == null) {
+                    // todo set error
+                    throw RecipeCreationException("You must select a recipe type.")
+                }
+                if (method == null || method.isEmpty()) {
+                    // todo set error
+                    throw RecipeCreationException("You must enter at least 1 method step.")
+                }
+                val servings = mutableUiState.value.numberOfServings
+                val llmRecipe = LlmRecipe(
+                    title = mutableUiState.value.title,
+                    sectionIngredients = listOf(LlmIngredientSection("For the recipe", ingredients.map { it.copy(ingredientAmount = (it.ingredientAmount / servings)) })), // scale such that it stores the amount for 1 serving.
+                    servings = servings,
+                    mealType = recipeType.title,
+                    method = method.map { it.step }, // only get the steps, remove the uuids
+                    tags = mutableUiState.value.tagSheetState.recipeTags?.filter { it.selected }?.map { it.tag.identifier } ?: listOf(""), // finds all selected tags, then gets their identifiers. tags are not mandatory so "" is ok if it is null.
+                    storage = mutableUiState.value.storageGuidance,
+                    recipeNotPossible = false,
+                    emoji = mutableUiState.value.emoji,
+                    colour = mutableUiState.value.colour?.name ?: "PINK" // default is pink if none given.
+                )
+                // Check that user is logged in validly
+                val uid = authenticationManager.getUid()
+                if (uid == null) {
+                    throw NullPointerException()
+                } // user is null; throw to be handled appropriately
+
+                // Add the recipe to the database:
+                recipeRepository.createRecipe(
+                    // recipe is saved with the higher quality image, which is stored in second place
+                    uid, llmRecipe, imagePath = mutableUiState.value.imageFile,
+                    alteration = false, llmGenerated = false // not an alteration; it is a new recipe. and it is NOT llm generated.
+                )
+            }
+                .onSuccess {
+                    setRecipeCreated(true)
+                    uiEventBus.enqueueEvent(
+                        UiEvent.ShowSnackbar(
+                            "Your recipe has been saved successfully."
+                        )
+                    )
+                }
+
+                .onFailure { e ->
+                    when (e) {
+                        is RecipeCreationException -> {
+                            setRecipeCreationError(e.message ?: "Could not save recipe.")
+                        }
+                    }
+                    uiEventBus.enqueueEvent(
+                        UiEvent.ShowSnackbar(
+                            "Your recipe could not be saved."
+                        )
+                    )
+                    Log.i("RECIPE SAVE", "$e")
+                }
+        }
     }
 
 }
