@@ -67,7 +67,8 @@ class RecipeActions @Inject constructor(
                 uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
                     "Tag could not be created."
                 ))
-                Log.i("tag creation", "failed: $e")
+                // then throw the tag creation exception to be handled in the viewmodel, and output to the user.
+                throw e
             }
     }
 

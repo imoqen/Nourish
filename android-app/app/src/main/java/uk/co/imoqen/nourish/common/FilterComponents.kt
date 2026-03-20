@@ -356,7 +356,7 @@ fun SelectedType(
 fun SelectedTags(
     tags: List<TagSelection>?,
     allowEdit: Boolean = false,
-    updateSelectedTag: (Tag, Boolean) -> Unit = {_,_ -> }
+    updateSelectedTag: (Tag, Boolean) -> Unit = {_,_ -> },
 ) {
     val scrollState = rememberScrollState()
 
@@ -426,7 +426,6 @@ fun SelectedTags(
                                 )
                             }
                         }
-
                     }
                 }
             }

@@ -49,6 +49,7 @@ fun RecipeTagSelection(
     sheetState: SheetState, // the modal bottom sheet state
     tagSheetState: TagSheetState, // the ui state of the tag sheet
     tagSheetAction: (TagSheetAction) -> Unit, // trying to refactor into shared actions, then just 1 function needs to be passed in. unfinished
+    title: String = "Filter by Nutritional Tag(s)"
 ) {
     ModalBottomSheet(
         onDismissRequest = {
@@ -69,7 +70,7 @@ fun RecipeTagSelection(
                         verticalArrangement = Arrangement.Center,
                         modifier = Modifier.padding(bottom = 20.dp)
                     ) {
-                        NourishTextDivider("Filter by Nutritional Tag(s)")
+                        NourishTextDivider(title)
 
                         TagsDisplayForFiltering(
                             tags = tagSheetState.recipeTags,

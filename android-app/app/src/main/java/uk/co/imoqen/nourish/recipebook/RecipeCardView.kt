@@ -331,47 +331,8 @@ fun RecipeCard(
                                 }
                             }
                         }
-
-                        Column(
-                            modifier = Modifier
-                                .padding(8.dp)
-                                .background(
-                                    color = MaterialTheme.colorScheme.surfaceContainer,
-                                    shape = RoundedCornerShape(16.dp)
-                                )
-                            //.fillMaxWidth(0.3f)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .padding(8.dp) // for inner padding of the total item
-                                    .animateContentSize()
-                            ) {
-                                NourishIconButton(
-                                    onClick = { recipeBookViewModel.alterServingSize(false) },
-                                    painter = painterResource(R.drawable.subtract),
-                                    modifier = Modifier.size(38.dp)
-                                )
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    modifier = Modifier.padding(horizontal = 3.dp)
-                                ) {
-                                    Image(
-                                        painter = painterResource(R.drawable.person),
-                                        contentDescription = "Number of Servings",
-                                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground)
-                                    )
-                                    Text(
-                                        text = "${recipeCard.serves}",
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                                NourishIconButton(
-                                    onClick = { recipeBookViewModel.alterServingSize(true) },
-                                    painter = painterResource(R.drawable.add),
-                                    modifier = Modifier.size(38.dp)
-                                )
-                            }
-                        }
+                        // Serving Size:
+                        ServingSizeUpdater(recipeCard.serves, recipeBookViewModel::alterServingSize)
                     }
 
                     HorizontalDivider(modifier = Modifier.padding(vertical=16.dp))
@@ -1250,6 +1211,52 @@ fun QueryDisplay(
                         Text(query.llmAnswer, modifier = Modifier.padding(8.dp))
                     }
                 }
+            )
+        }
+    }
+}
+
+@Composable
+fun ServingSizeUpdater(
+    servings: Int,
+    alterServingSize: (Boolean) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .padding(8.dp)
+            .background(
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                shape = RoundedCornerShape(16.dp)
+            )
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(8.dp) // for inner padding of the total item
+                .animateContentSize()
+        ) {
+            NourishIconButton(
+                onClick = { alterServingSize(false) },
+                painter = painterResource(R.drawable.subtract),
+                modifier = Modifier.size(38.dp)
+            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(horizontal = 3.dp)
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.person),
+                    contentDescription = "Number of Servings",
+                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground)
+                )
+                Text(
+                    text = "$servings",
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            NourishIconButton(
+                onClick = { alterServingSize(true) },
+                painter = painterResource(R.drawable.add),
+                modifier = Modifier.size(38.dp)
             )
         }
     }

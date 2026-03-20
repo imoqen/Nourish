@@ -299,7 +299,8 @@ fun NourishIconTextButton(
     modifier: Modifier = Modifier,
     selected: Boolean = false,
     fillMaxWidth: Boolean = false,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    buttonColour: Color = MaterialTheme.colorScheme.primaryContainer // so that can change button colour, this is used in the add a recipe bit
 ) {
     Button(
         onClick = {
@@ -307,9 +308,9 @@ fun NourishIconTextButton(
         },
         colors = ButtonDefaults.buttonColors(
             containerColor = if (selected) {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha=0.40f)
+                buttonColour.copy(alpha=0.40f)
             } else {
-                MaterialTheme.colorScheme.primaryContainer
+                buttonColour
             }
         ),
         modifier = if (fillMaxWidth) { modifier.fillMaxWidth().fillMaxHeight() } else modifier,

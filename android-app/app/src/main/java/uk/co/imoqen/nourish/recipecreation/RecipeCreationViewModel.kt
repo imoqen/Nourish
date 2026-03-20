@@ -246,5 +246,23 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
+    // for updating the number of servings of a recipe
+    // much less complex than for a recipe card, as this doesnt scale the ingredients. its simply what the user enters.
+    fun alterServingSize(
+        increase: Boolean
+    ) {
+        if (increase) {
+            setNumberOfServings(mutableUiState.value.numberOfServings+1)
+        } else {
+            // ensure it doesnt go negative or 0
+            setNumberOfServings(
+                if (mutableUiState.value.numberOfServings > 1) {
+                    mutableUiState.value.numberOfServings - 1
+                } else {
+                    mutableUiState.value.numberOfServings
+                }
+            )
+        }
+    }
 
 }
