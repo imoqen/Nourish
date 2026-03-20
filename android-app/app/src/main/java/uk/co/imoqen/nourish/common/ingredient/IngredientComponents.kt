@@ -21,8 +21,6 @@ import uk.co.imoqen.nourish.common.NourishButton
 import uk.co.imoqen.nourish.common.NourishErrorText
 import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
-import uk.co.imoqen.nourish.common.tag.FilterState
-import uk.co.imoqen.nourish.common.tag.TagSheetAction
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.shoppinglist.UnitSelectionButton
 
@@ -32,7 +30,7 @@ fun AddIngredientBottomSheet(
     ingredient: AddIngredientSheetState,
     action: (IngredientSheetAction) -> Unit,
     possibleUnits: List<IngredientUnit>,
-    completeMessage: String
+    text: AddIngredientSheetText
 ) {
     val modalBottomSheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true // makes it fill the screen with the required amount rather than stuck at half the screen size
@@ -55,25 +53,20 @@ fun AddIngredientBottomSheet(
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             NourishTextDivider(
-                "Add an item to your Shopping List",
+                text.title,
                 modifier = Modifier.padding(top = 6.dp)
             )
             NourishTextField(
                 value = ingredient.name,
                 onValueChange = { action(IngredientSheetAction.SetIngredientName(it)) },
-                placeholder = "Enter item to add", // user language consideration: although the app is built for ingredients, users will likely add other things. hence, "item" is used.
+                placeholder = text.name, // user language consideration: although the app is built for ingredients, users will likely add other things. hence, "item" is used.
                 onDone = { keyboardFocusManager.clearFocus(force=true) }
             )
-            // Display item name error
-            if (ingredient.error != "") {
-                NourishErrorText(ingredient.error)
-            }
 
             NourishTextDivider(
-                "Enter amount (optional)",
+                text.amount,
                 modifier = Modifier.padding(top = 6.dp)
             )
-
             NourishTextField(
                 value = ingredient.amount,
                 onValueChange = {
@@ -86,7 +79,7 @@ fun AddIngredientBottomSheet(
             )
 
             NourishTextDivider(
-                "Select unit (optional)",
+                text.unit,
                 modifier = Modifier.padding(top = 6.dp)
             )
 
@@ -110,19 +103,24 @@ fun AddIngredientBottomSheet(
                         UnitSelectionButton(
                             ingredient.unit,
                             { action(IngredientSheetAction.SetIngredientUnit(it)) },
-                            unit.pluralName,
+                            unit.singularName,
                             unit
                         )
                     }
                 }
             }
 
+            // Display error
+            if (ingredient.error != "") {
+                NourishErrorText(ingredient.error)
+            }
+
             NourishButton(
                 onClick = {
                     // add the ingredient
-                     action(IngredientSheetAction.OnComplete()) 
+                     action(IngredientSheetAction.OnComplete())
                 },
-                text = completeMessage,
+                text = text.complete,
             )
         }
     }

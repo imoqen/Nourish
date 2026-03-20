@@ -57,6 +57,7 @@ import uk.co.imoqen.nourish.common.NourishDivider
 import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.common.ingredient.AddIngredientBottomSheet
+import uk.co.imoqen.nourish.common.ingredient.AddIngredientSheetText
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.recipebook.RecipeLoadingBar
 import kotlin.math.ceil
@@ -464,14 +465,19 @@ fun ShoppingListScreen(
             }
 
             if (uiState.userInteractionStatus == UserInteractionStatus.ADD) {
-
                 AddIngredientBottomSheet(
                     ingredient = uiState.ingredientToAdd,
                     action = viewModel::onIngredientSheetAction,
                     possibleUnits = listOf(
                         IngredientUnit.ML, IngredientUnit.L, IngredientUnit.G, IngredientUnit.KG, IngredientUnit.PINT
                     ),
-                    completeMessage = "Add to Shopping List"
+                    text = AddIngredientSheetText(
+                        title = "Add an item to your Shopping List",
+                        name = "Enter an item to add",
+                        amount = "Enter amount (optional)",
+                        unit = "Select unit (optional)",
+                        complete = "Add to Shopping List"
+                    )
                 )
             }
 

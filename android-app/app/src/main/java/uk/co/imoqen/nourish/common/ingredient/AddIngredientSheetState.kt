@@ -10,3 +10,11 @@ data class AddIngredientSheetState(
     // purchased will be set to false. ordinal will be the next max ordinal value.
     val error: String = ""
 )
+
+data class AddIngredientSheetText(
+    val title: String,
+    val name: String,
+    val amount: String,
+    val unit: String,
+    val complete: String
+)

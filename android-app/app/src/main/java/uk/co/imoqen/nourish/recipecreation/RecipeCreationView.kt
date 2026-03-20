@@ -42,10 +42,13 @@ import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.common.SelectedTags
 import uk.co.imoqen.nourish.common.TypesDisplayForMutuallyExclusiveFiltering
+import uk.co.imoqen.nourish.common.ingredient.AddIngredientBottomSheet
+import uk.co.imoqen.nourish.common.ingredient.AddIngredientSheetText
 import uk.co.imoqen.nourish.recipebook.ServingSizeUpdater
 import uk.co.imoqen.nourish.common.tag.FilterState
 import uk.co.imoqen.nourish.common.tag.RecipeTagSelection
 import uk.co.imoqen.nourish.common.tag.TagSheetAction
+import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -231,7 +234,7 @@ fun RecipeCreationScreen(
                 NourishIconTextButton(
                     description = "Add Ingredient",
                     painter = painterResource(R.drawable.ingredients),
-                    onClick = { /* todo add ingredient */ },
+                    onClick = { viewModel.setShowAddIngredientSheet(true) },
                     buttonColour = MaterialTheme.colorScheme.background
                 )
             }
@@ -259,6 +262,26 @@ fun RecipeCreationScreen(
             placeholder = "Enter Storage Guidance",
             onDone = { keyboardFocusManager.clearFocus() },
             leadingIcon = ImageVector.vectorResource(R.drawable.fridge),
+        )
+    }
+
+    // modal bottom sheet for adding ingredients
+    if (uiState.showAddIngredientSheet) {
+        AddIngredientBottomSheet(
+            ingredient = uiState.ingredientToAdd,
+            action = viewModel::onIngredientSheetAction,
+            possibleUnits = listOf(
+                // more options than in the shopping list. but not overcomplicating it, not overwhelming user.
+                IngredientUnit.ML, IngredientUnit.L, IngredientUnit.G, IngredientUnit.KG,
+                IngredientUnit.TSP, IngredientUnit.TBSP, IngredientUnit.PINCH, IngredientUnit.PINT
+            ),
+            text = AddIngredientSheetText(
+                title = "Add an ingredient to your Recipe",
+                name = "Enter an ingredient to add",
+                amount = "Enter amount",
+                unit = "Select unit",
+                complete = "Add to Recipe"
+            )
         )
     }
 

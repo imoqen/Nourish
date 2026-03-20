@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.RecipeActions
+import uk.co.imoqen.nourish.common.ingredient.IngredientSheetAction
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
@@ -21,6 +22,8 @@ import uk.co.imoqen.nourish.recipebook.TagSelection
 import uk.co.imoqen.nourish.common.tag.FilterState
 import uk.co.imoqen.nourish.common.tag.TagCreationException
 import uk.co.imoqen.nourish.common.tag.TagSheetAction
+import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
+import uk.co.imoqen.nourish.shoppinglist.UserInteractionStatus
 import javax.inject.Inject
 
 @HiltViewModel
@@ -79,6 +82,14 @@ class RecipeCreationViewModel @Inject constructor(
         mutableUiState.update { currentState ->
             currentState.copy(
                 recipeTypes = recipeTypes
+            )
+        }
+    }
+
+    fun setShowAddIngredientSheet(show: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                showAddIngredientSheet = show
             )
         }
     }
@@ -148,6 +159,47 @@ class RecipeCreationViewModel @Inject constructor(
             currentState.copy( // to update the sheet ui state, need to nest the copy
                 tagSheetState = currentState.tagSheetState.copy (
                     tagToDelete = tagToDelete
+                )
+            )
+        }
+    }
+
+    // Setters for the ingredient object
+    fun setIngredientToAddName(name: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                ingredientToAdd = currentState.ingredientToAdd.copy(
+                    name = name
+                )
+            )
+        }
+    }
+
+    fun setIngredientToAddUnit(unit: IngredientUnit) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                ingredientToAdd = currentState.ingredientToAdd.copy(
+                    unit = unit
+                )
+            )
+        }
+    }
+
+    fun setIngredientToAddAmount(amount: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                ingredientToAdd = currentState.ingredientToAdd.copy(
+                    amount = amount
+                )
+            )
+        }
+    }
+
+    fun setIngredientToAddError(error: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                ingredientToAdd = currentState.ingredientToAdd.copy(
+                    error = error
                 )
             )
         }
@@ -260,6 +312,21 @@ class RecipeCreationViewModel @Inject constructor(
                     mutableUiState.value.numberOfServings
                 }
             )
+        }
+    }
+
+    fun addIngredientToRecipe() {
+        //todo. make sure that ingredient amount is not optional
+    }
+
+    // the actions for the ingredient addition sheet;
+    fun onIngredientSheetAction(action: IngredientSheetAction) {
+        when (action) {
+            is IngredientSheetAction.OnDismissRequest -> { setShowAddIngredientSheet(false) }
+            is IngredientSheetAction.OnComplete -> { addIngredientToRecipe() }
+            is IngredientSheetAction.SetIngredientAmount -> { setIngredientToAddAmount(action.amount) }
+            is IngredientSheetAction.SetIngredientName -> { setIngredientToAddName(action.name) }
+            is IngredientSheetAction.SetIngredientUnit -> { setIngredientToAddUnit(action.unit) }
         }
     }
 

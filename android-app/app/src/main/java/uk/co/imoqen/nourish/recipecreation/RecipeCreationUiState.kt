@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish.recipecreation
 
+import uk.co.imoqen.nourish.common.ingredient.AddIngredientSheetState
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.network.response.LlmIngredientSection
 import uk.co.imoqen.nourish.common.tag.TagSheetState
@@ -16,9 +17,11 @@ data class RecipeCreationUiState(
     // recipe tags:
     val tagSheetState: TagSheetState = TagSheetState(),
 
-    // list of ingredient? todo
-    val ingredients: List<LlmIngredientSection>? = null
+    // list of ingredients. for simplicity (not only programming, but also for the user's sake), ingredients cant be added to sections. just one section.
+    val ingredients: List<LlmIngredientSection>? = null,
+    val showAddIngredientSheet: Boolean = false,
+    val ingredientToAdd: AddIngredientSheetState = AddIngredientSheetState()
+
     // list of method? todo
-    // recipe tag list? todo
 
 )
