@@ -45,6 +45,31 @@ class RecipeCreationViewModel @Inject constructor(
     private val mutableUiState = MutableStateFlow(RecipeCreationUiState())
     val uiState: StateFlow<RecipeCreationUiState> = mutableUiState.asStateFlow()
 
+    // display (image, colour, and emoji):
+    fun setImageFile(imageFile: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                imageFile = imageFile
+            )
+        }
+    }
+
+    fun setEmoji(emoji: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                emoji = emoji
+            )
+        }
+    }
+
+    fun setColour(colour: NourishColour) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                colour = colour
+            )
+        }
+    }
+
     // method setters:
     fun setMethod(method: List<RecipeStep>) {
         mutableUiState.update { currentState ->

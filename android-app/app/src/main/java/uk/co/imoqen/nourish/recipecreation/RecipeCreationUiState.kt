@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish.recipecreation
 
+import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.ingredient.AddIngredientSheetState
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.network.response.LlmIngredientSection
@@ -35,8 +36,12 @@ data class RecipeCreationUiState(
     val stepToAdd: String = "",
     val stepToEdit: String = "",
     val stepIndexToEdit: Int = -1,
-    val stepIndexToDelete: Int = -1
+    val stepIndexToDelete: Int = -1,
 
+    // image, colour, and emoji
+    val imageFile: String = "",
+    val emoji: String = "\uD83E\uDD57",
+    val colour: NourishColour? = null
 )
 
 data class RecipeStep(
