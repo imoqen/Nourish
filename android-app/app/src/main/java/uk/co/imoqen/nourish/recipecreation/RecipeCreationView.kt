@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,6 +27,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -62,9 +68,11 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import sh.calvin.reorderable.ReorderableItem
@@ -92,6 +100,7 @@ import uk.co.imoqen.nourish.common.tag.FilterState
 import uk.co.imoqen.nourish.common.tag.RecipeTagSelection
 import uk.co.imoqen.nourish.common.tag.TagSheetAction
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
+import uk.co.imoqen.nourish.network.request.LlmActionType
 import uk.co.imoqen.nourish.shoppinglist.IngredientAmount
 import uk.co.imoqen.nourish.shoppinglist.UserInteractionStatus
 import java.io.File
@@ -174,6 +183,9 @@ fun RecipeCreationScreen(
                             .background(
                                 (uiState.colour ?: NourishColour.PINK).recipeColour()
                             ) // put the chosen colour. pink if not chosen.
+                            .clickable(
+                                onClick = { viewModel.setShowColourSelector(true) } // for the user to change the colour
+                            )
                     )
                 }
             }
@@ -245,7 +257,12 @@ fun RecipeCreationScreen(
                         Modifier
                             .align(Alignment.Center)
                             .offset(y = (16).dp) // offsets are added to account for the bg displayed for the rounded corner shape
-                    },
+                    }
+                        .then(
+                            Modifier.clickable(
+                                onClick = { viewModel.setShowEmojiSelector(true) } // for the user to select the emoji
+                            )
+                        ),
                     style = TextStyle(
                         shadow = Shadow(
                             color = Color.Black,
@@ -258,8 +275,8 @@ fun RecipeCreationScreen(
         }
 
         Column(
-            modifier = Modifier.fillMaxSize().padding(bottom = 12.dp)
-                , // room from top for the title area
+            modifier = Modifier.fillMaxSize()
+                .padding(bottom = 12.dp), // room from top for the title area
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -646,6 +663,136 @@ fun RecipeCreationScreen(
                         viewModel::setRecipeType,
                         allowNone = false
                     )
+                }
+            }
+        }
+
+        // popup for emoji selection
+        if (uiState.showEmojiSelector) {
+            Dialog(
+                onDismissRequest = {
+                    viewModel.setShowEmojiSelector(false)
+                }
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    NourishH2("Select an Emoji")
+                    // emojis copied from: https://emojipedia.org/food-drink
+                    val emojis = listOf(
+                        "\uD83C\uDF47",
+                        "\uD83C\uDF48",
+                        "\uD83C\uDF49",
+                        "\uD83C\uDF4A",
+                        "\uD83C\uDF4B",
+                        "\uD83C\uDF4B\u200D\uD83D\uDFE9",
+                        "\uD83C\uDF4C",
+                        "\uD83C\uDF4D",
+                        "\uD83E\uDD6D",
+                        "\uD83C\uDF4E",
+                        "\uD83C\uDF4F",
+                        "\uD83C\uDF50",
+                        "\uD83C\uDF51",
+                        "\uD83C\uDF52",
+                        "\uD83C\uDF53",
+                        "\uD83E\uDED0",
+                        "\uD83E\uDD5D",
+                        "\uD83C\uDF45",
+                        "\uD83E\uDED2",
+                        "\uD83E\uDD65"
+                    )
+                    LazyRow() {
+                        items(emojis) { emoji ->
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        color = MaterialTheme.colorScheme.background,
+                                        shape = RoundedCornerShape(16.dp)
+                                    )
+                                    .padding(8.dp)
+                                    .clickable(
+                                        onClick = { viewModel.setEmoji(emoji) }
+                                    )
+                            ) {
+                                Text(emoji)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (uiState.showColourSelector) {
+            // popup for colour selection
+            Dialog(
+                onDismissRequest = {
+                    viewModel.setShowColourSelector(false)
+                }
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(24.dp),
+                    modifier = Modifier.fillMaxHeight(0.7f)
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.padding(10.dp)
+                    ) {
+                        NourishH2("Select a Colour")
+
+                        NourishDivider()
+
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(3),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(NourishColour.entries) { colour ->
+                                Box(
+                                    modifier = Modifier
+                                        .clip(
+                                            shape = RoundedCornerShape(16.dp)
+                                        )
+                                        .background(
+                                            color = colour.recipeColour(),
+                                            shape = RoundedCornerShape(16.dp),
+                                        )
+                                        .clickable(
+                                            onClick = { viewModel.setColour(colour) }
+                                        )
+                                        .fillMaxWidth(0.1f)
+                                        .aspectRatio(1f) // to get a square
+                                        .then(
+                                            if (uiState.colour == colour) {
+                                                Modifier.border(
+                                                    width = 2.dp,
+                                                    color = MaterialTheme.colorScheme.onBackground,
+                                                    shape = RoundedCornerShape(16.dp)
+                                                )
+                                            } else {
+                                                Modifier
+                                            }
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = colour.name.lowercase()
+                                            .replaceFirstChar { it.uppercase() },
+                                        color = Color.Black,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+                        }
+
+                        NourishDivider()
+
+                        NourishIconTextButton(
+                            onClick = { viewModel.setShowColourSelector(false) },
+                            painter = painterResource(R.drawable.tick),
+                            description = "Done",
+                        )
+                    }
                 }
             }
         }

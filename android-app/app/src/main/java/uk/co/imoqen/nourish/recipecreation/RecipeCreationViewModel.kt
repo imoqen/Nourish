@@ -61,11 +61,25 @@ class RecipeCreationViewModel @Inject constructor(
             )
         }
     }
+    fun setShowEmojiSelector(showEmojiSelector: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                showEmojiSelector = showEmojiSelector
+            )
+        }
+    }
 
     fun setColour(colour: NourishColour) {
         mutableUiState.update { currentState ->
             currentState.copy(
                 colour = colour
+            )
+        }
+    }
+    fun setShowColourSelector(showColourSelector: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                showColourSelector = showColourSelector
             )
         }
     }

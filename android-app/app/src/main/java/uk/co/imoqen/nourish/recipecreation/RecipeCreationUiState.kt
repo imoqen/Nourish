@@ -41,7 +41,9 @@ data class RecipeCreationUiState(
     // image, colour, and emoji
     val imageFile: String = "",
     val emoji: String = "\uD83E\uDD57",
-    val colour: NourishColour? = null
+    val colour: NourishColour? = null,
+    val showColourSelector: Boolean = false,
+    val showEmojiSelector: Boolean = false
 )
 
 data class RecipeStep(
