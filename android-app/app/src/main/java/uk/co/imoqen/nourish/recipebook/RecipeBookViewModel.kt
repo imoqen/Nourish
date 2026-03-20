@@ -933,9 +933,17 @@ class RecipeBookViewModel @Inject constructor(
                 recipeRepository.deleteRecipe(recipe) // delete
             }
                 .onSuccess {
+                    // when successfully deleted, update the id in the ui to -1 to trigger it to go back to the recipe all recipe book view
+                    if (mutableUiState.value.selectedRecipe != null) {
+                        setSelectedRecipe(
+                            mutableUiState.value.selectedRecipe!!.copy(
+                                id = -1
+                            )
+                        )
+                    }
                     uiEventBus.enqueueEvent(
                         UiEvent.ShowSnackbar(
-                            "The recipe has been updated."
+                            "The recipe has been deleted."
                         )
                     )
                 }
@@ -943,7 +951,7 @@ class RecipeBookViewModel @Inject constructor(
                 .onFailure { e ->
                     uiEventBus.enqueueEvent(
                         UiEvent.ShowSnackbar(
-                            "The recipe could not be updated. Please try again, or enter a different alteration."
+                            "The recipe could not be deleted."
                         )
                     )
                 }

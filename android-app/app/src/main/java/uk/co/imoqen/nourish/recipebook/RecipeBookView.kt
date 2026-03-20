@@ -95,7 +95,7 @@ import kotlin.enumValueOf
 fun RecipeBookScreen(
     recipeBookViewModel: RecipeBookViewModel,
     onViewRecipeCard: (Long) -> Unit,
-    onAddRecipe: () -> Unit
+    onAddRecipe: () -> Unit,
 ) {
 
     val scrollState = rememberScrollState()

@@ -111,6 +111,11 @@ fun RecipeCardScreen(
     val scrollState = rememberScrollState()
     val keyboardFocusManager = LocalFocusManager.current
 
+    if (uiState.selectedRecipe != null && uiState.selectedRecipe.id.toInt() == -1) {
+        // recipe has been deleted
+        onBack()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -646,6 +651,19 @@ fun RecipeCard(
                                     modifier = Modifier.weight(1f)
                                 )
                             }
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            RecipeActionButton(
+                                onClick = {
+                                    recipeBookViewModel.deleteRecipe()
+                                },
+                                painter = painterResource(R.drawable.delete), //todo ADD CONFIRMATION and make it red to show danger
+                                description = "Delete Recipe",
+                                modifier = Modifier.weight(1f)
+                            )
                         }
 
                         /*
