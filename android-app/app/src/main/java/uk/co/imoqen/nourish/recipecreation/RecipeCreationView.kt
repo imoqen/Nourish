@@ -259,7 +259,9 @@ fun RecipeCreationScreen(
                             .offset(y = (16).dp) // offsets are added to account for the bg displayed for the rounded corner shape
                     }
                         .then(
-                            Modifier.clickable(
+                            Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .clickable(
                                 onClick = { viewModel.setShowEmojiSelector(true) } // for the user to select the emoji
                             )
                         ),
@@ -675,47 +677,218 @@ fun RecipeCreationScreen(
                 }
             ) {
                 Surface(
-                    shape = RoundedCornerShape(24.dp)
+                    shape = RoundedCornerShape(24.dp),
+                    modifier = Modifier.fillMaxHeight(0.7f)
                 ) {
-                    NourishH2("Select an Emoji")
-                    // emojis copied from: https://emojipedia.org/food-drink
-                    val emojis = listOf(
-                        "\uD83C\uDF47",
-                        "\uD83C\uDF48",
-                        "\uD83C\uDF49",
-                        "\uD83C\uDF4A",
-                        "\uD83C\uDF4B",
-                        "\uD83C\uDF4B\u200D\uD83D\uDFE9",
-                        "\uD83C\uDF4C",
-                        "\uD83C\uDF4D",
-                        "\uD83E\uDD6D",
-                        "\uD83C\uDF4E",
-                        "\uD83C\uDF4F",
-                        "\uD83C\uDF50",
-                        "\uD83C\uDF51",
-                        "\uD83C\uDF52",
-                        "\uD83C\uDF53",
-                        "\uD83E\uDED0",
-                        "\uD83E\uDD5D",
-                        "\uD83C\uDF45",
-                        "\uD83E\uDED2",
-                        "\uD83E\uDD65"
-                    )
-                    LazyRow() {
-                        items(emojis) { emoji ->
-                            Box(
-                                modifier = Modifier
-                                    .background(
-                                        color = MaterialTheme.colorScheme.background,
-                                        shape = RoundedCornerShape(16.dp)
-                                    )
-                                    .padding(8.dp)
-                                    .clickable(
-                                        onClick = { viewModel.setEmoji(emoji) }
-                                    )
-                            ) {
-                                Text(emoji)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.padding(10.dp)
+                    ) {
+                        NourishH2("Select an Emoji")
+                        Column(
+                            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+
+                            // emojis copied from: https://emojipedia.org/food-drink
+                            val emojis = mapOf(
+                                "Fruit" to listOf(
+                                    "\uD83C\uDF47",
+                                    "\uD83C\uDF48",
+                                    "\uD83C\uDF49",
+                                    "\uD83C\uDF4A",
+                                    "\uD83C\uDF4B",
+                                    "\uD83C\uDF4B\u200D\uD83D\uDFE9",
+                                    "\uD83C\uDF4C",
+                                    "\uD83C\uDF4D",
+                                    "\uD83E\uDD6D",
+                                    "\uD83C\uDF4E",
+                                    "\uD83C\uDF4F",
+                                    "\uD83C\uDF50",
+                                    "\uD83C\uDF51",
+                                    "\uD83C\uDF52",
+                                    "\uD83C\uDF53",
+                                    "\uD83E\uDED0",
+                                    "\uD83E\uDD5D",
+                                    "\uD83C\uDF45",
+                                    "\uD83E\uDED2",
+                                    "\uD83E\uDD65"
+                                ),
+                                "Vegetables" to listOf(
+                                    "\uD83E\uDD51",
+                                    "\uD83C\uDF46",
+                                    "\uD83E\uDD54",
+                                    "\uD83E\uDD55",
+                                    "\uD83C\uDF3D",
+                                    "\uD83C\uDF36\uFE0F",
+                                    "\uD83E\uDED1",
+                                    "\uD83E\uDD52",
+                                    "\uD83E\uDD6C",
+                                    "\uD83E\uDD66",
+                                    "\uD83E\uDDC4",
+                                    "\uD83E\uDDC5",
+                                    "\uD83E\uDD5C",
+                                    "\uD83E\uDED8",
+                                    "\uD83C\uDF30",
+                                    "\uD83E\uDEDA",
+                                    "\uD83E\uDEDB",
+                                    "\uD83C\uDF44\u200D\uD83D\uDFEB",
+                                    "\uD83E\uDEDC"
+                                ),
+                                "Bakery" to listOf(
+                                    "\uD83C\uDF5E",
+                                    "\uD83E\uDD50",
+                                    "\uD83E\uDD56",
+                                    "\uD83E\uDED3",
+                                    "\uD83E\uDD68",
+                                    "\uD83E\uDD6F",
+                                    "\uD83E\uDD5E",
+                                    "\uD83E\uDDC7"
+                                ),
+                                "General" to listOf(
+                                    "\uD83E\uDDC0",
+                                    "\uD83C\uDF56",
+                                    "\uD83C\uDF57",
+                                    "\uD83E\uDD69",
+                                    "\uD83E\uDD53",
+                                    "\uD83C\uDF54",
+                                    "\uD83C\uDF5F",
+                                    "\uD83C\uDF55",
+                                    "\uD83C\uDF2D",
+                                    "\uD83E\uDD6A",
+                                    "\uD83C\uDF2E",
+                                    "\uD83C\uDF2F",
+                                    "\uD83E\uDED4",
+                                    "\uD83E\uDD59",
+                                    "\uD83E\uDDC6",
+                                    "\uD83E\uDD5A",
+                                    "\uD83C\uDF73",
+                                    "\uD83E\uDD58",
+                                    "\uD83C\uDF72",
+                                    "\uD83E\uDED5",
+                                    "\uD83E\uDD63",
+                                    "\uD83E\uDD57",
+                                    "\uD83C\uDF7F",
+                                    "\uD83E\uDDC8",
+                                    "\uD83E\uDDC8",
+                                    "\uD83E\uDDC2",
+                                    "\uD83E\uDD6B",
+                                    "\uD83C\uDF5D"
+                                ),
+                                "Asian" to listOf(
+                                    "\uD83C\uDF71",
+                                    "\uD83C\uDF58",
+                                    "\uD83C\uDF59",
+                                    "\uD83C\uDF5A",
+                                    "\uD83C\uDF5B",
+                                    "\uD83C\uDF5C",
+                                    "\uD83C\uDF60",
+                                    "\uD83C\uDF62",
+                                    "\uD83C\uDF63",
+                                    "\uD83C\uDF64",
+                                    "\uD83C\uDF65",
+                                    "\uD83E\uDD6E",
+                                    "\uD83C\uDF61",
+                                    "\uD83E\uDD5F",
+                                    "\uD83E\uDD60",
+                                    "\uD83E\uDD61"
+                                ),
+                                "Desserts" to listOf(
+                                    "\uD83E\uDD61",
+                                    "\uD83C\uDF67",
+                                    "\uD83C\uDF68",
+                                    "\uD83C\uDF69",
+                                    "\uD83C\uDF6A",
+                                    "\uD83C\uDF82",
+                                    "\uD83C\uDF70",
+                                    "\uD83E\uDDC1",
+                                    "\uD83E\uDD67",
+                                    "\uD83C\uDF6B",
+                                    "\uD83C\uDF6C",
+                                    "\uD83C\uDF6D",
+                                    "\uD83C\uDF6E",
+                                    "\uD83C\uDF6F"
+                                ),
+                                "Drinks" to listOf(
+                                    "\uD83E\uDD5B",
+                                    "☕",
+                                    "\uD83E\uDED6",
+                                    "\uD83C\uDF75",
+                                    "\uD83E\uDD64",
+                                    "\uD83E\uDDCB",
+                                    "\uD83E\uDDC3",
+                                    "\uD83E\uDDC9",
+                                    "\uD83C\uDF7C",
+                                    "\uD83C\uDF76",
+                                    "\uD83C\uDF7E",
+                                    "\uD83C\uDF77",
+                                    "\uD83C\uDF78",
+                                    "\uD83C\uDF79",
+                                    "\uD83C\uDF7A",
+                                    "\uD83C\uDF7B",
+                                    "\uD83E\uDD42",
+                                    "\uD83E\uDD43"
+                                ),
+                                // no idea why the coffee one isnt encoded
+                                "Other" to listOf(
+                                    "\uD83E\uDD62",
+                                    "\uD83C\uDF7D\uFE0F",
+                                    "\uD83C\uDF74",
+                                    "\uD83E\uDD44",
+                                    "\uD83D\uDD2A",
+                                    "\uD83E\uDED9",
+                                    "\uD83E\uDED6"
+                                )
+                            )
+                            emojis.forEach { type ->
+                                NourishTextDivider(type.key)
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    type.value.forEach { emoji ->
+                                        Box(
+                                            modifier =
+                                                if (uiState.emoji == emoji) {
+                                                    Modifier.border(
+                                                        width = 1.dp,
+                                                        color = MaterialTheme.colorScheme.onBackground,
+                                                        shape = RoundedCornerShape(8.dp)
+                                                    )
+                                                } else {
+                                                    Modifier
+                                                }
+                                                    .clip(
+                                                        shape = RoundedCornerShape(8.dp)
+                                                    )
+                                                    .background(
+                                                        color = MaterialTheme.colorScheme.background,
+                                                        shape = RoundedCornerShape(8.dp)
+                                                    )
+                                                    .clickable(
+                                                        onClick = { viewModel.setEmoji(emoji) }
+                                                    )
+                                                    .padding(8.dp),
+                                        ) {
+                                            Text(
+                                                emoji,
+                                                fontSize = 24.sp
+                                            )
+                                        }
+                                    }
+                                }
                             }
+                        }
+
+                        Box(
+                            modifier = Modifier.padding(top=6.dp)
+                        ) {
+                            NourishIconTextButton(
+                                onClick = { viewModel.setShowEmojiSelector(false) },
+                                painter = painterResource(R.drawable.tick),
+                                description = "Done",
+                            )
                         }
                     }
                 }
