@@ -1227,11 +1227,13 @@ fun ServingSizeUpdater(
             .background(
                 color = MaterialTheme.colorScheme.surfaceContainer,
                 shape = RoundedCornerShape(16.dp)
-            )
+            ),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
         Row(
             modifier = Modifier
-                .padding(8.dp) // for inner padding of the total item
+                .padding(horizontal=8.dp).padding(top=8.dp) // for inner padding of the total item
                 .animateContentSize()
         ) {
             NourishIconButton(
@@ -1259,5 +1261,10 @@ fun ServingSizeUpdater(
                 modifier = Modifier.size(38.dp)
             )
         }
+        Text(
+            text = if (servings > 1) "Servings" else "Serving",
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
     }
 }
