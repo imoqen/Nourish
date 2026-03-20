@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish.recipecreation
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
@@ -57,6 +58,7 @@ import uk.co.imoqen.nourish.common.NourishConfirmationDialog
 import uk.co.imoqen.nourish.common.NourishDivider
 import uk.co.imoqen.nourish.common.NourishH2
 import uk.co.imoqen.nourish.common.NourishH3
+import uk.co.imoqen.nourish.common.NourishH4
 import uk.co.imoqen.nourish.common.NourishIconTextButton
 import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
@@ -129,43 +131,54 @@ fun RecipeCreationScreen(
     ) {
         // Contents, * means it is mandatory:
 
-        // Title of recipe *
-        NourishTextField(
-            value = uiState.title,
-            onValueChange = { newRecipeTitle ->
-                viewModel.setTitle(newRecipeTitle)
-            },
-            placeholder = "Enter a Title*",
-            onDone = { keyboardFocusManager.clearFocus() },
-            leadingIcon = ImageVector.vectorResource(R.drawable.text),
-        )
-
-        // Type of recipe *
+        // Details (title, type, tags)
         NourishTextDivider("Details")
 
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Recipe Title
+            // Title of recipe *
+            NourishTextField(
+                value = uiState.title,
+                onValueChange = { newRecipeTitle ->
+                    viewModel.setTitle(newRecipeTitle)
+                },
+                placeholder = "Enter a Title*",
+                onDone = { keyboardFocusManager.clearFocus() },
+                leadingIcon = ImageVector.vectorResource(R.drawable.text),
+            )
+
             // Recipe Type
             RecipeDetailSection(
                 onClick = { viewModel.setDisplayRecipeTypeSelector(true) },
                 roundedCornerAmount = 16
             ) {
                 Row(
-                    modifier = Modifier.padding(4.dp).padding(horizontal=6.dp),
+                    modifier = Modifier.padding(4.dp).padding(horizontal = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    Text("Recipe Type*")
+                    Text("Recipe Type* ")
                     if (uiState.recipeType == null) {
-                        NourishH3("None")
-                        Icon(
-                            painter = painterResource(R.drawable.edit),
-                            contentDescription = "Add a Nutritional Tag",
-                        )
+                        Box(
+                            modifier = Modifier.background(
+                                color = MaterialTheme.colorScheme.background,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                        ) {
+                            NourishH4(text = "None")
+                        }
                     } else {
-                        NourishH3(text = uiState.recipeType.title)
+                        Box(
+                            modifier = Modifier.background(
+                                color = MaterialTheme.colorScheme.background,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                        ) {
+                            NourishH4(text = uiState.recipeType.title)
+                        }
                     }
                 }
             }
@@ -180,24 +193,19 @@ fun RecipeCreationScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Row(
-                        modifier = Modifier.padding(top=4.dp),
+                        modifier = Modifier.padding(top = 4.dp),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text("Nutritional Tags")
-                        Icon(
-                            modifier = Modifier.padding(horizontal=4.dp),
-                            painter = painterResource(R.drawable.add),
-                            contentDescription = "Add a Nutritional Tag"
-                        )
                     }
 
                     Row(
-                        modifier = Modifier.fillMaxWidth(0.9f).padding(bottom = 4.dp),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
                         horizontalArrangement = Arrangement.Center
                     ) {
                         if (uiState.tagSheetState.recipeTags != null &&
-                            uiState.tagSheetState.recipeTags.any{ it.selected }
+                            uiState.tagSheetState.recipeTags.any { it.selected }
                         ) {
 
                             SelectedTags(
@@ -214,36 +222,36 @@ fun RecipeCreationScreen(
                             )
 
                         } else {
-                            NourishH3(
-                                text = "None"
-                            )
+                            Box(
+                                modifier = Modifier.background(
+                                    color = MaterialTheme.colorScheme.background,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                            ) {
+                                NourishH4("None")
+                            }
                         }
                     }
                 }
             }
         }
 
-        NourishTextDivider("Ingredients*")
+        NourishTextDivider(text = "Ingredients*", modifier = Modifier.padding(vertical=8.dp))
 
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(12.dp))
                 .background(
                     shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer
+                    color = MaterialTheme.colorScheme.surfaceContainer
                 )
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth(0.8f).padding(vertical=8.dp),
+                modifier = Modifier.fillMaxWidth(0.95f).padding(vertical = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Column(
-                    modifier = Modifier.background(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainer
-                    )
-                ) {
+
                     if (uiState.ingredients == null || uiState.ingredients.isEmpty()) {
                         Text(
                             text = "No ingredients added yet.",
@@ -251,10 +259,16 @@ fun RecipeCreationScreen(
                             modifier = Modifier.fillMaxWidth(0.95f).padding(8.dp)
                         )
                     } else {
+                        Column(
+                            modifier = Modifier.background(
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.background
+                            )
+                        ) {
                         uiState.ingredients.forEachIndexed { i, ingredient ->
 
                             Row(
-                                modifier = Modifier.fillMaxWidth(0.95f).padding(horizontal=6.dp),
+                                modifier = Modifier.fillMaxWidth(0.95f).padding(horizontal = 6.dp),
                                 horizontalArrangement = Arrangement.Start,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -297,7 +311,7 @@ fun RecipeCreationScreen(
                                 )
                                 Icon(
                                     painter = painterResource(R.drawable.delete),
-                                    contentDescription = "Delete Item",
+                                    contentDescription = "Delete Ingredient",
                                     tint = MaterialTheme.colorScheme.error.copy(
                                         alpha = 0.8f
                                     ),
@@ -314,7 +328,6 @@ fun RecipeCreationScreen(
                     description = "Add Ingredient",
                     painter = painterResource(R.drawable.ingredients),
                     onClick = { viewModel.setShowAddIngredientSheet(true) },
-                    buttonColour = MaterialTheme.colorScheme.background
                 )
 
                 HorizontalDivider()
@@ -325,52 +338,59 @@ fun RecipeCreationScreen(
         }
 
         // Method *
-        NourishTextDivider("Method*")
+        NourishTextDivider("Method*", modifier = Modifier.padding(vertical=8.dp))
         Box(
             modifier = Modifier
+                .padding(8.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(
                     shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer
+                    color = MaterialTheme.colorScheme.surfaceContainer
                 )
         ) {
             Column(
-                modifier = Modifier.background(
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainer
-                )
+                modifier = Modifier.fillMaxWidth().animateContentSize().padding(bottom = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-
                 DraggableStepsList(viewModel, uiState)
 
-                NourishIconTextButton(
-                    description = "Add Step",
-                    painter = painterResource(R.drawable.chef),
-                    onClick = { viewModel.setShowAddMethodSheet(true) },
-                    buttonColour = MaterialTheme.colorScheme.background
-                )
-
                 // modal bottom sheet for adding method step
-                if (
-                    uiState.showAddMethodSheet
-                ) {
-                    NourishTextField(
-                        value = uiState.stepToAdd,
-                        onValueChange = { viewModel.setStepToAdd(it) },
-                        placeholder = "Enter the step",
-                        onDone = { keyboardFocusManager.clearFocus() },
-                    )
-                    NourishButton(
-                        onClick = { viewModel.addRecipeStep() },
-                        text = "Save Step"
-                    )
+                AnimatedContent(targetState = uiState.showAddMethodSheet) { state ->
+                    if (state) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().animateContentSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            NourishTextField(
+                                value = uiState.stepToAdd,
+                                onValueChange = { viewModel.setStepToAdd(it) },
+                                placeholder = "Enter the step",
+                                onDone = { keyboardFocusManager.clearFocus() },
+                                trailingIcon = ImageVector.vectorResource(R.drawable.cross),
+                                alwaysDisplayTrailingIcon = true,
+                                onTrailingIconPress = { viewModel.resetRecipeStepAddition() }
+                            )
+                            NourishButton(
+                                onClick = { viewModel.addRecipeStep() },
+                                text = "Save Step"
+                            )
+                        }
+                    } else {
+                        NourishIconTextButton(
+                            description = "Add Step",
+                            painter = painterResource(R.drawable.chef),
+                            onClick = { viewModel.setShowAddMethodSheet(true) },
+                        )
+                    }
                 }
-
             }
+
         }
 
         // Storage
-        NourishTextDivider("Storage Guidance")
+        NourishTextDivider("Storage Guidance", modifier = Modifier.padding(vertical=8.dp))
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(12.dp))
@@ -393,6 +413,7 @@ fun RecipeCreationScreen(
             leadingIcon = ImageVector.vectorResource(R.drawable.fridge),
         )
     }
+
 
     // Confirmation Dialogs
     NourishConfirmationDialog(
@@ -484,6 +505,7 @@ fun RecipeDetailSection(
 ) {
     Box(
         modifier = Modifier
+            .fillMaxWidth(0.9f)
             .clip(RoundedCornerShape(roundedCornerAmount.dp))
             .clickable { onClick() }
             .background(
@@ -526,19 +548,31 @@ fun DraggableStepsList(
             modifier = Modifier.fillMaxWidth().heightIn(max=400.dp), //scrollable so just limit its ehight
             state = lazyListState,
             contentPadding = PaddingValues(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             items(uiState.method, key = { it.uuid }) { // random uuid is assigned when the step is made, so that no collisions between keys. keys must be unique, or the app crashes
 
                 ReorderableItem(reorderableLazyListState, key = it.uuid) { isDragging ->
                     val elevation by animateDpAsState(if (isDragging) 4.dp else 0.dp)
 
-                    Surface(shadowElevation = elevation) {
+                    Surface(
+                        shadowElevation = elevation,
+                        modifier = Modifier.clip(RoundedCornerShape(12.dp))
+                    ) {
 
-                        Row {
-                            Text(it.step)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(0.95f),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = it.step,
+                                modifier = Modifier.weight(1f).padding(6.dp) // so that it wont take up all of the space
+                            )
                             IconButton(
-                                modifier = Modifier.draggableHandle(
+                                modifier = Modifier
+                                    .padding(6.dp)
+                                    .draggableHandle(
                                     onDragStarted = {
                                         hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
                                     },

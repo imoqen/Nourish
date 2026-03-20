@@ -544,10 +544,14 @@ class RecipeCreationViewModel @Inject constructor(
             }
                 .onSuccess {
                     // after it is successfully added, clear the ui of any of the addition
-                    setShowAddMethodSheet(false)
-                    setStepToAdd("")
+                    resetRecipeStepAddition()
                 }
         }
+    }
+
+    fun resetRecipeStepAddition() {
+        setShowAddMethodSheet(false)
+        setStepToAdd("")
     }
 
 }
