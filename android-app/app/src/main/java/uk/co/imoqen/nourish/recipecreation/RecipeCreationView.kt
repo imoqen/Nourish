@@ -144,6 +144,7 @@ fun RecipeCreationScreen(
         viewModel.getAllRecipeTypes()
         viewModel.getAllTagsForUser()
     }
+
     // Image:
     var displayImage = false
     val context = LocalContext.current
@@ -310,7 +311,6 @@ fun RecipeCreationScreen(
                                 viewModel.setImageFile("")
                             },
                             painter = painterResource(R.drawable.delete),
-                            backgroundColour = MaterialTheme.colorScheme.background,
                             iconColour = MaterialTheme.colorScheme.error
                         )
                     } else {
