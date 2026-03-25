@@ -3,6 +3,7 @@ package uk.co.imoqen.nourish.recipecreation
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -39,6 +40,7 @@ import uk.co.imoqen.nourish.network.response.LlmIngredientSection
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 import uk.co.imoqen.nourish.recipediscovery.Mipmap
 import uk.co.imoqen.nourish.shoppinglist.UserInteractionStatus
+import java.io.File
 import java.lang.NullPointerException
 import java.util.UUID
 import javax.inject.Inject
@@ -785,7 +787,9 @@ class RecipeCreationViewModel @Inject constructor(
     }
 
     // updates a recipe by deleting the old recipe and replacing it with the new one.
-    fun updateRecipe() {
+    fun updateRecipe(
+        context: Context // required for image deletion
+    ) {
         viewModelScope.launch() {
             runCatching {
                 // Check that user is logged in validly
@@ -799,6 +803,14 @@ class RecipeCreationViewModel @Inject constructor(
                     return@launch
                 }
                 val updatedRecipe = parseIntoLlmRecipe()
+
+                // check if the image should be deleted or not:
+                if (originalRecipe.imagePath != "" && mutableUiState.value.imageFile == "") {
+                    File(
+                        context.filesDir,
+                        originalRecipe.imagePath // delete the image file
+                    ).delete()
+                }
 
                 // Add the recipe to the database:
                 recipeRepository.replaceRecipe(originalRecipe, updatedRecipe, mutableUiState.value.imageFile, llmGenerated=false) // now  non llm generated, vecayse user edited it

@@ -302,7 +302,11 @@ fun RecipeCreationScreen(
                         // allow user to delete image
                         NourishIconButton(
                             onClick = {
-                                imageFile.delete(); // deletes higher quality image
+                                // if editing: NOT deleted from the device here, in case the user does not save their changes.
+                                // if uploading, doesnt matter eitherway so just delete it.
+                                if (uiState.creationMode == CreationMode.ADD) {
+                                    imageFile.delete(); // deletes higher quality image
+                                }
                                 viewModel.setImageFile("")
                             },
                             painter = painterResource(R.drawable.delete),
@@ -649,7 +653,7 @@ fun RecipeCreationScreen(
                     if (uiState.creationMode == CreationMode.ADD) {
                         viewModel.addRecipe()
                     } else {
-                        viewModel.updateRecipe()
+                        viewModel.updateRecipe(context)
                     }
                 },
                 painter = painterResource(R.drawable.tick),

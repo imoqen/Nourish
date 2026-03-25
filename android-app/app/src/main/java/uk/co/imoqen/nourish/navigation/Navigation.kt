@@ -91,7 +91,10 @@ fun AppNavHost(
         ) { backStackEntry ->
             val recipeId = backStackEntry.arguments?.getLong("id")!!
             val recipeCreationViewModel: RecipeCreationViewModel = hiltViewModel() //uses recipe creation, but just parses the recipe to be displayed within it. then user can make changes to it.
-            recipeCreationViewModel.populateFromId(recipeId)
+            if (recipeCreationViewModel.uiState.collectAsState().value.recipeEditId != recipeId) {
+                // if the recipe to edit doesn't match the current recipe being edited, update it:
+                recipeCreationViewModel.populateFromId(recipeId)
+            }
             RecipeCreationScreen(recipeCreationViewModel, onBack={ navController.popBackStack() }, onFinishEdit={navController.popBackStack(TabDestination.RECIPE_BOOK.route, inclusive = false)} ) // simply go back by keep popping back stack until reached back to the recipe book
         }
         // Can add Route destinations too (those not from tabs)
