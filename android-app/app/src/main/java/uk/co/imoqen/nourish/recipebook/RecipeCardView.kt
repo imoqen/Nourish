@@ -580,10 +580,20 @@ fun RecipeCard(
 
                         HorizontalDivider()
 
-                        Text(
-                            text = recipeCard.storageInstructions,
-                            modifier = Modifier.padding(8.dp)
-                        )
+                        if (recipeCard.storageInstructions != "") {
+                            Text(
+                                text = recipeCard.storageInstructions,
+                                modifier = Modifier.padding(8.dp)
+                            )
+                        } else {
+                            Text(
+                                text = "No storage guidance provided.",
+                                color = MaterialTheme.colorScheme.onBackground.copy(
+                                    0.5f
+                                ),
+                                modifier = Modifier.padding(8.dp)
+                            )
+                        }
                     }
 
                     HorizontalDivider(modifier = Modifier.padding(vertical=16.dp))

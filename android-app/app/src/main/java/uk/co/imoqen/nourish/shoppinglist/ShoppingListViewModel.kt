@@ -316,7 +316,7 @@ class ShoppingListViewModel @Inject constructor(
                 }
 
                 val ingredientName = mutableUiState.value.ingredientToAdd.name.trim() // whitespace si removed
-                if (ingredientName == "") {
+                if (ingredientName.trim() == "") {
                     setIngredientToAddError("The item cannot be blank.")
                     return@launch
                 }

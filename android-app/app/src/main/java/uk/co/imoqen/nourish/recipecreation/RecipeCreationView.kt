@@ -630,7 +630,7 @@ fun RecipeCreationScreen(
                 leadingIcon = ImageVector.vectorResource(R.drawable.fridge),
             )
 
-            // Error if recipe creation fails
+            // Error if recipe creation fails when saving the new recipe / updating the existing recipe
             if (uiState.recipeCreationError != "") {
                 NourishErrorText(
                     uiState.recipeCreationError

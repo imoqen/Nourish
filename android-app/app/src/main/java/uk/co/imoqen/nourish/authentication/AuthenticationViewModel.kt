@@ -194,7 +194,7 @@ class AuthenticationViewModel @Inject constructor(
      */
     fun signInWithEmailAndPassword() {
         viewModelScope.launch() {
-            if (mutableUiState.value.signinEmail == "" || mutableUiState.value.signinPassword == "") {
+            if (mutableUiState.value.signinEmail.trim() == "" || mutableUiState.value.signinPassword == "") {
                 setSigninError(ErrorMessage.INPUT_ERROR_BLANK)
                 uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNIN))
                 return@launch
@@ -257,7 +257,7 @@ class AuthenticationViewModel @Inject constructor(
         viewModelScope.launch() {
             // Blank input fields:
             if (
-                mutableUiState.value.signupEmail == "" ||
+                mutableUiState.value.signupEmail.trim() == "" ||
                 mutableUiState.value.signupPassword == "" ||
                 mutableUiState.value.signupPasswordConfirmation == ""
             ) {
@@ -305,7 +305,7 @@ class AuthenticationViewModel @Inject constructor(
      * so their account will now use both password and Google login.
      */
     fun passwordResetRequest() {
-        if (mutableUiState.value.emailToResetPassword == "") {
+        if (mutableUiState.value.emailToResetPassword.trim() == "") {
             setPasswordResetStatus(ErrorMessage.INPUT_ERROR_BLANK)
             return // early return
         }

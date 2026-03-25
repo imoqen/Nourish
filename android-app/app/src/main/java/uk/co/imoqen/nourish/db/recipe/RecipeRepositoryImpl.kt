@@ -192,7 +192,7 @@ class RecipeRepositoryImpl @Inject constructor(
 
                     // SANITISE the user inputted. user inputted always has singular = "". so check this, if it is then update it and the plural value accordingly.
                     val ingredient = ingredientRepository.getById(ingredientId).first()
-                    if (ingredient != null && ingredient.singular == "") {
+                    if (ingredient != null && ingredient.singular.trim() == "") {
                         ingredientRepository.update(ingredient.copy(plural = plural, singular = singular))
                     }
 

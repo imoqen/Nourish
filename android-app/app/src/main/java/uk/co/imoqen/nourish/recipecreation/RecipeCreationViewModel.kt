@@ -497,7 +497,7 @@ class RecipeCreationViewModel @Inject constructor(
                 val amount = mutableUiState.value.ingredientToAdd.amount.replace(',', '.').toDoubleOrNull()
                 val name = mutableUiState.value.ingredientToAdd.name.trim()
                 val unit = mutableUiState.value.ingredientToAdd.unit
-                if (name == "") {
+                if (name.trim() == "") {
                     setIngredientToAddError("The name cannot be blank.")
                     return@launch
                 }
@@ -620,7 +620,7 @@ class RecipeCreationViewModel @Inject constructor(
         viewModelScope.launch() {
             runCatching {
                 val step = mutableUiState.value.stepToAdd.trim()
-                if (step == "") {
+                if (step.trim() == "") {
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
                         "The step cannot be blank."
                     ))
@@ -652,7 +652,7 @@ class RecipeCreationViewModel @Inject constructor(
                 val newStep = mutableUiState.value.stepToEdit.trim()
                 val index = mutableUiState.value.stepIndexToEdit
                 val method = mutableUiState.value.method
-                if (newStep == "") {
+                if (newStep.trim() == "") {
                     return@launch
                 }
                 if (method == null) {
@@ -801,8 +801,12 @@ class RecipeCreationViewModel @Inject constructor(
                         )
                     )
                 }
-
                 .onFailure { e ->
+                    when (e) {
+                        is RecipeCreationException -> {
+                            setRecipeCreationError(e.message ?: "Could not update recipe.")
+                        }
+                    }
                     uiEventBus.enqueueEvent(
                         UiEvent.ShowSnackbar(
                             "Your recipe could not be updated."
@@ -812,29 +816,42 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
+    fun validateRecipeRequiredFields(
+        title: String,
+        ingredients: List<LlmIngredient>?,
+        recipeType: RecipeType?,
+        method: List<RecipeStep>?
+    ) {
+        if (title.trim() == "") {
+            throw RecipeCreationException("You must enter a title.")
+        }
+        if (ingredients == null || ingredients.isEmpty()) {
+            throw RecipeCreationException("You must enter at least 1 ingredient.")
+        }
+        if (recipeType == null) {
+            throw RecipeCreationException("You must select a recipe type.")
+        }
+        if (method == null || method.isEmpty()) {
+            throw RecipeCreationException("You must enter at least 1 method step.")
+        }
+    }
+
     fun parseIntoLlmRecipe(): LlmRecipe {
         val ingredients = mutableUiState.value.ingredients
         val recipeType = mutableUiState.value.recipeType
         val method = mutableUiState.value.method
-        if (ingredients == null || ingredients.isEmpty()) {
-            // todo set error
-            throw RecipeCreationException("You must enter at least 1 ingredient.")
-        }
-        if (recipeType == null) {
-            // todo set error
-            throw RecipeCreationException("You must select a recipe type.")
-        }
-        if (method == null || method.isEmpty()) {
-            // todo set error
-            throw RecipeCreationException("You must enter at least 1 method step.")
-        }
+        val title = mutableUiState.value.title
+
+        // validate that the required fields have been filled:
+        validateRecipeRequiredFields(title, ingredients, recipeType, method)
+
         val servings = mutableUiState.value.numberOfServings
         return LlmRecipe(
             title = mutableUiState.value.title,
-            sectionIngredients = listOf(LlmIngredientSection("For the recipe", ingredients.map { it.copy(ingredientAmount = (it.ingredientAmount / servings)) })), // scale such that it stores the amount for 1 serving.
+            sectionIngredients = listOf(LlmIngredientSection("For the recipe", ingredients!!.map { it.copy(ingredientAmount = (it.ingredientAmount / servings)) })), // scale such that it stores the amount for 1 serving.
             servings = servings,
-            mealType = recipeType.title,
-            method = method.map { it.step }, // only get the steps, remove the uuids
+            mealType = recipeType!!.title,
+            method = method!!.map { it.step }, // only get the steps, remove the uuids
             tags = mutableUiState.value.tagSheetState.recipeTags?.filter { it.selected }?.map { it.tag.identifier } ?: listOf(""), // finds all selected tags, then gets their identifiers. tags are not mandatory so "" is ok if it is null.
             storage = mutableUiState.value.storageGuidance,
             recipeNotPossible = false,
@@ -868,7 +885,7 @@ class RecipeCreationViewModel @Inject constructor(
                         selectedTags.add(TagSelection(tag, false))
                     }
                 }
-                
+
                 // build ingredients
                 val llmIngredients: MutableList<LlmIngredient> = mutableListOf()
                 val allIngredients = recipeRepository.getRecipeWithRecipeIngredients(recipe.id).first().ingredients

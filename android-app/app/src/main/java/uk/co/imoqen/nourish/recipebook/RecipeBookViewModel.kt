@@ -729,11 +729,15 @@ class RecipeBookViewModel @Inject constructor(
                 val recipe = mutableUiState.value.selectedRecipe
 
                 // validation
-                if (userPrompt == "") {
+                if (userPrompt.trim() == "") {
+                    setActionChatStage(ActionChatStage.USER_INPUT) // no longer awaiting - error occurred.
+                    setLlmAwaitActionType(LlmActionType.NONE)
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("The input must not be blank to proceed."))
                     return@launch
                 }
                 if (recipe == null) {
+                    setActionChatStage(ActionChatStage.USER_INPUT) // no longer awaiting - error occurred.
+                    setLlmAwaitActionType(LlmActionType.NONE)
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("A recipe must be selected to proceed."))
                     return@launch
                 }
