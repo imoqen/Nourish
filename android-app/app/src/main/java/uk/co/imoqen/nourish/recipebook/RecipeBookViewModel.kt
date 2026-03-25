@@ -828,6 +828,14 @@ class RecipeBookViewModel @Inject constructor(
                             }
                         }
 
+                    },
+                    onError = { errorMessage ->
+                        viewModelScope.launch() {
+                            // show the error and reset the ui
+                            uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(errorMessage))
+                            setActionChatStage(ActionChatStage.USER_INPUT)
+                            setLlmAwaitActionType(LlmActionType.NONE)
+                        }
                     }
                 )
             }
