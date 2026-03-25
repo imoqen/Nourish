@@ -100,6 +100,11 @@ const NutritionSchemaZod = z.object({
     .describe(
       "The estimated amount of salt, in grams, in this dish for 1 serving. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
     ),
+  fibre: z
+    .number()
+    .describe(
+      "The estimated amount of fibre, in grams, in this dish for 1 serving. Calculate this using the servings, ingredients, amounts, and units in the provided recipe.",
+    ),
 });
 
 // for question:
@@ -120,7 +125,7 @@ const IngredientSchemaZod = z.object({
     .string()
     .describe(
       "Fill this in first. An ingredient required for this recipeSection, in its singular form. Do not specify details such as size; simply give the ingredient " +
-        "(type should be specified only if necessary, e.g. brown sugar vs granulated sugar). Also be careful if adding baking soda; ensure it is not too much and use baking powder instead if appropriate. " +
+        "(type should be specified only if necessary, e.g. brown sugar vs granulated sugar). Also be careful if adding baking soda / bicarbonate of soda; ensure it is not too much and only use if necessary - most of the time, baking powder should be used instead. If using yeast, ensure the amount is valid and in grams (e.g. 7 grams active dry yeast for 500g flour) " +
         "If the ingredient is 'garlic', only write 'garlic', not 'garlic clove' as this will be covered by the ingredientAmountUnit (CLOVE). Apply this rule to other ingredients where you see fit. " +
         "Do not include the amount or unit here; this will go in ingredientAmount and ingredientAmountsUnit, respectively. " +
         "Do not include temperature characteristics of the ingredient, write them exactly as how they would be bought in a shop / shopping list. Include any temperature details in the method instead (e.g. if there is milk and it should be warmed, the ingredient should only be 'milk' and outline the warming step in the method.)",

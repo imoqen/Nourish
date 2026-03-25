@@ -1126,17 +1126,25 @@ fun NutritionLlmAction(
             viewModel.getNutritionForRecipe(recipe.id)
                 .collectAsState(initial = null).value
         if (uiState.llmAwaitActionType == LlmActionType.NUTRITIONAL_VALUES) {
-            Text(
-                "Estimating nutritional values...",
-                modifier = Modifier.padding(16.dp),
-                textAlign = TextAlign.Center
-            )
+            Column() {
+                Text(
+                    "Estimating nutritional values...",
+                    modifier = Modifier.padding(16.dp),
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text = "This can take some time.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom=8.dp)
+                )
+            }
         }
         if (nutrition == null && uiState.llmAwaitActionType == LlmActionType.NONE) {
             viewModel.setUserActionRequest("Generate nutritional values for the provided dish in the provided JSON schema, for the given number of servings.")
             NourishButton(
                 onClick = { viewModel.makeLlmApiCall(LlmActionType.NUTRITIONAL_VALUES) },
-                text = "Generate Nutritional Values",
+                text = "Estimate Nutritional Values",
             )
         } else if (nutrition != null) {
             LookaheadScope() {
@@ -1147,7 +1155,7 @@ fun NutritionLlmAction(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
 
-                    NourishH2("Nutritional Values")
+                    NourishH2("Estimated Nutritional Values")
 
                     NourishTextDivider(
                         text = "in ${nutrition.servings} serving${
@@ -1194,6 +1202,13 @@ fun NutritionLlmAction(
                         item {
                             NutritionalFact("Salt", "${nutrition.salt}g")
                         }
+                    }
+                    // fibre is separate to it is centred at the bottom, as it is the 7th element so doesn't fit into the 2x3 grid
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top=10.dp),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        NutritionalFact("Fibre", "${nutrition.fibre}g")
                     }
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))

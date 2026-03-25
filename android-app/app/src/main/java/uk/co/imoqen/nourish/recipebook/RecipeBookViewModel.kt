@@ -832,7 +832,8 @@ class RecipeBookViewModel @Inject constructor(
                                         carbohydrate = llmNutritionResponse.carbohydrate,
                                         sugars = llmNutritionResponse.sugars,
                                         protein = llmNutritionResponse.protein,
-                                        salt = llmNutritionResponse.salt
+                                        salt = llmNutritionResponse.salt,
+                                        fibre = llmNutritionResponse.fibre
                                     )
                                 )
                                 setActionChatStage(ActionChatStage.RESPONSE_RECEIVED)
