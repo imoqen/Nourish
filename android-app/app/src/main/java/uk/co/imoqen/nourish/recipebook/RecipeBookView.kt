@@ -343,7 +343,7 @@ fun RecipeList(
                                                                     verticalArrangement = Arrangement.Center
                                                                 ) {
                                                                     Text(
-                                                                        text = recipeCardUnexpanded.title,
+                                                                        text = if (recipeCardUnexpanded.title.length <= 54) { recipeCardUnexpanded.title } else { "${recipeCardUnexpanded.title.take(50)}..." },
                                                                         textAlign = TextAlign.Center,
                                                                         modifier = Modifier.padding(
                                                                             4.dp

@@ -847,6 +847,9 @@ class RecipeCreationViewModel @Inject constructor(
         if (title.trim() == "") {
             throw RecipeCreationException("You must enter a title.")
         }
+        if (title.length > 54) {
+            throw RecipeCreationException("The title is too long. It must be less than 54 characters.")
+        }
         if (ingredients == null || ingredients.isEmpty()) {
             throw RecipeCreationException("You must enter at least 1 ingredient.")
         }

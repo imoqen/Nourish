@@ -107,6 +107,7 @@ import uk.co.imoqen.nourish.common.backgroundColour
 import uk.co.imoqen.nourish.common.ingredient.AddIngredientBottomSheet
 import uk.co.imoqen.nourish.common.ingredient.AddIngredientSheetText
 import uk.co.imoqen.nourish.common.ingredient.EditIngredientBottomSheet
+import uk.co.imoqen.nourish.common.onBackgroundColour
 import uk.co.imoqen.nourish.common.recipeColour
 import uk.co.imoqen.nourish.recipebook.ServingSizeUpdater
 import uk.co.imoqen.nourish.common.tag.FilterState
@@ -168,8 +169,7 @@ fun RecipeCreationScreen(
 
     // slight animation to mask the population of values (particularly needed for editing recipe):
     var loading by remember { mutableStateOf(true) }
-    LaunchedEffect("TIME_FOR_LOADING") {
-        //delay(150)
+    LaunchedEffect(uiState.recipeEditId) { // whenever the id to edit changes, load again
         loading = false
     }
 
@@ -1089,7 +1089,7 @@ fun RecipeCreationScreen(
                                         Text(
                                             text = colour.name.lowercase()
                                                 .replaceFirstChar { it.uppercase() },
-                                            color = Color.Black,
+                                            color = colour.onBackgroundColour(),
                                             fontWeight = FontWeight.SemiBold
                                         )
                                     }

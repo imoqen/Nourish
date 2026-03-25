@@ -934,7 +934,7 @@ fun AlterationLlmAction(
 
                 HorizontalDivider(modifier = Modifier.padding(top = 10.dp))
 
-                if (uiState.userActionRequest != "" && uiState.actionChatStage != ActionChatStage.USER_INPUT) {
+                if (uiState.userActionRequest != "" && uiState.actionChatStage != ActionChatStage.USER_INPUT && uiState.actionChatStage != ActionChatStage.RESPONSE_RECEIVED) {
                     NourishTextMessage(
                         textSender = TextSender.USER,
                         modifier = Modifier.align(Alignment.End),
