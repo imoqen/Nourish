@@ -83,6 +83,8 @@ import coil3.request.ImageRequest
 import uk.co.imoqen.nourish.common.IndeterminateCircularIndicator
 import uk.co.imoqen.nourish.common.NourishButton
 import uk.co.imoqen.nourish.common.NourishColour
+import uk.co.imoqen.nourish.common.NourishConfirmationDialog
+import uk.co.imoqen.nourish.common.NourishDangerButton
 import uk.co.imoqen.nourish.common.NourishH2
 import uk.co.imoqen.nourish.common.NourishH3
 import uk.co.imoqen.nourish.common.NourishIconButton
@@ -97,6 +99,7 @@ import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQuery
 import uk.co.imoqen.nourish.network.request.LlmActionType
 import uk.co.imoqen.nourish.recipediscovery.RecipeCardPreview
+import uk.co.imoqen.nourish.recipediscovery.restart
 import uk.co.imoqen.nourish.shoppinglist.IngredientAmount
 import java.io.File
 
@@ -129,6 +132,7 @@ fun RecipeCardScreen(
             RecipeCard(recipeBookViewModel, onBack, uiState, keyboardFocusManager, onEditRecipe)
         }
     }
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -660,15 +664,14 @@ fun RecipeCard(
                         }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            horizontalArrangement = Arrangement.Center
                         ) {
-                            RecipeActionButton(
+
+                            NourishDangerButton(
                                 onClick = {
-                                    recipeBookViewModel.deleteRecipe()
+                                    recipeBookViewModel.setDeleteConfirmation(true)
                                 },
-                                painter = painterResource(R.drawable.delete), //todo ADD CONFIRMATION and make it red to show danger
-                                description = "Delete Recipe",
-                                modifier = Modifier.weight(1f)
+                                text = "Delete Recipe",
                             )
                         }
 
@@ -756,6 +759,14 @@ fun RecipeCard(
             }
         }
     }
+    // confirmation dialog for deletion of a recipe:
+    NourishConfirmationDialog(
+        show = uiState.deleteConfirmation,
+        title = "Delete Recipe",
+        description = "Are you sure you wish to permanently delete this recipe?\n\nThis action cannot be undone; the recipe cannot be restored.",
+        onConfirmation = { recipeBookViewModel.deleteRecipe() },
+        onDismiss = { recipeBookViewModel.setDeleteConfirmation(false) }
+    )
 }
 
 @Composable

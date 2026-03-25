@@ -176,6 +176,15 @@ class RecipeBookViewModel @Inject constructor(
         }
     }
 
+    // to show delete recipe dialog:
+    fun setDeleteConfirmation(deleteConfirmation: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                deleteConfirmation = deleteConfirmation
+            )
+        }
+    }
+
     fun alterIngredientShoppingListStatus(
         ingredientToAddToShoppingList: ShoppingListIngredient,
         index: Int, // safe to use index because it wont change after it is populated. for safety, done in runcatching
