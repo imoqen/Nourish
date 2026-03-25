@@ -33,4 +33,5 @@ data class RecipeNutrition(
     @ColumnInfo(name = "sugars") val sugars: Double,
     @ColumnInfo(name = "protein") val protein: Double,
     @ColumnInfo(name = "salt") val salt: Double,
+    @ColumnInfo(name = "fibre") val fibre: Double
 )

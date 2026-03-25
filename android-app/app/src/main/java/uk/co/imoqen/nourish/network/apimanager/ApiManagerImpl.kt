@@ -15,7 +15,6 @@ import uk.co.imoqen.nourish.network.request.LlmActionType
 import uk.co.imoqen.nourish.network.response.LlmError
 import uk.co.imoqen.nourish.network.request.LlmRequest
 import uk.co.imoqen.nourish.network.request.LlmRequestType
-import uk.co.imoqen.nourish.network.response.ApiResponse
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import uk.co.imoqen.nourish.network.response.LlmNutrition
 import uk.co.imoqen.nourish.network.response.LlmQuestionResponse
@@ -36,7 +35,8 @@ class ApiManagerImpl @Inject constructor(
         imageFilename: String, // optional; only for generating from image
         filesDir: File?, // optional; only for generating from image
         onDishesProposed: (LlmDishesProposed?) -> Unit,
-        onResponse: (ApiResponse?) -> Unit
+        onError: (String) -> Unit,
+        onResponse: (LlmRecipe?) -> Unit,
     ) {
         // when: the last line of each block is what will be assigned to the call val
         try {
@@ -47,7 +47,8 @@ class ApiManagerImpl @Inject constructor(
                     handleRequestCall(
                         apiService.generateRecipe(request, "Bearer $bearerToken"),
                         onDishesProposed,
-                        onResponse
+                        onResponse,
+                        onError
                     )
                 }
 
@@ -62,7 +63,8 @@ class ApiManagerImpl @Inject constructor(
                     handleRequestCall(
                         apiService.generateRecipeFromDishImage(multipartBody, request, "Bearer $bearerToken"),
                         onDishesProposed,
-                        onResponse
+                        onResponse,
+                        onError
                     )
                 }
 
@@ -72,8 +74,8 @@ class ApiManagerImpl @Inject constructor(
                     handleRequestCall(
                         apiService.generateDishesFromIngredients(request, "Bearer $bearerToken"),
                         onDishesProposed,
-                        { } // do nothing because we are proposing dishes, not getting recipe response
-
+                        { }, // do nothing because we are proposing dishes, not getting recipe response
+                        onError
                     )
                 }
 
@@ -91,8 +93,8 @@ class ApiManagerImpl @Inject constructor(
                     handleRequestCall(
                         apiService.generateDishesFromImage(multipartBody, request, "Bearer $bearerToken"),
                         onDishesProposed,
-                        { } // do nothing because we are proposing dishes, not getting recipe response
-
+                        { }, // do nothing because we are proposing dishes, not getting recipe response
+                        onError
                     )
                 }
 
@@ -106,14 +108,14 @@ class ApiManagerImpl @Inject constructor(
                     handleRequestCall(
                         apiService.generateDishesFromIngredientsImage(multipartBody, request, "Bearer $bearerToken"),
                         onDishesProposed,
-                        { } // do nothing because we are proposing dishes, not getting recipe response
-
+                        { }, // do nothing because we are proposing dishes, not getting recipe response
+                        onError
                     )
                 }
             }
         } catch(e: Exception) {
             Log.e("CALL ERROR LLM", "$e")
-            onResponse(ApiResponse(null, "Internal Server Error. Please try again later."))
+            onError("Internal Server Error. Please try again later.")
         }
     }
 
@@ -123,7 +125,8 @@ class ApiManagerImpl @Inject constructor(
         bearerToken: String,
         onQuestionAnswered: (LlmQuestionResponse?) -> Unit,
         onRecipeAltered: (LlmRecipe?) -> Unit,
-        onNutritionGenerated: (LlmNutrition?) -> Unit
+        onNutritionGenerated: (LlmNutrition?) -> Unit,
+        onError: (String) -> Unit
     ) {
         // when: the last line of each block is what will be assigned to the call val
         try {
@@ -132,7 +135,7 @@ class ApiManagerImpl @Inject constructor(
                 LlmActionType.ALTERATION -> {
                     handleActionCall(
                         apiService.generateAlteredRecipe(request, "Bearer $bearerToken"),
-                        {}, onRecipeAltered, {}
+                        {}, onRecipeAltered, {}, onError
                     )
                 }
 
@@ -140,7 +143,7 @@ class ApiManagerImpl @Inject constructor(
                 LlmActionType.QUESTION -> {
                     handleActionCall(
                         apiService.generateQueryAnswer(request, "Bearer $bearerToken"),
-                        onQuestionAnswered, {}, {}
+                        onQuestionAnswered, {}, {}, onError
                     )
                 }
 
@@ -148,7 +151,7 @@ class ApiManagerImpl @Inject constructor(
                 LlmActionType.NUTRITIONAL_VALUES -> {
                     handleActionCall(
                         apiService.generateNutrition(request, "Bearer $bearerToken"),
-                        {}, {}, onNutritionGenerated
+                        {}, {}, onNutritionGenerated, onError
                     )
                 }
 
@@ -164,7 +167,8 @@ class ApiManagerImpl @Inject constructor(
     private fun <T> handleRequestCall(
         call: Call<T>,
         onDishesProposed: (LlmDishesProposed?) -> Unit,
-        onResponse: (ApiResponse?) -> Unit
+        onResponse: (LlmRecipe?) -> Unit,
+        onError: (String) -> Unit
     ) {
         call.enqueue(object : Callback<T> {
             // Response received from the server:
@@ -172,15 +176,15 @@ class ApiManagerImpl @Inject constructor(
                 call: Call<T>, response: Response<T>
             ) {
                 if (response.isSuccessful) {
-                    handleRequestSuccess(response, onDishesProposed, onResponse)
+                    handleRequestSuccess(response, onDishesProposed, onResponse, onError)
                 } else {
-                    handleRequestError(response, onResponse)
+                    handleRequestError(response, onError)
                 }
             }
             // Timeout or no internet:
             override fun onFailure(call: Call<T>, t: Throwable) {
                 Log.e("CALL ERROR LLM", "${t.message}")
-                onResponse(ApiResponse(null,"Internal Server Error. Please try again later."))
+                onError("Internal Server Error. Please try again later, or check your internet connection.")
             }
         })
     }
@@ -189,17 +193,17 @@ class ApiManagerImpl @Inject constructor(
     // template, to update the UiState when called.
     private fun <T> handleRequestError(
         response: Response<T>,
-        onResponse: (ApiResponse?) -> Unit
+        onError: (String) -> Unit
     ) {
         try {
             val error = response.errorBody()?.string()
             val errorJson = Gson().fromJson(error, LlmError::class.java)
-            onResponse(ApiResponse(null, "Error: ${errorJson.error}"))
+            onError("An error occurred. ${errorJson.error}")
         } catch (e: Exception) {
             // exception thrown if error is already returned as json - in this case,
             // simply return the exception itself.
-            Log.e("SERVER ERROR LLM", "$e")
-            onResponse(ApiResponse(null, "Error: The service is currently starting. Please try again in a few minutes!"))
+            Log.e("SERVER ERROR LLM 1", "$e")
+            onError("The LLM service is down, or currently starting. Please try again in a few minutes!")
         }
     }
 
@@ -207,25 +211,20 @@ class ApiManagerImpl @Inject constructor(
     private fun <T> handleRequestSuccess(
         response: Response<T>,
         onDishesProposed: (LlmDishesProposed?) -> Unit,
-        onResponse: (ApiResponse?) -> Unit
+        onResponse: (LlmRecipe?) -> Unit,
+        onError: (String) -> Unit
     ) {
         val post = response.body()
         when(post) {
             is LlmRecipe -> {
-                onResponse(ApiResponse(post,
-                    "${post.title}:" +
-                            //"\n\nIngredients: \n${post.ingredients} " +
-                            "\n\nMethod: \n${post.method}" +
-                            "\n\nServing Size: \n${post.servings} " +
-                            "\n\nType of Meal: \n${post.mealType} ")
-                )
+                onResponse(post)
             }
             is LlmDishesProposed -> {
                 onDishesProposed(post)
-                onResponse(ApiResponse(null, "")) // no recipe generated - only dishes. onresponse should still be called for cleanup and validation.
+                onResponse(null) // no recipe generated - only dishes. onresponse should still be called for cleanup and validation.
             }
             else -> {
-                onResponse(ApiResponse(null, ErrorMessage.API_ERROR_FAILED_TO_GEN))
+                onError(ErrorMessage.API_ERROR_FAILED_TO_GEN)
             }
         }
     }
@@ -236,7 +235,8 @@ class ApiManagerImpl @Inject constructor(
         call: Call<T>,
         onQuestionAnswered: (LlmQuestionResponse?) -> Unit,
         onRecipeAltered: (LlmRecipe?) -> Unit,
-        onNutritionGenerated: (LlmNutrition?) -> Unit
+        onNutritionGenerated: (LlmNutrition?) -> Unit,
+        onError: (String) -> Unit
     ) {
         call.enqueue(object : Callback<T> {
             // Response received from the server:
@@ -244,14 +244,15 @@ class ApiManagerImpl @Inject constructor(
                 call: Call<T>, response: Response<T>
             ) {
                 if (response.isSuccessful) {
-                    handleActionSuccess(response, onQuestionAnswered, onRecipeAltered, onNutritionGenerated)
+                    handleActionSuccess(response, onQuestionAnswered, onRecipeAltered, onNutritionGenerated, onError)
                 } else {
-                    handleActionError(response)
+                    handleActionError(response, onError)
                 }
             }
             // Timeout or no internet:
             override fun onFailure(call: Call<T>, t: Throwable) {
                 Log.i("Llm Action", "${t.message}")
+                onError("Internal Server Error. Please try again later, or check your internet connection.")
             }
         })
     }
@@ -259,14 +260,16 @@ class ApiManagerImpl @Inject constructor(
     // simply logs the error for debugging
     private fun <T> handleActionError(
         response: Response<T>,
+        onError: (String) -> Unit
     ) {
         try {
             val error = response.errorBody()?.string()
             Log.i("Server error llm", "$error")
             val errorJson = Gson().fromJson(error, LlmError::class.java)
-            Log.i("Server Error LLM", errorJson.error)
+            // likely due to token limit being reached.
+            onError("An error occurred. ${errorJson.error}")
         } catch (e: Exception) {
-            Log.e("SERVER ERROR LLM", "$e")
+            onError("The LLM service is down, or currently starting. Please try again in a few minutes!")
         }
     }
 
@@ -274,7 +277,8 @@ class ApiManagerImpl @Inject constructor(
         response: Response<T>,
         onQuestionAnswered: (LlmQuestionResponse?) -> Unit,
         onRecipeAltered: (LlmRecipe?) -> Unit,
-        onNutritionGenerated: (LlmNutrition?) -> Unit
+        onNutritionGenerated: (LlmNutrition?) -> Unit,
+        onError: (String) -> Unit
     ) {
         val post = response.body()
         when(post) {
@@ -288,7 +292,7 @@ class ApiManagerImpl @Inject constructor(
                 onNutritionGenerated(post)
             }
             else -> {
-                Log.i("Llm Action", ErrorMessage.API_ERROR_FAILED_TO_GEN)
+                onError(ErrorMessage.API_ERROR_FAILED_TO_GEN)
             }
         }
     }

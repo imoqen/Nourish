@@ -32,7 +32,7 @@ class RecipeActions @Inject constructor(
     ) {
         runCatching {
 
-            if (description == "") {
+            if (description.trim() == "") {
                 throw TagCreationException("Please enter a description.")
             }
             if (description.length > 27) {

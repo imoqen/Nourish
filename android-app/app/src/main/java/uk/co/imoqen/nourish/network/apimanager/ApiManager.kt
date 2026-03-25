@@ -4,7 +4,6 @@ import uk.co.imoqen.nourish.network.request.LlmActionRequest
 import uk.co.imoqen.nourish.network.request.LlmActionType
 import uk.co.imoqen.nourish.network.request.LlmRequest
 import uk.co.imoqen.nourish.network.request.LlmRequestType
-import uk.co.imoqen.nourish.network.response.ApiResponse
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import uk.co.imoqen.nourish.network.response.LlmNutrition
 import uk.co.imoqen.nourish.network.response.LlmQuestionResponse
@@ -21,7 +20,8 @@ interface ApiManager {
         imageFilename: String = "", // optional; only for generating from image
         filesDir: File? = null, // optional; only for generating from image
         onDishesProposed: (LlmDishesProposed?) -> Unit, // optional; only for when dishes are proposed
-        onResponse: (ApiResponse?) -> Unit,
+        onError: (String) -> Unit,
+        onResponse: (LlmRecipe?) -> Unit
     )
 
     // for llm actions, which are things that can be done AFTER the recipe is generated, from the recipe book screen in a recipe card.
@@ -31,7 +31,8 @@ interface ApiManager {
         bearerToken: String,
         onQuestionAnswered: (LlmQuestionResponse?) -> Unit,
         onRecipeAltered: (LlmRecipe?) -> Unit,
-        onNutritionGenerated: (LlmNutrition?) -> Unit
+        onNutritionGenerated: (LlmNutrition?) -> Unit,
+        onError: (String) -> Unit
     )
 
 }

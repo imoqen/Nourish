@@ -176,6 +176,15 @@ class RecipeBookViewModel @Inject constructor(
         }
     }
 
+    // to show delete recipe dialog:
+    fun setDeleteConfirmation(deleteConfirmation: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                deleteConfirmation = deleteConfirmation
+            )
+        }
+    }
+
     fun alterIngredientShoppingListStatus(
         ingredientToAddToShoppingList: ShoppingListIngredient,
         index: Int, // safe to use index because it wont change after it is populated. for safety, done in runcatching
@@ -444,7 +453,7 @@ class RecipeBookViewModel @Inject constructor(
                 val recipeCard = RecipeCardExpanded(
                     title, ingredientsMap, method, serves, recipeType,
                     recipeTags, storageInstructions, recipe.imagePath, recipe.emoji,
-                    enumValueOf<NourishColour>(recipe.colour.uppercase())
+                    enumValueOf<NourishColour>(recipe.colour.uppercase()), recipe.generated
                 )
 
                 setRecipeCard(recipeCard)
@@ -729,11 +738,15 @@ class RecipeBookViewModel @Inject constructor(
                 val recipe = mutableUiState.value.selectedRecipe
 
                 // validation
-                if (userPrompt == "") {
+                if (userPrompt.trim() == "") {
+                    setActionChatStage(ActionChatStage.USER_INPUT) // no longer awaiting - error occurred.
+                    setLlmAwaitActionType(LlmActionType.NONE)
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("The input must not be blank to proceed."))
                     return@launch
                 }
                 if (recipe == null) {
+                    setActionChatStage(ActionChatStage.USER_INPUT) // no longer awaiting - error occurred.
+                    setLlmAwaitActionType(LlmActionType.NONE)
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("A recipe must be selected to proceed."))
                     return@launch
                 }
@@ -819,7 +832,8 @@ class RecipeBookViewModel @Inject constructor(
                                         carbohydrate = llmNutritionResponse.carbohydrate,
                                         sugars = llmNutritionResponse.sugars,
                                         protein = llmNutritionResponse.protein,
-                                        salt = llmNutritionResponse.salt
+                                        salt = llmNutritionResponse.salt,
+                                        fibre = llmNutritionResponse.fibre
                                     )
                                 )
                                 setActionChatStage(ActionChatStage.RESPONSE_RECEIVED)
@@ -828,6 +842,14 @@ class RecipeBookViewModel @Inject constructor(
                             }
                         }
 
+                    },
+                    onError = { errorMessage ->
+                        viewModelScope.launch() {
+                            // show the error and reset the ui
+                            uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(errorMessage))
+                            setActionChatStage(ActionChatStage.USER_INPUT)
+                            setLlmAwaitActionType(LlmActionType.NONE)
+                        }
                     }
                 )
             }

@@ -9,4 +9,5 @@ data class LlmNutrition (
     val sugars: Double, // "of which sugars" ^
     val protein: Double,
     val salt: Double,
+    val fibre: Double
 )

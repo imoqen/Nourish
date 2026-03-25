@@ -64,13 +64,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
     val uiState: StateFlow<RecipeDiscoveryUiState> = mutableUiState.asStateFlow()
 
     // Setters for Ui State values:
-    fun setApiResponse(apiResponse: String) {
-        mutableUiState.update { currentState ->
-            currentState.copy(
-                apiResponse = apiResponse
-            )
-        }
-    }
 
     fun setLlmGeneratedRecipe(llmGeneratedRecipe: LlmRecipe?) {
         mutableUiState.update { currentState ->
@@ -337,7 +330,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
 
                 val dishType = mutableUiState.value.selectedRecipeType?.title?: "Breakfast, Lunch, Dinner, Dessert, Side, Drink" // if none provided, all.
 
-
                 // if the user submitted empty string as prompt, and this string is NOT optional for this call type, return error:
                 if ((type == LlmRequestType.RECIPE || type == LlmRequestType.DISHES_FROM_INGREDIENTS || type == LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH) && userPrompt == "") {
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_BLANK_PROMPT))
@@ -359,7 +351,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 // validate the user's token:
                 val tokenResult = authenticationManager.getUserToken()
                 if (tokenResult == null) {
-                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("1" + ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
                     // error occurred; go back to the USER_INPUT stage (MAY NOT WORK: TEST THIS).
                     setLlmChatStage(LlmChatStage.USER_INPUT)
                     return@launch
@@ -371,6 +363,13 @@ class RecipeDiscoveryViewModel @Inject constructor(
                     tokenResult,
                     imageFilename, // will just be "" and null if not used, so optional in that sense. handled appropriately.
                     filesDir,
+                    onError = { errorMessage ->
+                        viewModelScope.launch() {
+                            // Error message in Snackbar:
+                            uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(errorMessage))
+                            setLlmChatStage(LlmChatStage.USER_INPUT)
+                        }
+                    },
                     onDishesProposed = { dishesJson ->
                         // safe because only occurs if not null. if it is null, handles by onResponse which is below.
                         if (dishesJson != null) {
@@ -403,27 +402,22 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 ) { response ->
 
                     viewModelScope.launch() {
-                        if (response == null || response.llmRecipe == null) {
+                        if (response == null) {
                             // Error message in Snackbar:
-                            uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("2" + ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
+                            uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
+                            // ERROR HERE when llm is down
+                            resetAfterError()
                             setLlmChatStage(LlmChatStage.USER_INPUT)
                             return@launch
                         }
-                        if (response.string.startsWith("An error occurred.") || response.string.startsWith("Error:")) {
-                            // Response error in Snackbar:
-                            uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(response.string))
-                            setLlmChatStage(LlmChatStage.USER_INPUT)
-                            return@launch
-                        }
-                        if (response.llmRecipe.recipeNotPossible) {
+                        if (response.recipeNotPossible) {
                             // user inputted invalid prompt / image; recipe cannot be generated.
                             uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("A valid recipe could not be generated. Please try another dish."))
                             setLlmChatStage(LlmChatStage.USER_INPUT)
                             return@launch
                         }
                         // Response is valid - output in a recipe card to the user
-                        setApiResponse(response.string)
-                        setLlmGeneratedRecipe(response.llmRecipe)
+                        setLlmGeneratedRecipe(response)
 
                         // valid: set to the dish selection stage
                         setLlmChatStage(LlmChatStage.USER_VIEW_RECIPE)
@@ -432,10 +426,16 @@ class RecipeDiscoveryViewModel @Inject constructor(
             }
                 .onFailure {
                     // error occurred
-                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("3" + ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
+                    resetAfterError()
                     setLlmChatStage(LlmChatStage.USER_INPUT)
                 }
         }
+    }
+
+    fun resetAfterError() {
+        setDishes(null)
+        setChosenDish("")
     }
 
     fun displayBlankInputError(
@@ -512,7 +512,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
 
     // to restart from fresh to gen a new recipe
     fun restart() {
-        setApiResponse("")
         setUserRequest("")
         setChosenDish("")
 

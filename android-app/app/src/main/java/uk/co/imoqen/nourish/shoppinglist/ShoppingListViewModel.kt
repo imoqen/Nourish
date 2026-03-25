@@ -316,7 +316,7 @@ class ShoppingListViewModel @Inject constructor(
                 }
 
                 val ingredientName = mutableUiState.value.ingredientToAdd.name.trim() // whitespace si removed
-                if (ingredientName == "") {
+                if (ingredientName.trim() == "") {
                     setIngredientToAddError("The item cannot be blank.")
                     return@launch
                 }
@@ -331,8 +331,10 @@ class ShoppingListViewModel @Inject constructor(
                         // still null means it doesnt exist: add it
                         ingredientId = ingredientRepository.insert(
                             Ingredient(
-                                singular = "", // singular is "" and this will be checked when the LLM adds a new ingredient. LLM searches by plurality. if it finds a match where singular is null, it can then replace it.
-                                plural = ingredientName
+                                // both singular and plural are set to the user input. then it is flagged as user inputted, so ai can correct plurality if required.
+                                singular = ingredientName,
+                                plural = ingredientName,
+                                userAdded = true
                             )
                         )
                         Log.i("created", "$ingredientId")

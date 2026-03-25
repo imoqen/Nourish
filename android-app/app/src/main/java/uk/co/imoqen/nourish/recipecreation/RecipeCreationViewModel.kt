@@ -3,6 +3,7 @@ package uk.co.imoqen.nourish.recipecreation
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -39,6 +40,7 @@ import uk.co.imoqen.nourish.network.response.LlmIngredientSection
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 import uk.co.imoqen.nourish.recipediscovery.Mipmap
 import uk.co.imoqen.nourish.shoppinglist.UserInteractionStatus
+import java.io.File
 import java.lang.NullPointerException
 import java.util.UUID
 import javax.inject.Inject
@@ -57,6 +59,16 @@ class RecipeCreationViewModel @Inject constructor(
 ): ViewModel() {
     private val mutableUiState = MutableStateFlow(RecipeCreationUiState())
     val uiState: StateFlow<RecipeCreationUiState> = mutableUiState.asStateFlow()
+
+    // to go back:
+    fun setShowBackConfirmation(showBackConfirmation: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                showBackConfirmation = showBackConfirmation
+            )
+        }
+    }
+
 
     // for editing:
     fun setCreationMode(creationMode: CreationMode) {
@@ -497,7 +509,7 @@ class RecipeCreationViewModel @Inject constructor(
                 val amount = mutableUiState.value.ingredientToAdd.amount.replace(',', '.').toDoubleOrNull()
                 val name = mutableUiState.value.ingredientToAdd.name.trim()
                 val unit = mutableUiState.value.ingredientToAdd.unit
-                if (name == "") {
+                if (name.trim() == "") {
                     setIngredientToAddError("The name cannot be blank.")
                     return@launch
                 }
@@ -510,7 +522,7 @@ class RecipeCreationViewModel @Inject constructor(
                     ingredientAmount = amount, // if user inputted invalid, it just gets set to 1.0
                     ingredientPlural = name,
                     ingredientAmountUnit = unit.name, // will always be safe as user must select, all options are ok.
-                    ingredientSingular = "" // user inputted ingredients value is always set to singular.
+                    ingredientSingular = name // user inputted ingredients value is always set to the same as plural, although this may not be correct - this is due to human error. but CAN be fixed byt he llm if it generated subsequent.
                 )
                 setIngredients(
                     // adds the ingredient or makes a new list with the ingredient if it is empty
@@ -620,7 +632,7 @@ class RecipeCreationViewModel @Inject constructor(
         viewModelScope.launch() {
             runCatching {
                 val step = mutableUiState.value.stepToAdd.trim()
-                if (step == "") {
+                if (step.trim() == "") {
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
                         "The step cannot be blank."
                     ))
@@ -652,7 +664,7 @@ class RecipeCreationViewModel @Inject constructor(
                 val newStep = mutableUiState.value.stepToEdit.trim()
                 val index = mutableUiState.value.stepIndexToEdit
                 val method = mutableUiState.value.method
-                if (newStep == "") {
+                if (newStep.trim() == "") {
                     return@launch
                 }
                 if (method == null) {
@@ -734,12 +746,13 @@ class RecipeCreationViewModel @Inject constructor(
     ) {
         viewModelScope.launch() {
             runCatching {
-                val llmRecipe = parseIntoLlmRecipe()
                 // Check that user is logged in validly
                 val uid = authenticationManager.getUid()
                 if (uid == null) {
                     throw NullPointerException()
                 } // user is null; throw to be handled appropriately
+
+                val llmRecipe = parseIntoLlmRecipe()
 
                 // Add the recipe to the database:
                 recipeRepository.createRecipe(
@@ -774,7 +787,9 @@ class RecipeCreationViewModel @Inject constructor(
     }
 
     // updates a recipe by deleting the old recipe and replacing it with the new one.
-    fun updateRecipe() {
+    fun updateRecipe(
+        context: Context // required for image deletion
+    ) {
         viewModelScope.launch() {
             runCatching {
                 // Check that user is logged in validly
@@ -789,6 +804,14 @@ class RecipeCreationViewModel @Inject constructor(
                 }
                 val updatedRecipe = parseIntoLlmRecipe()
 
+                // check if the image should be deleted or not:
+                if (originalRecipe.imagePath != "" && mutableUiState.value.imageFile == "") {
+                    File(
+                        context.filesDir,
+                        originalRecipe.imagePath // delete the image file
+                    ).delete()
+                }
+
                 // Add the recipe to the database:
                 recipeRepository.replaceRecipe(originalRecipe, updatedRecipe, mutableUiState.value.imageFile, llmGenerated=false) // now  non llm generated, vecayse user edited it
             }
@@ -800,8 +823,12 @@ class RecipeCreationViewModel @Inject constructor(
                         )
                     )
                 }
-
                 .onFailure { e ->
+                    when (e) {
+                        is RecipeCreationException -> {
+                            setRecipeCreationError(e.message ?: "Could not update recipe.")
+                        }
+                    }
                     uiEventBus.enqueueEvent(
                         UiEvent.ShowSnackbar(
                             "Your recipe could not be updated."
@@ -811,29 +838,45 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
+    fun validateRecipeRequiredFields(
+        title: String,
+        ingredients: List<LlmIngredient>?,
+        recipeType: RecipeType?,
+        method: List<RecipeStep>?
+    ) {
+        if (title.trim() == "") {
+            throw RecipeCreationException("You must enter a title.")
+        }
+        if (title.length > 54) {
+            throw RecipeCreationException("The title is too long. It must be less than 54 characters.")
+        }
+        if (ingredients == null || ingredients.isEmpty()) {
+            throw RecipeCreationException("You must enter at least 1 ingredient.")
+        }
+        if (recipeType == null) {
+            throw RecipeCreationException("You must select a recipe type.")
+        }
+        if (method == null || method.isEmpty()) {
+            throw RecipeCreationException("You must enter at least 1 method step.")
+        }
+    }
+
     fun parseIntoLlmRecipe(): LlmRecipe {
         val ingredients = mutableUiState.value.ingredients
         val recipeType = mutableUiState.value.recipeType
         val method = mutableUiState.value.method
-        if (ingredients == null || ingredients.isEmpty()) {
-            // todo set error
-            throw RecipeCreationException("You must enter at least 1 ingredient.")
-        }
-        if (recipeType == null) {
-            // todo set error
-            throw RecipeCreationException("You must select a recipe type.")
-        }
-        if (method == null || method.isEmpty()) {
-            // todo set error
-            throw RecipeCreationException("You must enter at least 1 method step.")
-        }
+        val title = mutableUiState.value.title
+
+        // validate that the required fields have been filled:
+        validateRecipeRequiredFields(title, ingredients, recipeType, method)
+
         val servings = mutableUiState.value.numberOfServings
         return LlmRecipe(
             title = mutableUiState.value.title,
-            sectionIngredients = listOf(LlmIngredientSection("For the recipe", ingredients.map { it.copy(ingredientAmount = (it.ingredientAmount / servings)) })), // scale such that it stores the amount for 1 serving.
+            sectionIngredients = listOf(LlmIngredientSection("For the recipe", ingredients!!.map { it.copy(ingredientAmount = (it.ingredientAmount / servings)) })), // scale such that it stores the amount for 1 serving.
             servings = servings,
-            mealType = recipeType.title,
-            method = method.map { it.step }, // only get the steps, remove the uuids
+            mealType = recipeType!!.title,
+            method = method!!.map { it.step }, // only get the steps, remove the uuids
             tags = mutableUiState.value.tagSheetState.recipeTags?.filter { it.selected }?.map { it.tag.identifier } ?: listOf(""), // finds all selected tags, then gets their identifiers. tags are not mandatory so "" is ok if it is null.
             storage = mutableUiState.value.storageGuidance,
             recipeNotPossible = false,
@@ -853,14 +896,22 @@ class RecipeCreationViewModel @Inject constructor(
                     return@launch
                 }
                 val recipeType = recipeRepository.getRecipeTypeById(recipe.recipeTypeId).first()
-                val tags = recipeRepository.getRecipeWithRecipeTypes(recipe.id).first().recipeTags.map { tag ->
+
+                // get all tags and the selected tags for this recipe
+                val allTags = tagRepository.getAllForUser(recipe.authorUid).first()
+                val selectedTags = recipeRepository.getRecipeWithRecipeTypes(recipe.id).first().recipeTags.map { tag ->
                     val tag = tagRepository.getById(tag.tagId).first()
                     TagSelection(tag!!, true)
-
-                } // this may not work - it may not get all tags, only the ones for that recipe. so would need to add in the other ones. but see.
+                }.toMutableList()
+                // then populate the selected tags such that the non-selected ones are added and set to false
+                allTags.forEach { tag ->
+                    if (!selectedTags.contains(TagSelection(tag, true))) {
+                        // if not selected, add it as non selected
+                        selectedTags.add(TagSelection(tag, false))
+                    }
+                }
 
                 // build ingredients
-
                 val llmIngredients: MutableList<LlmIngredient> = mutableListOf()
                 val allIngredients = recipeRepository.getRecipeWithRecipeIngredients(recipe.id).first().ingredients
 
@@ -888,7 +939,7 @@ class RecipeCreationViewModel @Inject constructor(
                 setNumberOfServings(recipe.numberOfServings)
                 setRecipeType(recipeType)
                 setStorageGuidance(recipe.storageInstructions)
-                setRecipeTags(tags) // probably wont work
+                setRecipeTags(selectedTags)
                 setIngredients(llmIngredients)
                 setMethod(method)
                 setImageFile(recipe.imagePath)

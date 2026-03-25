@@ -30,8 +30,9 @@ data class RecipeBookUiState(
     val visible: Boolean = true,
 
     val showShoppingListDialog: Boolean = false,
-    val ingredientsToAddToShoppingList: MutableList<Pair<ShoppingListIngredient, Boolean>>? = null // boolean outlines whether it should be added to shopping list or not. all are initially set to true and set to false only if user chooses not to add it.
+    val ingredientsToAddToShoppingList: MutableList<Pair<ShoppingListIngredient, Boolean>>? = null, // boolean outlines whether it should be added to shopping list or not. all are initially set to true and set to false only if user chooses not to add it.
 
+    val deleteConfirmation: Boolean = false
 )
 
 enum class ActionChatStage {
@@ -60,7 +61,8 @@ data class RecipeCardExpanded(
     val storageInstructions: String,
     val imagePath: String,
     val emoji: String,
-    val colour: NourishColour
+    val colour: NourishColour,
+    val llmGenerated: Boolean
 )
 
 // condensed version of RecipeCardExpanded, so only the data that's necessary to display on the

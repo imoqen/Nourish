@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.ErrorMessage
@@ -152,13 +153,14 @@ class AuthenticationViewModel @Inject constructor(
             if (uid == null) {
                 return@launch
             }
-            // do nothing if it is not the user's first time logging in.
-            if (!authenticationManager.getIsFirstLogin()) {
-                Log.i("first time", "false")
+            // do nothing if the user already has tags
+            if (tagRepository.getAllForUser(uid).first().isNotEmpty()) {
+                Log.i("no tags", "false")
                 return@launch
             }
-            Log.i("first time", "true")
+            Log.i("no tags", "true")
 
+            // Just a predefined list of tags which will be added whenever a user logs in if they have no tags.
             val recipeTags = listOf(
                 Tag(identifier = "VEGAN", displayName = "Vegan", colour = "GREEN", authorId = uid),
                 Tag(identifier = "VEGETARIAN", displayName = "Vegetarian", colour = "YELLOW", authorId = uid),
@@ -176,7 +178,7 @@ class AuthenticationViewModel @Inject constructor(
                 Tag(identifier = "LOW-CALORIE", displayName = "Low calorie", colour = "PINK", authorId = uid),
                 Tag(identifier = "VITAMINS-&-MINERALS", displayName = "Vitamins & Minerals", colour = "RED", authorId = uid),
                 Tag(identifier = "LOW-CARB", displayName = "Low carb", colour = "YELLOW", authorId = uid),
-                Tag(identifier = "HIGH-FIBRE", displayName = "High fibre", colour = "ORANGE", authorId = uid),
+                Tag(identifier = "HIGH-FIBRE", displayName = "High fibre", colour = "PURPLE", authorId = uid),
                 Tag(identifier = "NO-ADDED-SUGAR", displayName = "No added sugar", colour = "GREY", authorId = uid),
             )
             recipeTags.forEach { recipeTag ->
@@ -192,7 +194,7 @@ class AuthenticationViewModel @Inject constructor(
      */
     fun signInWithEmailAndPassword() {
         viewModelScope.launch() {
-            if (mutableUiState.value.signinEmail == "" || mutableUiState.value.signinPassword == "") {
+            if (mutableUiState.value.signinEmail.trim() == "" || mutableUiState.value.signinPassword == "") {
                 setSigninError(ErrorMessage.INPUT_ERROR_BLANK)
                 uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNIN))
                 return@launch
@@ -202,7 +204,7 @@ class AuthenticationViewModel @Inject constructor(
             // https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/run-catching.html
             runCatching {
                 authenticationManager.signInWithEmailAndPassword(
-                    mutableUiState.value.signinEmail,
+                    mutableUiState.value.signinEmail.trim(), // remove whitespace
                     mutableUiState.value.signinPassword
                 )
                 // then add the user to firestore if they don't already exist in firestore:
@@ -255,7 +257,7 @@ class AuthenticationViewModel @Inject constructor(
         viewModelScope.launch() {
             // Blank input fields:
             if (
-                mutableUiState.value.signupEmail == "" ||
+                mutableUiState.value.signupEmail.trim() == "" ||
                 mutableUiState.value.signupPassword == "" ||
                 mutableUiState.value.signupPasswordConfirmation == ""
             ) {
@@ -271,7 +273,7 @@ class AuthenticationViewModel @Inject constructor(
             }
             runCatching {
                 authenticationManager.signUpWithEmailAndPassword(
-                    mutableUiState.value.signupEmail,
+                    mutableUiState.value.signupEmail.trim(),
                     mutableUiState.value.signupPassword
                 )
                 // then add the user to firestore if they don't already exist in firestore:
@@ -303,7 +305,7 @@ class AuthenticationViewModel @Inject constructor(
      * so their account will now use both password and Google login.
      */
     fun passwordResetRequest() {
-        if (mutableUiState.value.emailToResetPassword == "") {
+        if (mutableUiState.value.emailToResetPassword.trim() == "") {
             setPasswordResetStatus(ErrorMessage.INPUT_ERROR_BLANK)
             return // early return
         }

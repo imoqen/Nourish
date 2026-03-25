@@ -635,7 +635,6 @@ fun RecipeDishProposalGenerationResult(
                         ) {
                             NourishSurfaceButton(
                                 onClick = {
-                                    viewModel.setChosenDish(dish) // set the chosen dish
                                     generateRecipeFromChosenDish(
                                         dish,
                                         viewModel,
@@ -903,10 +902,13 @@ fun generateRecipeFromChosenDish(
     dishes: LlmDishesProposed
 ) {
     // Set the user request depending on whether an image or ingredients were included
+    // and add in the further user detail
     if (dishes.ingredientsIdentified != null) {
-        viewModel.setChosenDish(dish + "\n\nUsing only ingredients: ${dishes.ingredientsIdentified}")
+        viewModel.setChosenDish(dish + "\n\nUsing ingredients: ${dishes.ingredientsIdentified}")
+    } else if (uiState.userRequest != "" ){
+        viewModel.setChosenDish(dish + "\n\nFurther details: ${uiState.userRequest}") // if the user added further details
     } else {
-        viewModel.setChosenDish(dish)
+        viewModel.setChosenDish(dish) // otherwise, the prompt is just the dish
     }
 
     // Make the LLM API call depending on whether an image or ingredients were included
@@ -1264,11 +1266,11 @@ fun sendToLlm(
         viewModel.makeLlmApiCall(uiState.requestType) // make llm call
         validRequest = true
         // then as the data has been sent and not needed anymore (as recipe generated), can delete the compressed image (low quality image file): as only need high quality after this.
-        val lowQualityImageFile = File(context.filesDir, lowQualityFilename)
+        /*val lowQualityImageFile = File(context.filesDir, lowQualityFilename)
         if (lowQualityImageFile.exists()) {
             lowQualityImageFile.delete()
             // note that the compressed image can only be deleted here, not after dish generation etc as it will be reused when sending to the llm to generate the chosen recipe. so this is the only safe place to delete it.
-        }
+        }*/
     }
 
     // generate potential dishes from ingredients list:

@@ -14,7 +14,6 @@ data class RecipeDiscoveryUiState(
 
     val showRestartConfirmationDialog: Boolean = false,
 
-    val apiResponse: String = "",
     val userRequest: String = "",
 
     val userChoice: LlmMode? = null,

@@ -91,8 +91,11 @@ fun AppNavHost(
         ) { backStackEntry ->
             val recipeId = backStackEntry.arguments?.getLong("id")!!
             val recipeCreationViewModel: RecipeCreationViewModel = hiltViewModel() //uses recipe creation, but just parses the recipe to be displayed within it. then user can make changes to it.
-            recipeCreationViewModel.populateFromId(recipeId)
-            RecipeCreationScreen(recipeCreationViewModel, onBack={ navController.popBackStack() }, onFinishEdit={navController.popBackStack(TabDestination.RECIPE_BOOK.route, inclusive = false)} ) // simply go back by keep popping back stack until reached back to the recipe book
+            if (recipeCreationViewModel.uiState.collectAsState().value.recipeEditId != recipeId) {
+                // if the recipe to edit doesn't match the current recipe being edited, update it:
+                recipeCreationViewModel.populateFromId(recipeId)
+            }
+            RecipeCreationScreen(recipeCreationViewModel, onBack={ navController.popBackStack() }, onFinishEdit={navController.navigate("b/recipe-card/$recipeId") { popUpTo("b/edit-recipe/$recipeId") { inclusive = true }; launchSingleTop = true } } ) // go to the new recipe, and remove the edit from the stack as if it was never there. so user cant go back to back. and single top to ensure that the new recipe REPLACES the old one
         }
         // Can add Route destinations too (those not from tabs)
         // can add here. then can add params to them as shown in this video: https://www.youtube.com/watch?v=wJKwsI5WUI4

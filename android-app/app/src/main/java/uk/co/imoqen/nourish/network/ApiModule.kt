@@ -25,6 +25,7 @@ object ApiModule {
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(90, TimeUnit.SECONDS)
         .writeTimeout(90, TimeUnit.SECONDS)
+        .callTimeout(90, TimeUnit.SECONDS) // total time
         .build()
 
     @Provides
