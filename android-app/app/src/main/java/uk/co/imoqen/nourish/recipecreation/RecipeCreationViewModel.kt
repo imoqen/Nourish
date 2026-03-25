@@ -522,7 +522,7 @@ class RecipeCreationViewModel @Inject constructor(
                     ingredientAmount = amount, // if user inputted invalid, it just gets set to 1.0
                     ingredientPlural = name,
                     ingredientAmountUnit = unit.name, // will always be safe as user must select, all options are ok.
-                    ingredientSingular = "" // user inputted ingredients value is always set to singular.
+                    ingredientSingular = name // user inputted ingredients value is always set to the same as plural, although this may not be correct - this is due to human error. but CAN be fixed byt he llm if it generated subsequent.
                 )
                 setIngredients(
                     // adds the ingredient or makes a new list with the ingredient if it is empty

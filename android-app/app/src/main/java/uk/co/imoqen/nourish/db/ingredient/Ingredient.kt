@@ -13,4 +13,5 @@ data class Ingredient(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(name = "singular") val singular: String,
     @ColumnInfo(name = "plural") val plural: String,
+    @ColumnInfo(name = "userAdded") val userAdded: Boolean // so that the LLM will overwrite it to get correct sing / pl if it encounters it
 )

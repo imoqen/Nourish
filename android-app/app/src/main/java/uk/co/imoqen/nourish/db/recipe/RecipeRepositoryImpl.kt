@@ -186,14 +186,19 @@ class RecipeRepositoryImpl @Inject constructor(
                         ingredientId = ingredientRepository.getIdByPlural(singular)
                         if (ingredientId == null) {
                             // if still null, it doesnt exist so add the ingredient
-                            ingredientId = ingredientRepository.insert(Ingredient(singular = singular, plural = plural))
+                            ingredientId = ingredientRepository.insert(Ingredient(
+                                singular = singular, plural = plural, userAdded = !llmGenerated)
+                            )
                         }
                     }
 
-                    // SANITISE the user inputted. user inputted always has singular = "". so check this, if it is then update it and the plural value accordingly.
+                    // Correct the user inputted value:
+                    // if the ingredient has been added by the user and not yet updated,
+                    // check if the true singular = the stored singular, and same for plural.
+                    // If either don't match, update it to be correct.
                     val ingredient = ingredientRepository.getById(ingredientId).first()
-                    if (ingredient != null && ingredient.singular.trim() == "") {
-                        ingredientRepository.update(ingredient.copy(plural = plural, singular = singular))
+                    if (ingredient != null && ingredient.userAdded && (ingredient.singular != singular || ingredient.plural != plural)) {
+                        ingredientRepository.update(ingredient.copy(plural = plural, singular = singular, userAdded = false))
                     }
 
                     // Ingredient unit: find the corresponding unit in the enum
