@@ -220,6 +220,7 @@ fun TypesDisplayForMutuallyExclusiveFiltering(
     types: List<RecipeType>?,
     selectedType: RecipeType?,
     updateSelectedType: (RecipeType?) -> Unit,
+    allowNone: Boolean = true // by default, allowed to not enter a recipe type. however, not allowed for when adding recipe - it must have one.
 ) {
     FlowRow(
         modifier = Modifier.padding(2.dp).fillMaxWidth(0.85f),
@@ -272,11 +273,13 @@ fun TypesDisplayForMutuallyExclusiveFiltering(
             }
         }
         // reset button:
-        NourishIconButton(
-            onClick = { updateSelectedType(null) }, // reset back to all types
-            painter = painterResource(R.drawable.cross),
-            modifier = Modifier.size(32.dp)
-        )
+        if (allowNone) {
+            NourishIconButton(
+                onClick = { updateSelectedType(null) }, // reset back to all types
+                painter = painterResource(R.drawable.cross),
+                modifier = Modifier.size(32.dp)
+            )
+        }
     }
 }
 
@@ -353,7 +356,7 @@ fun SelectedType(
 fun SelectedTags(
     tags: List<TagSelection>?,
     allowEdit: Boolean = false,
-    updateSelectedTag: (Tag, Boolean) -> Unit = {_,_ -> }
+    updateSelectedTag: (Tag, Boolean) -> Unit = {_,_ -> },
 ) {
     val scrollState = rememberScrollState()
 
@@ -423,7 +426,6 @@ fun SelectedTags(
                                 )
                             }
                         }
-
                     }
                 }
             }

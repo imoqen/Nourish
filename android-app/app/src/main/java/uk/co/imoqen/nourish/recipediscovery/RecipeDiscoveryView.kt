@@ -16,16 +16,13 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -34,16 +31,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Send
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -74,7 +67,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import kotlinx.coroutines.CoroutineScope
@@ -85,7 +77,6 @@ import uk.co.imoqen.nourish.common.NourishButton
 import uk.co.imoqen.nourish.common.NourishConfirmationDialog
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.NourishDivider
-import uk.co.imoqen.nourish.common.NourishErrorText
 import uk.co.imoqen.nourish.common.NourishH2
 import uk.co.imoqen.nourish.common.NourishH3
 import uk.co.imoqen.nourish.common.NourishH4
@@ -95,25 +86,20 @@ import uk.co.imoqen.nourish.common.NourishSurfaceButton
 import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.common.NourishTextMessage
-import uk.co.imoqen.nourish.common.RecipeActions
 import uk.co.imoqen.nourish.common.SelectedTags
-import uk.co.imoqen.nourish.common.TagsDisplayForFiltering
 import uk.co.imoqen.nourish.common.TextSender
 import uk.co.imoqen.nourish.common.TypesDisplayForMutuallyExclusiveFiltering
-import uk.co.imoqen.nourish.common.backgroundColour
-import uk.co.imoqen.nourish.common.dimmedBackgroundColour
-import uk.co.imoqen.nourish.common.onBackgroundColour
 import uk.co.imoqen.nourish.common.recipeColour
-import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 import uk.co.imoqen.nourish.recipebook.ImageCardHeader
 import uk.co.imoqen.nourish.recipebook.TagSelection
+import uk.co.imoqen.nourish.common.tag.FilterState
+import uk.co.imoqen.nourish.common.tag.RecipeTagSelection
 
 import java.io.File
-import kotlin.text.lowercase
 
 /**
  * View for RecipeDiscovery, where LLM calls can be made and recipes thus generated.
@@ -136,8 +122,8 @@ fun RecipeDiscoveryScreen(
         Log.i("size:", "${uiState.recipeTypes?.size}")
         viewModel.getAllRecipeTypes()
     }
-    LaunchedEffect(uiState.recipeTags?.size) {
-        Log.i("size:", "${uiState.recipeTags?.size}")
+    LaunchedEffect(uiState.tagSheetState.recipeTags?.size) {
+        Log.i("size:", "${uiState.tagSheetState.recipeTags?.size}")
         viewModel.getAllTagsForUser()
     }
 
@@ -378,7 +364,7 @@ fun UserRequest(
                         )
                     }
 
-                    val selectedTags = uiState.recipeTags?.filter{ it.selected }
+                    val selectedTags = uiState.tagSheetState.recipeTags?.filter{ it.selected }
                     if (selectedTags != null  && selectedTags.isNotEmpty()) {
                         NourishUserRequestComponent {
                             SelectedTags(
@@ -718,7 +704,7 @@ fun GeneratedRecipe(
         // higher quality image is displayed
         RecipeCardPreview(
             recipe, viewModel::formatIngredientText, uiState.savedImageMipmap.highQualityFilename,
-            context, uiState.recipeTags
+            context, uiState.tagSheetState.recipeTags
         )
 
         NourishDivider()
@@ -996,7 +982,7 @@ fun UserInputSection(
                     .animateContentSize()
             ) {
                 Column() {
-                    val filtersSelected = uiState.recipeTags != null && uiState.recipeTags.any { it.selected }
+                    val filtersSelected = uiState.tagSheetState.recipeTags != null && uiState.tagSheetState.recipeTags.any { it.selected }
                     // Selected dish type:
                     Row(
                         horizontalArrangement = Arrangement.Center,
@@ -1039,7 +1025,7 @@ fun UserInputSection(
                     // Selected tags:
                     if (filtersSelected) { // only display if at least one has been selected, not if all unselected
                         SelectedTags(
-                            tags = uiState.recipeTags,
+                            tags = uiState.tagSheetState.recipeTags,
                             allowEdit = true,
                             updateSelectedTag = viewModel::updateSelected
                         )
@@ -1051,205 +1037,12 @@ fun UserInputSection(
             val nutritionalTagSheetState = rememberModalBottomSheetState(
                 skipPartiallyExpanded = true // makes it fill the screen with the required amount rather than stuck at half the screen size
             )
-            if (uiState.filterDisplayState != FilterState.NONE) {
-                ModalBottomSheet(
-                    onDismissRequest = {
-                        viewModel.setFilterDisplayState(FilterState.NONE)
-                    },
-                    sheetState = nutritionalTagSheetState
-                ) {
-
-                    val keyboardFocusManager = LocalFocusManager.current
-
-                    val tags = viewModel.uiState.collectAsState().value.recipeTags
-
-                    AnimatedContent(
-                        targetState = uiState.filterDisplayState,
-                    ) { filterDisplayState ->
-                        when (filterDisplayState) {
-                            FilterState.APPLY -> {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center,
-                                    modifier = Modifier.padding(bottom = 20.dp)
-                                ) {
-                                    NourishTextDivider("Filter by Nutritional Tag(s)")
-
-                                    TagsDisplayForFiltering(
-                                        tags = tags,
-                                        onTagPressed = viewModel::updateSelected,
-                                        displayAddButton = true,
-                                        onAddButtonPressed = { viewModel.setFilterDisplayState(FilterState.CREATE) },
-                                        displayEditButton = true,
-                                        onEditButtonPressed = { viewModel.setFilterDisplayState(FilterState.EDIT) }
-                                    )
-                                }
-                            }
-
-                            FilterState.CREATE -> {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(bottom = 20.dp) // to add padding to bottom to ensure not too close to bottom of screen
-                                        .animateContentSize(),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-
-                                    NourishTextDivider(
-                                        "Create a Nutritional Tag",
-                                        modifier = Modifier.padding(top = 6.dp)
-                                    )
-
-                                    NourishTextField(
-                                        value = uiState.createdTagName,
-                                        onValueChange = { viewModel.setCreatedTagName(it) },
-                                        placeholder = "Enter a description, e.g. 'Vegan'",
-                                        onDone = { keyboardFocusManager.clearFocus() }
-                                    )
-
-                                    // identifier is created by making the display name all caps and replacing spaces with -. only alphanumerics can be added. so need to vberify this.
-
-                                    NourishTextDivider(
-                                        "Choose a colour",
-                                        modifier = Modifier.padding(top = 6.dp)
-                                    )
-
-                                    // colour picker too from predefined colours.
-                                    // 3x3 as there are 9 colours
-                                    LazyVerticalGrid(
-                                        columns = GridCells.Fixed(3),
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(12.dp)
-                                    ) {
-                                        items(NourishColour.entries) { colour ->
-                                            Column(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(3.dp),
-                                                horizontalAlignment = Alignment.CenterHorizontally,
-                                                verticalArrangement = Arrangement.Center
-                                            ) { // simply for padding between tags
-                                                Box(
-                                                    Modifier
-                                                        .fillMaxWidth()
-                                                        .background(
-                                                            color =
-                                                                if (isSystemInDarkTheme()) {
-                                                                    colour.onBackgroundColour()
-                                                                } else {
-                                                                    colour.dimmedBackgroundColour()
-                                                                },
-                                                            shape = RoundedCornerShape(16.dp)
-                                                        )
-                                                        .clickable {
-                                                            viewModel.setCreatedTagColour(
-                                                                colour
-                                                            )
-                                                        }
-                                                        .then(
-                                                            // highlight if this is the selected colour for the tag:
-                                                            if (uiState.createdTagColour == colour) {
-                                                                Modifier.border(
-                                                                    width = 1.dp,
-                                                                    color = MaterialTheme.colorScheme.onBackground,
-                                                                    shape = RoundedCornerShape(12.dp)
-                                                                )
-                                                            } else {
-                                                                Modifier
-                                                            }
-                                                        )
-                                                        .then(
-                                                            Modifier.padding(4.dp)
-                                                        )
-                                                ) {
-                                                    Text(
-                                                        text = colour.name.lowercase()
-                                                            .replaceFirstChar { it.uppercase() },
-                                                        color =
-                                                            if (isSystemInDarkTheme()) {
-                                                                colour.backgroundColour()
-                                                            } else {
-                                                                colour.onBackgroundColour()
-                                                            },
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        textAlign = TextAlign.Center
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceAround
-                                    ) {
-                                        NourishIconTextButton(
-                                            onClick = { viewModel.createTag(uiState.createdTagName, uiState.createdTagColour) },
-                                            painter = painterResource(R.drawable.tick),
-                                            description = "Create tag"
-                                        )
-                                        NourishIconTextButton(
-                                            onClick = {
-                                                viewModel.closeTagCreation()
-                                            },
-                                            painter = painterResource(R.drawable.cross),
-                                            description = "Discard tag"
-                                        )
-                                    }
-
-                                    if (uiState.tagCreationError != "") {
-                                        NourishErrorText(uiState.tagCreationError)
-                                    }
-                                }
-                            }
-
-                            FilterState.EDIT -> {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(bottom = 10.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    NourishTextDivider("Delete a Nutritional Tag")
-
-                                    TagsDisplayForFiltering(
-                                        tags = tags,
-                                        trailingIcon = painterResource(R.drawable.delete),
-                                        onTrailingIconPress = {
-                                            viewModel.setShowTagConfirmationDialog(true)
-                                        },
-                                        setTagOnTrailingIconPress = viewModel::setTagToDelete
-                                    )
-
-                                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-
-                                    NourishIconTextButton(
-                                        onClick = { viewModel.setFilterDisplayState(FilterState.APPLY) },
-                                        painter = painterResource(R.drawable.arrow_left),
-                                        description = "Back",
-                                    )
-                                }
-
-                                NourishConfirmationDialog(
-                                    show = uiState.showTagConfirmationDialog,
-                                    title = "Confirm Tag Deletion",
-                                    description = "Are you sure you wish to delete this nutritional tag?\n\nThis action cannot be undone.",
-                                    onConfirmation = { viewModel.deleteTag() },
-                                    onDismiss = { viewModel.setShowTagConfirmationDialog(false) }
-                                )
-                            }
-
-                            FilterState.NONE -> {
-                                // do nothing - unreachable. only to satisfy compiler.
-                            }
-                        }
-                    }
-                }
+            if (uiState.tagSheetState.filterDisplayState != FilterState.NONE) {
+                RecipeTagSelection(
+                    sheetState = nutritionalTagSheetState,
+                    tagSheetState = uiState.tagSheetState,
+                    tagSheetAction = viewModel::onTagSheetAction
+                )
             }
 
             val recipeTypeSheetState = rememberModalBottomSheetState(

@@ -1,13 +1,10 @@
 package uk.co.imoqen.nourish.recipediscovery
 
-import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
-import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import uk.co.imoqen.nourish.network.response.LlmRecipe
-import uk.co.imoqen.nourish.recipebook.TagSelection
-import uk.co.imoqen.nourish.recipebook.TypeSelection
+import uk.co.imoqen.nourish.common.tag.TagSheetState
 
 /**
  * UiState for RecipeDiscovery: accessed in the View/ViewModel and mutated in the ViewModel.
@@ -15,11 +12,7 @@ import uk.co.imoqen.nourish.recipebook.TypeSelection
  */
 data class RecipeDiscoveryUiState(
 
-    val filterDisplayState: FilterState = FilterState.NONE, // determines what part of the filter selection is shown
-
-    val showTagConfirmationDialog: Boolean = false,
     val showRestartConfirmationDialog: Boolean = false,
-    val tagToDelete: Tag? = null,
 
     val apiResponse: String = "",
     val userRequest: String = "",
@@ -30,11 +23,6 @@ data class RecipeDiscoveryUiState(
 
     val displayImage: Boolean = false,
 
-    val createdTagName: String = "",
-    val createdTagColour: NourishColour? = null,
-    val tagCreationError: String = "",
-
-    val recipeTags: List<TagSelection>? = null,
     val recipeTypes: List<RecipeType>? = null, // typeselection not needed as only one can be selected anyway
     val selectedRecipeType: RecipeType? = null,
     val displayRecipeTypeSelector: Boolean = false,
@@ -57,6 +45,8 @@ data class RecipeDiscoveryUiState(
     val llmChatStage: LlmChatStage = LlmChatStage.USER_SELECT_OPTION, // begsina t the first stage
 
     val llmGeneratedRecipe: LlmRecipe? = null,
+
+    val tagSheetState: TagSheetState = TagSheetState() // instantiated using the default tag sheet state values.
 )
 
 data class Mipmap(
@@ -77,11 +67,4 @@ enum class LlmMode {
     FROM_DESCRIPTION,
     FROM_IMAGE,
     FROM_INGREDIENTS
-}
-
-enum class FilterState {
-    APPLY, // to apply filters to the query
-    CREATE, // to add a new filter
-    EDIT, // delete filters
-    NONE // when the modal bottom sheet for filtering should not be displayed
 }

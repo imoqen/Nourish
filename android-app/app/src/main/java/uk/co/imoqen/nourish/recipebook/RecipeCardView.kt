@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateBounds
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
@@ -38,6 +39,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,6 +48,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -60,6 +63,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LookaheadScope
@@ -101,10 +105,16 @@ fun RecipeCardScreen(
     uiState: RecipeBookUiState,
     recipeId: Long,
     onBack: () -> Unit,
+    onEditRecipe: (Long) -> Unit
 ) {
 
     val scrollState = rememberScrollState()
     val keyboardFocusManager = LocalFocusManager.current
+
+    if (uiState.selectedRecipe != null && uiState.selectedRecipe.id.toInt() == -1) {
+        // recipe has been deleted
+        onBack()
+    }
 
     Column(
         modifier = Modifier
@@ -115,7 +125,7 @@ fun RecipeCardScreen(
         // should constrain it to only return recipe made by that user, for security. address in a future stepping stone ^
         if (recipe != null) {
             recipeBookViewModel.setSelectedRecipe(recipe)
-            RecipeCard(recipeBookViewModel, onBack, uiState, keyboardFocusManager)
+            RecipeCard(recipeBookViewModel, onBack, uiState, keyboardFocusManager, onEditRecipe)
         }
     }
 }
@@ -126,7 +136,8 @@ fun RecipeCard(
     recipeBookViewModel: RecipeBookViewModel,
     onBack: () -> Unit,
     uiState: RecipeBookUiState,
-    keyboardFocusManager: FocusManager
+    keyboardFocusManager: FocusManager,
+    onEditRecipe: (Long) -> Unit
 ) {
 
     AnimatedVisibility(
@@ -327,48 +338,11 @@ fun RecipeCard(
                                 }
                             }
                         }
-
-                        Column(
-                            modifier = Modifier
-                                .padding(8.dp)
-                                .background(
-                                    color = MaterialTheme.colorScheme.surfaceContainer,
-                                    shape = RoundedCornerShape(16.dp)
-                                )
-                            //.fillMaxWidth(0.3f)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .padding(8.dp) // for inner padding of the total item
-                                    .animateContentSize()
-                            ) {
-                                NourishIconButton(
-                                    onClick = { recipeBookViewModel.alterServingSize(false) },
-                                    painter = painterResource(R.drawable.subtract),
-                                    modifier = Modifier.size(38.dp)
-                                )
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    modifier = Modifier.padding(horizontal = 3.dp)
-                                ) {
-                                    Image(
-                                        painter = painterResource(R.drawable.person),
-                                        contentDescription = "Number of Servings",
-                                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground)
-                                    )
-                                    Text(
-                                        text = "${recipeCard.serves}",
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                                NourishIconButton(
-                                    onClick = { recipeBookViewModel.alterServingSize(true) },
-                                    painter = painterResource(R.drawable.add),
-                                    modifier = Modifier.size(38.dp)
-                                )
-                            }
-                        }
+                        // Serving Size:
+                        ServingSizeUpdater(recipeCard.serves, recipeBookViewModel::alterServingSize)
                     }
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical=16.dp))
 
                     Column(
                         modifier = Modifier
@@ -381,19 +355,21 @@ fun RecipeCard(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
+
                         NourishH2("Ingredients")
                         HorizontalDivider()
 
                         Column(
                             modifier = Modifier
-                                .animateContentSize().fillMaxWidth().padding(vertical=8.dp),
+                                .animateContentSize().fillMaxWidth().padding(vertical = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             // then output the ingredients by section
                             recipeCard.sectionsWithIngredients.forEach { (section, ingredients) ->
                                 Column(
-                                    modifier = Modifier.padding(vertical = 8.dp)
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     // only output name of section if there is more than 1 section, otherwise it is irrelevant
                                     if (recipeCard.sectionsWithIngredients.size > 1) {
@@ -404,8 +380,19 @@ fun RecipeCard(
                                     }
 
                                     ingredients.forEach { (ingredient, amount, _) ->
-                                        val round = !(ingredient.startsWith("kg") || ingredient.startsWith("L")) // if kg or L, do not round.
-                                        Text("${recipeBookViewModel.formatIngredientAmount(amount, round)} $ingredient")
+
+                                        val round =
+                                            !(ingredient.startsWith("kg") || ingredient.startsWith(
+                                                "L"
+                                            )) // if kg or L, do not round.
+                                        Text(
+                                            text = "${
+                                                recipeBookViewModel.formatIngredientAmount(
+                                                    amount,
+                                                    round
+                                                )
+                                            } $ingredient",
+                                        )
                                     }
                                 }
                             }
@@ -431,11 +418,15 @@ fun RecipeCard(
                                             modifier = Modifier.fillMaxHeight(0.7f)
                                         ) {
                                             Column(
-                                                modifier = Modifier.fillMaxWidth().padding(vertical=12.dp),
+                                                modifier = Modifier.fillMaxWidth()
+                                                    .padding(vertical = 12.dp),
                                                 horizontalAlignment = Alignment.CenterHorizontally,
                                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                                             ) {
-                                                NourishH3("Add to Shopping List", modifier = Modifier.fillMaxWidth())
+                                                NourishH3(
+                                                    "Add to Shopping List",
+                                                    modifier = Modifier.fillMaxWidth()
+                                                )
 
                                                 HorizontalDivider()
 
@@ -448,7 +439,8 @@ fun RecipeCard(
                                                     itemsIndexed(ingredientsToAddToShoppingList) { i, (ingredient, selected) ->
 
                                                         Row(
-                                                            modifier = Modifier.fillMaxWidth().padding(horizontal=8.dp),
+                                                            modifier = Modifier.fillMaxWidth()
+                                                                .padding(horizontal = 8.dp),
                                                             horizontalArrangement = Arrangement.Center,
                                                             verticalAlignment = Alignment.CenterVertically
                                                         ) {
@@ -463,14 +455,20 @@ fun RecipeCard(
                                                             // only in the UI - not in the db so everything is still stored as G / ML so easy to compare and bundle together.
                                                             if (amount >= 1000 && (unit == IngredientUnit.G || unit == IngredientUnit.ML)) {
                                                                 when (unit) {
-                                                                    IngredientUnit.G -> { unit = IngredientUnit.KG }
-                                                                    IngredientUnit.ML -> { unit = IngredientUnit.L }
+                                                                    IngredientUnit.G -> {
+                                                                        unit = IngredientUnit.KG
+                                                                    }
+
+                                                                    IngredientUnit.ML -> {
+                                                                        unit = IngredientUnit.L
+                                                                    }
+
                                                                     else -> {} // make no change
                                                                 }
                                                                 amount = amount / 1000
                                                             }
 
-                                                            Spacer(modifier= Modifier.weight(1f))
+                                                            Spacer(modifier = Modifier.weight(1f))
 
                                                             IngredientAmount(
                                                                 unit = unit,
@@ -497,7 +495,7 @@ fun RecipeCard(
                                                 NourishIconTextButton(
                                                     onClick = {
                                                         recipeBookViewModel.addIngredientsToShoppingList() // this sets it not to null, so the dialog will be triggered to display (if successful).
-                                                              },
+                                                    },
                                                     painter = painterResource(R.drawable.shopping_cart_add),
                                                     description = "Add to Shopping List",
                                                 )
@@ -570,73 +568,139 @@ fun RecipeCard(
                             }
                         }
                     }
-                }
 
+                    Column(
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceContainer,
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                            .fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        NourishH2("Storage Guidance")
 
-                Column(
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.surfaceContainer,
-                            shape = RoundedCornerShape(16.dp)
+                        HorizontalDivider()
+
+                        Text(
+                            text = recipeCard.storageInstructions,
+                            modifier = Modifier.padding(8.dp)
                         )
-                        .fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    NourishH2("Storage Guidance")
+                    }
 
-                    HorizontalDivider()
+                    HorizontalDivider(modifier = Modifier.padding(vertical=16.dp))
 
-                    Text(
-                        text = recipeCard.storageInstructions,
-                        modifier = Modifier.padding(8.dp)
-                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(color = MaterialTheme.colorScheme.background)
+                            .padding(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            RecipeActionButton(
+                                onClick = {
+                                    recipeBookViewModel.setLlmActionType(LlmActionType.NUTRITIONAL_VALUES)
+                                    recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
+                                },
+                                painter = painterResource(R.drawable.forkchart),
+                                description = "Nutrition",
+                                modifier = Modifier.weight(1f)
+                            )
+                            RecipeActionButton(
+                                onClick = {
+                                    recipeBookViewModel.setUserActionRequest("")
+                                    recipeBookViewModel.setLlmActionType(LlmActionType.ALTERATION)
+                                    recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
+                                },
+                                painter = painterResource(R.drawable.adjust),
+                                description = "Make Alteration",
+                                modifier = Modifier.weight(1f)
+                            )
+
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            RecipeActionButton(
+                                onClick = {
+                                    recipeBookViewModel.setUserActionRequest("")
+                                    recipeBookViewModel.setLlmActionType(LlmActionType.QUESTION)
+                                    recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
+                                },
+                                painter = painterResource(R.drawable.live_question),
+                                description = "Ask Question",
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            if (uiState.selectedRecipe != null) {
+                                RecipeActionButton(
+                                    onClick = {
+                                        onEditRecipe(uiState.selectedRecipe.id)// edit the recipe with its id
+                                    },
+                                    painter = painterResource(R.drawable.edit),
+                                    description = "Edit Manually",
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            RecipeActionButton(
+                                onClick = {
+                                    recipeBookViewModel.deleteRecipe()
+                                },
+                                painter = painterResource(R.drawable.delete), //todo ADD CONFIRMATION and make it red to show danger
+                                description = "Delete Recipe",
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+
+                        /*
+                        NourishIconTextButton(
+                            onClick = {
+                                recipeBookViewModel.setLlmActionType(LlmActionType.NUTRITIONAL_VALUES)
+                                recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
+                            },
+                            painter = painterResource(R.drawable.forkchart),
+                            description = "Nutritional Values",
+                            modifier = Modifier.fillMaxWidth(0.7f)
+                        )
+
+                        NourishIconTextButton(
+                            onClick = {
+                                recipeBookViewModel.setUserActionRequest("")
+                                recipeBookViewModel.setLlmActionType(LlmActionType.ALTERATION)
+                                recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
+                            },
+                            painter = painterResource(R.drawable.adjust),
+                            description = "Make an alteration",
+                            modifier = Modifier.fillMaxWidth(0.7f)
+                        )
+
+                        NourishIconTextButton(
+                            onClick = {
+                                recipeBookViewModel.setUserActionRequest("")
+                                recipeBookViewModel.setLlmActionType(LlmActionType.QUESTION)
+                                recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
+                            },
+                            painter = painterResource(R.drawable.live_question),
+                            description = "Ask a question",
+                            modifier = Modifier.fillMaxWidth(0.7f)
+                        )*/
+                    }
+
                 }
-
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(color = MaterialTheme.colorScheme.background)
-                        .padding(vertical = 10.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-
-                    NourishIconTextButton(
-                        onClick = {
-                            recipeBookViewModel.setLlmActionType(LlmActionType.NUTRITIONAL_VALUES)
-                            recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
-                        },
-                        painter = painterResource(R.drawable.forkchart),
-                        description = "Nutritional Values",
-                        modifier = Modifier.fillMaxWidth(0.7f)
-                    )
-
-                    NourishIconTextButton(
-                        onClick = {
-                            recipeBookViewModel.setUserActionRequest("")
-                            recipeBookViewModel.setLlmActionType(LlmActionType.ALTERATION)
-                            recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
-                        },
-                        painter = painterResource(R.drawable.adjust),
-                        description = "Make an alteration",
-                        modifier = Modifier.fillMaxWidth(0.7f)
-                    )
-
-                    NourishIconTextButton(
-                        onClick = {
-                            recipeBookViewModel.setUserActionRequest("")
-                            recipeBookViewModel.setLlmActionType(LlmActionType.QUESTION)
-                            recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
-                        },
-                        painter = painterResource(R.drawable.live_question),
-                        description = "Ask a question",
-                        modifier = Modifier.fillMaxWidth(0.7f)
-                    )
-                }
-
             }
 
             if (uiState.llmActionType == LlmActionType.NUTRITIONAL_VALUES && uiState.selectedRecipe != null) {
@@ -682,6 +746,47 @@ fun RecipeCard(
                             )
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun RecipeActionButton(
+    painter: Painter,
+    description: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier // for assigning equal weight to the buttons so they fill the screen equally
+) {
+    Box(
+        modifier = modifier
+    ) {
+        OutlinedButton(
+            onClick = onClick,
+            colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.background.copy(),
+                    contentColor = MaterialTheme.colorScheme.onBackground.copy(alpha=0.90f),
+            ),
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    painter = painter,
+                    contentDescription = null,
+                    //tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier
+                        .size(24.dp)
+                )
+
+                if (description != "") {
+                    Text(
+                        text = description,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
                 }
             }
         }
@@ -1130,5 +1235,58 @@ fun QueryDisplay(
                 }
             )
         }
+    }
+}
+
+@Composable
+fun ServingSizeUpdater(
+    servings: Int,
+    alterServingSize: (Boolean) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .padding(8.dp)
+            .background(
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                shape = RoundedCornerShape(16.dp)
+            ),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal=8.dp).padding(top=8.dp) // for inner padding of the total item
+                .animateContentSize()
+        ) {
+            NourishIconButton(
+                onClick = { alterServingSize(false) },
+                painter = painterResource(R.drawable.subtract),
+                modifier = Modifier.size(38.dp)
+            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(horizontal = 3.dp)
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.person),
+                    contentDescription = "Number of Servings",
+                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground)
+                )
+                Text(
+                    text = "$servings",
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            NourishIconButton(
+                onClick = { alterServingSize(true) },
+                painter = painterResource(R.drawable.add),
+                modifier = Modifier.size(38.dp)
+            )
+        }
+        Text(
+            text = if (servings > 1) "Servings" else "Serving",
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
     }
 }

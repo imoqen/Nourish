@@ -292,7 +292,7 @@ class RecipeBookViewModel @Inject constructor(
 
                     var unit = shoppingListIngredient.unit
                     var amount = shoppingListIngredient.amount
-                    if (!unit.keepUnitInShoppingList || (unit != IngredientUnit.UNIT && amount <= 15)) { // if the unit shouldnt be kept, or the amount is inconsiderable (less than 15) then just set to buy 1.
+                    if (!unit.keepUnitInShoppingList || ((unit != IngredientUnit.PINT && unit != IngredientUnit.UNIT) && amount <= 15)) { // if the unit shouldnt be kept, or the amount is inconsiderable (less than 15 IF not UNIT or PINT, l and kg doesn tmatter because we store iti n ml /g anyway.) then just set to buy 1.
                         unit = IngredientUnit.SINGLE
                         amount = 1.0
                     }
@@ -432,7 +432,7 @@ class RecipeBookViewModel @Inject constructor(
                     buildIngredientsMap(getRecipeIngredientsForRecipe(recipe.id).first())
                 val method = buildRecipeSteps(recipe.id)
                 val serves = recipe.numberOfServings
-                val recipeType = findRecipeType(recipe.recipeTypeId)
+                val recipeType = recipeActions.findRecipeType(recipe.recipeTypeId)
                 val recipeTags = buildRecipeTags(recipe.id)
                 val storageInstructions = recipe.storageInstructions
 
@@ -482,16 +482,6 @@ class RecipeBookViewModel @Inject constructor(
             recipeStepsList.add(Triple(step.instruction, step.complete, step.id))
         }
         return recipeStepsList
-    }
-
-    suspend fun findRecipeType(
-        recipeTypeId: Long
-    ): Pair<String, Int>? {
-        val recipeType = getRecipeTypeById(recipeTypeId).first()
-        if (recipeType == null) {
-            return recipeType
-        }
-        return Pair(recipeType.title, recipeType.ordinal)
     }
 
     suspend fun buildIngredientsMap(
@@ -682,7 +672,7 @@ class RecipeBookViewModel @Inject constructor(
         recipe: Recipe,
         includeServings: Boolean
     ): LlmRecipe {
-        val recipeType = findRecipeType(recipe.recipeTypeId)?.first ?: ""
+        val recipeType = recipeActions.findRecipeType(recipe.recipeTypeId)?.first ?: ""
         val tags = getRecipeTagsForRecipe(recipe.id).first().recipeTags.map { tag ->
             getTagByTagId(tag.tagId).first()?.identifier ?: ""
         }
@@ -908,7 +898,7 @@ class RecipeBookViewModel @Inject constructor(
                     throw NullPointerException()
                 } // user is null; throw to be handled appropriately
                 // Add the recipe to the database:
-                recipeRepository.replaceRecipe(originalRecipe, newRecipe)
+                recipeRepository.replaceRecipe(originalRecipe, newRecipe, originalRecipe.imagePath) // original image is preserved
             }
                 .onSuccess {
                     uiEventBus.enqueueEvent(
@@ -922,6 +912,46 @@ class RecipeBookViewModel @Inject constructor(
                     uiEventBus.enqueueEvent(
                         UiEvent.ShowSnackbar(
                             "The recipe could not be updated. Please try again, or enter a different alteration."
+                        )
+                    )
+                }
+        }
+    }
+
+    fun deleteRecipe() {
+        viewModelScope.launch() {
+            runCatching {
+                // get and delete the recipe
+                val uiRecipe = mutableUiState.value.selectedRecipe
+                if (uiRecipe == null) {
+                    return@launch
+                }
+                val recipe = recipeRepository.getRecipeById(uiRecipe.id).first()
+                if (recipe == null) {
+                    return@launch
+                }
+                recipeRepository.deleteRecipe(recipe) // delete
+            }
+                .onSuccess {
+                    // when successfully deleted, update the id in the ui to -1 to trigger it to go back to the recipe all recipe book view
+                    if (mutableUiState.value.selectedRecipe != null) {
+                        setSelectedRecipe(
+                            mutableUiState.value.selectedRecipe!!.copy(
+                                id = -1
+                            )
+                        )
+                    }
+                    uiEventBus.enqueueEvent(
+                        UiEvent.ShowSnackbar(
+                            "The recipe has been deleted."
+                        )
+                    )
+                }
+
+                .onFailure { e ->
+                    uiEventBus.enqueueEvent(
+                        UiEvent.ShowSnackbar(
+                            "The recipe could not be deleted."
                         )
                     )
                 }

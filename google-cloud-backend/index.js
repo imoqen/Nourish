@@ -52,7 +52,7 @@ const db = getFirestore();
 
 // Units: given as metric, something to address in the future would be also adding support for imperial which the software has the capacity to do but was not implemented for simplicity.
 const metricUnits =
-  "TSP, TBSP, ML, G, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, CM, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR, UNIT";
+  "TSP, TBSP, ML, G, CLOVE, HEAD, BUNCH, SPRIG, BULB, STALK, STICK, PIECE, LEAF, CM, DASH, DRIZZLE, PINCH, SPLASH, DROP, HANDFUL, SLICE, LOAF, ROLL, SHEET, BLOCK, BAR, UNIT, PINT";
 const ingredientUnitList = metricUnits.split(",").map((v) => v.trim());
 // Schemas:
 
@@ -793,7 +793,7 @@ async function generateAlteredRecipe(
         role: "system",
         content:
           "Return in the required schema, write in sufficient detail but not too much (keep below 250 words). Use British English. " +
-          "Generate a new recipe using the provided recipe, ensuring it is altered to the user's needs accordingly." + 
+          "Generate a new recipe using the provided recipe, ensuring it is altered to the user's needs accordingly." +
           " The provided amounts in the recipe make 1 serving. Create your recipe for 1 serving too, but preserve the 'serving' field as the SAME value given, as this is used for recipe scaling separately. The recipe should remain the same for any part which does not need to be altered to the request." +
           "If the recipe cannot be altered in the way that the user wishes (e.g. inedible), fill in the recipeNotPossible field as true and all others as null. Only do this if there really is no way to alter it, otherwise be creative to meet the user's needs.",
       },
