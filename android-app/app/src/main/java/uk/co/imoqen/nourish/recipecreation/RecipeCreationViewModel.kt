@@ -734,12 +734,13 @@ class RecipeCreationViewModel @Inject constructor(
     ) {
         viewModelScope.launch() {
             runCatching {
-                val llmRecipe = parseIntoLlmRecipe()
                 // Check that user is logged in validly
                 val uid = authenticationManager.getUid()
                 if (uid == null) {
                     throw NullPointerException()
                 } // user is null; throw to be handled appropriately
+
+                val llmRecipe = parseIntoLlmRecipe()
 
                 // Add the recipe to the database:
                 recipeRepository.createRecipe(
@@ -853,14 +854,22 @@ class RecipeCreationViewModel @Inject constructor(
                     return@launch
                 }
                 val recipeType = recipeRepository.getRecipeTypeById(recipe.recipeTypeId).first()
-                val tags = recipeRepository.getRecipeWithRecipeTypes(recipe.id).first().recipeTags.map { tag ->
+
+                // get all tags and the selected tags for this recipe
+                val allTags = tagRepository.getAllForUser(recipe.authorUid).first()
+                val selectedTags = recipeRepository.getRecipeWithRecipeTypes(recipe.id).first().recipeTags.map { tag ->
                     val tag = tagRepository.getById(tag.tagId).first()
                     TagSelection(tag!!, true)
-
-                } // this may not work - it may not get all tags, only the ones for that recipe. so would need to add in the other ones. but see.
-
+                }.toMutableList()
+                // then populate the selected tags such that the non-selected ones are added and set to false
+                allTags.forEach { tag ->
+                    if (!selectedTags.contains(TagSelection(tag, true))) {
+                        // if not selected, add it as non selected
+                        selectedTags.add(TagSelection(tag, false))
+                    }
+                }
+                
                 // build ingredients
-
                 val llmIngredients: MutableList<LlmIngredient> = mutableListOf()
                 val allIngredients = recipeRepository.getRecipeWithRecipeIngredients(recipe.id).first().ingredients
 
@@ -888,7 +897,7 @@ class RecipeCreationViewModel @Inject constructor(
                 setNumberOfServings(recipe.numberOfServings)
                 setRecipeType(recipeType)
                 setStorageGuidance(recipe.storageInstructions)
-                setRecipeTags(tags) // probably wont work
+                setRecipeTags(selectedTags)
                 setIngredients(llmIngredients)
                 setMethod(method)
                 setImageFile(recipe.imagePath)
