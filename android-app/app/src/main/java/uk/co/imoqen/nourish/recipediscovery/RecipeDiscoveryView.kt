@@ -635,7 +635,6 @@ fun RecipeDishProposalGenerationResult(
                         ) {
                             NourishSurfaceButton(
                                 onClick = {
-                                    viewModel.setChosenDish(dish) // set the chosen dish
                                     generateRecipeFromChosenDish(
                                         dish,
                                         viewModel,
@@ -903,10 +902,13 @@ fun generateRecipeFromChosenDish(
     dishes: LlmDishesProposed
 ) {
     // Set the user request depending on whether an image or ingredients were included
+    // and add in the further user detail
     if (dishes.ingredientsIdentified != null) {
         viewModel.setChosenDish(dish + "\n\nUsing ingredients: ${dishes.ingredientsIdentified}")
+    } else if (uiState.userRequest != "" ){
+        viewModel.setChosenDish(dish + "\n\nFurther details: ${uiState.userRequest}") // if the user added further details
     } else {
-        viewModel.setChosenDish(dish)
+        viewModel.setChosenDish(dish) // otherwise, the prompt is just the dish
     }
 
     // Make the LLM API call depending on whether an image or ingredients were included

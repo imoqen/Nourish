@@ -60,7 +60,8 @@ data class RecipeCardExpanded(
     val storageInstructions: String,
     val imagePath: String,
     val emoji: String,
-    val colour: NourishColour
+    val colour: NourishColour,
+    val llmGenerated: Boolean
 )
 
 // condensed version of RecipeCardExpanded, so only the data that's necessary to display on the

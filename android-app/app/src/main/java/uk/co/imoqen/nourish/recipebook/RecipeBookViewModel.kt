@@ -444,7 +444,7 @@ class RecipeBookViewModel @Inject constructor(
                 val recipeCard = RecipeCardExpanded(
                     title, ingredientsMap, method, serves, recipeType,
                     recipeTags, storageInstructions, recipe.imagePath, recipe.emoji,
-                    enumValueOf<NourishColour>(recipe.colour.uppercase())
+                    enumValueOf<NourishColour>(recipe.colour.uppercase()), recipe.generated
                 )
 
                 setRecipeCard(recipeCard)

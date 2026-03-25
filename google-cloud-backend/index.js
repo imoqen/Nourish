@@ -990,10 +990,12 @@ async function generateRecipeFromDishImage(
   });
 
   console.log(
-    "Generating recipe for dish using image" +
-      " with filters: " +
+    "Generating recipe for: " +
+      dish +
+      " From image" +
+      " With filters: " +
       chosenNutritionalFilters +
-      " and type: " +
+      " And type: " +
       dishType,
   );
 
@@ -1018,7 +1020,7 @@ async function generateRecipeFromDishImage(
             text:
               "Generate a recipe for the following dish ensuring that the recipe conforms to the nutritional filters given in " +
               chosenNutritionalFilters +
-              ", and creating the recipe as close to the image provided as possible: " +
+              ", and creating the recipe as close to the image provided as possible. " +
               dish,
           },
           { type: "image_url", image_url: { url: dataUrl } },
