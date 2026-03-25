@@ -253,6 +253,11 @@ function recipeSchemaZod(allNutritionalFilters, dishType) {
 //https://docs.langchain.com/oss/javascript/langchain/structured-output#tool-calling-strategy
 function recipeListFromIngredientsSchemaZod(dishType) {
   return z.object({
+    ingredientsIdentified: z
+      .string()
+      .describe(
+        "The ingredients that the user has entered, separated by commas, and only these ingredients. So that recipes which are possible to cook using only those ingredients can be created.",
+      ),
     firstMostLikelyDish: z
       .string()
       .describe(

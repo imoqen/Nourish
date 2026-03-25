@@ -853,7 +853,6 @@ fun RecipeCreationScreen(
                                     "\uD83E\uDD57",
                                     "\uD83C\uDF7F",
                                     "\uD83E\uDDC8",
-                                    "\uD83E\uDDC8",
                                     "\uD83E\uDDC2",
                                     "\uD83E\uDD6B",
                                     "\uD83C\uDF5D"
@@ -877,7 +876,6 @@ fun RecipeCreationScreen(
                                     "\uD83E\uDD61"
                                 ),
                                 "Desserts" to listOf(
-                                    "\uD83E\uDD61",
                                     "\uD83C\uDF67",
                                     "\uD83C\uDF68",
                                     "\uD83C\uDF69",
@@ -919,8 +917,7 @@ fun RecipeCreationScreen(
                                     "\uD83C\uDF74",
                                     "\uD83E\uDD44",
                                     "\uD83D\uDD2A",
-                                    "\uD83E\uDED9",
-                                    "\uD83E\uDED6"
+                                    "\uD83E\uDED9"
                                 )
                             )
                             emojis.forEach { type ->

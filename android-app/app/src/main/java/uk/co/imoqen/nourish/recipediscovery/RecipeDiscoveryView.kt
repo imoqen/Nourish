@@ -904,7 +904,7 @@ fun generateRecipeFromChosenDish(
 ) {
     // Set the user request depending on whether an image or ingredients were included
     if (dishes.ingredientsIdentified != null) {
-        viewModel.setChosenDish(dish + "\n\nUsing only ingredients: ${dishes.ingredientsIdentified}")
+        viewModel.setChosenDish(dish + "\n\nUsing ingredients: ${dishes.ingredientsIdentified}")
     } else {
         viewModel.setChosenDish(dish)
     }
