@@ -1126,7 +1126,9 @@ fun NutritionLlmAction(
             viewModel.getNutritionForRecipe(recipe.id)
                 .collectAsState(initial = null).value
         if (uiState.llmAwaitActionType == LlmActionType.NUTRITIONAL_VALUES) {
-            Column() {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Text(
                     "Estimating nutritional values...",
                     modifier = Modifier.padding(16.dp),
