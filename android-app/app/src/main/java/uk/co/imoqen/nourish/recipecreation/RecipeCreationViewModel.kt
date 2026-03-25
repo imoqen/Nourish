@@ -58,6 +58,16 @@ class RecipeCreationViewModel @Inject constructor(
     private val mutableUiState = MutableStateFlow(RecipeCreationUiState())
     val uiState: StateFlow<RecipeCreationUiState> = mutableUiState.asStateFlow()
 
+    // to go back:
+    fun setShowBackConfirmation(showBackConfirmation: Boolean) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                showBackConfirmation = showBackConfirmation
+            )
+        }
+    }
+
+
     // for editing:
     fun setCreationMode(creationMode: CreationMode) {
         mutableUiState.update { currentState ->

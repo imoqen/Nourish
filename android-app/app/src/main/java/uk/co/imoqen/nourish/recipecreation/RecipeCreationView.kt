@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish.recipecreation
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -135,6 +136,10 @@ fun RecipeCreationScreen(
         }
     }
 
+    BackHandler { // to intercept the device's back button to ensure confirmation occurs before navigating back
+        viewModel.setShowBackConfirmation(true)
+    }
+
     LaunchedEffect("GET_RECIPE_TYPES_AND_TAGS") {
         viewModel.getAllRecipeTypes()
         viewModel.getAllTagsForUser()
@@ -236,7 +241,9 @@ fun RecipeCreationScreen(
 
                 // back button:
                 IconButton(
-                    onClick = { onBack() },
+                    onClick = {
+                        viewModel.setShowBackConfirmation(true)
+                              },
                     modifier = Modifier.align(Alignment.CenterStart)
                 ) {
                     Icon(
@@ -668,6 +675,15 @@ fun RecipeCreationScreen(
             description = "Are you sure you wish to remove this step from the recipe?",
             onConfirmation = { viewModel.deleteStep() },
             onDismiss = { viewModel.setStepIndexToDelete(-1) }
+        )
+
+        // back confirmation:
+        NourishConfirmationDialog(
+            show = uiState.showBackConfirmation,
+            title = "Unsaved Changes",
+            description = if (uiState.recipeEditId != -1L) { "Are you sure you wish to discard your changes to this recipe?" } else { "Your recipe has not yet been saved.\n\nAre you sure you wish to discard your recipe?" },
+            onConfirmation = { onBack() },
+            onDismiss = { viewModel.setShowBackConfirmation(false) }
         )
 
         // modal bottom sheet for editing ingredient amount
