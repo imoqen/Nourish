@@ -17,12 +17,10 @@ import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
-import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.request.LlmRequest
 import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import javax.inject.Inject
 import uk.co.imoqen.nourish.common.saveMipmap
-import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.tag.Tag
@@ -37,7 +35,6 @@ import uk.co.imoqen.nourish.common.tag.TagSheetAction
 import java.io.File
 import java.lang.NullPointerException
 import kotlin.onSuccess
-
 
 /**
  * ViewModel for RecipeDiscovery.
@@ -261,6 +258,15 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Updates the input stage present in the view. There are three different forms of input stage:
+     * recipe, from image, and from ingredients. The user can select which they wish to do, and the
+     * interface will now be in the 'mode' selected.
+     * @param userChoice: the mode (LlmMode) that the user wishes to discover a recipe (recipe,
+     *                    from ingredients, or from image).
+     * @param placeholderText: the text to display in the user input bar in the current mode
+     * @param requestType: the type of request, determining whether an image has been uploaded etc.
+     */
     fun updateToInputStageGivenOptions(
         userChoice: LlmMode?,
         placeholderText: String,
@@ -269,12 +275,10 @@ class RecipeDiscoveryViewModel @Inject constructor(
         setUserChoice(userChoice) // for the display of the ui
         setPlaceholderText(placeholderText) // for the message response
         setRequestType(requestType) // for the llm request api call
-
         if (userChoice == LlmMode.FROM_DESCRIPTION) { // no image can be uploaded in this mode
             // ensure no image can be uploaded:
             setSavedImageMipmap(Mipmap("", ""))
         }
-
         // allow user input:
         setLlmChatStage(LlmChatStage.USER_INPUT)
     }
@@ -527,26 +531,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
 
         setLlmGeneratedRecipe(null)
         setRecipeSaved(false)
-    }
-
-    fun determineUnitPlurality(
-        ingredientAmount: Double,
-    ): Boolean {
-        return recipeActions.determineUnitPlurality(ingredientAmount)
-    }
-
-    fun determineIngredientPlurality(
-        ingredientAmount: Double,
-        ingredientUnit: IngredientUnit
-    ): Boolean {
-        return recipeActions.determineIngredientPlurality(ingredientAmount, ingredientUnit)
-    }
-
-    fun formatIngredientAmount(
-        ingredientAmount: Double,
-        roundToNearestQuarter: Boolean = true
-    ): String {
-        return recipeActions.formatIngredientAmount(ingredientAmount, roundToNearestQuarter)
     }
 
     // only used for llmingredient as they are dealt with differently.

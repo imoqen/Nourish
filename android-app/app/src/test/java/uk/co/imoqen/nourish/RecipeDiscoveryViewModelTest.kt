@@ -224,4 +224,37 @@ class RecipeDiscoveryViewModelTest {
         Assert.assertEquals(vm.uiState.value.llmChatStage, LlmChatStage.USER_INPUT)
     }
 
+    @Test
+    fun `updateToInputStageGivenOptions should update state correctly when no image can be uploaded (FROM_DESCRIPTION)`() {
+        vm.updateToInputStageGivenOptions(
+            LlmMode.FROM_DESCRIPTION, "Enter a dish", LlmRequestType.RECIPE
+        )
+        Assert.assertEquals(vm.uiState.value.userChoice, LlmMode.FROM_DESCRIPTION)
+        Assert.assertEquals(vm.uiState.value.placeholderText, "Enter a dish")
+        Assert.assertEquals(vm.uiState.value.requestType, LlmRequestType.RECIPE)
+        // no image can be uploaded:
+        Assert.assertEquals(vm.uiState.value.savedImageMipmap, Mipmap("", ""))
+        Assert.assertEquals(vm.uiState.value.llmChatStage, LlmChatStage.USER_INPUT)
+    }
+
+    @Test
+    fun `updateToInputStageGivenOptions should update state correctly when an image can be uploaded (FROM_DESCRIPTION)`() {
+        // Image upload:
+        vm.updateToInputStageGivenOptions(
+            LlmMode.FROM_IMAGE, "Upload an image", LlmRequestType.DISHES_FROM_IMAGE
+        )
+        Assert.assertEquals(vm.uiState.value.userChoice, LlmMode.FROM_IMAGE)
+        Assert.assertEquals(vm.uiState.value.placeholderText, "Upload an image")
+        Assert.assertEquals(vm.uiState.value.requestType, LlmRequestType.DISHES_FROM_IMAGE)
+        Assert.assertEquals(vm.uiState.value.llmChatStage, LlmChatStage.USER_INPUT)
+
+        vm.updateToInputStageGivenOptions(
+            LlmMode.FROM_INGREDIENTS, "Enter ingredient(s) or image", LlmRequestType.DISHES_FROM_INGREDIENTS
+        )
+        Assert.assertEquals(vm.uiState.value.userChoice, LlmMode.FROM_INGREDIENTS)
+        Assert.assertEquals(vm.uiState.value.placeholderText, "Enter ingredient(s) or image")
+        Assert.assertEquals(vm.uiState.value.requestType, LlmRequestType.DISHES_FROM_INGREDIENTS)
+        Assert.assertEquals(vm.uiState.value.llmChatStage, LlmChatStage.USER_INPUT)
+    }
+
 }
