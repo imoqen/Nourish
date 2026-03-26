@@ -12,7 +12,9 @@ import java.io.File
 
 interface ApiManager {
 
-    // for llm recipe generation
+    /**
+     * Makes the API call to generate a recipe / dishes, depending on the user input.
+     */
     fun makeRetrofitLlmRequestCall(
         type: LlmRequestType,
         request: LlmRequest,

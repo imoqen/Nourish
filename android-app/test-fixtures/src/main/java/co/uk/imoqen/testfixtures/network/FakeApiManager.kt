@@ -1,5 +1,6 @@
 package co.uk.imoqen.testfixtures.network
 
+import co.uk.imoqen.testfixtures.common.TestData
 import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import uk.co.imoqen.nourish.network.request.LlmActionRequest
 import uk.co.imoqen.nourish.network.request.LlmActionType
@@ -106,7 +107,33 @@ class FakeApiManager(): ApiManager {
         onError: (String) -> Unit,
         onResponse: (LlmRecipe?) -> Unit
     ) {
-        TODO("Not yet implemented")
+        if (bearerToken == "triggerError") {
+            onError("An error occurred.")
+        }
+        else {
+            when (type) {
+                LlmRequestType.RECIPE -> {
+                    onResponse(TestData.llmRecipe_salad)
+                }
+
+                LlmRequestType.DISHES_FROM_INGREDIENTS -> {
+                    onDishesProposed(TestData.llmDishesProposed_dishNotPossible)
+                }
+
+                LlmRequestType.DISHES_FROM_IMAGE -> {
+                    onDishesProposed(TestData.llmDishesProposed_pasta)
+                }
+
+                LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE -> {
+                    onDishesProposed(TestData.llmDishesProposed_dishNotPossible)
+                }
+
+                LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH -> {
+                    onResponse(TestData.llmRecipe_recipeNotPossible)
+                }
+            }
+        }
+
     }
 
     override fun makeRetrofitLlmActionCall(

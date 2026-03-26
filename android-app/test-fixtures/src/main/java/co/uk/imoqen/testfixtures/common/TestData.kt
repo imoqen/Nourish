@@ -103,6 +103,19 @@ object TestData {
         colour = "GREEN"
     )
 
+    val llmRecipe_recipeNotPossible = LlmRecipe(
+        "",
+        sectionIngredients = listOf(),
+        servings = 1,
+        mealType = "",
+        method = listOf(),
+        tags = listOf(),
+        storage = "",
+        recipeNotPossible = true,
+        emoji = "",
+        colour = ""
+    )
+
     val llmDishesProposed_cherry = LlmDishesProposed(
         ingredientsIdentified = "cherries, flour, sugar, eggs, milk",
         firstMostLikelyDish = "Cherry Pancakes",
@@ -179,5 +192,25 @@ object TestData {
     val recipeTypes = listOf(
         recipeType_breakfast, recipeType_lunch, recipeType_dinner, recipeType_dessert,
         recipeType_side, recipeType_drink
+    )
+
+    // Dishes proposed
+
+    val llmDishesProposed_pasta = LlmDishesProposed(
+        ingredientsIdentified = "Pasta, pesto, tomatoes, bacon, cheese, eggs, parmesan",
+        firstMostLikelyDish = "Pasta Pesto",
+        secondMostLikelyDish = "Spaghetti Carbonara",
+        thirdMostLikelyDish = "Tomato pasta bake",
+        fourthMostLikelyDish = "Pesto traybake",
+        dishNotPossible = false
+    )
+
+    val llmDishesProposed_dishNotPossible = LlmDishesProposed(
+        ingredientsIdentified = "",
+        firstMostLikelyDish = "",
+        secondMostLikelyDish = "",
+        thirdMostLikelyDish = "",
+        fourthMostLikelyDish = "",
+        dishNotPossible = true // dishes could not be generated; dish not possible.
     )
 }

@@ -322,9 +322,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 if (chosenNutritionalFilters == null) {
                     chosenNutritionalFilters = "[]" // signifies empty list
                 }
-                Log.i("selected tags: ", chosenNutritionalFilters)
-
-
                 var allNutritionalFilters = mutableUiState.value.tagSheetState.recipeTags?.joinToString(", ") { it.tag.identifier }
                 if (allNutritionalFilters == null) {
                     allNutritionalFilters = "[]" // signifies empty list
@@ -404,25 +401,19 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 ) { response ->
 
                     viewModelScope.launch() {
-                        if (response == null) {
-                            // Error message in Snackbar:
-                            uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
-                            // ERROR HERE when llm is down
-                            resetAfterError()
-                            setLlmChatStage(LlmChatStage.USER_INPUT)
-                            return@launch
-                        }
-                        if (response.recipeNotPossible) {
-                            // user inputted invalid prompt / image; recipe cannot be generated.
-                            uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("A valid recipe could not be generated. Please try another dish."))
-                            setLlmChatStage(LlmChatStage.USER_INPUT)
-                            return@launch
-                        }
-                        // Response is valid - output in a recipe card to the user
-                        setLlmGeneratedRecipe(response)
+                        if (response != null) {
+                            if (response.recipeNotPossible) {
+                                // user inputted invalid prompt / image; recipe cannot be generated.
+                                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("A valid recipe could not be generated. Please try another dish."))
+                                setLlmChatStage(LlmChatStage.USER_INPUT)
+                                return@launch
+                            }
+                            // Response is valid - output in a recipe card to the user
+                            setLlmGeneratedRecipe(response)
 
-                        // valid: set to the dish selection stage
-                        setLlmChatStage(LlmChatStage.USER_VIEW_RECIPE)
+                            // valid: set to the dish selection stage
+                            setLlmChatStage(LlmChatStage.USER_VIEW_RECIPE)
+                        }
                     }
                 }
             }

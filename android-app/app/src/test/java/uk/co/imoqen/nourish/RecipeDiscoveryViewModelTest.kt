@@ -257,4 +257,109 @@ class RecipeDiscoveryViewModelTest {
         Assert.assertEquals(vm.uiState.value.llmChatStage, LlmChatStage.USER_INPUT)
     }
 
+    @Test
+    fun `makeLlmApiCall should handle the possible dishes generation case and empty selected tags`() {
+        Assert.assertEquals(vm.uiState.value.dishes, null)
+        fakeAuthenticationManager.setLoginState(true) // for valid token
+        vm.makeLlmApiCall(LlmRequestType.DISHES_FROM_IMAGE, imageFilename = "image.png")
+        Assert.assertEquals(vm.uiState.value.dishes, TestData.llmDishesProposed_pasta)
+    }
+
+    @Test
+    fun `makeLlmApiCall should not update dishes if an image was not uploaded, but image option chosen`() {
+        Assert.assertEquals(vm.uiState.value.dishes, null)
+        fakeAuthenticationManager.setLoginState(true) // for valid token
+        vm.makeLlmApiCall(LlmRequestType.DISHES_FROM_IMAGE) // no image filename specified
+        Assert.assertEquals(vm.uiState.value.dishes, null) // the dishes are not updated; error occurred.
+    }
+
+    @Test
+    fun `makeLlmApiCall should not make the call if the token is null`() {
+        vm.setChosenDish("Salad")
+        fakeAuthenticationManager.setLoginState(false) // for invalid token
+        Assert.assertEquals(vm.uiState.value.llmGeneratedRecipe, null)
+        vm.makeLlmApiCall(LlmRequestType.RECIPE, imageFilename = "image.png")
+        Assert.assertEquals(vm.uiState.value.llmGeneratedRecipe, null) // no recipe is generated.
+    }
+    /*@Test
+    fun `makeLlmApiCall should handle the recipe from dish choice generation case`() {
+        Assert.assertEquals(vm.uiState.value.llmGeneratedRecipe, null)
+        fakeAuthenticationManager.setLoginState(true) // for valid token
+        vm.setChosenDish("Salad")
+        vm.setRecipeTags(TestData.recipeTags) // populated with some recipe tags
+        vm.makeLlmApiCall(LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH, imageFilename = "image.png")
+        Assert.assertEquals(vm.uiState.value.llmGeneratedRecipe, TestData.llmRecipe_salad)
+    }*/
+
+    @Test
+    fun `makeLlmApiCall should not make the call if an image is not provided, and recipe from image of dish is requested`() {
+        Assert.assertEquals(vm.uiState.value.llmGeneratedRecipe, null)
+        fakeAuthenticationManager.setLoginState(true) // for valid token
+        vm.setRecipeTags(TestData.recipeTags) // populated with some recipe tags
+        vm.makeLlmApiCall(LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH)
+        Assert.assertEquals(vm.uiState.value.llmGeneratedRecipe, null)
+    }
+
+    @Test
+    fun `makeLlmApiCall should not make the call in recipe from description if no description is given`() {
+        Assert.assertEquals(vm.uiState.value.llmGeneratedRecipe, null)
+        fakeAuthenticationManager.setLoginState(true) // for valid token
+        vm.setRecipeTags(TestData.recipeTags) // populated with some recipe tags
+        vm.setUserChoice(LlmMode.FROM_DESCRIPTION)
+        vm.makeLlmApiCall(LlmRequestType.RECIPE)
+        Assert.assertEquals(vm.uiState.value.llmGeneratedRecipe, null)
+    }
+
+    @Test
+    fun `makeLlmApiCall should handle the recipe from description if description is given`() {
+        Assert.assertEquals(vm.uiState.value.llmGeneratedRecipe, null)
+        fakeAuthenticationManager.setLoginState(true) // for valid token
+        vm.setRecipeTags(TestData.recipeTags) // populated with some recipe tags
+        vm.setUserChoice(LlmMode.FROM_DESCRIPTION)
+        vm.setUserRequest("Salad")
+        vm.makeLlmApiCall(LlmRequestType.RECIPE)
+        Assert.assertEquals(vm.uiState.value.llmGeneratedRecipe, TestData.llmRecipe_salad)
+    }
+
+    @Test
+    fun `makeLlmApiCall should not make the call if the token is invalid`() {
+        Assert.assertEquals(vm.uiState.value.llmGeneratedRecipe, null)
+        vm.setRecipeTags(TestData.recipeTags) // populated with some recipe tags
+        vm.setUserChoice(LlmMode.FROM_DESCRIPTION)
+        vm.setSelectedRecipeType(TestData.recipeType_breakfast)
+        vm.setUserRequest("Eggs, Milk, Butter, Flour")
+        fakeAuthenticationManager.setLoginState(true, "invalid") // invalid token
+        vm.makeLlmApiCall(LlmRequestType.DISHES_FROM_INGREDIENTS)
+        Assert.assertEquals(vm.uiState.value.llmGeneratedRecipe, null)
+    }
+
+    @Test
+    fun `makeLlmApiCall handles dishesNotPossible appropriately`() {
+        Assert.assertEquals(vm.uiState.value.dishes, null)
+        fakeAuthenticationManager.setLoginState(true) // for valid token
+        vm.setRecipeTags(TestData.recipeTags) // populated with some recipe tags
+        vm.setUserChoice(LlmMode.FROM_DESCRIPTION)
+        vm.setSelectedRecipeType(TestData.recipeType_breakfast)
+        vm.setChosenDish("socks")
+        // these will generate "dishes not possible" for the dishes
+        vm.makeLlmApiCall(LlmRequestType.DISHES_FROM_INGREDIENTS)
+        Assert.assertEquals(vm.uiState.value.dishes, null)
+        vm.makeLlmApiCall(LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE, "image.png")
+        Assert.assertEquals(vm.uiState.value.dishes, null)
+    }
+
+    @Test
+    fun `makeLlmApiCall handles recipeNotPossible appropriately`() {
+        Assert.assertEquals(vm.uiState.value.llmGeneratedRecipe, null)
+        fakeAuthenticationManager.setLoginState(true) // for valid token
+        vm.setChosenDish("Salad")
+        vm.setRecipeTags(TestData.recipeTags) // populated with some recipe tags
+        vm.makeLlmApiCall(LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH, imageFilename = "image.png")
+        Assert.assertEquals(vm.uiState.value.llmGeneratedRecipe, null) // simulates recipe not possible
+    }
+
+    @Test
+    fun `makeLlmApiCall should handle errors appropriately`() {
+    }
+
 }

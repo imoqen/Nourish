@@ -96,7 +96,13 @@ class FakeAuthenticationManager(): AuthenticationManager {
     }
 
     override suspend fun getUserToken(): String? {
-        TODO("Not yet implemented")
+        if (!mutableAuthenticationState.value.loggedIn) {
+            return null
+        }
+        if (mutableAuthenticationState.value.uid == "invalid") {
+            return "triggerError"
+        }
+        return "validToken"
     }
 
     override fun getUid(): String? {
