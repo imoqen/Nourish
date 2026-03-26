@@ -20,4 +20,13 @@ class FakeIngredientRepository(): IngredientRepository {
     override suspend fun getIdBySingular(singular: String): Long? {
         TODO("Not yet implemented")
     }
+
+    override suspend fun getIdByPlural(plural: String): Long? {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun update(ingredient: Ingredient) {
+        TODO("Not yet implemented")
+    }
+
 }

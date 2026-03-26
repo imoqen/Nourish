@@ -130,15 +130,19 @@ class FakeRecipeRepository(): RecipeRepository {
     override suspend fun createRecipe(
         uid: String,
         llmRecipe: LlmRecipe,
+        alteration: Boolean,
         recipeId: Long,
-        imagePath: String
+        imagePath: String,
+        llmGenerated: Boolean
     ) {
         TODO("Not yet implemented")
     }
 
     override suspend fun replaceRecipe(
         currentRecipe: Recipe,
-        newRecipe: LlmRecipe
+        newRecipe: LlmRecipe,
+        updatedImagePath: String,
+        llmGenerated: Boolean
     ) {
         TODO("Not yet implemented")
     }
@@ -158,4 +162,9 @@ class FakeRecipeRepository(): RecipeRepository {
     override suspend fun updateRecipe(recipe: Recipe) {
         TODO("Not yet implemented")
     }
+
+    override suspend fun deleteRecipe(recipe: Recipe) {
+        TODO("Not yet implemented")
+    }
+
 }
