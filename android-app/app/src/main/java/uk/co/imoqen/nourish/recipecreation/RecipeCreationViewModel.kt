@@ -48,9 +48,7 @@ import kotlin.math.round
 
 @HiltViewModel
 class RecipeCreationViewModel @Inject constructor(
-    private val apiService: ApiService,
     private val authenticationManager: AuthenticationManager,
-    private val apiManager: ApiManager,
     private val uiEventBus: UiEventBus,
     private val recipeRepository: RecipeRepository,
     private val recipeActions: RecipeActions,
@@ -68,7 +66,6 @@ class RecipeCreationViewModel @Inject constructor(
             )
         }
     }
-
 
     // for editing:
     fun setCreationMode(creationMode: CreationMode) {

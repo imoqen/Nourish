@@ -32,6 +32,7 @@ class RecipeDiscoveryViewModelTest {
     val fakeRecipeRepository = FakeRecipeRepository()
     val fakeTagRepository = FakeTagRepository()
 
+
     lateinit var vm: RecipeDiscoveryViewModel
 
     @Before
@@ -136,7 +137,7 @@ class RecipeDiscoveryViewModelTest {
     }
 
     @Test
-    fun `should set createdTagColour in createdTagName correctly`() {
+    fun `should set createdTagName in tagSheetState correctly`() {
         Assert.assertEquals(vm.uiState.value.tagSheetState.createdTagName, "")
         vm.setCreatedTagName("Low Processed")
         Assert.assertEquals(vm.uiState.value.tagSheetState.createdTagName, "Low Processed")
