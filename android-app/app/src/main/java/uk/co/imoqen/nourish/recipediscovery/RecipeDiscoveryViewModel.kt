@@ -48,12 +48,10 @@ import kotlin.onSuccess
  *       https://medium.com/@imkuldeepsinghrai/api-calls-with-retrofit-in-android-kotlin-a-comprehensive-guide-e049e19deba9
  * Furthermore, dependent on the authenticationManager to get the token of the logged in user, for
  * authentication.
- * @param apiService - dependent on the ApiService to make the API call
  * @param authenticationManager - dependent on the AuthenticationManager to access user's token
  */
 @HiltViewModel
 class RecipeDiscoveryViewModel @Inject constructor(
-    private val apiService: ApiService,
     private val authenticationManager: AuthenticationManager,
     private val apiManager: ApiManager,
     private val uiEventBus: UiEventBus,

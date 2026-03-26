@@ -197,9 +197,9 @@ val instrumentedTestExclusions = listOf(
 
 val unitTestInclusions = listOf(
     "**/*ViewModel*.class",
-    "**/*Repository*.class"
 )
 val unitTestExclusions = listOf(
+    "**/db/**", // dont include repositories in unit tests
     "**/hilt_aggregated_deps/**",
     "**/*Test*.class",
     "**/**AppViewModel**.class" // for Hilt, untestable.
@@ -241,13 +241,6 @@ tasks.register<JacocoReport>("JacocoInstrumentedCodeCoverage") {
             exclude("**/*.exec")
         }
     )
-
-    /*doFirst {
-        println("=== executionData ===")
-        executionData.files.forEach { println(it.absolutePath) }
-        println("=== classDirectories ===")
-        classDirectories.files.forEach { println(it.absolutePath) }
-    }*/
 }
 
 // UNIT TESTS:
