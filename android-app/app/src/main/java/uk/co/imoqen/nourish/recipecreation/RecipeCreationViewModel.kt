@@ -748,7 +748,7 @@ class RecipeCreationViewModel @Inject constructor(
             runCatching {
                 // Check that user is logged in validly
                 val uid = authenticationManager.getUid()
-                if (uid == null) {
+                if (uid == "") {
                     throw NullPointerException()
                 } // user is null; throw to be handled appropriately
 
@@ -794,7 +794,7 @@ class RecipeCreationViewModel @Inject constructor(
             runCatching {
                 // Check that user is logged in validly
                 val uid = authenticationManager.getUid()
-                if (uid == null) {
+                if (uid == "") {
                     throw NullPointerException()
                 } // user is null; throw to be handled appropriately
 

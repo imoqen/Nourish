@@ -1,11 +1,13 @@
 package uk.co.imoqen.nourish
 
+import androidx.compose.ui.platform.LocalContext
 import co.uk.imoqen.testfixtures.common.FakeUiEventBus
 import co.uk.imoqen.testfixtures.common.TestData
 import co.uk.imoqen.testfixtures.firebase.FakeAuthenticationManager
 import co.uk.imoqen.testfixtures.network.FakeApiManager
 import co.uk.imoqen.testfixtures.repository.FakeRecipeRepository
 import co.uk.imoqen.testfixtures.repository.FakeTagRepository
+import coil3.Uri
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
@@ -359,7 +361,129 @@ class RecipeDiscoveryViewModelTest {
     }
 
     @Test
-    fun `makeLlmApiCall should handle errors appropriately`() {
+    fun `resetAfterError sets the values correctly`() {
+        vm.resetAfterError()
+        Assert.assertEquals(vm.uiState.value.dishes, null)
+        Assert.assertEquals(vm.uiState.value.chosenDish, "")
     }
+
+    @Test
+    fun `displayBlankErrorInput displays error message and sets the llm chat stage back to USER_INPUT`() {
+        vm.displayBlankInputError(LlmRequestType.RECIPE)
+        Assert.assertEquals(vm.uiState.value.llmChatStage, LlmChatStage.USER_INPUT)
+        vm.displayBlankInputError(LlmRequestType.DISHES_FROM_INGREDIENTS)
+        Assert.assertEquals(vm.uiState.value.llmChatStage, LlmChatStage.USER_INPUT)
+        vm.displayBlankInputError(LlmRequestType.DISHES_FROM_IMAGE)
+        Assert.assertEquals(vm.uiState.value.llmChatStage, LlmChatStage.USER_INPUT)
+    }
+
+    @Test
+    fun `addRecipe does not add the recipe to the database if the user is not logged in`() {
+        fakeAuthenticationManager.setLoginState(false, "")
+        Assert.assertEquals(vm.uiState.value.recipeSaved, false)
+        vm.addRecipe(TestData.llmRecipe_salad)
+        Assert.assertEquals(vm.uiState.value.recipeSaved, false) // not saved
+    }
+
+    @Test
+    fun `addRecipe adds a llmRecipe to the database if the recipe is valid`() {
+        fakeAuthenticationManager.setLoginState(true)
+        Assert.assertEquals(vm.uiState.value.recipeSaved, false)
+        vm.addRecipe(TestData.llmRecipe_salad)
+        Assert.assertEquals(vm.uiState.value.recipeSaved, true) // not saved
+    }
+
+    @Test
+    fun `restart resets all of the relevant UI values for recipe generation`() {
+        vm.restart()
+        Assert.assertEquals(vm.uiState.value.userRequest, "")
+        Assert.assertEquals(vm.uiState.value.chosenDish, "")
+        Assert.assertEquals(vm.uiState.value.userChoice, null)
+        Assert.assertEquals(vm.uiState.value.dishes, null)
+        Assert.assertEquals(vm.uiState.value.selectedRecipeType, null)
+        Assert.assertEquals(vm.uiState.value.llmChatStage, LlmChatStage.USER_SELECT_OPTION)
+        Assert.assertEquals(vm.uiState.value.requestType, LlmRequestType.RECIPE)
+        Assert.assertEquals(vm.uiState.value.savedImageMipmap, Mipmap("",""))
+        Assert.assertEquals(vm.uiState.value.placeholderText, "")
+        Assert.assertEquals(vm.uiState.value.llmGeneratedRecipe, null)
+        Assert.assertEquals(vm.uiState.value.recipeSaved, false)
+    }
+
+    @Test
+    fun `formatIngredientText returns empty string for invalid ingredient`() {
+        Assert.assertEquals(vm.formatIngredientText(TestData.llmIngredient_tomato), "")
+    }
+
+    @Test
+    fun `getAllTagsForUser returns all tags authored by a user`() {
+        Assert.assertNull(vm.uiState.value.tagSheetState.recipeTags)
+        fakeAuthenticationManager.setLoginState(true)
+        vm.getAllTagsForUser()
+        Assert.assertEquals(vm.uiState.value.tagSheetState.recipeTags, listOf(
+            TestData.tagSelection_lowcalorie, TestData.tagSelection_vegan
+        ))
+    }
+
+    @Test
+    fun `getAllRecipeTypes returns all recipe types, user independent`() {
+        Assert.assertNull(vm.uiState.value.recipeTypes)
+        fakeAuthenticationManager.setLoginState(true)
+        vm.getAllRecipeTypes()
+        Assert.assertEquals(vm.uiState.value.recipeTypes, TestData.recipeTypes)
+    }
+
+    @Test
+    fun `updateSelected updates a tag's selected status`() {
+        fakeAuthenticationManager.setLoginState(true)
+        vm.getAllTagsForUser()
+        Assert.assertEquals(vm.uiState.value.tagSheetState.recipeTags?.get(1), TagSelection(TestData.tag_vegan, false))
+        vm.updateSelected(TestData.tag_vegan, true)
+        Assert.assertEquals(vm.uiState.value.tagSheetState.recipeTags?.get(1), TagSelection(TestData.tag_vegan, true))
+    }
+
+    @Test
+    fun `createTag creates a tag when name and colour are valid`() {
+        fakeAuthenticationManager.setLoginState(true)
+        vm.setCreatedTagName("Vegetarian")
+        vm.setCreatedTagColour(NourishColour.PINK)
+        vm.createTag()
+        Assert.assertEquals(vm.uiState.value.tagSheetState.tagCreationError, "")
+    }
+
+    @Test
+    fun `createTag does not create a tag when name is invalid`() {
+        fakeAuthenticationManager.setLoginState(true)
+        vm.setCreatedTagName("")
+        vm.setCreatedTagColour(NourishColour.PINK)
+        vm.createTag()
+        Assert.assertEquals(vm.uiState.value.tagSheetState.tagCreationError, "Please enter a description.")
+    }
+
+    @Test
+    fun `createTag does not create a tag when the user is not logged in`() {
+        fakeAuthenticationManager.setLoginState(false, "")
+        vm.setCreatedTagName("Vegetarian")
+        vm.setCreatedTagColour(NourishColour.PINK)
+        vm.createTag()
+        Assert.assertEquals(vm.uiState.value.tagSheetState.tagCreationError, "The tag could not be created.")
+    }
+
+    @Test
+    fun `deleteTag successfully deletes a tag`() {
+        fakeAuthenticationManager.setLoginState(true)
+        vm.setTagToDelete(TestData.tag_lowcalorie)
+        vm.deleteTag()
+        Assert.assertEquals(vm.uiState.value.tagSheetState.tagToDelete, TestData.tag_lowcalorie)
+    }
+
+    @Test
+    fun `closeTagCreation resets the UI values regarding tag creation`() {
+        vm.closeTagCreation()
+        Assert.assertEquals(vm.uiState.value.tagSheetState.filterDisplayState, FilterState.APPLY)
+        Assert.assertEquals(vm.uiState.value.tagSheetState.createdTagColour, null)
+        Assert.assertEquals(vm.uiState.value.tagSheetState.createdTagName, "")
+        Assert.assertEquals(vm.uiState.value.tagSheetState.tagCreationError, "")
+    }
+
 
 }

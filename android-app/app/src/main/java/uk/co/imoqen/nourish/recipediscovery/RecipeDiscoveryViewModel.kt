@@ -445,27 +445,18 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
+    // Saves the image mipmap using the ImageHandler helper function, catching errors if they occur.
     fun handleImage(
         uri: Uri?,
         context: Context
     ) {
         viewModelScope.launch() {
             runCatching {
-                saveMipmap(
-                    uri,
-                    context
-                ) { lowQualityFilename, highQualityFilename ->
+                saveMipmap(uri, context) { lowQualityFilename, highQualityFilename ->
                     setSavedImageMipmap(Mipmap(lowQualityFilename, highQualityFilename))
                 }
             }
-                .onSuccess {
-                    Log.i("PhotoPicker", "image saved successfully")
-                }
-                .onFailure { e ->
-                    Log.i("PhotoPicker", "image not saved: $e")
-                }
         }
-
     }
 
     fun addRecipe(llmRecipe: LlmRecipe) {
@@ -473,14 +464,15 @@ class RecipeDiscoveryViewModel @Inject constructor(
             runCatching {
                 // Check that user is logged in validly
                 val uid = authenticationManager.getUid()
-                if (uid == null) {
+                if (uid == "") {
                     throw NullPointerException()
-                } // user is null; throw to be handled appropriately
-                // Add the recipe to the database:
+                }
+                // Add the recipe to the database, with the higher quality image:
                 recipeRepository.createRecipe(
-                    // recipe is saved with the higher quality image, which is stored in second place
-                    uid, llmRecipe, imagePath = mutableUiState.value.savedImageMipmap.highQualityFilename,
-                    alteration = false // not an alteration; it is a new recipe.
+                    uid,
+                    llmRecipe,
+                    imagePath = mutableUiState.value.savedImageMipmap.highQualityFilename,
+                    alteration = false
                 )
             }
                 .onSuccess {
@@ -491,14 +483,12 @@ class RecipeDiscoveryViewModel @Inject constructor(
                         )
                     )
                 }
-
                 .onFailure { e ->
                     uiEventBus.enqueueEvent(
                         UiEvent.ShowSnackbar(
                             "The recipe could not be saved. Please try again, or generate a new recipe."
                         )
                     )
-                    Log.i("RECIPE SAVE", "$e")
                 }
         }
     }
@@ -507,19 +497,14 @@ class RecipeDiscoveryViewModel @Inject constructor(
     fun restart() {
         setUserRequest("")
         setChosenDish("")
-
         setUserChoice(null)
         setDishes(null)
-
         getAllTagsForUser(reset=true)
         setSelectedRecipeType(null)
-
         setLlmChatStage(LlmChatStage.USER_SELECT_OPTION) // the starting stage
         setRequestType(LlmRequestType.RECIPE)
-
         setSavedImageMipmap(Mipmap("",""))
         setPlaceholderText("")
-
         setLlmGeneratedRecipe(null)
         setRecipeSaved(false)
     }
@@ -531,14 +516,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
         runCatching {
             return recipeActions.formatIngredientText(ingredient)
         }
-            .onFailure {
-                viewModelScope.launch {
-                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("The recipe could not be generated. Please try again."))
-                    setLlmChatStage(LlmChatStage.USER_INPUT)
-                    return@launch
-                }
-            }
-        return "" // invalid if reached here
+        return "" // if invalid
     }
 
     // Tag Sheet Logic: exposes the logic present in RecipeActions for tag selection.
@@ -573,8 +551,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
-    fun createTag(
-    ) {
+    fun createTag() {
         viewModelScope.launch() {
             runCatching {
                 recipeActions.createTag(
@@ -583,7 +560,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
                     mutableUiState.value.tagSheetState.recipeTags)
             }
                 .onSuccess {
-                    // when the tag has been successfully made,
                     getAllTagsForUser() // update the tags as a new one now exists
                     closeTagCreation()
                 }

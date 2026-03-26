@@ -336,7 +336,7 @@ class RecipeBookViewModel @Inject constructor(
 
                 // get uid:
                 val uid = authenticationManager.getUid()
-                if (uid == null) {
+                if (uid == "") {
                     return@launch
                 }
 
@@ -366,7 +366,7 @@ class RecipeBookViewModel @Inject constructor(
     // gets all recipes for the currently logged in user. ensures that if user not logged in, empty list returned.
     fun getAllRecipes(): Flow<List<Recipe>> {
         val uid = authenticationManager.getUid()
-        if (uid == null) return flowOf(emptyList())
+        if (uid == "") return flowOf(emptyList())
         return recipeRepository.getAllRecipes(uid)
     }
 
@@ -884,7 +884,7 @@ class RecipeBookViewModel @Inject constructor(
             runCatching {
                 // Check that user is logged in validly
                 val uid = authenticationManager.getUid()
-                if (uid == null) {
+                if (uid == "") {
                     throw NullPointerException()
                 } // user is null; throw to be handled appropriately
                 // Add the recipe to the database:
@@ -916,7 +916,7 @@ class RecipeBookViewModel @Inject constructor(
             runCatching {
                 // Check that user is logged in validly
                 val uid = authenticationManager.getUid()
-                if (uid == null) {
+                if (uid == "") {
                     throw NullPointerException()
                 } // user is null; throw to be handled appropriately
                 // Add the recipe to the database:

@@ -1,6 +1,8 @@
 package co.uk.imoqen.testfixtures.repository
 
+import co.uk.imoqen.testfixtures.common.TestData
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.recipe.RecipeWithRecipeSteps
@@ -41,7 +43,7 @@ class FakeRecipeRepository(): RecipeRepository {
     }
 
     override fun getAllRecipeTypes(): Flow<List<RecipeType>> {
-        TODO("Not yet implemented")
+        return flowOf( TestData.recipeTypes )
     }
 
     override fun getRecipeTypeById(id: Long): Flow<RecipeType?> {
@@ -135,7 +137,7 @@ class FakeRecipeRepository(): RecipeRepository {
         imagePath: String,
         llmGenerated: Boolean
     ) {
-        TODO("Not yet implemented")
+        // simply do nothing; no side effects
     }
 
     override suspend fun replaceRecipe(

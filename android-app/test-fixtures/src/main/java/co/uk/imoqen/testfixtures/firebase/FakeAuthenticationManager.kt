@@ -105,7 +105,10 @@ class FakeAuthenticationManager(): AuthenticationManager {
         return "validToken"
     }
 
-    override fun getUid(): String? {
+    override fun getUid(): String {
+        if (!mutableAuthenticationState.value.loggedIn) {
+         return ""
+        }
         return "test_uid"
     }
 

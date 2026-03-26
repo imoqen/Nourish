@@ -31,7 +31,6 @@ class RecipeActions @Inject constructor(
         allRecipeTags: List<TagSelection>?
     ) {
         runCatching {
-
             if (description.trim() == "") {
                 throw TagCreationException("Please enter a description.")
             }
@@ -49,7 +48,7 @@ class RecipeActions @Inject constructor(
             }
 
             val uid = authenticationManager.getUid()
-            if (uid == null) {
+            if (uid == "") {
                 throw NullPointerException()
             }
             // create the tag
@@ -75,9 +74,8 @@ class RecipeActions @Inject constructor(
         reset: Boolean = false // to reset them to all be not selected
     ): List<TagSelection>? {
         runCatching {
-            Log.i("setting","setting all tags")
             val uid = authenticationManager.getUid()
-            if (uid == null) {
+            if (uid == "") {
                 throw NullPointerException()
             }
             // only update if an update has been made to the list of tags, or no tags have been obtained yet:
@@ -88,10 +86,8 @@ class RecipeActions @Inject constructor(
                             .map { tag ->
                                 val oldTag = previousTags?.find { it.tag == tag }
                                 val selected = if (!reset) {
-                                    Log.i("selected", "${oldTag?.selected}")
                                     (oldTag?.selected) ?: false
                                 } else {
-                                    Log.i("selected", "RESETTING TO FALSE")
                                     false
                                 }
                                 TagSelection(tag, selected) // so that old tags preserve their selected values
@@ -99,9 +95,6 @@ class RecipeActions @Inject constructor(
                         )
             }
         }
-            .onFailure { e ->
-                Log.i("tag obtaining", "failed: $e")
-            }
         return null // if failure, return null.
     }
 
@@ -142,9 +135,7 @@ class RecipeActions @Inject constructor(
                 uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
                     "Couldn't fetch recipe types. Please try again later."
                 ))
-                Log.i("recipe types", "failed: $e")
             }
-        Log.i("get types", "null")
         return null // failure occurred
     }
 
@@ -156,7 +147,6 @@ class RecipeActions @Inject constructor(
         allTags: List<TagSelection>?
     ): List<TagSelection>? {
         runCatching {
-            Log.i("updating","updating tag: ${tag.displayName}")
             if (allTags == null) {
                 throw NullPointerException()
             }
@@ -172,7 +162,6 @@ class RecipeActions @Inject constructor(
                 uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
                     "The tag could not be selected. Please try again later."
                 ))
-                Log.i("tag select", "failed: $e")
             }
         return null
     }

@@ -146,10 +146,10 @@ object TestData {
     // Recipe tags and their selection status:
 
     val tagSelection_vegan =
-        TagSelection(tag_vegan, true)
+        TagSelection(tag_vegan, false)
 
     val tagSelection_lowcalorie =
-        TagSelection(tag_lowcalorie, true)
+        TagSelection(tag_lowcalorie, false)
 
     val recipeTags = listOf(
         tagSelection_vegan,

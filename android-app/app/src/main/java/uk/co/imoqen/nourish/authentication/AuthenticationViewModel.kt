@@ -140,7 +140,7 @@ class AuthenticationViewModel @Inject constructor(
         viewModelScope.launch() {
             val uid = authenticationManager.getUid()
             val email = authenticationManager.getEmail()
-            if (uid !=null && email != null) {
+            if (uid != "" && email != null) {
                 userRepository.insert(User(uid, email))
             }
         }
@@ -150,7 +150,7 @@ class AuthenticationViewModel @Inject constructor(
         // add the recipe tags if they are not already in the DB:
         viewModelScope.launch() {
             val uid = authenticationManager.getUid()
-            if (uid == null) {
+            if (uid == "") {
                 return@launch
             }
             // do nothing if the user already has tags

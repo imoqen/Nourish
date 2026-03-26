@@ -179,7 +179,7 @@ class ShoppingListViewModel @Inject constructor(
         viewModelScope.launch() {
             runCatching {
                 val uid = authenticationManager.getUid()
-                if (uid == null) {
+                if (uid == "") {
                     return@launch
                 }
                 if (onlyDeletePurchased) {
@@ -216,7 +216,7 @@ class ShoppingListViewModel @Inject constructor(
         viewModelScope.launch() {
             runCatching {
                 val uid = authenticationManager.getUid()
-                if (uid == null) {
+                if (uid == "") {
                     return@launch
                 }
 
@@ -311,7 +311,7 @@ class ShoppingListViewModel @Inject constructor(
         viewModelScope.launch() {
             runCatching {
                 val uid = authenticationManager.getUid()
-                if (uid == null) {
+                if (uid == "") {
                     return@launch
                 }
 
