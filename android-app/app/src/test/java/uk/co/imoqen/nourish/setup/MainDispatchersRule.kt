@@ -1,4 +1,4 @@
-package uk.co.imoqen.nourish
+package uk.co.imoqen.nourish.setup
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

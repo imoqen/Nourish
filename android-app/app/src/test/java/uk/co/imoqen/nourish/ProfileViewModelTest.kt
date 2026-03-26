@@ -6,10 +6,10 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import uk.co.imoqen.nourish.authentication.AuthenticationViewModel
 import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.profile.ProfileViewModel
+import uk.co.imoqen.nourish.setup.MainDispatcherRule
 
 class ProfileViewModelTest {
 

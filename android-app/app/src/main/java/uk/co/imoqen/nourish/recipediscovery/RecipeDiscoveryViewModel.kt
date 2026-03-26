@@ -147,14 +147,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
-    fun setRecipeTypes(recipeTypes: List<RecipeType>?) {
-        mutableUiState.update { currentState ->
-            currentState.copy(
-                recipeTypes = recipeTypes
-            )
-        }
-    }
-
     fun setCreatedTagName(createdTagName: String) {
         mutableUiState.update { currentState ->
             currentState.copy( // to update the sheet ui state, need to nest the copy
@@ -191,6 +183,14 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 tagSheetState = currentState.tagSheetState.copy (
                     showTagConfirmationDialog = showTagConfirmationDialog
                 )
+            )
+        }
+    }
+
+    fun setRecipeTypes(recipeTypes: List<RecipeType>?) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                recipeTypes = recipeTypes
             )
         }
     }

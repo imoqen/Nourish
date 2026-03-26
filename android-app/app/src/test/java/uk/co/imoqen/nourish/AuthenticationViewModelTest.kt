@@ -12,6 +12,7 @@ import uk.co.imoqen.nourish.authentication.AuthenticationUiStatus
 import uk.co.imoqen.nourish.authentication.AuthenticationViewModel
 import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.uievent.UiEvent
+import uk.co.imoqen.nourish.setup.MainDispatcherRule
 
 class AuthenticationViewModelTest {
 
