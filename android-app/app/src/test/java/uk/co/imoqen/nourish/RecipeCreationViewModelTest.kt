@@ -15,6 +15,8 @@ import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.RecipeActions
 import uk.co.imoqen.nourish.common.tag.FilterState
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
+import uk.co.imoqen.nourish.network.response.LlmIngredient
+import uk.co.imoqen.nourish.recipebook.TagSelection
 import uk.co.imoqen.nourish.recipecreation.CreationMode
 import uk.co.imoqen.nourish.recipecreation.RecipeCreationViewModel
 import uk.co.imoqen.nourish.recipecreation.RecipeStep
@@ -326,6 +328,141 @@ class RecipeCreationViewModelTest {
         Assert.assertEquals(vm.uiState.value.ingredientToEdit.amount, "")
         vm.setEditIngredientAmount("25")
         Assert.assertEquals(vm.uiState.value.ingredientToEdit.amount, "25")
+    }
+
+    // Testing the exposed tag methods
+    @Test
+    fun `getAllTagsForUser returns all tags authored by a user`() {
+        Assert.assertNull(vm.uiState.value.tagSheetState.recipeTags)
+        fakeAuthenticationManager.setLoginState(true)
+        vm.getAllTagsForUser()
+        Assert.assertEquals(vm.uiState.value.tagSheetState.recipeTags, listOf(
+            TestData.tagSelection_lowcalorie, TestData.tagSelection_vegan
+        ))
+    }
+
+    @Test
+    fun `getAllRecipeTypes returns all recipe types, user independent`() {
+        Assert.assertNull(vm.uiState.value.recipeTypes)
+        fakeAuthenticationManager.setLoginState(true)
+        vm.getAllRecipeTypes()
+        Assert.assertEquals(vm.uiState.value.recipeTypes, TestData.recipeTypes)
+    }
+
+    @Test
+    fun `updateSelected updates a tag's selected status`() {
+        fakeAuthenticationManager.setLoginState(true)
+        vm.getAllTagsForUser()
+        Assert.assertEquals(vm.uiState.value.tagSheetState.recipeTags?.get(1), TagSelection(TestData.tag_vegan, false))
+        vm.updateSelected(TestData.tag_vegan, true)
+        Assert.assertEquals(vm.uiState.value.tagSheetState.recipeTags?.get(1), TagSelection(TestData.tag_vegan, true))
+    }
+
+    @Test
+    fun `createTag creates a tag when name and colour are valid`() {
+        fakeAuthenticationManager.setLoginState(true)
+        vm.setCreatedTagName("Vegetarian")
+        vm.setCreatedTagColour(NourishColour.PINK)
+        vm.createTag()
+        Assert.assertEquals(vm.uiState.value.tagSheetState.tagCreationError, "")
+    }
+
+    @Test
+    fun `createTag does not create a tag when name is invalid`() {
+        fakeAuthenticationManager.setLoginState(true)
+        vm.setCreatedTagName("")
+        vm.setCreatedTagColour(NourishColour.PINK)
+        vm.createTag()
+        Assert.assertEquals(vm.uiState.value.tagSheetState.tagCreationError, "Please enter a description.")
+    }
+
+    @Test
+    fun `createTag does not create a tag when the user is not logged in`() {
+        fakeAuthenticationManager.setLoginState(false, "")
+        vm.setCreatedTagName("Vegetarian")
+        vm.setCreatedTagColour(NourishColour.PINK)
+        vm.createTag()
+        Assert.assertEquals(vm.uiState.value.tagSheetState.tagCreationError, "The tag could not be created.")
+    }
+
+    @Test
+    fun `deleteTag successfully deletes a tag`() {
+        fakeAuthenticationManager.setLoginState(true)
+        vm.setTagToDelete(TestData.tag_lowcalorie)
+        vm.deleteTag()
+        Assert.assertEquals(vm.uiState.value.tagSheetState.tagToDelete, TestData.tag_lowcalorie)
+    }
+
+    @Test
+    fun `closeTagCreation resets the UI values regarding tag creation`() {
+        vm.closeTagCreation()
+        Assert.assertEquals(vm.uiState.value.tagSheetState.filterDisplayState, FilterState.APPLY)
+        Assert.assertEquals(vm.uiState.value.tagSheetState.createdTagColour, null)
+        Assert.assertEquals(vm.uiState.value.tagSheetState.createdTagName, "")
+        Assert.assertEquals(vm.uiState.value.tagSheetState.tagCreationError, "")
+    }
+
+    // Tests for non-trivial (not setters), RecipeCreation-specific methods:
+    @Test
+    fun `alterServingSize can increase the serving size`() {
+        vm.setNumberOfServings(1)
+        vm.alterServingSize(true) // true for increase
+        Assert.assertEquals(vm.uiState.value.numberOfServings, 2)
+    }
+
+    @Test
+    fun `alterServingSize can decrease the serving size`() {
+        vm.setNumberOfServings(3)
+        vm.alterServingSize(false) // false for decrease
+        Assert.assertEquals(vm.uiState.value.numberOfServings, 2)
+    }
+
+    @Test
+    fun `alterServingSize cannot decrease the serving size below 1`() {
+        vm.setNumberOfServings(1)
+        vm.alterServingSize(false) // false for decrease
+        Assert.assertEquals(vm.uiState.value.numberOfServings, 1) // unchanged - cant be 0 or less.
+    }
+
+    @Test
+    fun `addIngredientToRecipe does not add the ingredient if the name is blank`() {
+        vm.setIngredientToAddName("")
+        vm.addIngredientToRecipe()
+        Assert.assertEquals(vm.uiState.value.ingredientToAdd.error, "The name cannot be blank.")
+    }
+
+    @Test
+    fun `addIngredientToRecipe does not add the ingredient if the amount is blank`() {
+        vm.setIngredientToAddName("Cherry")
+        vm.setIngredientToAddAmount("")
+        vm.addIngredientToRecipe()
+        Assert.assertEquals(vm.uiState.value.ingredientToAdd.error, "The amount cannot be blank.")
+    }
+
+    @Test
+    fun `addIngredientToRecipe adds a valid ingredient and updates the ingredient state`() {
+        vm.setIngredientToAddName("Cherry")
+        vm.setIngredientToAddAmount("300")
+        vm.setIngredientToAddUnit(IngredientUnit.G)
+        vm.addIngredientToRecipe()
+        Assert.assertEquals(vm.uiState.value.ingredientToAdd.error, "") // no error
+        Assert.assertEquals(vm.uiState.value.ingredients, listOf(LlmIngredient("Cherry", "Cherry", 300.0, "G")))
+    }
+
+    @Test
+    fun `resetIngredientAdditionUI resets the UI state related to ingredients back to default values`() {
+        vm.setIngredientToAddName("Cherry")
+        vm.setIngredientToAddAmount("300")
+        vm.setIngredientToAddName("G")
+        vm.setIngredientToAddError("An error occurred")
+        vm.setShowAddIngredientSheet(true)
+        vm.resetIngredientAdditionUI()
+        // then all the values get reset as a result:
+        Assert.assertEquals(vm.uiState.value.ingredientToAdd.error, "")
+        Assert.assertEquals(vm.uiState.value.ingredientToAdd.name, "")
+        Assert.assertEquals(vm.uiState.value.ingredientToAdd.amount, "")
+        Assert.assertEquals(vm.uiState.value.ingredientToAdd.unit, IngredientUnit.UNIT)
+        Assert.assertEquals(vm.uiState.value.showAddIngredientSheet, false)
     }
 
 }
