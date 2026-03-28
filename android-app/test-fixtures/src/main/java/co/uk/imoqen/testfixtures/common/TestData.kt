@@ -10,7 +10,11 @@ import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.network.response.LlmIngredientSection
 import uk.co.imoqen.nourish.network.response.LlmRecipe
+import uk.co.imoqen.nourish.recipebook.RecipeCardExpanded
+import uk.co.imoqen.nourish.recipebook.RecipeCardUnexpanded
+import uk.co.imoqen.nourish.recipebook.ShoppingListIngredient
 import uk.co.imoqen.nourish.recipebook.TagSelection
+import uk.co.imoqen.nourish.recipebook.TypeSelection
 import uk.co.imoqen.nourish.shoppinglist.IngredientAmount
 
 object TestData {
@@ -252,7 +256,98 @@ object TestData {
         emoji = "\uD83C\uDF5C"
     )
 
+    val recipe_withInvalidIngredients = Recipe(
+        id = -1, // triggers invalid when getting ingredients, in the fake.
+        authorUid = "valid_user",
+        title = "Salad Recipe",
+        numberOfServings = 2,
+        colour = "PINK",
+        generated = false,
+        imagePath = "image.png",
+        archived = false,
+        storageInstructions = "Eat immediately.",
+        recipeTypeId = -1,
+        emoji = "\uD83C\uDF5C"
+    )
+
+    val recipe_withWaterIngredients = Recipe(
+        id = 3, // corresponds to water ingredient
+        authorUid = "valid_user",
+        title = "Soup Recipe",
+        numberOfServings = 2,
+        colour = "PINK",
+        generated = false,
+        imagePath = "image.png",
+        archived = false,
+        storageInstructions = "Freezable.",
+        recipeTypeId = -1,
+        emoji = "\uD83C\uDF5C"
+    )
+
+    val recipe_withDuplicateIngredients = Recipe(
+        id = 5, // corresponds to a recipe with duplicated ingredients
+        authorUid = "valid_user",
+        title = "Carrot Cake",
+        numberOfServings = 2,
+        colour = "PINK",
+        generated = false,
+        imagePath = "image.png",
+        archived = false,
+        storageInstructions = "Freezable.",
+        recipeTypeId = -1,
+        emoji = "\uD83C\uDF5C"
+    )
+
+    val recipe_withUnitToConvert = Recipe(
+        id = 7, // corresponds to a recipe with duplicated ingredients
+        authorUid = "valid_user",
+        title = "Apple Pie",
+        numberOfServings = 2,
+        colour = "PINK",
+        generated = false,
+        imagePath = "image.png",
+        archived = false,
+        storageInstructions = "Freezable.",
+        recipeTypeId = -1,
+        emoji = "\uD83C\uDF5C"
+    )
+
+    val recipe_withUnitToNotKeepInShoppingList = Recipe(
+        id = 8, // corresponds to a recipe with duplicated ingredients
+        authorUid = "valid_user",
+        title = "Orange Cake",
+        numberOfServings = 2,
+        colour = "PINK",
+        generated = false,
+        imagePath = "image.png",
+        archived = false,
+        storageInstructions = "Freezable.",
+        recipeTypeId = -1,
+        emoji = "\uD83C\uDF5C"
+    )
+
     val ingredient_cherry = Ingredient(
+        id = 0,
+        singular = "cherry",
+        plural = "cherries",
+        userAdded = false
+    )
+
+    val ingredient_water = Ingredient(
+        id = 0,
+        singular = "water",
+        plural = "water",
+        userAdded = false
+    )
+
+    val ingredient_lettuce = Ingredient(
+        id = 5,
+        singular = "lettuce",
+        plural = "lettuce",
+        userAdded = false
+    )
+
+    val ingredient_unitToConvert = Ingredient(
         id = 0,
         singular = "cherry",
         plural = "cherries",
@@ -265,4 +360,72 @@ object TestData {
         ingredientAmount = 1000.0,
         ingredientAmountUnit = "G"
     )
+
+    val recipeCardExpanded_cherry = RecipeCardExpanded(
+        title = "Cherry Pie",
+        sectionsWithIngredients = mutableMapOf(
+            "For the Pie" to mutableListOf(
+                Triple(
+                    "Cherry",
+                    5.0,
+                    5L
+                )
+            )
+        ),
+        method = mutableListOf(Triple("Wash the cherries", false, 1L)),
+        serves = 2,
+        recipeType = Pair("Dessert", 1),
+        recipeTags = mutableListOf(Pair("Low calorie", NourishColour.PINK)),
+        storageInstructions = "Eat immediately.",
+        imagePath = "image.png",
+        emoji = "\uD83C\uDF52",
+        colour = NourishColour.RED,
+        llmGenerated = true
+    )
+
+    val recipeCardUnexpanded_cherry = RecipeCardUnexpanded(
+        title = "Cherry Pie",
+        recipeTags = mutableListOf(
+            Pair("Low calorie", NourishColour.PINK)
+        ),
+        imagePath = "image.png",
+        emoji = "\uD83C\uDF52",
+        recipeId = 0,
+        colour = NourishColour.RED
+    )
+
+    val recipeBookMap_dessert = mutableMapOf(
+        recipeType_dessert to mutableListOf(
+            recipeCardUnexpanded_cherry
+        )
+    )
+
+    val typeSelection = listOf(
+        TypeSelection(
+            recipeType_dessert, true
+        ),
+        TypeSelection(
+            recipeType_breakfast, true
+        )
+    )
+
+    val shoppingListIngredient_cherry = ShoppingListIngredient(
+        ingredientId = 0,
+        plural = "cherries",
+        unit = IngredientUnit.G,
+        amount = 250.0
+    )
+
+    val shoppingListIngredient_oatMilk = ShoppingListIngredient(
+        ingredientId = 0,
+        plural = "oat milk",
+        unit = IngredientUnit.ML,
+        amount = 1000.0
+    )
+
+    val ingredientsToAddToShoppingList = mutableListOf(
+        Pair(shoppingListIngredient_cherry, true),
+        Pair(shoppingListIngredient_oatMilk, true)
+    )
+
 }

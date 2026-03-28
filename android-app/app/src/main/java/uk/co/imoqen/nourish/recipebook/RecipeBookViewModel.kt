@@ -49,7 +49,6 @@ import kotlin.math.round
 
 @HiltViewModel
 class RecipeBookViewModel @Inject constructor(
-    private val apiService: ApiService,
     private val authenticationManager: AuthenticationManager,
     private val apiManager: ApiManager,
     private val uiEventBus: UiEventBus,
@@ -192,7 +191,6 @@ class RecipeBookViewModel @Inject constructor(
     ) {
         viewModelScope.launch() {
             runCatching {
-                // IMPORTANT NOTe for future: toMutableList() solves composition problems by creating a NEW list.
                 val updatedList = mutableUiState.value.ingredientsToAddToShoppingList?.toMutableList().apply {
                     this?.set(index, Pair(ingredientToAddToShoppingList, selected))
                 }
@@ -200,7 +198,6 @@ class RecipeBookViewModel @Inject constructor(
             }
                 .onFailure {
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Cannot edit ingredient status."))
-                    Log.i("ingredient status change", "failed")
                 }
         }
     }
@@ -282,7 +279,6 @@ class RecipeBookViewModel @Inject constructor(
                 }
 
                 // THEN go through the array containing no duplicates and add them to the selection list
-
                 // declare the list for storing the selections after preprocessing:
                 val shoppingListIngredientSelections: MutableList<Pair<ShoppingListIngredient, Boolean>> = mutableListOf()
 
@@ -293,12 +289,6 @@ class RecipeBookViewModel @Inject constructor(
                     if (ingredient == null) {
                         return@launch // error
                     }
-
-                    //TODO if the ingredient amount is very small like tsp, then should simply store this as unit AND
-                    // ignore the amount. as only should need to ever buy one ofthese (e..g tsp salt -> salt.) so set amount to 1g always if tsp. and dont let them add up.
-                    // potentially do same for very small g values too etc e.g. 5g salt -> just salt. no one is going to buy just 5g of salt
-                    // lets say if the amount is less than 15g then just say buy the item itself.
-
                     var unit = shoppingListIngredient.unit
                     var amount = shoppingListIngredient.amount
                     if (!unit.keepUnitInShoppingList || ((unit != IngredientUnit.PINT && unit != IngredientUnit.UNIT) && amount <= 15)) { // if the unit shouldnt be kept, or the amount is inconsiderable (less than 15 IF not UNIT or PINT, l and kg doesn tmatter because we store iti n ml /g anyway.) then just set to buy 1.
@@ -322,7 +312,6 @@ class RecipeBookViewModel @Inject constructor(
             }
                 .onFailure { e ->
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Ingredients cannot be added. Please try another recipe, or add manually."))
-                    Log.i("INGREDIENT DISPLAY ERROR", "$e")
                 }
         }
     }
@@ -352,7 +341,6 @@ class RecipeBookViewModel @Inject constructor(
             }
                 .onFailure { e ->
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Ingredients cannot be added. Please try another recipe, or add manually."))
-                    Log.i("INGREDIENT ADD ERROR", "$e")
                 }
                 .onSuccess {
                     // reset the selection and notify the user

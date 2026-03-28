@@ -12,6 +12,15 @@ class FakeIngredientRepository(): IngredientRepository {
     }
 
     override fun getById(id: Long): Flow<Ingredient?> {
+        if (id == -1L) {
+            return flowOf(null)
+        }
+        if (id == 3L) {
+            return flowOf(TestData.ingredient_water)
+        }
+        if (id == 5L) {
+            return flowOf(TestData.ingredient_lettuce)
+        }
         return flowOf(TestData.ingredient_cherry)
     }
 

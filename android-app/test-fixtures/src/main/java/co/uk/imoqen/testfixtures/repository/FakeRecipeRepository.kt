@@ -42,6 +42,91 @@ class FakeRecipeRepository(): RecipeRepository {
     }
 
     override fun getRecipeWithRecipeIngredients(recipeId: Long): Flow<RecipeWithRecipeIngredients> {
+        if (recipeId == -1L) { // for invalid
+            return flowOf(
+                RecipeWithRecipeIngredients(
+                    recipe = TestData.recipe_salad,
+                    ingredients = listOf(RecipeIngredient(
+                        id = -1, // invalid id
+                        recipeId = 0,
+                        ingredientId = -1, // invalid ingredient id, triggers null return
+                        ingredientUnit = IngredientUnit.G,
+                        amount = 500.0,
+                        sectionId = 0
+                    ))
+                )
+            )
+        }
+        else if (recipeId == 3L) { // water:
+            return flowOf(
+                RecipeWithRecipeIngredients(
+                    recipe = TestData.recipe_withWaterIngredients,
+                    ingredients = listOf(RecipeIngredient(
+                        id = 3, // water recipe id
+                        recipeId = 0,
+                        ingredientId = 3, // water ingredient id
+                        ingredientUnit = IngredientUnit.ML,
+                        amount = 100.0,
+                        sectionId = 0
+                    ))
+                )
+            )
+        }
+        else if (recipeId == 5L) { // duplicate ingredients:
+            return flowOf(
+                RecipeWithRecipeIngredients(
+                    recipe = TestData.recipe_withWaterIngredients,
+                    ingredients = listOf(
+                        RecipeIngredient(
+                            id = 5,
+                            recipeId = 0,
+                            ingredientId = 5, // dupe ingredient id
+                            ingredientUnit = IngredientUnit.ML,
+                            amount = 100.0,
+                            sectionId = 0
+                        ),
+                        RecipeIngredient(
+                            id = 5,
+                            recipeId = 0,
+                            ingredientId = 5, // dupe ingredient id
+                            ingredientUnit = IngredientUnit.ML,
+                            amount = 100.0,
+                            sectionId = 0
+                        )
+                    )
+                )
+            )
+        }
+        else if (recipeId == 7L) {
+            return flowOf(
+                RecipeWithRecipeIngredients(
+                    recipe = TestData.recipe_salad,
+                    ingredients = listOf(RecipeIngredient(
+                        id = 7L,
+                        recipeId = 0,
+                        ingredientId = 7,
+                        ingredientUnit = IngredientUnit.HEAD, // gets converted to UNIT when adding to shopping list
+                        amount = 500.0,
+                        sectionId = 0
+                    ))
+                )
+            )
+        }
+        else if (recipeId == 8L) {
+            return flowOf(
+                RecipeWithRecipeIngredients(
+                    recipe = TestData.recipe_salad,
+                    ingredients = listOf(RecipeIngredient(
+                        id = 8L,
+                        recipeId = 0,
+                        ingredientId = 8,
+                        ingredientUnit = IngredientUnit.SINGLE, // to remove from the shopping list
+                        amount = 0.0,
+                        sectionId = 0
+                    ))
+                )
+            )
+        }
         return flowOf(
             RecipeWithRecipeIngredients(
                 recipe = TestData.recipe_salad,
