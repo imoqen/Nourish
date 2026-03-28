@@ -85,6 +85,9 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
+    // Mockk for mocking in Unit tests: https://mvnrepository.com/artifact/io.mockk/mockk/versions
+    testImplementation("io.mockk:mockk-android:1.13.8")
+
     // drag and drop lists
     implementation("sh.calvin.reorderable:reorderable:3.0.0")
 

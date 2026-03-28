@@ -23,7 +23,12 @@ class FakeRecipeRepository(): RecipeRepository {
     }
 
     override fun getRecipeById(recipeId: Long): Flow<Recipe?> {
-        TODO("Not yet implemented")
+        if (recipeId == -1L) {
+            return flowOf(null)
+        }
+        return flowOf(
+            TestData.recipe_salad
+        )
     }
 
     override suspend fun insertRecipe(recipe: Recipe): Long {
@@ -132,7 +137,7 @@ class FakeRecipeRepository(): RecipeRepository {
     override suspend fun createRecipe(
         uid: String,
         llmRecipe: LlmRecipe,
-        alteration: Boolean,
+        shouldNotScaleIngredients: Boolean,
         recipeId: Long,
         imagePath: String,
         llmGenerated: Boolean
@@ -146,7 +151,7 @@ class FakeRecipeRepository(): RecipeRepository {
         updatedImagePath: String,
         llmGenerated: Boolean
     ) {
-        TODO("Not yet implemented")
+        // simply do nothing; no side effects
     }
 
     override suspend fun updateRecipeIngredient(recipeIngredient: RecipeIngredient) {

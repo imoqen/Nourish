@@ -1,5 +1,7 @@
 package co.uk.imoqen.testfixtures.common
 
+import uk.co.imoqen.nourish.common.NourishColour
+import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
@@ -212,5 +214,19 @@ object TestData {
         thirdMostLikelyDish = "",
         fourthMostLikelyDish = "",
         dishNotPossible = true // dishes could not be generated; dish not possible.
+    )
+
+    val recipe_salad = Recipe(
+        id = 2,
+        authorUid = "valid_user",
+        title = "Salad Recipe",
+        numberOfServings = 2,
+        colour = "PINK",
+        generated = false,
+        imagePath = "image.png",
+        archived = false,
+        storageInstructions = "Eat immediately.",
+        recipeTypeId = 1,
+        emoji = "\uD83C\uDF5C"
     )
 }

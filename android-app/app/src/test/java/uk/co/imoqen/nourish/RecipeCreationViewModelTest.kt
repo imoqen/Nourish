@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish
 
+import android.content.Context
 import co.uk.imoqen.testfixtures.common.FakeUiEventBus
 import co.uk.imoqen.testfixtures.common.TestData
 import co.uk.imoqen.testfixtures.firebase.FakeAuthenticationManager
@@ -7,6 +8,8 @@ import co.uk.imoqen.testfixtures.network.FakeApiManager
 import co.uk.imoqen.testfixtures.repository.FakeIngredientRepository
 import co.uk.imoqen.testfixtures.repository.FakeRecipeRepository
 import co.uk.imoqen.testfixtures.repository.FakeTagRepository
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
@@ -22,7 +25,9 @@ import uk.co.imoqen.nourish.recipecreation.RecipeCreationViewModel
 import uk.co.imoqen.nourish.recipecreation.RecipeStep
 import uk.co.imoqen.nourish.recipediscovery.RecipeDiscoveryViewModel
 import uk.co.imoqen.nourish.setup.MainDispatcherRule
+import java.io.File
 import java.util.UUID
+import kotlin.collections.listOf
 
 class RecipeCreationViewModelTest {
 
@@ -466,11 +471,315 @@ class RecipeCreationViewModelTest {
     }
 
     @Test
-    fun `updateIngredientAmount does not update if the ingredient is null`() {
+    fun `updateIngredientAmount does not update if the ingredients list has not yet been initialised`() {
+        vm.setIngredients(null)
+        vm.updateIngredientAmount()
+        Assert.assertEquals(vm.uiState.value.ingredients, null) // no change made
     }
 
     @Test
-    fun `updateIngredientAmount sets the amount to 1.0 if it is null`() {
+    fun `updateIngredientAmount sets the amount to 1 if it is empty`() {
+        vm.setIngredients(listOf(TestData.llmIngredient_cucumber))
+        vm.setEditIngredientIndex(0)
+        vm.setEditIngredientAmount("")
+        vm.updateIngredientAmount()
+        Assert.assertEquals(vm.uiState.value.ingredients, listOf(TestData.llmIngredient_cucumber.copy(ingredientAmount = 1.0))) // no change made
     }
+
+    @Test
+    fun `updateIngredientAmount handles an invalid index`() {
+        vm.setIngredients(listOf(TestData.llmIngredient_cucumber))
+        vm.setEditIngredientIndex(-10)
+        vm.updateIngredientAmount()
+        // makes no change:
+        Assert.assertEquals(vm.uiState.value.ingredients, listOf(TestData.llmIngredient_cucumber))
+    }
+
+    @Test
+    fun `updateIngredientAmount sets the amount and resets the UI if it is valid`() {
+        vm.setIngredients(listOf(TestData.llmIngredient_cucumber))
+        vm.setEditIngredientIndex(0)
+        vm.setEditIngredientAmount("500")
+        vm.updateIngredientAmount()
+        Assert.assertEquals(vm.uiState.value.ingredients, listOf(TestData.llmIngredient_cucumber.copy(ingredientAmount = 500.0))) // no change made
+    }
+
+    @Test
+    fun `formatIngredientAmount rounds to the nearest quarter`() {
+        Assert.assertEquals(
+            vm.formatIngredientAmount(5.2),
+            "5.25"
+        )
+    }
+
+    @Test
+    fun `formatIngredientAmount rounds to the nearest 2 decimal place`() {
+        Assert.assertEquals(
+            vm.formatIngredientAmount(5.135, roundToNearestQuarter = false),
+            "5.14"
+        )
+    }
+
+    @Test
+    fun `deleteIngredient does not delete if the ingredients list has not been initialised`() {
+        vm.setIngredients(null)
+        vm.deleteIngredient()
+        Assert.assertEquals(vm.uiState.value.ingredients, null) // no change made
+    }
+
+    @Test
+    fun `deleteIngredient handles an invalid index to delete`() {
+        vm.setIngredients(listOf(TestData.llmIngredient_cucumber))
+        vm.setIngredientIndexToDelete(50) // doesnt exist in the list
+        vm.deleteIngredient()
+        Assert.assertEquals(vm.uiState.value.ingredients, listOf(TestData.llmIngredient_cucumber)) // no change made
+    }
+
+    @Test
+    fun `deleteIngredient deletes an ingredient if it is valid in the list`() {
+        vm.setIngredients(listOf(TestData.llmIngredient_cucumber))
+        vm.setIngredientIndexToDelete(0)
+        vm.deleteIngredient()
+        Assert.assertEquals(vm.uiState.value.ingredients, listOf<LlmIngredient>()) // removed the ingredient
+    }
+
+    @Test
+    fun `addRecipeStep does not add the step if it is blank`() {
+        vm.setStepToAdd("")
+        vm.addRecipeStep()
+        Assert.assertEquals(vm.uiState.value.method, null) // no step added
+    }
+
+    @Test
+    fun `addRecipeStep adds a step to an empty list`() {
+        vm.setStepToAdd("Wash the cherries")
+        vm.addRecipeStep()
+        Assert.assertEquals(vm.uiState.value.method?.map { it.step }, listOf("Wash the cherries")) // no step added
+    }
+
+    @Test
+    fun `addRecipeStep adds a step to an existing list`() {
+        vm.setMethod(listOf(RecipeStep("Wash the cherries", UUID.randomUUID())))
+        vm.setStepToAdd("Dry the cherries")
+        vm.addRecipeStep()
+        Assert.assertEquals(vm.uiState.value.method?.map { it.step }, listOf("Wash the cherries", "Dry the cherries")) // no step added
+    }
+
+    @Test
+    fun `updateStep does not update the step if it is blank`() {
+        vm.setMethod(listOf(RecipeStep("Wash the cherries", UUID.randomUUID())))
+        vm.setStepToEdit("")
+        vm.updateStep()
+        // unchanged:
+        Assert.assertEquals(vm.uiState.value.method?.map { it.step }, listOf("Wash the cherries"))
+    }
+
+    @Test
+    fun `updateStep does not update the step if there are no steps`() {
+        vm.setStepToEdit("Eat the cherries")
+        vm.updateStep()
+        // unchanged:
+        Assert.assertEquals(vm.uiState.value.method, null) // no step added
+    }
+
+    @Test
+    fun `updateStep does not update the step if the index is invalid`() {
+        vm.setMethod(listOf(RecipeStep("Wash the cherries", UUID.randomUUID())))
+        vm.setStepIndexToEdit(20) // doesnt exist
+        vm.setStepToEdit("Eat the cherries")
+        vm.updateStep()
+        // unchanged:
+        Assert.assertEquals(vm.uiState.value.method?.map { it.step }, listOf("Wash the cherries"))
+    }
+
+    @Test
+    fun `updateStep updates the step if valid`() {
+        vm.setMethod(listOf(RecipeStep("Wash the cherries", UUID.randomUUID())))
+        vm.setStepIndexToEdit(0)
+        vm.setStepToEdit("Eat the cherries")
+        vm.updateStep()
+        // changes:
+        Assert.assertEquals(vm.uiState.value.method?.map { it.step }, listOf("Eat the cherries"))
+    }
+
+    @Test
+    fun `deleteStep doesn't delete the step if there is no method`() {
+        vm.deleteStep()
+        // unchanged:
+        Assert.assertEquals(vm.uiState.value.method, null)
+    }
+
+    @Test
+    fun `deleteStep doesn't delete the step if it does not exist`() {
+        vm.setMethod(listOf(RecipeStep("Eat the cherries", UUID.randomUUID())))
+        vm.setStepIndexToDelete(10) // doesnt exist
+        vm.deleteStep()
+        // unchanged:
+        Assert.assertEquals(vm.uiState.value.method?.map { it.step }, listOf("Eat the cherries"))
+    }
+
+    @Test
+    fun `deleteStep deletes a valid step`() {
+        vm.setMethod(listOf(RecipeStep("Eat the cherries", UUID.randomUUID())))
+        vm.setStepIndexToDelete(0) // exists
+        vm.deleteStep()
+        // deletes the step:
+        Assert.assertEquals(vm.uiState.value.method, listOf<RecipeStep>())
+    }
+
+    @Test
+    fun `addRecipe does not add a recipe if the user is not logged in`() {
+        fakeAuthenticationManager.setLoginState(false, "")
+        vm.addRecipe()
+        Assert.assertEquals(vm.uiState.value.recipeCreationError, "You must be logged in.")
+    }
+
+    @Test
+    fun `addRecipe adds a recipe if the user is logged in`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.setIngredients(listOf(TestData.llmIngredient_cucumber, TestData.llmIngredient_tomato))
+        vm.setRecipeType(TestData.recipeType_side)
+        val stepUuid = UUID.randomUUID()
+        vm.setMethod(listOf(RecipeStep("Wash the cherries", stepUuid)))
+        vm.setTitle("Cherry Pie")
+        vm.addRecipe()
+        Assert.assertEquals(vm.uiState.value.recipeCreationError, "") // no error
+    }
+
+    @Test
+    fun `addRecipe adds a recipe if the user is logged in with tags provided`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.setIngredients(listOf(TestData.llmIngredient_cucumber, TestData.llmIngredient_tomato))
+        vm.setRecipeType(TestData.recipeType_side)
+        val stepUuid = UUID.randomUUID()
+        vm.setMethod(listOf(RecipeStep("Wash the cherries", stepUuid)))
+        vm.setTitle("Cherry Pie")
+        vm.setRecipeTags(TestData.recipeTags)
+        vm.addRecipe()
+        Assert.assertEquals(vm.uiState.value.recipeCreationError, "") // no error
+    }
+
+    @Test
+    fun `addRecipe adds a recipe if the user is logged in with a colour provided`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.setIngredients(listOf(TestData.llmIngredient_cucumber, TestData.llmIngredient_tomato))
+        vm.setRecipeType(TestData.recipeType_side)
+        val stepUuid = UUID.randomUUID()
+        vm.setMethod(listOf(RecipeStep("Wash the cherries", stepUuid)))
+        vm.setTitle("Cherry Pie")
+        vm.setColour(NourishColour.GREY)
+        vm.addRecipe()
+        Assert.assertEquals(vm.uiState.value.recipeCreationError, "") // no error
+    }
+
+    @Test
+    fun `addRecipe does not add a recipe if the title is blank`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.setIngredients(listOf(TestData.llmIngredient_cucumber, TestData.llmIngredient_tomato))
+        vm.setRecipeType(TestData.recipeType_side)
+        val stepUuid = UUID.randomUUID()
+        vm.setMethod(listOf(RecipeStep("Wash the cherries", stepUuid)))
+        vm.setTitle("")
+        vm.addRecipe()
+        Assert.assertEquals(vm.uiState.value.recipeCreationError, "You must enter a title.")
+    }
+
+    @Test
+    fun `addRecipe does not add a recipe if the title is too long`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.setIngredients(listOf(TestData.llmIngredient_cucumber, TestData.llmIngredient_tomato))
+        vm.setRecipeType(TestData.recipeType_side)
+        val stepUuid = UUID.randomUUID()
+        vm.setMethod(listOf(RecipeStep("Wash the cherries", stepUuid)))
+        vm.setTitle("This is a very long title which is more than 54 characters long and is therefore not allowed")
+        vm.addRecipe()
+        Assert.assertEquals(vm.uiState.value.recipeCreationError, "The title is too long. It must be less than 54 characters.")
+    }
+
+    @Test
+    fun `addRecipe does not add a recipe if no ingredients are provided`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.setRecipeType(TestData.recipeType_side)
+        val stepUuid = UUID.randomUUID()
+        vm.setMethod(listOf(RecipeStep("Wash the cherries", stepUuid)))
+        vm.setTitle("Cherry pie")
+        vm.addRecipe()
+        Assert.assertEquals(vm.uiState.value.recipeCreationError, "You must enter at least 1 ingredient.")
+        // also if the ingredients list is set to empty:
+        vm.setIngredients(listOf())
+        Assert.assertEquals(vm.uiState.value.recipeCreationError, "You must enter at least 1 ingredient.")
+    }
+
+    @Test
+    fun `addRecipe does not add a recipe if the recipe type is not selected`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.setIngredients(listOf(TestData.llmIngredient_cucumber, TestData.llmIngredient_tomato))
+        val stepUuid = UUID.randomUUID()
+        vm.setMethod(listOf(RecipeStep("Wash the cherries", stepUuid)))
+        vm.setTitle("Cherry pie")
+        vm.addRecipe()
+        Assert.assertEquals(vm.uiState.value.recipeCreationError, "You must select a recipe type.")
+    }
+
+    @Test
+    fun `addRecipe does not add a recipe if no steps have been provided`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.setIngredients(listOf(TestData.llmIngredient_cucumber, TestData.llmIngredient_tomato))
+        vm.setRecipeType(TestData.recipeType_side)
+        vm.setTitle("Cherry pie")
+        vm.addRecipe()
+        Assert.assertEquals(vm.uiState.value.recipeCreationError, "You must enter at least 1 method step.")
+        // also if the steps are is set to empty:
+        vm.setMethod(listOf())
+        Assert.assertEquals(vm.uiState.value.recipeCreationError, "You must enter at least 1 method step.")
+    }
+
+    @Test
+    fun `updateRecipe does not update a recipe if the user is not logged in`() {
+        fakeAuthenticationManager.setLoginState(false, "")
+        // Mockito to mock the context:
+        val mockContext = mockk<Context>()
+        every { mockContext.filesDir } returns File("testDir")
+        vm.updateRecipe(mockContext)
+        Assert.assertEquals(vm.uiState.value.recipeCreated, false) // the recipe was not created (updated)
+    }
+
+    @Test
+    fun `updateRecipe does not update a recipe if the original recipe does not exist`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        // Mockito to mock the context:
+        val mockContext = mockk<Context>()
+        every { mockContext.filesDir } returns File("testDir")
+        vm.setRecipeEditId(-1) // to simulate recipe which does not exist
+        vm.updateRecipe(mockContext)
+        Assert.assertEquals(vm.uiState.value.recipeCreated, false) // the recipe was not created (updated)
+    }
+
+    @Test
+    fun `updateRecipe updates a recipe successfully when all details are provided`() {
+        // recipe details to update:
+        vm.setIngredients(listOf(TestData.llmIngredient_cucumber, TestData.llmIngredient_tomato))
+        vm.setRecipeType(TestData.recipeType_side)
+        val stepUuid = UUID.randomUUID()
+        vm.setMethod(listOf(RecipeStep("Wash the cherries", stepUuid)))
+        vm.setTitle("Cherry Pie")
+        vm.setImageFile("image.png") // to simulate image not deleted.
+        // previous recipe to update:
+        vm.setRecipeEditId(1) // recipe which exists
+
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        // Mockito to mock the context:
+        val mockContext = mockk<Context>()
+        every { mockContext.filesDir } returns File("testDir")
+        vm.updateRecipe(mockContext)
+        Assert.assertEquals(vm.uiState.value.recipeCreated, true) // the recipe was not created (updated)
+    }
+
+    // deleting file not covered, would need to mock it but not sure how. maybe look into in the future if more cov required.
+
+    
+
+
+
 
 }

@@ -590,11 +590,7 @@ class RecipeCreationViewModel @Inject constructor(
         ingredientAmount: Double,
         roundToNearestQuarter: Boolean = true
     ): String {
-        var amount = ingredientAmount
-        if (amount < 0.01) {
-            amount = 0.01 // cant go less than 0.01 in recipe creation - has a lower threshold than the others.
-        }
-        return recipeActions.formatIngredientAmount(amount, roundToNearestQuarter)
+        return recipeActions.formatIngredientAmount(ingredientAmount, roundToNearestQuarter)
     }
 
     fun deleteIngredient() {
@@ -617,7 +613,6 @@ class RecipeCreationViewModel @Inject constructor(
                 ))
             }
                 .onFailure { e->
-                Log.i("error ingredient", "$e")
                 uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
                     "Couldn't remove the ingredient. Please try again later."
                 ))
@@ -707,7 +702,6 @@ class RecipeCreationViewModel @Inject constructor(
                 ))
             }
                 .onFailure { e->
-                    Log.i("error step", "$e")
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
                         "Couldn't remove the step. Please try again later."
                     ))
@@ -746,13 +740,9 @@ class RecipeCreationViewModel @Inject constructor(
                 // Check that user is logged in validly
                 val uid = authenticationManager.getUid()
                 if (uid == "") {
-                    throw NullPointerException()
+                    throw RecipeCreationException("You must be logged in.")
                 } // user is null; throw to be handled appropriately
-
                 val llmRecipe = parseIntoLlmRecipe()
-                Log.i("recipe:", "$llmRecipe")
-
-
                 // Add the user created recipe to the database:
                 // ingredients are not scaled here, because they are scaled in parseToLlmRecipe instead. as with editing ingredients of a recipe.
                 recipeRepository.createRecipe(
@@ -769,7 +759,6 @@ class RecipeCreationViewModel @Inject constructor(
                         )
                     )
                 }
-
                 .onFailure { e ->
                     when (e) {
                         is RecipeCreationException -> {
@@ -781,7 +770,6 @@ class RecipeCreationViewModel @Inject constructor(
                             "Your recipe could not be saved."
                         )
                     )
-                    Log.i("RECIPE SAVE", "$e")
                 }
         }
     }
