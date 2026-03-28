@@ -1,6 +1,8 @@
 package co.uk.imoqen.testfixtures.common
 
 import uk.co.imoqen.nourish.common.NourishColour
+import uk.co.imoqen.nourish.db.ingredient.Ingredient
+import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.tag.Tag
@@ -9,6 +11,7 @@ import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.network.response.LlmIngredientSection
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 import uk.co.imoqen.nourish.recipebook.TagSelection
+import uk.co.imoqen.nourish.shoppinglist.IngredientAmount
 
 object TestData {
 
@@ -158,6 +161,11 @@ object TestData {
         tagSelection_lowcalorie
     )
 
+    val recipeTagsFirstSelected = listOf(
+        tagSelection_vegan.copy(selected = true),
+        tagSelection_lowcalorie
+    )
+
     // Recipe Types:
 
     val recipeType_breakfast = RecipeType(
@@ -217,7 +225,7 @@ object TestData {
     )
 
     val recipe_salad = Recipe(
-        id = 2,
+        id = 0,
         authorUid = "valid_user",
         title = "Salad Recipe",
         numberOfServings = 2,
@@ -228,5 +236,33 @@ object TestData {
         storageInstructions = "Eat immediately.",
         recipeTypeId = 1,
         emoji = "\uD83C\uDF5C"
+    )
+
+    val recipe_withInvalidRecipeTypeId = Recipe(
+        id = 0,
+        authorUid = "valid_user",
+        title = "Salad Recipe",
+        numberOfServings = 2,
+        colour = "PINK",
+        generated = false,
+        imagePath = "image.png",
+        archived = false,
+        storageInstructions = "Eat immediately.",
+        recipeTypeId = -1,
+        emoji = "\uD83C\uDF5C"
+    )
+
+    val ingredient_cherry = Ingredient(
+        id = 0,
+        singular = "cherry",
+        plural = "cherries",
+        userAdded = false
+    )
+
+    val llmIngredient_cherry = LlmIngredient(
+        ingredientSingular = "cherry",
+        ingredientPlural = "cherries",
+        ingredientAmount = 1000.0,
+        ingredientAmountUnit = "G"
     )
 }

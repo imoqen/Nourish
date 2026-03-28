@@ -3,6 +3,7 @@ package co.uk.imoqen.testfixtures.repository
 import co.uk.imoqen.testfixtures.common.TestData
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.recipe.RecipeWithRecipeSteps
@@ -26,6 +27,11 @@ class FakeRecipeRepository(): RecipeRepository {
         if (recipeId == -1L) {
             return flowOf(null)
         }
+        if (recipeId == 50L) {
+            return flowOf(
+                TestData.recipe_withInvalidRecipeTypeId
+            )
+        }
         return flowOf(
             TestData.recipe_salad
         )
@@ -36,15 +42,43 @@ class FakeRecipeRepository(): RecipeRepository {
     }
 
     override fun getRecipeWithRecipeIngredients(recipeId: Long): Flow<RecipeWithRecipeIngredients> {
-        TODO("Not yet implemented")
+        return flowOf(
+            RecipeWithRecipeIngredients(
+                recipe = TestData.recipe_salad,
+                ingredients = listOf(RecipeIngredient(
+                    id = 0,
+                    recipeId = 0,
+                    ingredientId = 0,
+                    ingredientUnit = IngredientUnit.G,
+                    amount = 500.0,
+                    sectionId = 0
+                ))
+            )
+        )
     }
 
-    override fun getRecipeWithRecipeTypes(recipeId: Long): Flow<RecipeWithRecipeTags> {
-        TODO("Not yet implemented")
+    override fun getRecipeWithRecipeTags(recipeId: Long): Flow<RecipeWithRecipeTags> {
+        return flowOf(
+            RecipeWithRecipeTags(
+                recipe = TestData.recipe_salad,
+                recipeTags = listOf(RecipeTag(0, 0, 0))
+            )
+        )
     }
 
     override fun getRecipeWithRecipeSteps(recipeId: Long): Flow<RecipeWithRecipeSteps> {
-        TODO("Not yet implemented")
+        return flowOf(
+            RecipeWithRecipeSteps(
+                recipe = TestData.recipe_salad,
+                recipeSteps = listOf(RecipeStep(
+                    id = 0,
+                    recipeId = 0,
+                    index = 0,
+                    instruction = "Wash the cherries",
+                    complete = false
+                ))
+            )
+        )
     }
 
     override fun getAllRecipeTypes(): Flow<List<RecipeType>> {
@@ -52,7 +86,10 @@ class FakeRecipeRepository(): RecipeRepository {
     }
 
     override fun getRecipeTypeById(id: Long): Flow<RecipeType?> {
-        TODO("Not yet implemented")
+        if (id == -1L) { // for testing null recipe type return value
+            return flowOf(null)
+        }
+        return flowOf(TestData.recipeType_dessert)
     }
 
     override suspend fun insertRecipeType(recipeType: RecipeType): Long {

@@ -1,6 +1,8 @@
 package co.uk.imoqen.testfixtures.repository
 
+import co.uk.imoqen.testfixtures.common.TestData
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import uk.co.imoqen.nourish.db.ingredient.Ingredient
 import uk.co.imoqen.nourish.db.ingredient.IngredientRepository
 
@@ -10,7 +12,7 @@ class FakeIngredientRepository(): IngredientRepository {
     }
 
     override fun getById(id: Long): Flow<Ingredient?> {
-        TODO("Not yet implemented")
+        return flowOf(TestData.ingredient_cherry)
     }
 
     override suspend fun insert(ingredient: Ingredient): Long {

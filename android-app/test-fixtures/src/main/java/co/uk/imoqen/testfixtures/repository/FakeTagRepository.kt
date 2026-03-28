@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.db.tag.TagRepository
+import kotlin.collections.listOf
 
 class FakeTagRepository(): TagRepository {
 
@@ -30,6 +31,6 @@ class FakeTagRepository(): TagRepository {
     }
 
     override fun getById(id: Long): Flow<Tag?> {
-        TODO("Not yet implemented")
+        return flowOf( TestData.tag_vegan )
     }
 }

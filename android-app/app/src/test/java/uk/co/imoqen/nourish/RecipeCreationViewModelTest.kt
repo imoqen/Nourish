@@ -18,6 +18,7 @@ import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.RecipeActions
 import uk.co.imoqen.nourish.common.tag.FilterState
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
+import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.recipebook.TagSelection
 import uk.co.imoqen.nourish.recipecreation.CreationMode
@@ -777,9 +778,82 @@ class RecipeCreationViewModelTest {
 
     // deleting file not covered, would need to mock it but not sure how. maybe look into in the future if more cov required.
 
-    
+    @Test
+    fun `populateFromId fills in the UI state with a recipe's details successfully, for editing`() {
+        Assert.assertEquals(vm.uiState.value.title, "")
+        Assert.assertEquals(vm.uiState.value.numberOfServings, 1)
+        Assert.assertEquals(vm.uiState.value.recipeType, null)
+        Assert.assertEquals(vm.uiState.value.storageGuidance, "")
+        Assert.assertEquals(vm.uiState.value.tagSheetState.recipeTags, null)
+        Assert.assertEquals(vm.uiState.value.ingredients, null)
+        Assert.assertEquals(vm.uiState.value.method?.map { it.step }, null)
+        Assert.assertEquals(vm.uiState.value.imageFile, "")
+        Assert.assertEquals(vm.uiState.value.emoji, "\uD83E\uDD57") // default emoji is salad
+        Assert.assertEquals(vm.uiState.value.colour, null)
+        vm.populateFromId(1) // will give salad recipe
+        // the recipe details are now populated:
+        Assert.assertEquals(vm.uiState.value.title, "Salad Recipe") // the recipe was not created (updated)
+        Assert.assertEquals(vm.uiState.value.numberOfServings, 2) // the recipe was not created (updated)
+        Assert.assertEquals(vm.uiState.value.recipeType, RecipeType(3, "Dessert", 3)) // the recipe was not created (updated)
+        Assert.assertEquals(vm.uiState.value.storageGuidance, "Eat immediately.")
+        Assert.assertEquals(vm.uiState.value.tagSheetState.recipeTags, TestData.recipeTagsFirstSelected)
+        Assert.assertEquals(vm.uiState.value.ingredients, listOf(TestData.llmIngredient_cherry))
+        Assert.assertEquals(vm.uiState.value.method?.map { it.step }, listOf("Wash the cherries"))
+        Assert.assertEquals(vm.uiState.value.imageFile, "image.png")
+        Assert.assertEquals(vm.uiState.value.emoji, "\uD83C\uDF5C")
+        Assert.assertEquals(vm.uiState.value.colour, NourishColour.PINK)
+    }
 
+    @Test
+    fun `populateFromId does not fill in the UI state if the provided recipe id is invalid`() {
+        Assert.assertEquals(vm.uiState.value.title, "")
+        Assert.assertEquals(vm.uiState.value.numberOfServings, 1)
+        Assert.assertEquals(vm.uiState.value.recipeType, null)
+        Assert.assertEquals(vm.uiState.value.storageGuidance, "")
+        Assert.assertEquals(vm.uiState.value.tagSheetState.recipeTags, null)
+        Assert.assertEquals(vm.uiState.value.ingredients, null)
+        Assert.assertEquals(vm.uiState.value.method?.map { it.step }, null)
+        Assert.assertEquals(vm.uiState.value.imageFile, "")
+        Assert.assertEquals(vm.uiState.value.emoji, "\uD83E\uDD57") // default emoji is salad
+        Assert.assertEquals(vm.uiState.value.colour, null)
+        vm.populateFromId(-1) // will not give valid recipe.
+        // the recipe details are not populated, because the recipe id was invalid:
+        Assert.assertEquals(vm.uiState.value.title, "")
+        Assert.assertEquals(vm.uiState.value.numberOfServings, 1)
+        Assert.assertEquals(vm.uiState.value.recipeType, null)
+        Assert.assertEquals(vm.uiState.value.storageGuidance, "")
+        Assert.assertEquals(vm.uiState.value.tagSheetState.recipeTags, null)
+        Assert.assertEquals(vm.uiState.value.ingredients, null)
+        Assert.assertEquals(vm.uiState.value.method?.map { it.step }, null)
+        Assert.assertEquals(vm.uiState.value.imageFile, "")
+        Assert.assertEquals(vm.uiState.value.emoji, "\uD83E\uDD57") // default emoji is salad
+        Assert.assertEquals(vm.uiState.value.colour, null)
+    }
 
-
+    @Test
+    fun `populateFromId does not fill in the UI state if the provided recipe id has a null recipe type`() {
+        Assert.assertEquals(vm.uiState.value.title, "")
+        Assert.assertEquals(vm.uiState.value.numberOfServings, 1)
+        Assert.assertEquals(vm.uiState.value.recipeType, null)
+        Assert.assertEquals(vm.uiState.value.storageGuidance, "")
+        Assert.assertEquals(vm.uiState.value.tagSheetState.recipeTags, null)
+        Assert.assertEquals(vm.uiState.value.ingredients, null)
+        Assert.assertEquals(vm.uiState.value.method?.map { it.step }, null)
+        Assert.assertEquals(vm.uiState.value.imageFile, "")
+        Assert.assertEquals(vm.uiState.value.emoji, "\uD83E\uDD57") // default emoji is salad
+        Assert.assertEquals(vm.uiState.value.colour, null)
+        vm.populateFromId(50) // will give valid recipe, but invalid (null) recipe type.
+        // the recipe details are not populated, because the recipe id was invalid:
+        Assert.assertEquals(vm.uiState.value.title, "")
+        Assert.assertEquals(vm.uiState.value.numberOfServings, 1)
+        Assert.assertEquals(vm.uiState.value.recipeType, null)
+        Assert.assertEquals(vm.uiState.value.storageGuidance, "")
+        Assert.assertEquals(vm.uiState.value.tagSheetState.recipeTags, null)
+        Assert.assertEquals(vm.uiState.value.ingredients, null)
+        Assert.assertEquals(vm.uiState.value.method?.map { it.step }, null)
+        Assert.assertEquals(vm.uiState.value.imageFile, "")
+        Assert.assertEquals(vm.uiState.value.emoji, "\uD83E\uDD57") // default emoji is salad
+        Assert.assertEquals(vm.uiState.value.colour, null)
+    }
 
 }

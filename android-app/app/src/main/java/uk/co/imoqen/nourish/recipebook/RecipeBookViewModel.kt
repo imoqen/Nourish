@@ -376,7 +376,7 @@ class RecipeBookViewModel @Inject constructor(
     }
 
     fun getRecipeTagsForRecipe(recipeId: Long): Flow<RecipeWithRecipeTags> {
-        return recipeRepository.getRecipeWithRecipeTypes(recipeId)
+        return recipeRepository.getRecipeWithRecipeTags(recipeId)
     }
 
     fun getIngredientById(ingredientId: Long): Flow<Ingredient?> {

@@ -3,7 +3,6 @@ package uk.co.imoqen.nourish.recipecreation
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,23 +22,17 @@ import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
-import uk.co.imoqen.nourish.network.ApiService
-import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import uk.co.imoqen.nourish.recipebook.TagSelection
 import uk.co.imoqen.nourish.common.tag.FilterState
 import uk.co.imoqen.nourish.common.exception.TagCreationException
 import uk.co.imoqen.nourish.common.tag.TagSheetAction
 import uk.co.imoqen.nourish.common.uievent.UiEvent
-import uk.co.imoqen.nourish.db.ingredient.Ingredient
 import uk.co.imoqen.nourish.db.ingredient.IngredientRepository
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
-import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeIngredient
 import uk.co.imoqen.nourish.db.tag.TagRepository
 import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.network.response.LlmIngredientSection
 import uk.co.imoqen.nourish.network.response.LlmRecipe
-import uk.co.imoqen.nourish.recipediscovery.Mipmap
-import uk.co.imoqen.nourish.shoppinglist.UserInteractionStatus
 import java.io.File
 import java.lang.NullPointerException
 import java.util.UUID
@@ -887,7 +880,7 @@ class RecipeCreationViewModel @Inject constructor(
 
                 // get all tags and the selected tags for this recipe
                 val allTags = tagRepository.getAllForUser(recipe.authorUid).first()
-                val selectedTags = recipeRepository.getRecipeWithRecipeTypes(recipe.id).first().recipeTags.map { tag ->
+                val selectedTags = recipeRepository.getRecipeWithRecipeTags(recipe.id).first().recipeTags.map { tag ->
                     val tag = tagRepository.getById(tag.tagId).first()
                     TagSelection(tag!!, true)
                 }.toMutableList()

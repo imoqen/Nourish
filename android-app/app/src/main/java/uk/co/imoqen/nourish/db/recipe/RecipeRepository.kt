@@ -19,7 +19,7 @@ interface RecipeRepository {
     fun getRecipeById(recipeId: Long): Flow<Recipe?>
     suspend fun insertRecipe(recipe: Recipe): Long
     fun getRecipeWithRecipeIngredients(recipeId: Long): Flow<RecipeWithRecipeIngredients>
-    fun getRecipeWithRecipeTypes(recipeId: Long): Flow<RecipeWithRecipeTags>
+    fun getRecipeWithRecipeTags(recipeId: Long): Flow<RecipeWithRecipeTags>
     fun getRecipeWithRecipeSteps(recipeId: Long): Flow<RecipeWithRecipeSteps>
 
     // RECIPE TYPE LOGIC:
