@@ -472,7 +472,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
                     uid,
                     llmRecipe,
                     imagePath = mutableUiState.value.savedImageMipmap.highQualityFilename,
-                    alteration = false
+                    shouldNotScaleIngredients = false // ingredients should be scaled.
                 )
             }
                 .onSuccess {

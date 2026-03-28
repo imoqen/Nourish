@@ -750,12 +750,15 @@ class RecipeCreationViewModel @Inject constructor(
                 } // user is null; throw to be handled appropriately
 
                 val llmRecipe = parseIntoLlmRecipe()
+                Log.i("recipe:", "$llmRecipe")
 
-                // Add the recipe to the database:
+
+                // Add the user created recipe to the database:
+                // ingredients are not scaled here, because they are scaled in parseToLlmRecipe instead. as with editing ingredients of a recipe.
                 recipeRepository.createRecipe(
                     // recipe is saved with the higher quality image, which is stored in second place
                     uid, llmRecipe, imagePath = mutableUiState.value.imageFile,
-                    alteration = false, llmGenerated = false // not an alteration; it is a new recipe. and it is NOT llm generated.
+                    shouldNotScaleIngredients = true, llmGenerated = false // not an alteration; it is a new recipe. and it is NOT llm generated.
                 )
             }
                 .onSuccess {
@@ -870,7 +873,7 @@ class RecipeCreationViewModel @Inject constructor(
         val servings = mutableUiState.value.numberOfServings
         return LlmRecipe(
             title = mutableUiState.value.title,
-            sectionIngredients = listOf(LlmIngredientSection("For the recipe", ingredients!!.map { it.copy(ingredientAmount = (it.ingredientAmount / servings)) })), // scale such that it stores the amount for 1 serving.
+            sectionIngredients = listOf(LlmIngredientSection("For the recipe", ingredients!!.map { it.copy(ingredientAmount = (it.ingredientAmount / servings)) })), // scale such that it stores the amount for 1 serving. so that it isnt done in the addRecipe method with the db
             servings = servings,
             mealType = recipeType!!.title,
             method = method!!.map { it.step }, // only get the steps, remove the uuids

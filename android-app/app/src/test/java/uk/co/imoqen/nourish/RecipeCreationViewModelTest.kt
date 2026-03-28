@@ -465,4 +465,12 @@ class RecipeCreationViewModelTest {
         Assert.assertEquals(vm.uiState.value.showAddIngredientSheet, false)
     }
 
+    @Test
+    fun `updateIngredientAmount does not update if the ingredient is null`() {
+    }
+
+    @Test
+    fun `updateIngredientAmount sets the amount to 1.0 if it is null`() {
+    }
+
 }

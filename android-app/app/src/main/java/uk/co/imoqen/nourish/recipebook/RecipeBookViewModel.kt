@@ -888,7 +888,7 @@ class RecipeBookViewModel @Inject constructor(
                     throw NullPointerException()
                 } // user is null; throw to be handled appropriately
                 // Add the recipe to the database:
-                recipeRepository.createRecipe(uid, llmRecipe, alteration = alteration)
+                recipeRepository.createRecipe(uid, llmRecipe, shouldNotScaleIngredients = alteration) // dont scale ingredients if it is an LLM alteration, otherwise scale.
             }
                 .onSuccess {
                     uiEventBus.enqueueEvent(
