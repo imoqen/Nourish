@@ -263,7 +263,7 @@ class RecipeDiscoveryViewModelTest {
     @Test
     fun `makeLlmApiCall should handle the possible dishes generation case and empty selected tags`() {
         Assert.assertEquals(vm.uiState.value.dishes, null)
-        fakeAuthenticationManager.setLoginState(true) // for valid token
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // for valid token
         vm.makeLlmApiCall(LlmRequestType.DISHES_FROM_IMAGE, imageFilename = "image.png")
         Assert.assertEquals(vm.uiState.value.dishes, TestData.llmDishesProposed_pasta)
     }
@@ -271,7 +271,7 @@ class RecipeDiscoveryViewModelTest {
     @Test
     fun `makeLlmApiCall should not update dishes if an image was not uploaded, but image option chosen`() {
         Assert.assertEquals(vm.uiState.value.dishes, null)
-        fakeAuthenticationManager.setLoginState(true) // for valid token
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // for valid token
         vm.makeLlmApiCall(LlmRequestType.DISHES_FROM_IMAGE) // no image filename specified
         Assert.assertEquals(vm.uiState.value.dishes, null) // the dishes are not updated; error occurred.
     }
@@ -287,7 +287,7 @@ class RecipeDiscoveryViewModelTest {
     /*@Test
     fun `makeLlmApiCall should handle the recipe from dish choice generation case`() {
         Assert.assertEquals(vm.uiState.value.llmGeneratedRecipe, null)
-        fakeAuthenticationManager.setLoginState(true) // for valid token
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // for valid token
         vm.setChosenDish("Salad")
         vm.setRecipeTags(TestData.recipeTags) // populated with some recipe tags
         vm.makeLlmApiCall(LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH, imageFilename = "image.png")
@@ -297,7 +297,7 @@ class RecipeDiscoveryViewModelTest {
     @Test
     fun `makeLlmApiCall should not make the call if an image is not provided, and recipe from image of dish is requested`() {
         Assert.assertEquals(vm.uiState.value.llmGeneratedRecipe, null)
-        fakeAuthenticationManager.setLoginState(true) // for valid token
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // for valid token
         vm.setRecipeTags(TestData.recipeTags) // populated with some recipe tags
         vm.makeLlmApiCall(LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH)
         Assert.assertEquals(vm.uiState.value.llmGeneratedRecipe, null)
@@ -306,7 +306,7 @@ class RecipeDiscoveryViewModelTest {
     @Test
     fun `makeLlmApiCall should not make the call in recipe from description if no description is given`() {
         Assert.assertEquals(vm.uiState.value.llmGeneratedRecipe, null)
-        fakeAuthenticationManager.setLoginState(true) // for valid token
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // for valid token
         vm.setRecipeTags(TestData.recipeTags) // populated with some recipe tags
         vm.setUserChoice(LlmMode.FROM_DESCRIPTION)
         vm.makeLlmApiCall(LlmRequestType.RECIPE)
@@ -316,7 +316,7 @@ class RecipeDiscoveryViewModelTest {
     @Test
     fun `makeLlmApiCall should handle the recipe from description if description is given`() {
         Assert.assertEquals(vm.uiState.value.llmGeneratedRecipe, null)
-        fakeAuthenticationManager.setLoginState(true) // for valid token
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // for valid token
         vm.setRecipeTags(TestData.recipeTags) // populated with some recipe tags
         vm.setUserChoice(LlmMode.FROM_DESCRIPTION)
         vm.setUserRequest("Salad")
@@ -339,7 +339,7 @@ class RecipeDiscoveryViewModelTest {
     @Test
     fun `makeLlmApiCall handles dishesNotPossible appropriately`() {
         Assert.assertEquals(vm.uiState.value.dishes, null)
-        fakeAuthenticationManager.setLoginState(true) // for valid token
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // for valid token
         vm.setRecipeTags(TestData.recipeTags) // populated with some recipe tags
         vm.setUserChoice(LlmMode.FROM_DESCRIPTION)
         vm.setSelectedRecipeType(TestData.recipeType_breakfast)
@@ -354,7 +354,7 @@ class RecipeDiscoveryViewModelTest {
     @Test
     fun `makeLlmApiCall handles recipeNotPossible appropriately`() {
         Assert.assertEquals(vm.uiState.value.llmGeneratedRecipe, null)
-        fakeAuthenticationManager.setLoginState(true) // for valid token
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // for valid token
         vm.setChosenDish("Salad")
         vm.setRecipeTags(TestData.recipeTags) // populated with some recipe tags
         vm.makeLlmApiCall(LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH, imageFilename = "image.png")
@@ -388,7 +388,7 @@ class RecipeDiscoveryViewModelTest {
 
     @Test
     fun `addRecipe adds a llmRecipe to the database if the recipe is valid`() {
-        fakeAuthenticationManager.setLoginState(true)
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
         Assert.assertEquals(vm.uiState.value.recipeSaved, false)
         vm.addRecipe(TestData.llmRecipe_salad)
         Assert.assertEquals(vm.uiState.value.recipeSaved, true) // not saved
@@ -418,7 +418,7 @@ class RecipeDiscoveryViewModelTest {
     @Test
     fun `getAllTagsForUser returns all tags authored by a user`() {
         Assert.assertNull(vm.uiState.value.tagSheetState.recipeTags)
-        fakeAuthenticationManager.setLoginState(true)
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
         vm.getAllTagsForUser()
         Assert.assertEquals(vm.uiState.value.tagSheetState.recipeTags, listOf(
             TestData.tagSelection_lowcalorie, TestData.tagSelection_vegan
@@ -428,14 +428,14 @@ class RecipeDiscoveryViewModelTest {
     @Test
     fun `getAllRecipeTypes returns all recipe types, user independent`() {
         Assert.assertNull(vm.uiState.value.recipeTypes)
-        fakeAuthenticationManager.setLoginState(true)
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
         vm.getAllRecipeTypes()
         Assert.assertEquals(vm.uiState.value.recipeTypes, TestData.recipeTypes)
     }
 
     @Test
     fun `updateSelected updates a tag's selected status`() {
-        fakeAuthenticationManager.setLoginState(true)
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
         vm.getAllTagsForUser()
         Assert.assertEquals(vm.uiState.value.tagSheetState.recipeTags?.get(1), TagSelection(TestData.tag_vegan, false))
         vm.updateSelected(TestData.tag_vegan, true)
@@ -444,7 +444,7 @@ class RecipeDiscoveryViewModelTest {
 
     @Test
     fun `createTag creates a tag when name and colour are valid`() {
-        fakeAuthenticationManager.setLoginState(true)
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
         vm.setCreatedTagName("Vegetarian")
         vm.setCreatedTagColour(NourishColour.PINK)
         vm.createTag()
@@ -453,7 +453,7 @@ class RecipeDiscoveryViewModelTest {
 
     @Test
     fun `createTag does not create a tag when name is invalid`() {
-        fakeAuthenticationManager.setLoginState(true)
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
         vm.setCreatedTagName("")
         vm.setCreatedTagColour(NourishColour.PINK)
         vm.createTag()
@@ -471,7 +471,7 @@ class RecipeDiscoveryViewModelTest {
 
     @Test
     fun `deleteTag successfully deletes a tag`() {
-        fakeAuthenticationManager.setLoginState(true)
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
         vm.setTagToDelete(TestData.tag_lowcalorie)
         vm.deleteTag()
         Assert.assertEquals(vm.uiState.value.tagSheetState.tagToDelete, TestData.tag_lowcalorie)

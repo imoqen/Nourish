@@ -1,6 +1,5 @@
 package uk.co.imoqen.nourish.shoppinglist
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.withTransaction
@@ -254,7 +253,6 @@ class ShoppingListViewModel @Inject constructor(
                 //sortShoppingListByOrdinal()
             }
                 .onFailure { e ->
-                    Log.i("SHOPPING LIST ERROR", "$e")
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Shopping list could not be obtained. Please try again later."))
                 }
         }
@@ -319,11 +317,9 @@ class ShoppingListViewModel @Inject constructor(
                 }
                 // add it to ingredient table if doesn't already exist in either singular or plurla (as its user input, dont know whether this will be singular or plural, so both are checked)
                 var ingredientId = ingredientRepository.getIdByPlural(ingredientName)
-                Log.i("plural", "$ingredientId")
                 if (ingredientId == null) {
                     // plural search returned null, now look for singular.
                     ingredientId = ingredientRepository.getIdBySingular(ingredientName)
-                    Log.i("singular", "$ingredientId")
                     if (ingredientId == null) {
                         // still null means it doesnt exist: add it
                         ingredientId = ingredientRepository.insert(
@@ -334,7 +330,6 @@ class ShoppingListViewModel @Inject constructor(
                                 userAdded = true
                             )
                         )
-                        Log.i("created", "$ingredientId")
                     }
                 }
 
@@ -379,13 +374,6 @@ class ShoppingListViewModel @Inject constructor(
                 // and repopulate the list with the new ingredient:
                 populateShoppingList()
             }
-                .onSuccess {
-
-                }
-                .onFailure {  e ->
-                    Log.i("shopping list add", "error: $e")
-
-                }
         }
 
     }
@@ -401,8 +389,6 @@ class ShoppingListViewModel @Inject constructor(
                 if (shoppingListEntry == null) {
                     throw NullPointerException()
                 }
-                Log.i("amount: ", mutableUiState.value.ingredientToEdit.amount)
-
                 var amount = mutableUiState.value.ingredientToEdit.amount.replace(',','.').toDoubleOrNull() ?: 1.0 // 1.0 if the input is invalid.
                 if (shoppingListUiEntry.unit == IngredientUnit.KG || shoppingListUiEntry.unit == IngredientUnit.L) {
                     // multiply the value by 1000 as it will be stored in the db as G or ML.

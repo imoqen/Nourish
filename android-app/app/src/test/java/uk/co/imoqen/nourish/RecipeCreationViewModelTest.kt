@@ -340,7 +340,7 @@ class RecipeCreationViewModelTest {
     @Test
     fun `getAllTagsForUser returns all tags authored by a user`() {
         Assert.assertNull(vm.uiState.value.tagSheetState.recipeTags)
-        fakeAuthenticationManager.setLoginState(true)
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
         vm.getAllTagsForUser()
         Assert.assertEquals(vm.uiState.value.tagSheetState.recipeTags, listOf(
             TestData.tagSelection_lowcalorie, TestData.tagSelection_vegan
@@ -350,14 +350,14 @@ class RecipeCreationViewModelTest {
     @Test
     fun `getAllRecipeTypes returns all recipe types, user independent`() {
         Assert.assertNull(vm.uiState.value.recipeTypes)
-        fakeAuthenticationManager.setLoginState(true)
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
         vm.getAllRecipeTypes()
         Assert.assertEquals(vm.uiState.value.recipeTypes, TestData.recipeTypes)
     }
 
     @Test
     fun `updateSelected updates a tag's selected status`() {
-        fakeAuthenticationManager.setLoginState(true)
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
         vm.getAllTagsForUser()
         Assert.assertEquals(vm.uiState.value.tagSheetState.recipeTags?.get(1), TagSelection(TestData.tag_vegan, false))
         vm.updateSelected(TestData.tag_vegan, true)
@@ -366,7 +366,7 @@ class RecipeCreationViewModelTest {
 
     @Test
     fun `createTag creates a tag when name and colour are valid`() {
-        fakeAuthenticationManager.setLoginState(true)
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
         vm.setCreatedTagName("Vegetarian")
         vm.setCreatedTagColour(NourishColour.PINK)
         vm.createTag()
@@ -375,7 +375,7 @@ class RecipeCreationViewModelTest {
 
     @Test
     fun `createTag does not create a tag when name is invalid`() {
-        fakeAuthenticationManager.setLoginState(true)
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
         vm.setCreatedTagName("")
         vm.setCreatedTagColour(NourishColour.PINK)
         vm.createTag()
@@ -393,7 +393,7 @@ class RecipeCreationViewModelTest {
 
     @Test
     fun `deleteTag successfully deletes a tag`() {
-        fakeAuthenticationManager.setLoginState(true)
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
         vm.setTagToDelete(TestData.tag_lowcalorie)
         vm.deleteTag()
         Assert.assertEquals(vm.uiState.value.tagSheetState.tagToDelete, TestData.tag_lowcalorie)

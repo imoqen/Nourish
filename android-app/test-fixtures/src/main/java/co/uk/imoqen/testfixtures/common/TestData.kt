@@ -16,7 +16,6 @@ import uk.co.imoqen.nourish.recipebook.RecipeCardUnexpanded
 import uk.co.imoqen.nourish.recipebook.ShoppingListIngredient
 import uk.co.imoqen.nourish.recipebook.TagSelection
 import uk.co.imoqen.nourish.recipebook.TypeSelection
-import uk.co.imoqen.nourish.shoppinglist.IngredientAmount
 import uk.co.imoqen.nourish.shoppinglist.ShoppingListUiEntry
 
 object TestData {
@@ -484,9 +483,34 @@ object TestData {
         ordinal = 1
     )
 
-    val shoppingListEntries = listOf(
+    val shoppingListUiEntries = listOf(
         shoppingListUiEntry_cherries,
         shoppingListUiEntry_oatMilk
+    )
+
+    val shoppingListEntries = listOf(
+        shoppingListEntry_cherries,
+        shoppingListEntry_oatMilk
+    )
+
+    val shoppingListEntry_toConvertToL = ShoppingListEntry(
+        id = 2,
+        ingredientId = 2,
+        purchaserUid = "user_with_ingr_to_convert_l_and_kg",
+        unit = IngredientUnit.ML,
+        amount = 2000.0, // will change to 2L in the UI
+        purchased = false,
+        ordinal = 2
+    )
+
+    val shoppingListEntry_toConvertToKG = ShoppingListEntry(
+        id = 3,
+        ingredientId = 3,
+        purchaserUid = "user_with_ingr_to_convert_l_and_kg",
+        unit = IngredientUnit.G,
+        amount = 5000.0, // will change to 5KG in the UI
+        purchased = false,
+        ordinal = 3
     )
 
 }

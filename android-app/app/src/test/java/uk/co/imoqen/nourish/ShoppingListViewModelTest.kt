@@ -13,10 +13,7 @@ import org.junit.Rule
 import org.junit.Test
 import uk.co.imoqen.nourish.common.RecipeActions
 import uk.co.imoqen.nourish.common.ingredient.AddIngredientSheetState
-import uk.co.imoqen.nourish.db.NourishDatabase
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
-import uk.co.imoqen.nourish.db.shoppinglistentry.ShoppingListEntryRepository
-import uk.co.imoqen.nourish.recipebook.RecipeBookViewModel
 import uk.co.imoqen.nourish.setup.MainDispatcherRule
 import uk.co.imoqen.nourish.shoppinglist.IngredientToEdit
 import uk.co.imoqen.nourish.shoppinglist.ShoppingListUiEntry
@@ -59,8 +56,8 @@ class ShoppingListViewModelTest {
     @Test
     fun `should set shoppingListEntries correctly`() {
         Assert.assertEquals(vm.uiState.value.shoppingListEntries, emptyList<ShoppingListUiEntry>())
-        vm.setShoppingListEntries(TestData.shoppingListEntries)
-        Assert.assertEquals(vm.uiState.value.shoppingListEntries, TestData.shoppingListEntries)
+        vm.setShoppingListEntries(TestData.shoppingListUiEntries)
+        Assert.assertEquals(vm.uiState.value.shoppingListEntries, TestData.shoppingListUiEntries)
     }
 
     @Test
@@ -165,44 +162,90 @@ class ShoppingListViewModelTest {
     @Test
     fun `deleteShoppingListItem should delete an item from the shopping list if the item is not null`() {
         vm.setItemIndexToDelete(1) // will delete second item,  this is oatMilk in the TestData
-        vm.setShoppingListEntries(TestData.shoppingListEntries)
+        vm.setShoppingListEntries(TestData.shoppingListUiEntries)
         vm.deleteShoppingListItem()
         // now check the item has been deleted:
-        Assert.assertEquals(vm.uiState.value.shoppingListEntries, listOf(TestData.shoppingListEntries[0])) // second index deleted; only first index remains.
+        Assert.assertEquals(vm.uiState.value.shoppingListEntries, listOf(TestData.shoppingListUiEntries[0])) // second index deleted; only first index remains.
     }
 
     @Test
     fun `deleteShoppingListItem should not delete an item from the shopping list if the item is not null (does not exist in the list)`() {
         vm.setItemIndexToDelete(0) // first item triggers null return for this test (in the fake shopping list repository)
-        vm.setShoppingListEntries(TestData.shoppingListEntries)
+        vm.setShoppingListEntries(TestData.shoppingListUiEntries)
         vm.deleteShoppingListItem()
         // now check the item has been deleted:
-        Assert.assertEquals(vm.uiState.value.shoppingListEntries, TestData.shoppingListEntries) // nothing deleted
+        Assert.assertEquals(vm.uiState.value.shoppingListEntries, TestData.shoppingListUiEntries) // nothing deleted
     }
 
     @Test
     fun `clearShoppingList should not clear the list if the user is not logged in`() {
         fakeAuthenticationManager.setLoginState(false, "") // not logged in
-        vm.setShoppingListEntries(TestData.shoppingListEntries)
+        vm.setShoppingListEntries(TestData.shoppingListUiEntries)
         vm.clearShoppingList()
         // shopping list will not have been cleared:
-        Assert.assertEquals(vm.uiState.value.shoppingListEntries, TestData.shoppingListEntries) // not cleared
+        Assert.assertEquals(vm.uiState.value.shoppingListEntries, TestData.shoppingListUiEntries) // not cleared
     }
 
     @Test
     fun `clearShoppingList clears only purchased items when onlyDeletePurchased is true`() {
-        fakeAuthenticationManager.setLoginState(true, "valid_user") // not logged in
-        vm.setShoppingListEntries(TestData.shoppingListEntries)
+        fakeAuthenticationManager.setLoginState(true, "valid_user_shoppinglist_clearPurchased") // not logged in
+        vm.setShoppingListEntries(TestData.shoppingListUiEntries)
         vm.clearShoppingList(onlyDeletePurchased = true)
-        Assert.assertEquals(vm.uiState.value.shoppingListEntries, TestData.shoppingListEntries) // then it stays same because none have been purchased.
+        // nothing cleared as none have been purchased:
+        Assert.assertEquals(vm.uiState.value.shoppingListEntries, listOf( // plurals are determined by the faked ingr.getById hence return non-senselical values. however, since this isn't the focus of the test here, it isn't a problem - its simply caused by the mock.
+            ShoppingListUiEntry(0, "cherries", IngredientUnit.G, 500.0, false, 0),
+            ShoppingListUiEntry(1, "cherries", IngredientUnit.L, 1.0, false, 1)
+        ))
     }
 
     @Test
     fun `clearShoppingList clears all items when onlyDeletePurchased is false (this is by default)`() {
-        fakeAuthenticationManager.setLoginState(true, "valid_user") // not logged in
-        vm.setShoppingListEntries(TestData.shoppingListEntries)
+        fakeAuthenticationManager.setLoginState(true, "valid_user_shoppinglist_clearAll") // not logged in
+        vm.setShoppingListEntries(TestData.shoppingListUiEntries)
         vm.clearShoppingList()
         Assert.assertEquals(vm.uiState.value.shoppingListEntries, listOf<ShoppingListUiEntry>()) // then it stays same because none have been purchased.
+    }
+
+    @Test
+    fun `populateShoppingList does not populate when the user is not logged in)`() {
+        fakeAuthenticationManager.setLoginState(false, "") // not logged in
+        vm.populateShoppingList()
+        Assert.assertEquals(vm.uiState.value.shoppingListEntries, listOf<ShoppingListUiEntry>()) // not populated
+    }
+
+    @Test
+    fun `populateShoppingList populates the shopping list when the user is logged in)`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // logged in
+        vm.populateShoppingList()
+        Assert.assertEquals(vm.uiState.value.shoppingListEntries, listOf(
+            ShoppingListUiEntry(1, "cherries", IngredientUnit.L, 1.0, false, 1),
+            ShoppingListUiEntry(0, "cherries", IngredientUnit.G, 500.0, false, 0)
+        ))
+    }
+
+    @Test
+    fun `populateShoppingList populates the shopping list and handles converting G to KG and ML to L if their amounts are over 1000`() {
+        fakeAuthenticationManager.setLoginState(true, "user_with_ingr_to_convert_l_and_kg") // logged in
+        vm.populateShoppingList()
+        Assert.assertEquals(vm.uiState.value.shoppingListEntries, listOf( // plurals are determined by the faked ingr.getById hence return non-senselical values. however, since this isn't the focus of the test here, it isn't a problem - its simply caused by the mock.
+            ShoppingListUiEntry(2, "cherries", IngredientUnit.L, 2.0, false, 2),
+            ShoppingListUiEntry(3, "water", IngredientUnit.KG, 5.0, false, 3)
+        ))
+    }
+
+    @Test
+    fun `populateShoppingList handles errors correctly, as a result not populating the shopping list`() {
+        fakeAuthenticationManager.setLoginState(true, "user_who_throws_error") // logged in
+        vm.populateShoppingList()
+        Assert.assertEquals(vm.uiState.value.shoppingListEntries, listOf<ShoppingListUiEntry>()) // shopping list not populated
+    }
+
+    @Test
+    fun `updatePurchasedState updates the purchased status from false to true`() {
+        vm.setShoppingListEntries(TestData.shoppingListUiEntries)
+        fakeAuthenticationManager.setLoginState(true, "user_who_throws_error") // logged in
+        vm.updatePurchasedState(0, TestData.shoppingListUiEntry_cherries.copy(purchased = true))
+        Assert.assertEquals(vm.uiState.value.shoppingListEntries, TestData.shoppingListUiEntries.map{ item -> if (item.plural == "cherries") { TestData.shoppingListUiEntries.first().copy(purchased = true)} else item }) // shopping list not populated
     }
 
 }

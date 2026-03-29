@@ -107,9 +107,9 @@ class FakeAuthenticationManager(): AuthenticationManager {
 
     override fun getUid(): String {
         if (!mutableAuthenticationState.value.loggedIn) {
-         return ""
+            return ""
         }
-        return "test_uid"
+        return mutableAuthenticationState.value.uid
     }
 
     override fun getEmail(): String? {
