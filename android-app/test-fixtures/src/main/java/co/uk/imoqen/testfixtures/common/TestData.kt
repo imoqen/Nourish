@@ -5,6 +5,7 @@ import uk.co.imoqen.nourish.db.ingredient.Ingredient
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
+import uk.co.imoqen.nourish.db.shoppinglistentry.ShoppingListEntry
 import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import uk.co.imoqen.nourish.network.response.LlmIngredient
@@ -16,6 +17,7 @@ import uk.co.imoqen.nourish.recipebook.ShoppingListIngredient
 import uk.co.imoqen.nourish.recipebook.TagSelection
 import uk.co.imoqen.nourish.recipebook.TypeSelection
 import uk.co.imoqen.nourish.shoppinglist.IngredientAmount
+import uk.co.imoqen.nourish.shoppinglist.ShoppingListUiEntry
 
 object TestData {
 
@@ -423,9 +425,68 @@ object TestData {
         amount = 1000.0
     )
 
+    val shoppingListIngredient_triggerError = ShoppingListIngredient(
+        ingredientId = 0,
+        plural = "error ingredient",
+        unit = IngredientUnit.UNIT,
+        amount = 1.0
+    )
+
     val ingredientsToAddToShoppingList = mutableListOf(
         Pair(shoppingListIngredient_cherry, true),
         Pair(shoppingListIngredient_oatMilk, true)
+    )
+
+    val ingredientsToAddToShoppingList_oneSelected_oneNotSelected = mutableListOf(
+        Pair(shoppingListIngredient_cherry, true), // selected
+        Pair(shoppingListIngredient_oatMilk, false) // not selected
+    )
+
+    val ingredientsToAddToShoppingList_triggerError = mutableListOf(
+        Pair(shoppingListIngredient_triggerError, true)
+    )
+
+    val shoppingListUiEntry_cherries = ShoppingListUiEntry(
+        id = 0,
+        plural = "cherries",
+        unit = IngredientUnit.G,
+        amount = 500.0,
+        purchased = false,
+        ordinal = 0
+    )
+
+    val shoppingListEntry_cherries = ShoppingListEntry(
+        id = 0,
+        ingredientId = 0,
+        purchaserUid = "valid_user",
+        unit = IngredientUnit.G,
+        amount = 500.0,
+        purchased = false,
+        ordinal = 0
+    )
+
+    val shoppingListUiEntry_oatMilk = ShoppingListUiEntry(
+        id = 1,
+        plural = "oat milk",
+        unit = IngredientUnit.ML,
+        amount = 1000.0,
+        purchased = false,
+        ordinal = 1
+    )
+
+    val shoppingListEntry_oatMilk = ShoppingListEntry(
+        id = 1,
+        ingredientId = 1,
+        purchaserUid = "valid_user",
+        unit = IngredientUnit.ML,
+        amount = 1000.0,
+        purchased = false,
+        ordinal = 1
+    )
+
+    val shoppingListEntries = listOf(
+        shoppingListUiEntry_cherries,
+        shoppingListUiEntry_oatMilk
     )
 
 }

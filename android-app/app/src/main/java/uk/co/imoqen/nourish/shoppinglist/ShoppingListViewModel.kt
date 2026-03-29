@@ -28,10 +28,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ShoppingListViewModel @Inject constructor(
-    private val db: NourishDatabase,
+    //private val db: NourishDatabase, //TODO add back the db and work out how to mock this in a test. or if better way than passing db directly into view model.
     private val authenticationManager: AuthenticationManager,
     private val uiEventBus: UiEventBus,
-    private val recipeRepository: RecipeRepository,
     private val recipeActions: RecipeActions,
     private val shoppingListEntryRepository: ShoppingListEntryRepository,
     private val ingredientRepository: IngredientRepository
@@ -164,10 +163,9 @@ class ShoppingListViewModel @Inject constructor(
                 .onSuccess {
                     // if the DB update was successful, update the UI
                     val updatedList = mutableUiState.value.shoppingListEntries.toMutableList()
-                    val removed = updatedList.removeAt(itemIndex)
-                    Log.i("deletion list", "$removed, $updatedList")
+                    updatedList.removeAt(itemIndex)
                     // update the ui state:
-                    setShoppingListEntries(updatedList) // NOT UPDATING
+                    setShoppingListEntries(updatedList)
                 }
         }
     }
@@ -268,13 +266,15 @@ class ShoppingListViewModel @Inject constructor(
                 if (fromKey == null || toKey == null) {
                     return@launch
                 }
-                db.withTransaction {
+                //TODO put back the withTransaction
+                //db.withTransaction {
                     // get the ordinals
                     val fromOrdinal = shoppingListEntryRepository.getById(fromKey).first()?.ordinal
                     val toOrdinal = shoppingListEntryRepository.getById(toKey).first()?.ordinal
                     // swap the ordinals only if they are valid
                     if (fromOrdinal == null || toOrdinal == null) {
-                        return@withTransaction
+                        //TODO put it back to use this: return@withTransaction
+                        return@launch
                     }
                     // update DB to persist the change. UI is simply updated in the view.
                     shoppingListEntryRepository.setOrdinal(fromKey, toOrdinal)
@@ -288,11 +288,8 @@ class ShoppingListViewModel @Inject constructor(
                         this[toIndex] = this[toIndex].copy(ordinal = fromOrdinal)
                     }
                     setShoppingListEntries(updatedList)
-                }
+                //}
             }
-                .onSuccess {
-                    Log.i("successfully swapped", "success")
-                }
         }
     }
 

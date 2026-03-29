@@ -432,26 +432,16 @@ class RecipeBookViewModel @Inject constructor(
                 val recipeType = recipeActions.findRecipeType(recipe.recipeTypeId)
                 val recipeTags = buildRecipeTags(recipe.id)
                 val storageInstructions = recipe.storageInstructions
-
                 if (ingredientsMap == null || recipeType == null) {
-                    Log.i("recipe book error", "null")
                     return@launch
                 }
-
                 val recipeCard = RecipeCardExpanded(
                     title, ingredientsMap, method, serves, recipeType,
                     recipeTags, storageInstructions, recipe.imagePath, recipe.emoji,
                     enumValueOf<NourishColour>(recipe.colour.uppercase()), recipe.generated
                 )
-
                 setRecipeCard(recipeCard)
             }
-                .onSuccess {
-                    Log.i("recipe book", "successfully parsed into recipe card")
-                }
-                .onFailure { e ->
-                    Log.i("recipe book", "failed: $e")
-                }
         }
     }
 

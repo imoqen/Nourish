@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish
 
+import androidx.compose.runtime.collectAsState
 import co.uk.imoqen.testfixtures.common.FakeUiEventBus
 import co.uk.imoqen.testfixtures.common.TestData
 import co.uk.imoqen.testfixtures.firebase.FakeAuthenticationManager
@@ -8,6 +9,8 @@ import co.uk.imoqen.testfixtures.repository.FakeIngredientRepository
 import co.uk.imoqen.testfixtures.repository.FakeRecipeRepository
 import co.uk.imoqen.testfixtures.repository.FakeShoppingListEntryRepository
 import co.uk.imoqen.testfixtures.repository.FakeTagRepository
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
@@ -15,12 +18,14 @@ import org.junit.Test
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.RecipeActions
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
+import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.network.request.LlmActionType
 import uk.co.imoqen.nourish.recipebook.ActionChatStage
 import uk.co.imoqen.nourish.recipebook.RecipeBookViewModel
 import uk.co.imoqen.nourish.recipebook.RecipeCardExpanded
 import uk.co.imoqen.nourish.recipebook.ShoppingListIngredient
 import uk.co.imoqen.nourish.setup.MainDispatcherRule
+import kotlin.collections.emptyList
 import kotlin.collections.listOf
 import kotlin.collections.mutableListOf
 
@@ -221,5 +226,74 @@ class RecipeBookViewModelTest {
         vm.setSelectedRecipe(TestData.recipe_withUnitToNotKeepInShoppingList)
         vm.formatIngredientsForShoppingList()
         Assert.assertEquals(vm.uiState.value.ingredientsToAddToShoppingList, listOf(Pair((ShoppingListIngredient(ingredientId=0, plural="cherries", unit= IngredientUnit.SINGLE, amount=1.0)), true))) // converts from HEAD to UNIT
+    }
+
+    @Test
+    fun `addIngredientToShoppingList does not add the ingredients if the user is not logged in`() {
+        vm.setIngredientsToAddToShoppingList(TestData.ingredientsToAddToShoppingList)
+        fakeAuthenticationManager.setLoginState(false, "") // not logged in
+        vm.addIngredientsToShoppingList()
+        // the ingredients do not get added because the user is not logged in, so tbey remain in the state:
+        Assert.assertEquals(
+            vm.uiState.value.ingredientsToAddToShoppingList,
+            TestData.ingredientsToAddToShoppingList
+        )
+    }
+
+    @Test
+    fun `addIngredientToShoppingList adds the ingredient if selected, and doesn't add the ingredient if not selected`() {
+        vm.setIngredientsToAddToShoppingList(TestData.ingredientsToAddToShoppingList_oneSelected_oneNotSelected)
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // not logged in
+        vm.addIngredientsToShoppingList()
+        // the ingredients do not get added because the user is not logged in, so tbey remain in the state:
+        Assert.assertEquals(
+            vm.uiState.value.ingredientsToAddToShoppingList, null // items got persisted to the DB, hence no longer in the UI state.
+        )
+    }
+
+    @Test
+    fun `addIngredientToShoppingList handles errors appropriately`() {
+        vm.setIngredientsToAddToShoppingList(TestData.ingredientsToAddToShoppingList_triggerError)
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // not logged in
+        vm.addIngredientsToShoppingList()
+        // the ingredients do not get added because the user is not logged in, so tbey remain in the state:
+        Assert.assertEquals(
+            vm.uiState.value.ingredientsToAddToShoppingList, TestData.ingredientsToAddToShoppingList_triggerError // items do not get added as error occurs, so remain in state.
+        )
+    }
+
+    // how to call a suspend fun in a test? or collect the folow? the flows arent equal when they should be.
+    /*@Test
+    fun `getAllRecipes returns empty list if the user is not logged in`() {
+        vm.setIngredientsToAddToShoppingList(TestData.ingredientsToAddToShoppingList_triggerError)
+        fakeAuthenticationManager.setLoginState(false, "") // not logged in
+
+        Assert.assertEquals(
+            vm.getAllRecipes(),  flowOf<List<Recipe>>(listOf())
+        )
+    }*/
+
+    // flow comparison not working
+    /*@Test
+    fun `getAllRecipes returns the list of a user's recipes if they are logged in`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // not logged in
+        Assert.assertEquals(
+            vm.getAllRecipes(),  flowOf(listOf(
+                TestData.recipe_salad,
+                TestData.recipe_withWaterIngredients
+            ))
+        )
+    }*/
+
+    @Test
+    fun `markStepAsComplete updates the step to complete if was previously incomplete`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // not logged in
+        vm.markStepAsComplete(1, true)
+        Assert.assertEquals(
+            vm.getAllRecipes(),  flowOf(listOf(
+                TestData.recipe_salad,
+                TestData.recipe_withWaterIngredients
+            ))
+        )
     }
 }

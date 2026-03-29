@@ -1,6 +1,8 @@
 package co.uk.imoqen.testfixtures.repository
 
+import co.uk.imoqen.testfixtures.common.TestData
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import uk.co.imoqen.nourish.db.shoppinglistentry.ShoppingListEntry
 import uk.co.imoqen.nourish.db.shoppinglistentry.ShoppingListEntryRepository
 import uk.co.imoqen.nourish.recipebook.ShoppingListIngredient
@@ -11,7 +13,10 @@ class FakeShoppingListEntryRepository(): ShoppingListEntryRepository {
     }
 
     override fun getById(id: Long): Flow<ShoppingListEntry?> {
-        TODO("Not yet implemented")
+        if (id != 1L) { // errors to simulate out of bounds
+            return flowOf(null)
+        }
+        return flowOf(TestData.shoppingListEntry_oatMilk)
     }
 
     override suspend fun insert(shoppingListEntry: ShoppingListEntry): Long {
@@ -23,7 +28,11 @@ class FakeShoppingListEntryRepository(): ShoppingListEntryRepository {
         uid: String,
         userAdded: Boolean
     ) {
-        TODO("Not yet implemented")
+        // simulate error so that onFailure response can be checked:
+        if (shoppingListIngredient == TestData.shoppingListIngredient_triggerError) {
+            throw Exception()
+        }
+        // otherwise, simply do nothing to simulate success
     }
 
     override suspend fun update(shoppingListEntry: ShoppingListEntry) {
@@ -31,7 +40,7 @@ class FakeShoppingListEntryRepository(): ShoppingListEntryRepository {
     }
 
     override suspend fun delete(shoppingListEntry: ShoppingListEntry) {
-        TODO("Not yet implemented")
+        // do nothing to simulate success
     }
 
     override suspend fun deleteAllForUser(uid: String) {

@@ -20,7 +20,12 @@ import uk.co.imoqen.nourish.network.response.LlmRecipe
 
 class FakeRecipeRepository(): RecipeRepository {
     override fun getAllRecipes(uid: String): Flow<List<Recipe>> {
-        TODO("Not yet implemented")
+        return flowOf(
+            listOf(
+                TestData.recipe_salad,
+                TestData.recipe_withWaterIngredients
+            )
+        )
     }
 
     override fun getRecipeById(recipeId: Long): Flow<Recipe?> {
@@ -217,7 +222,7 @@ class FakeRecipeRepository(): RecipeRepository {
         recipeStepId: Long,
         complete: Boolean
     ) {
-        TODO("Not yet implemented")
+        // do nothing to simulate success
     }
 
     override fun getAllRecipeTags(): Flow<List<RecipeTag>> {
