@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish
 
+import androidx.room.withTransaction
 import co.uk.imoqen.testfixtures.common.FakeUiEventBus
 import co.uk.imoqen.testfixtures.common.TestData
 import co.uk.imoqen.testfixtures.firebase.FakeAuthenticationManager
@@ -7,12 +8,18 @@ import co.uk.imoqen.testfixtures.repository.FakeIngredientRepository
 import co.uk.imoqen.testfixtures.repository.FakeRecipeRepository
 import co.uk.imoqen.testfixtures.repository.FakeShoppingListEntryRepository
 import co.uk.imoqen.testfixtures.repository.FakeTagRepository
+import io.mockk.MockKAnnotations
+import io.mockk.coEvery
+import io.mockk.impl.annotations.MockK
+import io.mockk.mockkStatic
+import io.mockk.slot
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import uk.co.imoqen.nourish.common.RecipeActions
 import uk.co.imoqen.nourish.common.ingredient.AddIngredientSheetState
+import uk.co.imoqen.nourish.db.NourishDatabase
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.setup.MainDispatcherRule
 import uk.co.imoqen.nourish.shoppinglist.IngredientToEdit
@@ -31,10 +38,29 @@ class ShoppingListViewModelTest {
         fakeUiEventBus, fakeAuthenticationManager, fakeTagRepository, fakeRecipeRepository
     )
 
+    // using Mockito to mock the database, as a Fake database is not possible due to its complexity.
+    @MockK
+    private lateinit var mockDb: NourishDatabase
+
     lateinit var vm: ShoppingListViewModel
 
     @Before
     fun init() {
+        // First, initialise the mocks: (the database mock)
+        // Approach taken from https://stackoverflow.com/questions/56500576/how-to-mock-android-room-withtransaction-method-with-mockk
+
+        MockKAnnotations.init(this)
+
+        mockkStatic(
+            "androidx.room.RoomDatabaseKt"
+        )
+
+        val transactionLambda = slot<suspend () -> Unit>()
+        coEvery { mockDb.withTransaction(capture(transactionLambda)) } coAnswers {
+            transactionLambda.captured.invoke()
+        }
+
+        // Then create the objects to use in testing:
         // uses the true recipeActions so it is testable, using the fake managers and repositories
         val recipeActions = RecipeActions(
             uiEventBus = fakeUiEventBus,
@@ -43,7 +69,7 @@ class ShoppingListViewModelTest {
             recipeRepository = fakeRecipeRepository
         )
         vm = ShoppingListViewModel(
-            fakeAuthenticationManager, fakeUiEventBus, recipeActions,
+            mockDb, fakeAuthenticationManager, fakeUiEventBus, recipeActions,
             fakeShoppingListEntryRepository, fakeIngredientRepository
         )
     }
@@ -170,10 +196,10 @@ class ShoppingListViewModelTest {
 
     @Test
     fun `deleteShoppingListItem should not delete an item from the shopping list if the item is not null (does not exist in the list)`() {
-        vm.setItemIndexToDelete(0) // first item triggers null return for this test (in the fake shopping list repository)
+        vm.setItemIndexToDelete(2) // out of bounds of the entries (as there are only 2 entries in the test data)
         vm.setShoppingListEntries(TestData.shoppingListUiEntries)
         vm.deleteShoppingListItem()
-        // now check the item has been deleted:
+        // now check the item has not been deleted:
         Assert.assertEquals(vm.uiState.value.shoppingListEntries, TestData.shoppingListUiEntries) // nothing deleted
     }
 
@@ -243,9 +269,74 @@ class ShoppingListViewModelTest {
     @Test
     fun `updatePurchasedState updates the purchased status from false to true`() {
         vm.setShoppingListEntries(TestData.shoppingListUiEntries)
-        fakeAuthenticationManager.setLoginState(true, "user_who_throws_error") // logged in
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // logged in
         vm.updatePurchasedState(0, TestData.shoppingListUiEntry_cherries.copy(purchased = true))
-        Assert.assertEquals(vm.uiState.value.shoppingListEntries, TestData.shoppingListUiEntries.map{ item -> if (item.plural == "cherries") { TestData.shoppingListUiEntries.first().copy(purchased = true)} else item }) // shopping list not populated
+        Assert.assertEquals(vm.uiState.value.shoppingListEntries, TestData.shoppingListUiEntries.map{ item -> if (item.plural == "cherries") { TestData.shoppingListUiEntries.first().copy(purchased = true)} else item })
+    }
+
+    @Test
+    fun `updatePurchasedState updates the purchased status from true to false`() {
+        vm.setShoppingListEntries(TestData.shoppingListUiEntries.map{ item -> if (item.plural == "cherries") { TestData.shoppingListUiEntries.first().copy(purchased = true)} else item })
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // logged in
+        vm.updatePurchasedState(0, TestData.shoppingListUiEntry_cherries.copy(purchased = false))
+        Assert.assertEquals(vm.uiState.value.shoppingListEntries, TestData.shoppingListUiEntries)
+    }
+
+    @Test
+    fun `updatePurchasedState does not update the purchased status if an error occurs`() {
+        vm.setShoppingListEntries(TestData.shoppingListUiEntries)
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // logged in
+        vm.updatePurchasedState(0, TestData.shoppingListUiEntry_bananas)
+        Assert.assertEquals(vm.uiState.value.shoppingListEntries, TestData.shoppingListUiEntries) // no change made as that ingredient is not in the list
+    }
+
+    @Test
+    fun `reorderShoppingList swaps two unpurchased items`() {
+        vm.setShoppingListEntries(TestData.shoppingListUiEntries)
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // logged in
+        vm.reorderShoppingList(0, 1) // swaps the first and second elements
+        // change is made: ingredients are the same, but with the ordinals swapped.
+        Assert.assertEquals(vm.uiState.value.shoppingListEntries, TestData.shoppingListUiEntries.map { if (it.ordinal == 0) { it.copy(ordinal = 1) } else { it.copy(ordinal = 0) } })
+    }
+
+    @Test
+    fun `reorderShoppingList does not reorder if the first item's key is null`() {
+        vm.setShoppingListEntries(TestData.shoppingListUiEntries)
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // logged in
+        vm.reorderShoppingList(null, 1)
+        Assert.assertEquals(vm.uiState.value.shoppingListEntries, TestData.shoppingListUiEntries) // no change made, as a key was null
+    }
+
+    @Test
+    fun `reorderShoppingList does not reorder if the second item's key is null`() {
+        vm.setShoppingListEntries(TestData.shoppingListUiEntries)
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // logged in
+        vm.reorderShoppingList(1, null)
+        Assert.assertEquals(vm.uiState.value.shoppingListEntries, TestData.shoppingListUiEntries) // no change made, as a key was null
+    }
+
+    @Test
+    fun `reorderShoppingList does not reorder if both item's keys are null`() {
+        vm.setShoppingListEntries(TestData.shoppingListUiEntries)
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // logged in
+        vm.reorderShoppingList(null, null)
+        Assert.assertEquals(vm.uiState.value.shoppingListEntries, TestData.shoppingListUiEntries) // no change made, as a key was null
+    }
+
+    @Test
+    fun `reorderShoppingList does not reorder if the ordinal of the items are null`() {
+        vm.setShoppingListEntries(TestData.shoppingListUiEntries)
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // logged in
+        vm.reorderShoppingList(3, 4)
+        Assert.assertEquals(vm.uiState.value.shoppingListEntries, TestData.shoppingListUiEntries) // no change made, as a key was null
+    }
+
+    @Test
+    fun `formatIngredientAmount`() {
+        vm.setShoppingListEntries(TestData.shoppingListUiEntries)
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // logged in
+        vm.reorderShoppingList(3, 4)
+        Assert.assertEquals(vm.uiState.value.shoppingListEntries, TestData.shoppingListUiEntries) // no change made, as a key was null
     }
 
 }

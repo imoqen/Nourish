@@ -27,7 +27,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ShoppingListViewModel @Inject constructor(
-    //private val db: NourishDatabase, //TODO add back the db and work out how to mock this in a test. or if better way than passing db directly into view model.
+    private val db: NourishDatabase, //TODO add back the db and work out how to mock this in a test. or if better way than passing db directly into view model.
     private val authenticationManager: AuthenticationManager,
     private val uiEventBus: UiEventBus,
     private val recipeActions: RecipeActions,
@@ -264,15 +264,13 @@ class ShoppingListViewModel @Inject constructor(
                 if (fromKey == null || toKey == null) {
                     return@launch
                 }
-                //TODO put back the withTransaction
-                //db.withTransaction {
+                db.withTransaction {
                     // get the ordinals
                     val fromOrdinal = shoppingListEntryRepository.getById(fromKey).first()?.ordinal
                     val toOrdinal = shoppingListEntryRepository.getById(toKey).first()?.ordinal
                     // swap the ordinals only if they are valid
                     if (fromOrdinal == null || toOrdinal == null) {
-                        //TODO put it back to use this: return@withTransaction
-                        return@launch
+                        return@withTransaction
                     }
                     // update DB to persist the change. UI is simply updated in the view.
                     shoppingListEntryRepository.setOrdinal(fromKey, toOrdinal)
@@ -286,7 +284,7 @@ class ShoppingListViewModel @Inject constructor(
                         this[toIndex] = this[toIndex].copy(ordinal = fromOrdinal)
                     }
                     setShoppingListEntries(updatedList)
-                //}
+                }
             }
         }
     }

@@ -25,9 +25,17 @@ class FakeShoppingListEntryRepository(): ShoppingListEntryRepository {
     }
 
     override fun getById(id: Long): Flow<ShoppingListEntry?> {
-        if (id != 1L) { // errors to simulate out of bounds
+        if (id == 0L) { // first element
+            return flowOf(TestData.shoppingListEntry_cherries)
+        }
+        if (id == 2L) { // errors to simulate out of bounds
             return flowOf(null)
         }
+        if (id == 3L || id == 4L) {
+            // simulates null ordinal results
+            return flowOf(null)
+        }
+        // second element:
         return flowOf(TestData.shoppingListEntry_oatMilk)
     }
 
@@ -64,10 +72,13 @@ class FakeShoppingListEntryRepository(): ShoppingListEntryRepository {
     }
 
     override suspend fun setOrdinal(id: Long, ordinal: Int) {
-        TODO("Not yet implemented")
+        // do nothing to simulate success
     }
 
     override suspend fun updatePurchaseStatus(id: Long, purchased: Boolean) {
-        // do nothing to simulate success
+        if (id == 2L) { //exceeds list bounds
+            throw Exception()
+        }
+        // else, do nothing to simulate success
     }
 }

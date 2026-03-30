@@ -473,6 +473,15 @@ object TestData {
         ordinal = 1
     )
 
+    val shoppingListUiEntry_bananas = ShoppingListUiEntry(
+        id = 2,
+        plural = "bananas",
+        unit = IngredientUnit.UNIT,
+        amount = 1.0,
+        purchased = false,
+        ordinal = 2
+    )
+
     val shoppingListEntry_oatMilk = ShoppingListEntry(
         id = 1,
         ingredientId = 1,
