@@ -412,7 +412,6 @@ class RecipeBookViewModel @Inject constructor(
                 }
                 .onFailure { e ->
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("The step could not be marked as complete. Please try again later."))
-                    Log.i("step check", "failed: $e")
                 }
         }
     }
@@ -486,7 +485,7 @@ class RecipeBookViewModel @Inject constructor(
 
             // title of the section:
             val sectionId = ingredient.sectionId
-            val sectionTitle = getSectionById(sectionId).first()?.title // this may fail if the values stored in the db update while user is looking at it. for this, would need to use .collect(). consider this if issues occur in future.
+            val sectionTitle = getSectionById(sectionId).first()?.title
 
             // determine pluralities
             var ingredientAmount = ingredient.amount * recipe.numberOfServings

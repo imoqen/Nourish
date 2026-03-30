@@ -171,6 +171,7 @@ dependencies {
     // Coil for loading and displaying images:
     implementation("io.coil-kt.coil3:coil-compose:3.0.0") // note: had bugs with this when using most recent version (3.3.0), downgradedto 3.0.0 and seems to work.
     // note for future: if want to load images from network, see: https://coil-kt.github.io/coil/getting_started/
+    testImplementation(kotlin("test"))
 }
 
 // For generating coverage report: Jacoco

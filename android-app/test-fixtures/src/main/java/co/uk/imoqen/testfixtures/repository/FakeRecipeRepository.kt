@@ -133,42 +133,25 @@ class FakeRecipeRepository(): RecipeRepository {
             )
         }
         return flowOf(
-            RecipeWithRecipeIngredients(
-                recipe = TestData.recipe_salad,
-                ingredients = listOf(RecipeIngredient(
-                    id = 0,
-                    recipeId = 0,
-                    ingredientId = 0,
-                    ingredientUnit = IngredientUnit.G,
-                    amount = 500.0,
-                    sectionId = 0
-                ))
-            )
+            TestData.recipeWithRecipeIngredient_salad
         )
     }
 
     override fun getRecipeWithRecipeTags(recipeId: Long): Flow<RecipeWithRecipeTags> {
-        return flowOf(
-            RecipeWithRecipeTags(
-                recipe = TestData.recipe_salad,
-                recipeTags = listOf(RecipeTag(0, 0, 0))
+        if (recipeId == 10L) {
+            return flowOf(
+                TestData.recipeWithRecipeTags_empty
             )
+        }
+        return flowOf(
+            TestData.recipeWithRecipeTags_salad
         )
     }
 
     override fun getRecipeWithRecipeSteps(recipeId: Long): Flow<RecipeWithRecipeSteps> {
         return flowOf(
-            RecipeWithRecipeSteps(
-                recipe = TestData.recipe_salad,
-                recipeSteps = listOf(RecipeStep(
-                    id = 0,
-                    recipeId = 0,
-                    index = 0,
-                    instruction = "Wash the cherries",
-                    complete = false
-                ))
+            TestData.recipeWithRecipeSteps_salad
             )
-        )
     }
 
     override fun getAllRecipeTypes(): Flow<List<RecipeType>> {
@@ -207,7 +190,14 @@ class FakeRecipeRepository(): RecipeRepository {
     }
 
     override fun getRecipeSectionById(id: Long): Flow<RecipeIngredientSection?> {
-        TODO("Not yet implemented")
+        if (id == 0L) {
+            return flowOf(TestData.recipeIngredientSection_salad)
+        }
+        if (id == 1L) {
+            return flowOf(TestData.recipeIngredientSection_salad)
+        }
+        // add more in furute
+        return flowOf(TestData.recipeIngredientSection_salad)
     }
 
     override fun getAllRecipeSteps(): Flow<List<RecipeStep>> {
@@ -222,7 +212,10 @@ class FakeRecipeRepository(): RecipeRepository {
         recipeStepId: Long,
         complete: Boolean
     ) {
-        // do nothing to simulate success
+        if (recipeStepId == -1L) {
+            throw Exception() // to test how it handles exceptions
+        }
+        // else, do nothing to simulate success
     }
 
     override fun getAllRecipeTags(): Flow<List<RecipeTag>> {
@@ -238,7 +231,7 @@ class FakeRecipeRepository(): RecipeRepository {
     }
 
     override fun getNutritionForRecipe(recipeId: Long): Flow<RecipeNutrition?> {
-        TODO("Not yet implemented")
+        return flowOf(TestData.recipeNutrition_salad)
     }
 
     override suspend fun deleteNutritionForRecipeId(recipeId: Long) {
@@ -254,7 +247,7 @@ class FakeRecipeRepository(): RecipeRepository {
     }
 
     override fun getAllQueriesForRecipe(recipeId: Long): Flow<List<RecipeQuery?>> {
-        TODO("Not yet implemented")
+        return flowOf(TestData.recipeQueriesList_salad)
     }
 
     override fun getRecipeQueryById(recipeQueryId: Long): Flow<RecipeQuery?> {

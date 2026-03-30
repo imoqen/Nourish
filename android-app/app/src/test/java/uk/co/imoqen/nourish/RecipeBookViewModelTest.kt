@@ -11,6 +11,7 @@ import co.uk.imoqen.testfixtures.repository.FakeShoppingListEntryRepository
 import co.uk.imoqen.testfixtures.repository.FakeTagRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
@@ -28,6 +29,7 @@ import uk.co.imoqen.nourish.setup.MainDispatcherRule
 import kotlin.collections.emptyList
 import kotlin.collections.listOf
 import kotlin.collections.mutableListOf
+import kotlin.test.assertFailsWith
 
 class RecipeBookViewModelTest {
     val fakeAuthenticationManager = FakeAuthenticationManager()
@@ -262,40 +264,248 @@ class RecipeBookViewModelTest {
         )
     }
 
-    // how to call a suspend fun in a test? or collect the folow? the flows arent equal when they should be.
-    /*@Test
-    fun `getAllRecipes returns empty list if the user is not logged in`() {
+    // runTest() can be used to call suspend functions in a test. otherwise, things like flow collection (via .first()) will not work.
+
+    @Test
+    fun `getAllRecipes returns empty list if the user is not logged in`() = runTest {
         vm.setIngredientsToAddToShoppingList(TestData.ingredientsToAddToShoppingList_triggerError)
         fakeAuthenticationManager.setLoginState(false, "") // not logged in
-
         Assert.assertEquals(
-            vm.getAllRecipes(),  flowOf<List<Recipe>>(listOf())
+            vm.getAllRecipes().first(),  listOf<Recipe>()
         )
-    }*/
+    }
 
-    // flow comparison not working
-    /*@Test
-    fun `getAllRecipes returns the list of a user's recipes if they are logged in`() {
+    @Test
+    fun `getAllRecipes returns the list of a user's recipes if they are logged in`() = runTest {
         fakeAuthenticationManager.setLoginState(true, "valid_user") // not logged in
         Assert.assertEquals(
-            vm.getAllRecipes(),  flowOf(listOf(
+            vm.getAllRecipes().first(),
+            listOf(
                 TestData.recipe_salad,
                 TestData.recipe_withWaterIngredients
-            ))
+            )
         )
-    }*/
+    }
 
-    // DONT KNOW HOW due to flow, as above.
+    @Test
+    fun `getRecipeIngredientsForRecipe returns a recipe's list of recipe ingredients`() = runTest {
+        Assert.assertEquals(
+            vm.getRecipeIngredientsForRecipe(2L).first(),
+            TestData.recipeWithRecipeIngredient_salad
+        )
+    }
 
-    /*@Test
-    fun `markStepAsComplete updates the step to complete if was previously incomplete`() {
+    @Test
+    fun `getRecipeTagsForRecipe returns a recipe's list of tags`() = runTest {
+        Assert.assertEquals(
+            vm.getRecipeTagsForRecipe(2L).first(),
+            TestData.recipeWithRecipeTags_salad
+        )
+    }
+
+    @Test
+    fun `getIngredientById returns the ingredient under the provided id`() = runTest {
+        Assert.assertEquals(
+            vm.getIngredientById(2L).first(),
+            TestData.ingredient_cherry
+        )
+    }
+
+    @Test
+    fun `getRecipeTypeById returns the recipe type under the provided id`() = runTest {
+        Assert.assertEquals(
+            vm.getRecipeTypeById(2L).first(),
+            TestData.recipeType_dessert
+        )
+    }
+
+    @Test
+    fun `getTagByTagId returns the tag under the provided id`() = runTest {
+        Assert.assertEquals(
+            vm.getTagByTagId(1L).first(),
+            TestData.tag_vegan
+        )
+    }
+
+    @Test
+    fun `getRecipeById returns the recipe under the provided id`() = runTest {
+        Assert.assertEquals(
+            vm.getRecipeById(1L).first(),
+            TestData.recipe_salad
+        )
+    }
+
+    @Test
+    fun `getSectionById returns the recipeIngredientSection under the provided id`() = runTest {
+        Assert.assertEquals(
+            vm.getSectionById(1L).first(),
+            TestData.recipeIngredientSection_salad
+        )
+    }
+
+    @Test
+    fun `getRecipeStepsForRecipe returns the recipeWithRecipeSteps under the provided id`() = runTest {
+        Assert.assertEquals(
+            vm.getRecipeById(1L).first(),
+            TestData.recipe_salad
+        )
+    }
+
+    @Test
+    fun `getNutritionForRecipe returns the recipeNutrition under the provided id`() = runTest {
+        Assert.assertEquals(
+            vm.getNutritionForRecipe(1L).first(),
+            TestData.recipeNutrition_salad
+        )
+    }
+
+    @Test
+    fun `getAllQueriesForRecipe returns the list of recipeQuery under the provided id`() = runTest {
+        Assert.assertEquals(
+            vm.getAllQueriesForRecipe(1L).first(),
+            TestData.recipeQueriesList_salad
+        )
+    }
+
+    @Test
+    fun `getRecipeStepsForRecipe returns the list of recipeSteps under the provided id`() = runTest {
+        Assert.assertEquals(
+            vm.getRecipeStepsForRecipe(1L).first(),
+            TestData.recipeWithRecipeSteps_salad
+        )
+    }
+
+    @Test
+    fun `markStepAsComplete updates the step to complete if was previously incomplete`() = runTest {
         fakeAuthenticationManager.setLoginState(true, "valid_user") // not logged in
+        vm.setSelectedRecipe(TestData.recipe_salad)
         vm.markStepAsComplete(1, true)
+        Assert.assertNotNull(vm.uiState.value.selectedRecipeCard)
+    }
+
+    @Test
+    fun `markStepAsComplete handles invalid stepId`() = runTest {
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // not logged in
+        vm.setSelectedRecipe(TestData.recipe_salad)
+        vm.markStepAsComplete(-1, true) // invalid step
+        Assert.assertNull(vm.uiState.value.selectedRecipeCard)
+    }
+
+    // also calls: build ingredients map, build recipe tags. need to do them first then:
+    @Test
+    fun `buildRecipeCard sets the recipe card with the UI state values if valid`() = runTest {
+        vm.setSelectedRecipe(TestData.recipe_salad)
+        vm.buildRecipeCard()
         Assert.assertEquals(
-            vm.getAllRecipes(),  flowOf(listOf(
-                TestData.recipe_salad,
-                TestData.recipe_withWaterIngredients
-            ))
+            vm.uiState.value.selectedRecipeCard,
+            TestData.recipeCardExpanded_salad
         )
-    }*/
+    }
+
+    @Test
+    fun `buildRecipeCard does not set the recipe card with the UI state if it is null`() = runTest {
+        // selected recipe is not set, therefore it is null.
+        vm.buildRecipeCard()
+        Assert.assertEquals(
+            vm.uiState.value.selectedRecipeCard,
+            null
+        )
+    }
+
+    @Test
+    fun `buildRecipeCard does not set the recipe card with the UI state if the recipeType does not exist`() = runTest {
+        vm.setSelectedRecipe(TestData.recipe_withInvalidRecipeTypeId)
+        // selected recipe is not set, therefore it is null.
+        vm.buildRecipeCard()
+        Assert.assertEquals(
+            vm.uiState.value.selectedRecipeCard,
+            null
+        )
+    }
+
+    // test build recipe card:
+    @Test
+    fun `buildIngredientsMap builds the map of ingredients from the provided recipeWithRecipeIngredients`() = runTest {
+        vm.setSelectedRecipe(TestData.recipe_salad)
+
+        Assert.assertEquals(
+            vm.buildIngredientsMap(TestData.recipeWithRecipeIngredient_salad),
+            TestData.sectionsWithIngredients_salad
+        )
+    }
+
+    @Test
+    fun `buildIngredientsMap builds the map of ingredients from the provided recipeWithRecipeIngredients and handles unit conversion`() = runTest {
+        vm.setSelectedRecipe(TestData.recipe_withUnitToConvert)
+
+        Assert.assertEquals(
+            vm.buildIngredientsMap(TestData.recipeWithRecipeIngredient_containsML),
+            TestData.sectionsWithIngredients_withML
+        )
+    }
+
+    @Test
+    fun `buildIngredientsMap builds the map of ingredients from the provided recipeWithRecipeIngredients and handles plurality requirement`() = runTest {
+        vm.setSelectedRecipe(TestData.recipe_salad)
+
+        Assert.assertEquals(
+            vm.buildIngredientsMap(TestData.recipeWithRecipeIngredient_shouldConvertToPlural),
+            TestData.sectionsWithIngredients_afterPluralConversion
+        )
+    }
+
+    @Test
+    fun `buildIngredientsMap builds the map of ingredients from the provided recipeWithRecipeIngredients and handles singular unit requirement`() = runTest {
+        vm.setSelectedRecipe(TestData.recipe_salad)
+
+        Assert.assertEquals(
+            vm.buildIngredientsMap(TestData.recipeWithRecipeIngredient_shouldHaveSingularUnit),
+            TestData.sectionsWithIngredients_singleUnit
+        )
+    }
+
+    @Test
+    fun `buildIngredientsMap builds the map of ingredients from the provided recipeWithRecipeIngredients and handles blank unit (UNIT unit)`() = runTest {
+        vm.setSelectedRecipe(TestData.recipe_salad)
+
+        Assert.assertEquals(
+            vm.buildIngredientsMap(TestData.recipeWithRecipeIngredient_withUnitUnit),
+            TestData.sectionsWithIngredients_unitUnit
+        )
+    }
+
+    @Test
+    fun `buildIngredientsMap returns null if the recipeIngredients provided is null`() = runTest {
+        vm.setSelectedRecipe(TestData.recipe_salad)
+        Assert.assertEquals(
+            vm.buildIngredientsMap(null),
+            null
+        )
+    }
+
+    @Test
+    fun `buildIngredientsMap returns null if the selectedRecipe is null`() = runTest {
+        Assert.assertEquals(
+            vm.buildIngredientsMap(TestData.recipeWithRecipeIngredient_salad),
+            null
+        )
+    }
+
+    @Test
+    fun `buildRecipeTags builds the map of tags given a recipe id`() = runTest {
+        vm.setSelectedRecipe(TestData.recipe_salad)
+        Assert.assertEquals(
+            vm.buildRecipeTags(0),
+            TestData.recipeTags_salad
+        )
+    }
+
+    @Test
+    fun `buildRecipeTags throws an exception if an identified tag does not exist (is null)`() = runTest {
+        vm.setSelectedRecipe(TestData.recipe_salad)
+        // have to use kotlin testing for this, not JUnit, because cant call suspend function from assert throws in JUnit
+        assertFailsWith<NullPointerException> {
+            vm.buildRecipeTags(10)
+        }
+    }
 }

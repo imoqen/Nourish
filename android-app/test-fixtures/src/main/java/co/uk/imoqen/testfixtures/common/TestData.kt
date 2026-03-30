@@ -4,6 +4,15 @@ import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.db.ingredient.Ingredient
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.Recipe
+import uk.co.imoqen.nourish.db.recipe.RecipeWithRecipeSteps
+import uk.co.imoqen.nourish.db.recipe.RecipeWithRecipeTags
+import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeIngredient
+import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeWithRecipeIngredients
+import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSection
+import uk.co.imoqen.nourish.db.recipe.recipenutrition.RecipeNutrition
+import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQuery
+import uk.co.imoqen.nourish.db.recipe.recipestep.RecipeStep
+import uk.co.imoqen.nourish.db.recipe.recipetag.RecipeTag
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.shoppinglistentry.ShoppingListEntry
 import uk.co.imoqen.nourish.db.tag.Tag
@@ -169,6 +178,10 @@ object TestData {
     val recipeTagsFirstSelected = listOf(
         tagSelection_vegan.copy(selected = true),
         tagSelection_lowcalorie
+    )
+
+    val recipeTags_salad = listOf(
+        Pair("Vegan", NourishColour.GREEN)
     )
 
     // Recipe Types:
@@ -362,6 +375,56 @@ object TestData {
         ingredientAmountUnit = "G"
     )
 
+    val sectionsWithIngredients_salad = mutableMapOf(
+        "For the Salad" to mutableListOf(
+            Triple(
+                "kg cherries",
+                1.0,
+                0L
+            )
+        )
+    )
+
+    val sectionsWithIngredients_withML = mutableMapOf(
+        "For the Salad" to mutableListOf(
+            Triple(
+                "L cherries",
+                1.0,
+                0L
+            )
+        )
+    )
+
+    val sectionsWithIngredients_afterPluralConversion = mutableMapOf(
+        "For the Salad" to mutableListOf(
+            Triple(
+                "kg cherries",
+                2.2,
+                0L
+            )
+        )
+    )
+
+    val sectionsWithIngredients_singleUnit = mutableMapOf(
+        "For the Salad" to mutableListOf(
+            Triple(
+                "slice of cherry",
+                1.0,
+                0L
+            )
+        )
+    )
+
+    val sectionsWithIngredients_unitUnit = mutableMapOf(
+        "For the Salad" to mutableListOf(
+            Triple(
+                "cherry",
+                1.0,
+                0L
+            )
+        )
+    )
+
     val recipeCardExpanded_cherry = RecipeCardExpanded(
         title = "Cherry Pie",
         sectionsWithIngredients = mutableMapOf(
@@ -382,6 +445,28 @@ object TestData {
         emoji = "\uD83C\uDF52",
         colour = NourishColour.RED,
         llmGenerated = true
+    )
+
+    val recipeCardExpanded_salad = RecipeCardExpanded(
+        title = "Salad Recipe",
+        sectionsWithIngredients = mutableMapOf(
+            "For the Salad" to mutableListOf(
+                Triple(
+                    "kg cherries",
+                    1.0,
+                    0L
+                )
+            )
+        ),
+        method = mutableListOf(Triple("Wash the cherries", false, 0L)),
+        serves = 2,
+        recipeType = Pair("Dessert", 3),
+        recipeTags = mutableListOf(Pair("Vegan", NourishColour.GREEN)),
+        storageInstructions = "Eat immediately.",
+        imagePath = "image.png",
+        emoji = "\uD83C\uDF5C",
+        colour = NourishColour.PINK,
+        llmGenerated = false
     )
 
     val recipeCardUnexpanded_cherry = RecipeCardUnexpanded(
@@ -530,5 +615,137 @@ object TestData {
         purchased = false,
         ordinal = 3
     )
+
+    val recipeWithRecipeIngredient_salad = RecipeWithRecipeIngredients(
+        recipe = recipe_salad,
+        ingredients = listOf(
+            RecipeIngredient(
+                id = 0,
+                recipeId = 0,
+                ingredientId = 0,
+                ingredientUnit = IngredientUnit.G,
+                amount = 500.0,
+                sectionId = 0
+            )
+        )
+    )
+
+    val recipeWithRecipeIngredient_containsML = RecipeWithRecipeIngredients(
+        recipe = recipe_salad,
+        ingredients = listOf(
+            RecipeIngredient(
+                id = 0,
+                recipeId = 0,
+                ingredientId = 0,
+                ingredientUnit = IngredientUnit.ML,
+                amount = 500.0,
+                sectionId = 0
+            )
+        )
+    )
+
+    val recipeWithRecipeIngredient_shouldConvertToPlural = RecipeWithRecipeIngredients(
+        recipe = recipe_salad,
+        ingredients = listOf(
+            RecipeIngredient(
+                id = 0,
+                recipeId = 0,
+                ingredientId = 0,
+                ingredientUnit = IngredientUnit.KG,
+                amount = 1.1, // rounds to 1.0
+                sectionId = 0
+            )
+        )
+    )
+
+    val recipeWithRecipeIngredient_shouldHaveSingularUnit = RecipeWithRecipeIngredients(
+        recipe = recipe_salad,
+        ingredients = listOf(
+            RecipeIngredient(
+                id = 0,
+                recipeId = 0,
+                ingredientId = 0,
+                ingredientUnit = IngredientUnit.SLICE,
+                amount = 0.5, // singular unit required for half a slice of bread; not half slices of bread
+                sectionId = 0
+            )
+        )
+    )
+
+    val recipeWithRecipeIngredient_withUnitUnit = RecipeWithRecipeIngredients(
+        recipe = recipe_salad,
+        ingredients = listOf(
+            RecipeIngredient(
+                id = 0,
+                recipeId = 0,
+                ingredientId = 0,
+                ingredientUnit = IngredientUnit.UNIT,
+                amount = 0.5, // singular unit required for half a slice of bread; not half slices of bread
+                sectionId = 0
+            )
+        )
+    )
+
+    val recipeWithRecipeTags_salad = RecipeWithRecipeTags(
+        recipe = recipe_salad,
+        recipeTags = listOf(RecipeTag(0, 0, 0))
+    )
+
+    val recipeWithRecipeTags_empty = RecipeWithRecipeTags(
+        recipe = recipe_salad,
+        recipeTags = listOf(RecipeTag(10, 10, 10)) // tag id of 10 doesn't exist in the db
+    )
+
+    val recipeIngredientSection_salad = RecipeIngredientSection(
+        id = 1,
+        title = "For the Salad"
+    )
+
+    val recipeStep_washCherries = RecipeStep(
+        id = 0,
+        recipeId = 0,
+        index = 0,
+        instruction = "Wash the cherries",
+        complete = false
+    )
+
+    val recipeWithRecipeSteps_salad = RecipeWithRecipeSteps(
+        recipe = recipe_salad,
+        recipeSteps = listOf(recipeStep_washCherries)
+    )
+
+    val recipeNutrition_salad = RecipeNutrition(
+        id = 0,
+        recipeId = 0,
+        servings = 1,
+        calories = 180,
+        fat = 4.0,
+        saturates = 5.0,
+        carbohydrate = 10.0,
+        sugars = 7.0,
+        protein = 1.0,
+        salt = 0.5,
+        fibre = 20.0
+    )
+
+    val recipeQuery_salad_healthiness = RecipeQuery(
+        id = 0,
+        recipeId = 0,
+        userQuestion = "Is this healthy?",
+        llmAnswer = "Yes, this recipe is extremely healthy. However, it is low in protein so may not keep you full."
+    )
+
+    val recipeQuery_salad_protein = RecipeQuery(
+        id = 1,
+        recipeId = 0,
+        userQuestion = "How can I increase the protein in this recipe?",
+        llmAnswer = "Add some sources of protein such as chicken or tofu."
+    )
+
+    val recipeQueriesList_salad = listOf(
+        recipeQuery_salad_healthiness,
+        recipeQuery_salad_protein
+    )
+
 
 }

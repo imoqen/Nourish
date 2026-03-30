@@ -31,6 +31,9 @@ class FakeTagRepository(): TagRepository {
     }
 
     override fun getById(id: Long): Flow<Tag?> {
+        if (id == 10L) {
+            return flowOf(null)
+        }
         return flowOf( TestData.tag_vegan )
     }
 }
