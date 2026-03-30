@@ -412,7 +412,7 @@ class RecipeDiscoveryViewModelTest {
 
     @Test
     fun `formatIngredientText returns empty string for invalid ingredient`() {
-        Assert.assertEquals(vm.formatIngredientText(TestData.llmIngredient_tomato), "")
+        Assert.assertEquals(vm.formatIngredientText(TestData.llmIngredient_invalidUnit), "")
     }
 
     @Test
@@ -485,6 +485,5 @@ class RecipeDiscoveryViewModelTest {
         Assert.assertEquals(vm.uiState.value.tagSheetState.createdTagName, "")
         Assert.assertEquals(vm.uiState.value.tagSheetState.tagCreationError, "")
     }
-
 
 }

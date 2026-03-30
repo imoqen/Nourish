@@ -18,12 +18,15 @@ import org.junit.Rule
 import org.junit.Test
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.RecipeActions
+import uk.co.imoqen.nourish.common.tag.FilterState
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.Recipe
+import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.network.request.LlmActionType
 import uk.co.imoqen.nourish.recipebook.ActionChatStage
 import uk.co.imoqen.nourish.recipebook.RecipeBookViewModel
 import uk.co.imoqen.nourish.recipebook.RecipeCardExpanded
+import uk.co.imoqen.nourish.recipebook.RecipeCardUnexpanded
 import uk.co.imoqen.nourish.recipebook.ShoppingListIngredient
 import uk.co.imoqen.nourish.setup.MainDispatcherRule
 import kotlin.collections.emptyList
@@ -507,5 +510,26 @@ class RecipeBookViewModelTest {
         assertFailsWith<NullPointerException> {
             vm.buildRecipeTags(10)
         }
+    }
+
+    @Test
+    fun `getRecipeBookMap builds the recipe book map`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // logged in
+        vm.getRecipeBookMap()
+        Assert.assertEquals(vm.uiState.value.recipeBookMap, TestData.recipeBookMap_dessertSalad)
+    }
+
+    @Test
+    fun `getRecipeBookMap does not build the recipe book map if the user is not logged in`() {
+        fakeAuthenticationManager.setLoginState(false, "") // not logged in
+        vm.getRecipeBookMap()
+        Assert.assertEquals(vm.uiState.value.recipeBookMap, emptyMap<RecipeType, MutableList<RecipeCardUnexpanded>?>())
+    }
+
+    @Test
+    fun `getRecipeBookMap does not build the recipe book map if one or more of the recipe types is invalid`() {
+        fakeAuthenticationManager.setLoginState(true, "has_recipe_with_invalid_recipeTypeId") // not logged in
+        vm.getRecipeBookMap()
+        Assert.assertEquals(vm.uiState.value.recipeBookMap, null)
     }
 }

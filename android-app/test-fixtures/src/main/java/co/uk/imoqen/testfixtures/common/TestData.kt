@@ -48,6 +48,12 @@ object TestData {
         ingredientAmount = 4.0,
         ingredientAmountUnit = "LEAF"
     )
+    val llmIngredient_invalidUnit = LlmIngredient(
+        ingredientSingular = "tomato",
+        ingredientPlural = "tomatoes",
+        ingredientAmount = 100.0,
+        ingredientAmountUnit = "Invalid, nonexistent unit"
+    )
 
     val llmIngredient_honey = LlmIngredient(
         ingredientSingular = "honey",
@@ -294,7 +300,7 @@ object TestData {
         imagePath = "image.png",
         archived = false,
         storageInstructions = "Freezable.",
-        recipeTypeId = -1,
+        recipeTypeId = 1,
         emoji = "\uD83C\uDF5C"
     )
 
@@ -480,9 +486,38 @@ object TestData {
         colour = NourishColour.RED
     )
 
+    val recipeCardUnexpanded_salad = RecipeCardUnexpanded(
+        title = "Salad Recipe",
+        recipeTags = mutableListOf(
+            Pair("Vegan", NourishColour.GREEN)
+        ),
+        imagePath = "image.png",
+        emoji = "\uD83C\uDF5C",
+        recipeId = 0,
+        colour = NourishColour.PINK
+    )
+
+    val recipeCardUnexpanded_soup = RecipeCardUnexpanded(
+        title = "Soup Recipe",
+        recipeTags = mutableListOf(
+            Pair("Vegan", NourishColour.GREEN)
+        ),
+        imagePath = "image.png",
+        emoji = "\uD83C\uDF5C",
+        recipeId = 3,
+        colour = NourishColour.PINK
+    )
+
     val recipeBookMap_dessert = mutableMapOf(
         recipeType_dessert to mutableListOf(
             recipeCardUnexpanded_cherry
+        )
+    )
+
+    val recipeBookMap_dessertSalad = mutableMapOf(
+        recipeType_dessert to mutableListOf(
+            recipeCardUnexpanded_salad,
+            recipeCardUnexpanded_soup
         )
     )
 

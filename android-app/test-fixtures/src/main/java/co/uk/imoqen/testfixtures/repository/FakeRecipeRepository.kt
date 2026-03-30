@@ -20,6 +20,13 @@ import uk.co.imoqen.nourish.network.response.LlmRecipe
 
 class FakeRecipeRepository(): RecipeRepository {
     override fun getAllRecipes(uid: String): Flow<List<Recipe>> {
+        if (uid == "has_recipe_with_invalid_recipeTypeId") {
+            return flowOf(
+                listOf(
+                    TestData.recipe_withInvalidRecipeTypeId
+                )
+            )
+        }
         return flowOf(
             listOf(
                 TestData.recipe_salad,

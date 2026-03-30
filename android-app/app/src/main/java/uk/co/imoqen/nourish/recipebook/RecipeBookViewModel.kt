@@ -529,22 +529,14 @@ class RecipeBookViewModel @Inject constructor(
         return sectionsWithIngredients
     }
 
-    @OptIn(FlowPreview::class)
+    @OptIn(FlowPreview::class) // for debounce: smoothness
     fun getRecipeBookMap() {
         viewModelScope.launch() {
             runCatching {
-                Log.i("all recipes", "getting all")
                 val allRecipes = getAllRecipes().debounce(300).first() // get all recipes. debouncing is added to provide smoothness
-                // Filter to search term if search has been made:
-                /*if (mutableUiState.value.searchTerm != "") {
-                    allRecipes = allRecipes.filter { recipe ->
-                        recipe.title.contains(mutableUiState.value.searchTerm, true) // ignore case
-                    }
-                }*/
                 val recipeBookMap: MutableMap<RecipeType, MutableList<RecipeCardUnexpanded>> = mutableMapOf()
                 allRecipes.forEach { recipe ->
                     val type = recipeRepository.getRecipeTypeById(recipe.recipeTypeId).first()
-
                     // build the unexpanded recipe card:
                     val recipeCardUnexpanded = RecipeCardUnexpanded(
                         title = recipe.title,
@@ -554,7 +546,6 @@ class RecipeBookViewModel @Inject constructor(
                         recipeId = recipe.id,
                         colour = enumValueOf<NourishColour>(recipe.colour)
                     )
-
                     if (type == null) {
                         throw NullPointerException()
                     }
@@ -564,12 +555,9 @@ class RecipeBookViewModel @Inject constructor(
                 // to ensure recipes are printed: Breakfast -> Lunch -> Dinner -> Dessert -> Side -> Drink
                 val sorted = recipeBookMap.toSortedMap(compareBy { it.ordinal }) // sort by ordinal values of the recipeType.
                 setRecipeBookMap(sorted)
-                Log.i("sorted", "done")
             }
-                .onSuccess {  }
                 .onFailure { e ->
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Couldn't fetch recipes. Please try again later."))
-                    Log.i("recipe book", "failed: $e")
                 }
         }
     }
