@@ -29,4 +29,12 @@ dependencies {
 
     // the app:
     compileOnly(project(":app"))
+
+    // http requests and responses:
+    implementation("com.squareup.retrofit2:retrofit:3.0.0")
+
+    // mocking retrofit:
+    // https://central.sonatype.com/artifact/com.squareup.retrofit2/retrofit-mock
+    // https://mvnrepository.com/artifact/com.squareup.retrofit2/retrofit-mock
+    implementation("com.squareup.retrofit2:retrofit-mock:3.0.0")
 }

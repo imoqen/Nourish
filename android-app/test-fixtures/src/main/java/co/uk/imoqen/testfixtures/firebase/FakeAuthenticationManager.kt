@@ -92,15 +92,30 @@ class FakeAuthenticationManager(): AuthenticationManager {
     override suspend fun deleteGoogleAccount(
         activity: Activity,
     ) {
-        // do nothing to simulate success
+        if (!mutableAuthenticationState.value.loggedIn) {
+            throw Exception()
+        }
+        // otherwise do nothing to simulate success
     }
 
     override suspend fun getUserToken(): String? {
-        TODO("Not yet implemented")
+        if (!mutableAuthenticationState.value.loggedIn) {
+            return null
+        }
+        if (mutableAuthenticationState.value.uid == "invalid") {
+            return "triggerError"
+        }
+        if (mutableAuthenticationState.value.uid == "triggerRecipeNotPossible") {
+            return "triggerRecipeNotPossible"
+        }
+        return "validToken"
     }
 
-    override fun getUid(): String? {
-        return "test_uid"
+    override fun getUid(): String {
+        if (!mutableAuthenticationState.value.loggedIn) {
+            return ""
+        }
+        return mutableAuthenticationState.value.uid
     }
 
     override fun getEmail(): String? {

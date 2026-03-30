@@ -3,7 +3,6 @@ package uk.co.imoqen.nourish.recipecreation
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,23 +22,17 @@ import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
-import uk.co.imoqen.nourish.network.ApiService
-import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import uk.co.imoqen.nourish.recipebook.TagSelection
 import uk.co.imoqen.nourish.common.tag.FilterState
 import uk.co.imoqen.nourish.common.exception.TagCreationException
 import uk.co.imoqen.nourish.common.tag.TagSheetAction
 import uk.co.imoqen.nourish.common.uievent.UiEvent
-import uk.co.imoqen.nourish.db.ingredient.Ingredient
 import uk.co.imoqen.nourish.db.ingredient.IngredientRepository
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
-import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeIngredient
 import uk.co.imoqen.nourish.db.tag.TagRepository
 import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.network.response.LlmIngredientSection
 import uk.co.imoqen.nourish.network.response.LlmRecipe
-import uk.co.imoqen.nourish.recipediscovery.Mipmap
-import uk.co.imoqen.nourish.shoppinglist.UserInteractionStatus
 import java.io.File
 import java.lang.NullPointerException
 import java.util.UUID
@@ -48,9 +41,7 @@ import kotlin.math.round
 
 @HiltViewModel
 class RecipeCreationViewModel @Inject constructor(
-    private val apiService: ApiService,
     private val authenticationManager: AuthenticationManager,
-    private val apiManager: ApiManager,
     private val uiEventBus: UiEventBus,
     private val recipeRepository: RecipeRepository,
     private val recipeActions: RecipeActions,
@@ -68,7 +59,6 @@ class RecipeCreationViewModel @Inject constructor(
             )
         }
     }
-
 
     // for editing:
     fun setCreationMode(creationMode: CreationMode) {
@@ -593,11 +583,7 @@ class RecipeCreationViewModel @Inject constructor(
         ingredientAmount: Double,
         roundToNearestQuarter: Boolean = true
     ): String {
-        var amount = ingredientAmount
-        if (amount < 0.01) {
-            amount = 0.01 // cant go less than 0.01 in recipe creation - has a lower threshold than the others.
-        }
-        return recipeActions.formatIngredientAmount(amount, roundToNearestQuarter)
+        return recipeActions.formatIngredientAmount(ingredientAmount, roundToNearestQuarter)
     }
 
     fun deleteIngredient() {
@@ -620,7 +606,6 @@ class RecipeCreationViewModel @Inject constructor(
                 ))
             }
                 .onFailure { e->
-                Log.i("error ingredient", "$e")
                 uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
                     "Couldn't remove the ingredient. Please try again later."
                 ))
@@ -710,7 +695,6 @@ class RecipeCreationViewModel @Inject constructor(
                 ))
             }
                 .onFailure { e->
-                    Log.i("error step", "$e")
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
                         "Couldn't remove the step. Please try again later."
                     ))
@@ -748,17 +732,16 @@ class RecipeCreationViewModel @Inject constructor(
             runCatching {
                 // Check that user is logged in validly
                 val uid = authenticationManager.getUid()
-                if (uid == null) {
-                    throw NullPointerException()
+                if (uid == "") {
+                    throw RecipeCreationException("You must be logged in.")
                 } // user is null; throw to be handled appropriately
-
                 val llmRecipe = parseIntoLlmRecipe()
-
-                // Add the recipe to the database:
+                // Add the user created recipe to the database:
+                // ingredients are not scaled here, because they are scaled in parseToLlmRecipe instead. as with editing ingredients of a recipe.
                 recipeRepository.createRecipe(
                     // recipe is saved with the higher quality image, which is stored in second place
                     uid, llmRecipe, imagePath = mutableUiState.value.imageFile,
-                    alteration = false, llmGenerated = false // not an alteration; it is a new recipe. and it is NOT llm generated.
+                    shouldNotScaleIngredients = true, llmGenerated = false // not an alteration; it is a new recipe. and it is NOT llm generated.
                 )
             }
                 .onSuccess {
@@ -769,7 +752,6 @@ class RecipeCreationViewModel @Inject constructor(
                         )
                     )
                 }
-
                 .onFailure { e ->
                     when (e) {
                         is RecipeCreationException -> {
@@ -781,7 +763,6 @@ class RecipeCreationViewModel @Inject constructor(
                             "Your recipe could not be saved."
                         )
                     )
-                    Log.i("RECIPE SAVE", "$e")
                 }
         }
     }
@@ -794,7 +775,7 @@ class RecipeCreationViewModel @Inject constructor(
             runCatching {
                 // Check that user is logged in validly
                 val uid = authenticationManager.getUid()
-                if (uid == null) {
+                if (uid == "") {
                     throw NullPointerException()
                 } // user is null; throw to be handled appropriately
 
@@ -873,7 +854,7 @@ class RecipeCreationViewModel @Inject constructor(
         val servings = mutableUiState.value.numberOfServings
         return LlmRecipe(
             title = mutableUiState.value.title,
-            sectionIngredients = listOf(LlmIngredientSection("For the recipe", ingredients!!.map { it.copy(ingredientAmount = (it.ingredientAmount / servings)) })), // scale such that it stores the amount for 1 serving.
+            sectionIngredients = listOf(LlmIngredientSection("For the recipe", ingredients!!.map { it.copy(ingredientAmount = (it.ingredientAmount / servings)) })), // scale such that it stores the amount for 1 serving. so that it isnt done in the addRecipe method with the db
             servings = servings,
             mealType = recipeType!!.title,
             method = method!!.map { it.step }, // only get the steps, remove the uuids
@@ -899,7 +880,7 @@ class RecipeCreationViewModel @Inject constructor(
 
                 // get all tags and the selected tags for this recipe
                 val allTags = tagRepository.getAllForUser(recipe.authorUid).first()
-                val selectedTags = recipeRepository.getRecipeWithRecipeTypes(recipe.id).first().recipeTags.map { tag ->
+                val selectedTags = recipeRepository.getRecipeWithRecipeTags(recipe.id).first().recipeTags.map { tag ->
                     val tag = tagRepository.getById(tag.tagId).first()
                     TagSelection(tag!!, true)
                 }.toMutableList()

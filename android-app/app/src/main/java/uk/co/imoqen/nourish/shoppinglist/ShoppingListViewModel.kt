@@ -1,6 +1,5 @@
 package uk.co.imoqen.nourish.shoppinglist
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.withTransaction
@@ -28,10 +27,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ShoppingListViewModel @Inject constructor(
-    private val db: NourishDatabase,
+    private val db: NourishDatabase, //TODO add back the db and work out how to mock this in a test. or if better way than passing db directly into view model.
     private val authenticationManager: AuthenticationManager,
     private val uiEventBus: UiEventBus,
-    private val recipeRepository: RecipeRepository,
     private val recipeActions: RecipeActions,
     private val shoppingListEntryRepository: ShoppingListEntryRepository,
     private val ingredientRepository: IngredientRepository
@@ -164,10 +162,9 @@ class ShoppingListViewModel @Inject constructor(
                 .onSuccess {
                     // if the DB update was successful, update the UI
                     val updatedList = mutableUiState.value.shoppingListEntries.toMutableList()
-                    val removed = updatedList.removeAt(itemIndex)
-                    Log.i("deletion list", "$removed, $updatedList")
+                    updatedList.removeAt(itemIndex)
                     // update the ui state:
-                    setShoppingListEntries(updatedList) // NOT UPDATING
+                    setShoppingListEntries(updatedList)
                 }
         }
     }
@@ -179,7 +176,7 @@ class ShoppingListViewModel @Inject constructor(
         viewModelScope.launch() {
             runCatching {
                 val uid = authenticationManager.getUid()
-                if (uid == null) {
+                if (uid == "") {
                     return@launch
                 }
                 if (onlyDeletePurchased) {
@@ -216,7 +213,7 @@ class ShoppingListViewModel @Inject constructor(
         viewModelScope.launch() {
             runCatching {
                 val uid = authenticationManager.getUid()
-                if (uid == null) {
+                if (uid == "") {
                     return@launch
                 }
 
@@ -256,7 +253,6 @@ class ShoppingListViewModel @Inject constructor(
                 //sortShoppingListByOrdinal()
             }
                 .onFailure { e ->
-                    Log.i("SHOPPING LIST ERROR", "$e")
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Shopping list could not be obtained. Please try again later."))
                 }
         }
@@ -290,9 +286,6 @@ class ShoppingListViewModel @Inject constructor(
                     setShoppingListEntries(updatedList)
                 }
             }
-                .onSuccess {
-                    Log.i("successfully swapped", "success")
-                }
         }
     }
 
@@ -300,18 +293,14 @@ class ShoppingListViewModel @Inject constructor(
         ingredientAmount: Double,
         roundToNearestQuarter: Boolean = true
     ): String {
-        var amount = ingredientAmount
-        if (amount < 0.25) {
-            amount = 0.25 // cant go less than 0.25
-        }
-        return recipeActions.formatIngredientAmount(amount, roundToNearestQuarter)
+        return recipeActions.formatIngredientAmount(ingredientAmount, roundToNearestQuarter)
     }
 
     fun addIngredientToShoppingList() {
         viewModelScope.launch() {
             runCatching {
                 val uid = authenticationManager.getUid()
-                if (uid == null) {
+                if (uid == "") {
                     return@launch
                 }
 
@@ -322,11 +311,9 @@ class ShoppingListViewModel @Inject constructor(
                 }
                 // add it to ingredient table if doesn't already exist in either singular or plurla (as its user input, dont know whether this will be singular or plural, so both are checked)
                 var ingredientId = ingredientRepository.getIdByPlural(ingredientName)
-                Log.i("plural", "$ingredientId")
                 if (ingredientId == null) {
                     // plural search returned null, now look for singular.
                     ingredientId = ingredientRepository.getIdBySingular(ingredientName)
-                    Log.i("singular", "$ingredientId")
                     if (ingredientId == null) {
                         // still null means it doesnt exist: add it
                         ingredientId = ingredientRepository.insert(
@@ -337,7 +324,6 @@ class ShoppingListViewModel @Inject constructor(
                                 userAdded = true
                             )
                         )
-                        Log.i("created", "$ingredientId")
                     }
                 }
 
@@ -382,13 +368,6 @@ class ShoppingListViewModel @Inject constructor(
                 // and repopulate the list with the new ingredient:
                 populateShoppingList()
             }
-                .onSuccess {
-
-                }
-                .onFailure {  e ->
-                    Log.i("shopping list add", "error: $e")
-
-                }
         }
 
     }
@@ -404,8 +383,6 @@ class ShoppingListViewModel @Inject constructor(
                 if (shoppingListEntry == null) {
                     throw NullPointerException()
                 }
-                Log.i("amount: ", mutableUiState.value.ingredientToEdit.amount)
-
                 var amount = mutableUiState.value.ingredientToEdit.amount.replace(',','.').toDoubleOrNull() ?: 1.0 // 1.0 if the input is invalid.
                 if (shoppingListUiEntry.unit == IngredientUnit.KG || shoppingListUiEntry.unit == IngredientUnit.L) {
                     // multiply the value by 1000 as it will be stored in the db as G or ML.

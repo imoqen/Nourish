@@ -31,7 +31,6 @@ class RecipeActions @Inject constructor(
         allRecipeTags: List<TagSelection>?
     ) {
         runCatching {
-
             if (description.trim() == "") {
                 throw TagCreationException("Please enter a description.")
             }
@@ -49,7 +48,7 @@ class RecipeActions @Inject constructor(
             }
 
             val uid = authenticationManager.getUid()
-            if (uid == null) {
+            if (uid == "") {
                 throw NullPointerException()
             }
             // create the tag
@@ -75,9 +74,8 @@ class RecipeActions @Inject constructor(
         reset: Boolean = false // to reset them to all be not selected
     ): List<TagSelection>? {
         runCatching {
-            Log.i("setting","setting all tags")
             val uid = authenticationManager.getUid()
-            if (uid == null) {
+            if (uid == "") {
                 throw NullPointerException()
             }
             // only update if an update has been made to the list of tags, or no tags have been obtained yet:
@@ -88,10 +86,8 @@ class RecipeActions @Inject constructor(
                             .map { tag ->
                                 val oldTag = previousTags?.find { it.tag == tag }
                                 val selected = if (!reset) {
-                                    Log.i("selected", "${oldTag?.selected}")
                                     (oldTag?.selected) ?: false
                                 } else {
-                                    Log.i("selected", "RESETTING TO FALSE")
                                     false
                                 }
                                 TagSelection(tag, selected) // so that old tags preserve their selected values
@@ -99,9 +95,6 @@ class RecipeActions @Inject constructor(
                         )
             }
         }
-            .onFailure { e ->
-                Log.i("tag obtaining", "failed: $e")
-            }
         return null // if failure, return null.
     }
 
@@ -114,7 +107,6 @@ class RecipeActions @Inject constructor(
             val updatedTypes = recipeRepository.getAllRecipeTypes().first()
             // only set if not already set or value updated:
             if (previousTypes == null || updatedTypes.size != previousTypes.size) {
-                Log.i("get types", "not null")
                 return (recipeRepository.getAllRecipeTypes().first().map { type ->
                     TypeSelection(
                         type,
@@ -127,9 +119,7 @@ class RecipeActions @Inject constructor(
                 uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
                     "Couldn't fetch recipe types. Please try again later."
                 ))
-                Log.i("recipe types", "failed: $e")
             }
-        Log.i("get types", "null")
         return null // failure occurred
     }
 
@@ -142,9 +132,7 @@ class RecipeActions @Inject constructor(
                 uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
                     "Couldn't fetch recipe types. Please try again later."
                 ))
-                Log.i("recipe types", "failed: $e")
             }
-        Log.i("get types", "null")
         return null // failure occurred
     }
 
@@ -156,7 +144,6 @@ class RecipeActions @Inject constructor(
         allTags: List<TagSelection>?
     ): List<TagSelection>? {
         runCatching {
-            Log.i("updating","updating tag: ${tag.displayName}")
             if (allTags == null) {
                 throw NullPointerException()
             }
@@ -172,7 +159,6 @@ class RecipeActions @Inject constructor(
                 uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
                     "The tag could not be selected. Please try again later."
                 ))
-                Log.i("tag select", "failed: $e")
             }
         return null
     }
@@ -185,7 +171,6 @@ class RecipeActions @Inject constructor(
         recipeTypes: List<TypeSelection>?
     ): List<TypeSelection>? {
         runCatching {
-            Log.i("updating","updating type: ${type.title}")
             if (recipeTypes == null) {
                 throw NullPointerException()
             }
@@ -201,7 +186,6 @@ class RecipeActions @Inject constructor(
                 uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
                     "The type could not be selected. Please try again later."
                 ))
-                Log.i("type select", "failed: $e")
             }
         return null
     }
@@ -221,8 +205,7 @@ class RecipeActions @Inject constructor(
     fun determineUnitPlurality(
         ingredientAmount: Double,
     ): Boolean {
-        Log.i("ingredient amount:", "$ingredientAmount , rounded: ${round(ingredientAmount*4.0)/4.0} and is not equal to 1.0: ${round(ingredientAmount*4.0)/4.0 != 1.0 }")
-        // plural form should be used in most cases; just a few cases where it shouldn't.
+        // result is 1.0 if the value rounds to 1.0 between 0.25 intervals. e.g. 1.2 would round to 1.25, so not != 1.0 but 1.1 would round to 1.0 so == 1.0.
         return round(ingredientAmount*4)/4 != 1.0 // if only 1, should always be singular. and dont care about the kg or L  instance here, because the unit doesnt change pluralities for kg or l.
     }
 

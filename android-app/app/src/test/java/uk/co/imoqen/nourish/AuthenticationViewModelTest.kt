@@ -1,9 +1,12 @@
 package uk.co.imoqen.nourish
 
+import android.content.Context
 import co.uk.imoqen.testfixtures.common.FakeUiEventBus
 import co.uk.imoqen.testfixtures.firebase.FakeAuthenticationManager
 import co.uk.imoqen.testfixtures.repository.FakeTagRepository
 import co.uk.imoqen.testfixtures.repository.FakeUserRepository
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
@@ -12,6 +15,8 @@ import uk.co.imoqen.nourish.authentication.AuthenticationUiStatus
 import uk.co.imoqen.nourish.authentication.AuthenticationViewModel
 import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.uievent.UiEvent
+import uk.co.imoqen.nourish.setup.MainDispatcherRule
+import java.io.File
 
 class AuthenticationViewModelTest {
 
@@ -216,6 +221,28 @@ class AuthenticationViewModelTest {
         Assert.assertEquals(
             vm.uiState.value.showBottomSheet,
             true
+        )
+    }
+
+    @Test
+    fun `populateDbWithTags() sets the default tags in db if user doesn't yet have tags`() {
+        fakeAuthenticationManager.setLoginState(true, "user_without_tags")
+        vm.populateDbWithTags()
+
+        Assert.assertEquals(
+            fakeTagRepository.lastCalled,
+            "insert" // successfully inserted
+        )
+    }
+
+    @Test
+    fun `signInWithGoogle() signs the user in`() {
+        val mockContext = mockk<Context>()
+        vm.signInWithGoogle(mockContext)
+
+        Assert.assertEquals(
+            fakeUiEventBus.events.first(),
+            UiEvent.ShowSnackbar("Sign in successful.")
         )
     }
 }

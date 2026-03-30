@@ -19,7 +19,7 @@ interface RecipeRepository {
     fun getRecipeById(recipeId: Long): Flow<Recipe?>
     suspend fun insertRecipe(recipe: Recipe): Long
     fun getRecipeWithRecipeIngredients(recipeId: Long): Flow<RecipeWithRecipeIngredients>
-    fun getRecipeWithRecipeTypes(recipeId: Long): Flow<RecipeWithRecipeTags>
+    fun getRecipeWithRecipeTags(recipeId: Long): Flow<RecipeWithRecipeTags>
     fun getRecipeWithRecipeSteps(recipeId: Long): Flow<RecipeWithRecipeSteps>
 
     // RECIPE TYPE LOGIC:
@@ -61,7 +61,7 @@ interface RecipeRepository {
     /**
      * Creates a recipe in the database and its corresponding entities
      */
-    suspend fun createRecipe(uid: String, llmRecipe: LlmRecipe, alteration: Boolean, recipeId: Long = -1, imagePath: String = "", llmGenerated: Boolean = true)
+    suspend fun createRecipe(uid: String, llmRecipe: LlmRecipe, shouldNotScaleIngredients: Boolean, recipeId: Long = -1, imagePath: String = "", llmGenerated: Boolean = true)
 
     suspend fun replaceRecipe(currentRecipe: Recipe, newRecipe: LlmRecipe, updatedImagePath: String, llmGenerated: Boolean = true)
 

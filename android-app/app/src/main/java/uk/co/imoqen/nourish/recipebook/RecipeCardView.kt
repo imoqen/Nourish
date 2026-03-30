@@ -1013,7 +1013,7 @@ fun AlterationLlmAction(
                                 )
                                 NourishButton(
                                     onClick = {
-                                        viewModel.addRecipe(uiState.alteredRecipe, alteration = true) // alteration flag ensures that ingredients get scaled correctly when parsing to the db
+                                        viewModel.addRecipe(uiState.alteredRecipe, alteration = true) // alteration flag ensures that ingredients get scaled correctly when parsing to the db, from the llm alteration
                                         viewModel.setAlteredRecipe(null)
                                         viewModel.setLlmActionType(LlmActionType.NONE)
                                     },

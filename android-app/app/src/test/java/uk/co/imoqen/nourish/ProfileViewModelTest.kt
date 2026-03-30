@@ -1,15 +1,18 @@
 package uk.co.imoqen.nourish
 
+import android.app.Activity
+import android.content.Context
 import co.uk.imoqen.testfixtures.common.FakeUiEventBus
 import co.uk.imoqen.testfixtures.firebase.FakeAuthenticationManager
+import io.mockk.mockk
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import uk.co.imoqen.nourish.authentication.AuthenticationViewModel
 import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.profile.ProfileViewModel
+import uk.co.imoqen.nourish.setup.MainDispatcherRule
 
 class ProfileViewModelTest {
 
@@ -130,6 +133,35 @@ class ProfileViewModelTest {
         Assert.assertEquals(
             vm.uiState.value.showDeleteAccountBottomSheet,
             true
+        )
+    }
+
+    @Test
+    fun `getEmail() returns the email`() {
+        Assert.assertEquals(
+            vm.getEmail(),
+            "test@gmail.com"
+        )
+    }
+
+    @Test
+    fun `deleteGoogleAccount() does not delete Google account if the user is not logged in`() {
+        val mockActivity = mockk<Activity>()
+        vm.deleteGoogleAccount(mockActivity)
+        Assert.assertEquals(
+            fakeUiEventBus.events.first(),
+            UiEvent.ShowSnackbar(ErrorMessage.DELETE_ERROR)
+        )
+    }
+
+    @Test
+    fun `deleteGoogleAccount() deletes a Google account`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        val mockActivity = mockk<Activity>()
+        vm.deleteGoogleAccount(mockActivity)
+        Assert.assertEquals(
+            fakeUiEventBus.events.first(),
+            UiEvent.ShowSnackbar("Account successfully deleted.")
         )
     }
 }

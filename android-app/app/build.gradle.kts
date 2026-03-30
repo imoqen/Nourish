@@ -85,6 +85,9 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
+    // Mockk for mocking in Unit tests: https://mvnrepository.com/artifact/io.mockk/mockk/versions
+    testImplementation("io.mockk:mockk-android:1.13.8")
+
     // drag and drop lists
     implementation("sh.calvin.reorderable:reorderable:3.0.0")
 
@@ -168,6 +171,7 @@ dependencies {
     // Coil for loading and displaying images:
     implementation("io.coil-kt.coil3:coil-compose:3.0.0") // note: had bugs with this when using most recent version (3.3.0), downgradedto 3.0.0 and seems to work.
     // note for future: if want to load images from network, see: https://coil-kt.github.io/coil/getting_started/
+    testImplementation(kotlin("test"))
 }
 
 // For generating coverage report: Jacoco
@@ -197,9 +201,9 @@ val instrumentedTestExclusions = listOf(
 
 val unitTestInclusions = listOf(
     "**/*ViewModel*.class",
-    "**/*Repository*.class"
 )
 val unitTestExclusions = listOf(
+    "**/db/**", // dont include repositories in unit tests
     "**/hilt_aggregated_deps/**",
     "**/*Test*.class",
     "**/**AppViewModel**.class" // for Hilt, untestable.
@@ -241,13 +245,6 @@ tasks.register<JacocoReport>("JacocoInstrumentedCodeCoverage") {
             exclude("**/*.exec")
         }
     )
-
-    /*doFirst {
-        println("=== executionData ===")
-        executionData.files.forEach { println(it.absolutePath) }
-        println("=== classDirectories ===")
-        classDirectories.files.forEach { println(it.absolutePath) }
-    }*/
 }
 
 // UNIT TESTS:

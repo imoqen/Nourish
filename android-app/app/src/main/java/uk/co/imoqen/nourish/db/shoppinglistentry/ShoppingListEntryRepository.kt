@@ -10,8 +10,7 @@ interface ShoppingListEntryRepository {
 
     fun getById(id: Long): Flow<ShoppingListEntry?>
 
-    suspend fun insert(shoppingListEntry: ShoppingListEntry): Long
-
+    // insert function:
     suspend fun addShoppingListEntry(shoppingListIngredient: ShoppingListIngredient, uid: String, userAdded: Boolean)
 
     suspend fun update(shoppingListEntry: ShoppingListEntry)

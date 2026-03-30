@@ -49,7 +49,6 @@ import kotlin.math.round
 
 @HiltViewModel
 class RecipeBookViewModel @Inject constructor(
-    private val apiService: ApiService,
     private val authenticationManager: AuthenticationManager,
     private val apiManager: ApiManager,
     private val uiEventBus: UiEventBus,
@@ -192,7 +191,6 @@ class RecipeBookViewModel @Inject constructor(
     ) {
         viewModelScope.launch() {
             runCatching {
-                // IMPORTANT NOTe for future: toMutableList() solves composition problems by creating a NEW list.
                 val updatedList = mutableUiState.value.ingredientsToAddToShoppingList?.toMutableList().apply {
                     this?.set(index, Pair(ingredientToAddToShoppingList, selected))
                 }
@@ -200,7 +198,6 @@ class RecipeBookViewModel @Inject constructor(
             }
                 .onFailure {
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Cannot edit ingredient status."))
-                    Log.i("ingredient status change", "failed")
                 }
         }
     }
@@ -282,7 +279,6 @@ class RecipeBookViewModel @Inject constructor(
                 }
 
                 // THEN go through the array containing no duplicates and add them to the selection list
-
                 // declare the list for storing the selections after preprocessing:
                 val shoppingListIngredientSelections: MutableList<Pair<ShoppingListIngredient, Boolean>> = mutableListOf()
 
@@ -293,12 +289,6 @@ class RecipeBookViewModel @Inject constructor(
                     if (ingredient == null) {
                         return@launch // error
                     }
-
-                    //TODO if the ingredient amount is very small like tsp, then should simply store this as unit AND
-                    // ignore the amount. as only should need to ever buy one ofthese (e..g tsp salt -> salt.) so set amount to 1g always if tsp. and dont let them add up.
-                    // potentially do same for very small g values too etc e.g. 5g salt -> just salt. no one is going to buy just 5g of salt
-                    // lets say if the amount is less than 15g then just say buy the item itself.
-
                     var unit = shoppingListIngredient.unit
                     var amount = shoppingListIngredient.amount
                     if (!unit.keepUnitInShoppingList || ((unit != IngredientUnit.PINT && unit != IngredientUnit.UNIT) && amount <= 15)) { // if the unit shouldnt be kept, or the amount is inconsiderable (less than 15 IF not UNIT or PINT, l and kg doesn tmatter because we store iti n ml /g anyway.) then just set to buy 1.
@@ -322,7 +312,6 @@ class RecipeBookViewModel @Inject constructor(
             }
                 .onFailure { e ->
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Ingredients cannot be added. Please try another recipe, or add manually."))
-                    Log.i("INGREDIENT DISPLAY ERROR", "$e")
                 }
         }
     }
@@ -336,7 +325,7 @@ class RecipeBookViewModel @Inject constructor(
 
                 // get uid:
                 val uid = authenticationManager.getUid()
-                if (uid == null) {
+                if (uid == "") {
                     return@launch
                 }
 
@@ -352,7 +341,6 @@ class RecipeBookViewModel @Inject constructor(
             }
                 .onFailure { e ->
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Ingredients cannot be added. Please try another recipe, or add manually."))
-                    Log.i("INGREDIENT ADD ERROR", "$e")
                 }
                 .onSuccess {
                     // reset the selection and notify the user
@@ -366,7 +354,7 @@ class RecipeBookViewModel @Inject constructor(
     // gets all recipes for the currently logged in user. ensures that if user not logged in, empty list returned.
     fun getAllRecipes(): Flow<List<Recipe>> {
         val uid = authenticationManager.getUid()
-        if (uid == null) return flowOf(emptyList())
+        if (uid == "") return flowOf(emptyList())
         return recipeRepository.getAllRecipes(uid)
     }
 
@@ -376,7 +364,7 @@ class RecipeBookViewModel @Inject constructor(
     }
 
     fun getRecipeTagsForRecipe(recipeId: Long): Flow<RecipeWithRecipeTags> {
-        return recipeRepository.getRecipeWithRecipeTypes(recipeId)
+        return recipeRepository.getRecipeWithRecipeTags(recipeId)
     }
 
     fun getIngredientById(ingredientId: Long): Flow<Ingredient?> {
@@ -424,7 +412,6 @@ class RecipeBookViewModel @Inject constructor(
                 }
                 .onFailure { e ->
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("The step could not be marked as complete. Please try again later."))
-                    Log.i("step check", "failed: $e")
                 }
         }
     }
@@ -444,26 +431,16 @@ class RecipeBookViewModel @Inject constructor(
                 val recipeType = recipeActions.findRecipeType(recipe.recipeTypeId)
                 val recipeTags = buildRecipeTags(recipe.id)
                 val storageInstructions = recipe.storageInstructions
-
                 if (ingredientsMap == null || recipeType == null) {
-                    Log.i("recipe book error", "null")
                     return@launch
                 }
-
                 val recipeCard = RecipeCardExpanded(
                     title, ingredientsMap, method, serves, recipeType,
                     recipeTags, storageInstructions, recipe.imagePath, recipe.emoji,
                     enumValueOf<NourishColour>(recipe.colour.uppercase()), recipe.generated
                 )
-
                 setRecipeCard(recipeCard)
             }
-                .onSuccess {
-                    Log.i("recipe book", "successfully parsed into recipe card")
-                }
-                .onFailure { e ->
-                    Log.i("recipe book", "failed: $e")
-                }
         }
     }
 
@@ -508,7 +485,7 @@ class RecipeBookViewModel @Inject constructor(
 
             // title of the section:
             val sectionId = ingredient.sectionId
-            val sectionTitle = getSectionById(sectionId).first()?.title // this may fail if the values stored in the db update while user is looking at it. for this, would need to use .collect(). consider this if issues occur in future.
+            val sectionTitle = getSectionById(sectionId).first()?.title
 
             // determine pluralities
             var ingredientAmount = ingredient.amount * recipe.numberOfServings
@@ -552,22 +529,14 @@ class RecipeBookViewModel @Inject constructor(
         return sectionsWithIngredients
     }
 
-    @OptIn(FlowPreview::class)
+    @OptIn(FlowPreview::class) // for debounce: smoothness
     fun getRecipeBookMap() {
         viewModelScope.launch() {
             runCatching {
-                Log.i("all recipes", "getting all")
                 val allRecipes = getAllRecipes().debounce(300).first() // get all recipes. debouncing is added to provide smoothness
-                // Filter to search term if search has been made:
-                /*if (mutableUiState.value.searchTerm != "") {
-                    allRecipes = allRecipes.filter { recipe ->
-                        recipe.title.contains(mutableUiState.value.searchTerm, true) // ignore case
-                    }
-                }*/
                 val recipeBookMap: MutableMap<RecipeType, MutableList<RecipeCardUnexpanded>> = mutableMapOf()
                 allRecipes.forEach { recipe ->
                     val type = recipeRepository.getRecipeTypeById(recipe.recipeTypeId).first()
-
                     // build the unexpanded recipe card:
                     val recipeCardUnexpanded = RecipeCardUnexpanded(
                         title = recipe.title,
@@ -577,7 +546,6 @@ class RecipeBookViewModel @Inject constructor(
                         recipeId = recipe.id,
                         colour = enumValueOf<NourishColour>(recipe.colour)
                     )
-
                     if (type == null) {
                         throw NullPointerException()
                     }
@@ -587,12 +555,9 @@ class RecipeBookViewModel @Inject constructor(
                 // to ensure recipes are printed: Breakfast -> Lunch -> Dinner -> Dessert -> Side -> Drink
                 val sorted = recipeBookMap.toSortedMap(compareBy { it.ordinal }) // sort by ordinal values of the recipeType.
                 setRecipeBookMap(sorted)
-                Log.i("sorted", "done")
             }
-                .onSuccess {  }
                 .onFailure { e ->
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Couldn't fetch recipes. Please try again later."))
-                    Log.i("recipe book", "failed: $e")
                 }
         }
     }
@@ -603,13 +568,11 @@ class RecipeBookViewModel @Inject constructor(
         viewModelScope.launch() {
             val recipe = mutableUiState.value.selectedRecipe
             if (recipe == null) {
-                Log.i("Serving", "Cannot update serving size of a null recipe.")
                 return@launch
             }
 
             val currentServingSize = recipe.numberOfServings
             if (currentServingSize == 1 && !increase) {
-                Log.i("Serving", "Cannot decrease serving size from 1.")
                 return@launch
             }
 
@@ -633,7 +596,6 @@ class RecipeBookViewModel @Inject constructor(
             (recipeActions.getAllRecipeTypesSelectionList(
                 mutableUiState.value.recipeTypes
             ))?.let { updatedTypes ->
-                Log.i("setting types", "not null: ${updatedTypes}")
                 setRecipeTypes(updatedTypes) // only sets if not null
             }
         }
@@ -668,11 +630,7 @@ class RecipeBookViewModel @Inject constructor(
         ingredientAmount: Double,
         roundToNearestQuarter: Boolean = true
     ): String {
-        var amount = ingredientAmount
-        if (amount < 0.25) {
-            amount = 0.25 // cant go less than 0.25
-        }
-        return recipeActions.formatIngredientAmount(amount, roundToNearestQuarter)
+        return recipeActions.formatIngredientAmount(ingredientAmount, roundToNearestQuarter)
     }
 
     // api
@@ -779,6 +737,8 @@ class RecipeBookViewModel @Inject constructor(
                 if (tokenResult == null) {
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
                     // error occurred; go back to the USER_INPUT stage (MAY NOT WORK: TEST THIS).
+                    //setActionChatStage(ActionChatStage.USER_INPUT) // no longer awaiting - error occurred.
+                    //setLlmAwaitActionType(LlmActionType.NONE)
                     return@launch
                 }
 
@@ -789,7 +749,6 @@ class RecipeBookViewModel @Inject constructor(
                     onQuestionAnswered = { llmQuestionResponse ->
                         val llmAnswer = llmQuestionResponse?.answer
                         if (llmAnswer != null) {
-                            Log.i("LLM Answer", llmAnswer)
                             viewModelScope.launch() {
                                 // add the answer to the DB and display to the user in the chat UI
                                 val query = recipeRepository.getRecipeQueryById(queryId).first()
@@ -884,11 +843,11 @@ class RecipeBookViewModel @Inject constructor(
             runCatching {
                 // Check that user is logged in validly
                 val uid = authenticationManager.getUid()
-                if (uid == null) {
+                if (uid == "") {
                     throw NullPointerException()
                 } // user is null; throw to be handled appropriately
                 // Add the recipe to the database:
-                recipeRepository.createRecipe(uid, llmRecipe, alteration = alteration)
+                recipeRepository.createRecipe(uid, llmRecipe, shouldNotScaleIngredients = alteration) // dont scale ingredients if it is an LLM alteration, otherwise scale.
             }
                 .onSuccess {
                     uiEventBus.enqueueEvent(
@@ -916,7 +875,7 @@ class RecipeBookViewModel @Inject constructor(
             runCatching {
                 // Check that user is logged in validly
                 val uid = authenticationManager.getUid()
-                if (uid == null) {
+                if (uid == "") {
                     throw NullPointerException()
                 } // user is null; throw to be handled appropriately
                 // Add the recipe to the database:
@@ -929,7 +888,6 @@ class RecipeBookViewModel @Inject constructor(
                         )
                     )
                 }
-
                 .onFailure { e ->
                     uiEventBus.enqueueEvent(
                         UiEvent.ShowSnackbar(
@@ -969,7 +927,6 @@ class RecipeBookViewModel @Inject constructor(
                         )
                     )
                 }
-
                 .onFailure { e ->
                     uiEventBus.enqueueEvent(
                         UiEvent.ShowSnackbar(

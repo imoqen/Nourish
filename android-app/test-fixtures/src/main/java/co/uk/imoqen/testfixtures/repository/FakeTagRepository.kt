@@ -1,21 +1,32 @@
 package co.uk.imoqen.testfixtures.repository
 
+import co.uk.imoqen.testfixtures.common.TestData
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.db.tag.TagRepository
+import kotlin.collections.listOf
 
 class FakeTagRepository(): TagRepository {
 
+    var lastCalled = ""
+
     override fun getAllForUser(uid: String): Flow<List<Tag>> {
-        TODO("Not yet implemented")
+        if (uid == "user_without_tags") {
+            return flowOf(listOf())
+        }
+        return flowOf(listOf(
+            TestData.tag_lowcalorie, TestData.tag_vegan
+        ))
     }
 
     override suspend fun insert(tag: Tag): Long {
-        TODO("Not yet implemented")
+        lastCalled = "insert"
+        return 2 // successful insertion with id 2
     }
 
     override suspend fun delete(tag: Tag) {
-        TODO("Not yet implemented")
+        // do nothing to simulate successful tag deletion
     }
 
     override suspend fun getIdByIdentifier(
@@ -26,6 +37,9 @@ class FakeTagRepository(): TagRepository {
     }
 
     override fun getById(id: Long): Flow<Tag?> {
-        TODO("Not yet implemented")
+        if (id == 10L) {
+            return flowOf(null)
+        }
+        return flowOf( TestData.tag_vegan )
     }
 }

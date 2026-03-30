@@ -122,9 +122,6 @@ class ProfileViewModel @Inject constructor(
                 .onSuccess { result ->
                     setHasPasswordProvider(result)
                 }
-                .onFailure { error ->
-                    Log.e("PASSWORD PROVIDER", "Error: $error")
-                }
         }
     }
 

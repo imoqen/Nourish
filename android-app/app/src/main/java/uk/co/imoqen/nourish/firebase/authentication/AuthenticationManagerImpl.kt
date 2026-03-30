@@ -310,9 +310,9 @@ class AuthenticationManagerImpl @Inject constructor(
         return user.getIdToken(true).await().token
     }
 
-    override fun getUid(): String? {
+    override fun getUid(): String {
         if (!isLoggedIn()) {
-            return null // early return if not logged in; no auth credentials.
+            return "" // early return if not logged in; no auth credentials.
         }
         val user = auth.currentUser!!
         return user.uid

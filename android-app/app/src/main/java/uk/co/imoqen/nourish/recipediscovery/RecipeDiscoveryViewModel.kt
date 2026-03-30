@@ -17,12 +17,10 @@ import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
-import uk.co.imoqen.nourish.network.ApiService
 import uk.co.imoqen.nourish.network.request.LlmRequest
 import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import javax.inject.Inject
 import uk.co.imoqen.nourish.common.saveMipmap
-import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.tag.Tag
@@ -38,7 +36,6 @@ import java.io.File
 import java.lang.NullPointerException
 import kotlin.onSuccess
 
-
 /**
  * ViewModel for RecipeDiscovery.
  * Uses the ApiService to make a call to the Google Cloud Run Service.
@@ -48,12 +45,10 @@ import kotlin.onSuccess
  *       https://medium.com/@imkuldeepsinghrai/api-calls-with-retrofit-in-android-kotlin-a-comprehensive-guide-e049e19deba9
  * Furthermore, dependent on the authenticationManager to get the token of the logged in user, for
  * authentication.
- * @param apiService - dependent on the ApiService to make the API call
  * @param authenticationManager - dependent on the AuthenticationManager to access user's token
  */
 @HiltViewModel
 class RecipeDiscoveryViewModel @Inject constructor(
-    private val apiService: ApiService,
     private val authenticationManager: AuthenticationManager,
     private val apiManager: ApiManager,
     private val uiEventBus: UiEventBus,
@@ -149,14 +144,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
-    fun setRecipeTypes(recipeTypes: List<RecipeType>?) {
-        mutableUiState.update { currentState ->
-            currentState.copy(
-                recipeTypes = recipeTypes
-            )
-        }
-    }
-
     fun setCreatedTagName(createdTagName: String) {
         mutableUiState.update { currentState ->
             currentState.copy( // to update the sheet ui state, need to nest the copy
@@ -193,6 +180,14 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 tagSheetState = currentState.tagSheetState.copy (
                     showTagConfirmationDialog = showTagConfirmationDialog
                 )
+            )
+        }
+    }
+
+    fun setRecipeTypes(recipeTypes: List<RecipeType>?) {
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                recipeTypes = recipeTypes
             )
         }
     }
@@ -263,6 +258,15 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Updates the input stage present in the view. There are three different forms of input stage:
+     * recipe, from image, and from ingredients. The user can select which they wish to do, and the
+     * interface will now be in the 'mode' selected.
+     * @param userChoice: the mode (LlmMode) that the user wishes to discover a recipe (recipe,
+     *                    from ingredients, or from image).
+     * @param placeholderText: the text to display in the user input bar in the current mode
+     * @param requestType: the type of request, determining whether an image has been uploaded etc.
+     */
     fun updateToInputStageGivenOptions(
         userChoice: LlmMode?,
         placeholderText: String,
@@ -271,12 +275,10 @@ class RecipeDiscoveryViewModel @Inject constructor(
         setUserChoice(userChoice) // for the display of the ui
         setPlaceholderText(placeholderText) // for the message response
         setRequestType(requestType) // for the llm request api call
-
         if (userChoice == LlmMode.FROM_DESCRIPTION) { // no image can be uploaded in this mode
             // ensure no image can be uploaded:
             setSavedImageMipmap(Mipmap("", ""))
         }
-
         // allow user input:
         setLlmChatStage(LlmChatStage.USER_INPUT)
     }
@@ -320,9 +322,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 if (chosenNutritionalFilters == null) {
                     chosenNutritionalFilters = "[]" // signifies empty list
                 }
-                Log.i("selected tags: ", chosenNutritionalFilters)
-
-
                 var allNutritionalFilters = mutableUiState.value.tagSheetState.recipeTags?.joinToString(", ") { it.tag.identifier }
                 if (allNutritionalFilters == null) {
                     allNutritionalFilters = "[]" // signifies empty list
@@ -402,25 +401,19 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 ) { response ->
 
                     viewModelScope.launch() {
-                        if (response == null) {
-                            // Error message in Snackbar:
-                            uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
-                            // ERROR HERE when llm is down
-                            resetAfterError()
-                            setLlmChatStage(LlmChatStage.USER_INPUT)
-                            return@launch
-                        }
-                        if (response.recipeNotPossible) {
-                            // user inputted invalid prompt / image; recipe cannot be generated.
-                            uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("A valid recipe could not be generated. Please try another dish."))
-                            setLlmChatStage(LlmChatStage.USER_INPUT)
-                            return@launch
-                        }
-                        // Response is valid - output in a recipe card to the user
-                        setLlmGeneratedRecipe(response)
+                        if (response != null) {
+                            if (response.recipeNotPossible) {
+                                // user inputted invalid prompt / image; recipe cannot be generated.
+                                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("A valid recipe could not be generated. Please try another dish."))
+                                setLlmChatStage(LlmChatStage.USER_INPUT)
+                                return@launch
+                            }
+                            // Response is valid - output in a recipe card to the user
+                            setLlmGeneratedRecipe(response)
 
-                        // valid: set to the dish selection stage
-                        setLlmChatStage(LlmChatStage.USER_VIEW_RECIPE)
+                            // valid: set to the dish selection stage
+                            setLlmChatStage(LlmChatStage.USER_VIEW_RECIPE)
+                        }
                     }
                 }
             }
@@ -452,27 +445,18 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
+    // Saves the image mipmap using the ImageHandler helper function, catching errors if they occur.
     fun handleImage(
         uri: Uri?,
         context: Context
     ) {
         viewModelScope.launch() {
             runCatching {
-                saveMipmap(
-                    uri,
-                    context
-                ) { lowQualityFilename, highQualityFilename ->
+                saveMipmap(uri, context) { lowQualityFilename, highQualityFilename ->
                     setSavedImageMipmap(Mipmap(lowQualityFilename, highQualityFilename))
                 }
             }
-                .onSuccess {
-                    Log.i("PhotoPicker", "image saved successfully")
-                }
-                .onFailure { e ->
-                    Log.i("PhotoPicker", "image not saved: $e")
-                }
         }
-
     }
 
     fun addRecipe(llmRecipe: LlmRecipe) {
@@ -480,14 +464,15 @@ class RecipeDiscoveryViewModel @Inject constructor(
             runCatching {
                 // Check that user is logged in validly
                 val uid = authenticationManager.getUid()
-                if (uid == null) {
+                if (uid == "") {
                     throw NullPointerException()
-                } // user is null; throw to be handled appropriately
-                // Add the recipe to the database:
+                }
+                // Add the recipe to the database, with the higher quality image:
                 recipeRepository.createRecipe(
-                    // recipe is saved with the higher quality image, which is stored in second place
-                    uid, llmRecipe, imagePath = mutableUiState.value.savedImageMipmap.highQualityFilename,
-                    alteration = false // not an alteration; it is a new recipe.
+                    uid,
+                    llmRecipe,
+                    imagePath = mutableUiState.value.savedImageMipmap.highQualityFilename,
+                    shouldNotScaleIngredients = false // ingredients should be scaled.
                 )
             }
                 .onSuccess {
@@ -498,14 +483,12 @@ class RecipeDiscoveryViewModel @Inject constructor(
                         )
                     )
                 }
-
                 .onFailure { e ->
                     uiEventBus.enqueueEvent(
                         UiEvent.ShowSnackbar(
                             "The recipe could not be saved. Please try again, or generate a new recipe."
                         )
                     )
-                    Log.i("RECIPE SAVE", "$e")
                 }
         }
     }
@@ -514,41 +497,16 @@ class RecipeDiscoveryViewModel @Inject constructor(
     fun restart() {
         setUserRequest("")
         setChosenDish("")
-
         setUserChoice(null)
         setDishes(null)
-
         getAllTagsForUser(reset=true)
         setSelectedRecipeType(null)
-
         setLlmChatStage(LlmChatStage.USER_SELECT_OPTION) // the starting stage
         setRequestType(LlmRequestType.RECIPE)
-
         setSavedImageMipmap(Mipmap("",""))
         setPlaceholderText("")
-
         setLlmGeneratedRecipe(null)
         setRecipeSaved(false)
-    }
-
-    fun determineUnitPlurality(
-        ingredientAmount: Double,
-    ): Boolean {
-        return recipeActions.determineUnitPlurality(ingredientAmount)
-    }
-
-    fun determineIngredientPlurality(
-        ingredientAmount: Double,
-        ingredientUnit: IngredientUnit
-    ): Boolean {
-        return recipeActions.determineIngredientPlurality(ingredientAmount, ingredientUnit)
-    }
-
-    fun formatIngredientAmount(
-        ingredientAmount: Double,
-        roundToNearestQuarter: Boolean = true
-    ): String {
-        return recipeActions.formatIngredientAmount(ingredientAmount, roundToNearestQuarter)
     }
 
     // only used for llmingredient as they are dealt with differently.
@@ -558,14 +516,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
         runCatching {
             return recipeActions.formatIngredientText(ingredient)
         }
-            .onFailure {
-                viewModelScope.launch {
-                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("The recipe could not be generated. Please try again."))
-                    setLlmChatStage(LlmChatStage.USER_INPUT)
-                    return@launch
-                }
-            }
-        return "" // invalid if reached here
+        return "" // if invalid
     }
 
     // Tag Sheet Logic: exposes the logic present in RecipeActions for tag selection.
@@ -600,8 +551,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
-    fun createTag(
-    ) {
+    fun createTag() {
         viewModelScope.launch() {
             runCatching {
                 recipeActions.createTag(
@@ -610,7 +560,6 @@ class RecipeDiscoveryViewModel @Inject constructor(
                     mutableUiState.value.tagSheetState.recipeTags)
             }
                 .onSuccess {
-                    // when the tag has been successfully made,
                     getAllTagsForUser() // update the tags as a new one now exists
                     closeTagCreation()
                 }
