@@ -24,10 +24,6 @@ class ShoppingListEntryRepositoryImpl @Inject constructor(
         return shoppingListEntryDao.getByIngredientAndUidAndUnitUnpurchased(ingredientId, uid, unit)
     }
 
-    override suspend fun insert(shoppingListEntry: ShoppingListEntry): Long {
-        return shoppingListEntryDao.insert(shoppingListEntry)
-    }
-
     override suspend fun addShoppingListEntry(
         shoppingListIngredient: ShoppingListIngredient,
         uid: String,
@@ -56,7 +52,7 @@ class ShoppingListEntryRepositoryImpl @Inject constructor(
             ))
         } else {
             // else, insert a new ShoppingListEntry
-            insert(
+            shoppingListEntryDao.insert(
                 ShoppingListEntry(
                     ingredientId = ingredientId,
                     purchaserUid = uid,

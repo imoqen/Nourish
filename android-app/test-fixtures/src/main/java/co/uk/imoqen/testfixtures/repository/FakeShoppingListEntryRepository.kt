@@ -28,19 +28,11 @@ class FakeShoppingListEntryRepository(): ShoppingListEntryRepository {
         if (id == 0L) { // first element
             return flowOf(TestData.shoppingListEntry_cherries)
         }
-        if (id == 2L) { // errors to simulate out of bounds
-            return flowOf(null)
-        }
-        if (id == 3L || id == 4L) {
-            // simulates null ordinal results
+        if (id == 2L || id == 3L || id == 4L) { // errors to simulate out of bounds
             return flowOf(null)
         }
         // second element:
         return flowOf(TestData.shoppingListEntry_oatMilk)
-    }
-
-    override suspend fun insert(shoppingListEntry: ShoppingListEntry): Long {
-        TODO("Not yet implemented")
     }
 
     override suspend fun addShoppingListEntry(
@@ -56,7 +48,7 @@ class FakeShoppingListEntryRepository(): ShoppingListEntryRepository {
     }
 
     override suspend fun update(shoppingListEntry: ShoppingListEntry) {
-        TODO("Not yet implemented")
+        // do nothing to simulate success
     }
 
     override suspend fun delete(shoppingListEntry: ShoppingListEntry) {

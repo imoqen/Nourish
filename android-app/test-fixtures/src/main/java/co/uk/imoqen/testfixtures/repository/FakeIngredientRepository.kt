@@ -25,15 +25,30 @@ class FakeIngredientRepository(): IngredientRepository {
     }
 
     override suspend fun insert(ingredient: Ingredient): Long {
-        TODO("Not yet implemented")
+        if (ingredient.plural == "strawberries") {
+            return 7
+        }
+        return 0
     }
 
     override suspend fun getIdBySingular(singular: String): Long? {
-        TODO("Not yet implemented")
+        if (singular == "strawberries") {
+            return 7 // id of strawberries is 7
+        }
+        if (singular == "not yet in db") {
+            return null
+        }
+        return 0
     }
 
     override suspend fun getIdByPlural(plural: String): Long? {
-        TODO("Not yet implemented")
+        if (plural == "strawberries") {
+            return 7 // id of strawberries is 7
+        }
+        if (plural == "not yet in db") {
+            return null
+        }
+        return 0
     }
 
     override suspend fun update(ingredient: Ingredient) {

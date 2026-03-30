@@ -332,11 +332,138 @@ class ShoppingListViewModelTest {
     }
 
     @Test
-    fun `formatIngredientAmount`() {
-        vm.setShoppingListEntries(TestData.shoppingListUiEntries)
-        fakeAuthenticationManager.setLoginState(true, "valid_user") // logged in
-        vm.reorderShoppingList(3, 4)
-        Assert.assertEquals(vm.uiState.value.shoppingListEntries, TestData.shoppingListUiEntries) // no change made, as a key was null
+    fun `formatIngredientAmount rounds to the nearest quarter`() {
+        Assert.assertEquals(
+            vm.formatIngredientAmount(5.2),
+            "5.25"
+        )
     }
+
+    @Test
+    fun `formatIngredientAmount rounds to the nearest 2 decimal place`() {
+        Assert.assertEquals(
+            vm.formatIngredientAmount(5.135, roundToNearestQuarter = false),
+            "5.14"
+        )
+    }
+
+    @Test
+    fun `addIngredientToShoppingList does not add the ingredient if the user is not logged in`() {
+        fakeAuthenticationManager.setLoginState(false, "") // not logged in
+        vm.addIngredientToShoppingList()
+        Assert.assertEquals(vm.uiState.value.shoppingListEntries, listOf<ShoppingListUiEntry>()) // nothing added
+    }
+
+    @Test
+    fun `addIngredientToShoppingList does not add the ingredient if the ingredient name is blank`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.setIngredientToAddName("") // blank name
+        vm.addIngredientToShoppingList()
+        Assert.assertEquals(vm.uiState.value.shoppingListEntries, listOf<ShoppingListUiEntry>()) // nothing added
+        Assert.assertEquals(vm.uiState.value.ingredientToAdd.error, "The item cannot be blank.") // nothing added
+    }
+
+    @Test
+    fun `addIngredientToShoppingList adds an ingredient`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.setShoppingListEntries(listOf())
+        vm.setIngredientToAddName("strawberries")
+        vm.setIngredientToAddAmount("200.0")
+        vm.setIngredientToAddUnit(IngredientUnit.G)
+        vm.addIngredientToShoppingList()
+        Assert.assertTrue(vm.uiState.value.shoppingListEntries.isNotEmpty()) // not empty; populated with ingredient
+    }
+
+    @Test
+    fun `addIngredientToShoppingList adds an ingredient which does not yet exist in the db`() {
+        // if it doesnt exist, getIdByPlural / Singular will return null, triggering the addition of the ingredient.
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.setShoppingListEntries(listOf())
+        vm.setIngredientToAddName("not yet in db")
+        vm.setIngredientToAddAmount("2.0")
+        vm.setIngredientToAddUnit(IngredientUnit.SINGLE)
+        vm.addIngredientToShoppingList()
+        Assert.assertTrue(vm.uiState.value.shoppingListEntries.isNotEmpty()) // not empty; populated with ingredient
+    }
+
+    @Test
+    fun `addIngredientToShoppingList adds an ingredient provided in KG, converted to G form`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.setShoppingListEntries(listOf())
+        vm.setIngredientToAddName("apples")
+        vm.setIngredientToAddAmount("2.0")
+        vm.setIngredientToAddUnit(IngredientUnit.KG)
+        vm.addIngredientToShoppingList()
+        Assert.assertTrue(vm.uiState.value.shoppingListEntries.isNotEmpty()) // not empty; populated with ingredient
+    }
+
+    @Test
+    fun `addIngredientToShoppingList adds an ingredient provided in L, converted to ML form`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.setShoppingListEntries(listOf())
+        vm.setIngredientToAddName("apple juice")
+        vm.setIngredientToAddAmount("5.0")
+        vm.setIngredientToAddUnit(IngredientUnit.L)
+        vm.addIngredientToShoppingList()
+        Assert.assertTrue(vm.uiState.value.shoppingListEntries.isNotEmpty()) // not empty; populated with ingredient
+    }
+
+    @Test
+    fun `updateIngredientAmount resets the ui edit status after successfully updating an ingredient amount`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.setShoppingListEntries(TestData.shoppingListUiEntries)
+        vm.setIngredientIndexToEdit(0) // first ingredient gets edited
+        vm.setEditIngredientAmount("150.0")
+        vm.updateIngredientAmount()
+        Assert.assertTrue(vm.uiState.value.shoppingListEntries.isNotEmpty())
+        Assert.assertEquals(vm.uiState.value.ingredientToEdit.index, -1)
+        Assert.assertEquals(vm.uiState.value.ingredientToEdit.amount, "")
+    }
+
+    @Test
+    fun `updateIngredientAmount does not update the ingredient amount if the ingredient is null`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.setShoppingListEntries(TestData.shoppingListUiEntries + TestData.shoppingListUiEntry_null)
+        vm.setIngredientIndexToEdit(2) // points to the null entry.
+        vm.setEditIngredientAmount("150.0")
+        vm.updateIngredientAmount()
+        Assert.assertTrue(vm.uiState.value.shoppingListEntries.isNotEmpty())
+        // not reset, because it was unsuccessful:
+        Assert.assertEquals(vm.uiState.value.ingredientToEdit.index, 2)
+        Assert.assertEquals(vm.uiState.value.ingredientToEdit.amount, "150.0")
+    }
+
+    @Test
+    fun `updateIngredientAmount does not update the ingredient amount if an error occurs`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.setShoppingListEntries(TestData.shoppingListUiEntries)
+        vm.setIngredientIndexToEdit(2) // out of the bounds of the provided shoppingListEntries list.
+        vm.setEditIngredientAmount("150.0")
+        vm.updateIngredientAmount()
+        Assert.assertTrue(vm.uiState.value.shoppingListEntries.isNotEmpty())
+        // not reset, because it was unsuccessful:
+        Assert.assertEquals(vm.uiState.value.ingredientToEdit.index, 2)
+        Assert.assertEquals(vm.uiState.value.ingredientToEdit.amount, "150.0")
+    }
+
+    @Test
+    fun `updateIngredientAmount updates and handles L and KG cases to convert`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.setShoppingListEntries(listOf(
+            TestData.shoppingListUiEntry_cherries.copy(unit = IngredientUnit.KG),
+            TestData.shoppingListUiEntry_oatMilk.copy(unit = IngredientUnit.L),
+        ))
+        vm.setIngredientIndexToEdit(0) // cherries: kg
+        vm.setEditIngredientAmount("3.0")
+        vm.updateIngredientAmount()
+        vm.setIngredientIndexToEdit(1) // oat milk: L
+        vm.setEditIngredientAmount("5.0")
+        vm.updateIngredientAmount()
+        Assert.assertTrue(vm.uiState.value.shoppingListEntries.isNotEmpty())
+        // resets ui state as it was successful:
+        Assert.assertEquals(vm.uiState.value.ingredientToEdit.index, -1)
+        Assert.assertEquals(vm.uiState.value.ingredientToEdit.amount, "")
+    }
+
 
 }

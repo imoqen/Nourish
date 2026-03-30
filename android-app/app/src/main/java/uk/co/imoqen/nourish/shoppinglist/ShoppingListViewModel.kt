@@ -293,11 +293,7 @@ class ShoppingListViewModel @Inject constructor(
         ingredientAmount: Double,
         roundToNearestQuarter: Boolean = true
     ): String {
-        var amount = ingredientAmount
-        if (amount < 0.25) {
-            amount = 0.25 // cant go less than 0.25
-        }
-        return recipeActions.formatIngredientAmount(amount, roundToNearestQuarter)
+        return recipeActions.formatIngredientAmount(ingredientAmount, roundToNearestQuarter)
     }
 
     fun addIngredientToShoppingList() {
