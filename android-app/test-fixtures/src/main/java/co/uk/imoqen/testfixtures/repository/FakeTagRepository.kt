@@ -9,13 +9,19 @@ import kotlin.collections.listOf
 
 class FakeTagRepository(): TagRepository {
 
+    var lastCalled = ""
+
     override fun getAllForUser(uid: String): Flow<List<Tag>> {
+        if (uid == "user_without_tags") {
+            return flowOf(listOf())
+        }
         return flowOf(listOf(
             TestData.tag_lowcalorie, TestData.tag_vegan
         ))
     }
 
     override suspend fun insert(tag: Tag): Long {
+        lastCalled = "insert"
         return 2 // successful insertion with id 2
     }
 

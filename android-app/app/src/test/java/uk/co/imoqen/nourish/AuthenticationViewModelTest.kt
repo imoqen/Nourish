@@ -219,4 +219,15 @@ class AuthenticationViewModelTest {
             true
         )
     }
+
+    @Test
+    fun `populateDbWithTags() sets the default tags in db if user doesn't yet have tags`() {
+        fakeAuthenticationManager.setLoginState(true, "user_without_tags")
+        vm.populateDbWithTags()
+
+        Assert.assertEquals(
+            fakeTagRepository.lastCalled,
+            "insert" // successfully inserted
+        )
+    }
 }
