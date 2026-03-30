@@ -92,7 +92,10 @@ class FakeAuthenticationManager(): AuthenticationManager {
     override suspend fun deleteGoogleAccount(
         activity: Activity,
     ) {
-        // do nothing to simulate success
+        if (!mutableAuthenticationState.value.loggedIn) {
+            throw Exception()
+        }
+        // otherwise do nothing to simulate success
     }
 
     override suspend fun getUserToken(): String? {
