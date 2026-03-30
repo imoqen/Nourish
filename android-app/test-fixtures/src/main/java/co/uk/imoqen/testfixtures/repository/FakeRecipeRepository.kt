@@ -42,6 +42,9 @@ class FakeRecipeRepository(): RecipeRepository {
         if (recipeId == -1L) {
             return flowOf(null)
         }
+        if (recipeId == 2L) {
+            return flowOf(TestData.recipe_salad.copy(title = "should throw exception"))
+        }
         if (recipeId == 50L) {
             return flowOf(
                 TestData.recipe_withInvalidRecipeTypeId
@@ -278,7 +281,7 @@ class FakeRecipeRepository(): RecipeRepository {
         imagePath: String,
         llmGenerated: Boolean
     ) {
-        // simply do nothing; no side effects
+        lastCalled = "createRecipe"
     }
 
     override suspend fun replaceRecipe(
@@ -287,7 +290,7 @@ class FakeRecipeRepository(): RecipeRepository {
         updatedImagePath: String,
         llmGenerated: Boolean
     ) {
-        // simply do nothing; no side effects
+        lastCalled = "replaceRecipe"
     }
 
     override suspend fun updateRecipeIngredient(recipeIngredient: RecipeIngredient) {
@@ -307,7 +310,10 @@ class FakeRecipeRepository(): RecipeRepository {
     }
 
     override suspend fun deleteRecipe(recipe: Recipe) {
-        TODO("Not yet implemented")
+        if (recipe.title == "should throw exception") {
+            throw Exception()
+        }
+        lastCalled = "deleteRecipe"
     }
 
 }

@@ -888,7 +888,6 @@ class RecipeBookViewModel @Inject constructor(
                         )
                     )
                 }
-
                 .onFailure { e ->
                     uiEventBus.enqueueEvent(
                         UiEvent.ShowSnackbar(
@@ -928,7 +927,6 @@ class RecipeBookViewModel @Inject constructor(
                         )
                     )
                 }
-
                 .onFailure { e ->
                     uiEventBus.enqueueEvent(
                         UiEvent.ShowSnackbar(

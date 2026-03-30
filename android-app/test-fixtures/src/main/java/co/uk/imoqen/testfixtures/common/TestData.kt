@@ -315,6 +315,20 @@ object TestData {
         emoji = "\uD83C\uDF5C"
     )
 
+    val recipe_withInvalidId = Recipe(
+        id = -1, // invalid
+        authorUid = "valid_user",
+        title = "Salad Recipe",
+        numberOfServings = 2,
+        colour = "PINK",
+        generated = false,
+        imagePath = "image.png",
+        archived = false,
+        storageInstructions = "Eat immediately.",
+        recipeTypeId = 2,
+        emoji = "\uD83C\uDF5C"
+    )
+
     val recipe_withInvalidIngredients = Recipe(
         id = -1, // triggers invalid when getting ingredients, in the fake.
         authorUid = "valid_user",

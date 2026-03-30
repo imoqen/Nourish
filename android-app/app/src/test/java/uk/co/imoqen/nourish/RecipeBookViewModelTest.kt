@@ -737,5 +737,63 @@ class RecipeBookViewModelTest {
         Assert.assertEquals(vm.formatIngredientText(TestData.llmIngredient_invalidUnit), "")
     }
 
-    
+    @Test
+    fun `addRecipe does not add a recipe if the user is not logged in`() {
+        fakeAuthenticationManager.setLoginState(false, "")
+        vm.addRecipe(TestData.llmRecipe_salad)
+        Assert.assertEquals(fakeRecipeRepository.lastCalled,"")
+    }
+
+    @Test
+    fun `addRecipe adds a recipe if the user is logged in`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.addRecipe(TestData.llmRecipe_salad)
+        Assert.assertEquals(fakeRecipeRepository.lastCalled,"createRecipe")
+    }
+
+    @Test
+    fun `replaceRecipe does not replace a recipe if the user is not logged in`() {
+        fakeAuthenticationManager.setLoginState(false, "")
+        vm.replaceRecipe(TestData.recipe_salad, TestData.llmRecipe_salad)
+        Assert.assertEquals(fakeRecipeRepository.lastCalled,"")
+    }
+
+    @Test
+    fun `replaceRecipe replaces a recipe if the user is logged in`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.replaceRecipe(TestData.recipe_salad, TestData.llmRecipe_salad)
+        Assert.assertEquals(fakeRecipeRepository.lastCalled,"replaceRecipe")
+    }
+
+    @Test
+    fun `deleteRecipe does not delete a recipe if the selectedRecipe is null`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.deleteRecipe()
+        Assert.assertEquals(fakeRecipeRepository.lastCalled,"")
+    }
+
+    @Test
+    fun `deleteRecipe does not delete a recipe if the recipe does not exist in the database`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.setSelectedRecipe(TestData.recipe_withInvalidId)
+        vm.deleteRecipe()
+        Assert.assertEquals(fakeRecipeRepository.lastCalled,"")
+    }
+
+    @Test
+    fun `deleteRecipe deletes a recipe`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.setSelectedRecipe(TestData.recipe_salad)
+        vm.deleteRecipe()
+        Assert.assertEquals(fakeRecipeRepository.lastCalled,"deleteRecipe")
+    }
+
+    @Test
+    fun `deleteRecipe handles errors occurring`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.setSelectedRecipe(TestData.recipe_salad.copy(id = 2))
+        vm.deleteRecipe()
+        Assert.assertEquals(fakeRecipeRepository.lastCalled,"")
+    }
+
 }
