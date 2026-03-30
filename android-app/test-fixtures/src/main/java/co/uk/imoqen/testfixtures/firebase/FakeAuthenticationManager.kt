@@ -102,6 +102,9 @@ class FakeAuthenticationManager(): AuthenticationManager {
         if (mutableAuthenticationState.value.uid == "invalid") {
             return "triggerError"
         }
+        if (mutableAuthenticationState.value.uid == "triggerRecipeNotPossible") {
+            return "triggerRecipeNotPossible"
+        }
         return "validToken"
     }
 

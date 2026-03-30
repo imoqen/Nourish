@@ -737,6 +737,8 @@ class RecipeBookViewModel @Inject constructor(
                 if (tokenResult == null) {
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
                     // error occurred; go back to the USER_INPUT stage (MAY NOT WORK: TEST THIS).
+                    //setActionChatStage(ActionChatStage.USER_INPUT) // no longer awaiting - error occurred.
+                    //setLlmAwaitActionType(LlmActionType.NONE)
                     return@launch
                 }
 
@@ -747,7 +749,6 @@ class RecipeBookViewModel @Inject constructor(
                     onQuestionAnswered = { llmQuestionResponse ->
                         val llmAnswer = llmQuestionResponse?.answer
                         if (llmAnswer != null) {
-                            Log.i("LLM Answer", llmAnswer)
                             viewModelScope.launch() {
                                 // add the answer to the DB and display to the user in the chat UI
                                 val query = recipeRepository.getRecipeQueryById(queryId).first()

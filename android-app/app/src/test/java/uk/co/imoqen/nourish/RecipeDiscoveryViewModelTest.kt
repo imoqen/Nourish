@@ -284,15 +284,6 @@ class RecipeDiscoveryViewModelTest {
         vm.makeLlmApiCall(LlmRequestType.RECIPE, imageFilename = "image.png")
         Assert.assertEquals(vm.uiState.value.llmGeneratedRecipe, null) // no recipe is generated.
     }
-    /*@Test
-    fun `makeLlmApiCall should handle the recipe from dish choice generation case`() {
-        Assert.assertEquals(vm.uiState.value.llmGeneratedRecipe, null)
-        fakeAuthenticationManager.setLoginState(true, "valid_user") // for valid token
-        vm.setChosenDish("Salad")
-        vm.setRecipeTags(TestData.recipeTags) // populated with some recipe tags
-        vm.makeLlmApiCall(LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH, imageFilename = "image.png")
-        Assert.assertEquals(vm.uiState.value.llmGeneratedRecipe, TestData.llmRecipe_salad)
-    }*/
 
     @Test
     fun `makeLlmApiCall should not make the call if an image is not provided, and recipe from image of dish is requested`() {

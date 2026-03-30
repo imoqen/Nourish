@@ -19,6 +19,8 @@ import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.network.response.LlmDishesProposed
 import uk.co.imoqen.nourish.network.response.LlmIngredient
 import uk.co.imoqen.nourish.network.response.LlmIngredientSection
+import uk.co.imoqen.nourish.network.response.LlmNutrition
+import uk.co.imoqen.nourish.network.response.LlmQuestionResponse
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 import uk.co.imoqen.nourish.recipebook.RecipeCardExpanded
 import uk.co.imoqen.nourish.recipebook.RecipeCardUnexpanded
@@ -126,6 +128,31 @@ object TestData {
         recipeNotPossible = false,
         emoji = "\uD83E\uDD57",
         colour = "GREEN"
+    )
+
+    val llmRecipe_correspondingToRecipe_Salad = LlmRecipe(
+        title="Salad Recipe",
+        sectionIngredients= listOf(
+            LlmIngredientSection(
+                section="For the Salad",
+                ingredients= listOf(
+                    LlmIngredient(
+                        ingredientSingular="cherry",
+                        ingredientPlural="cherries",
+                        ingredientAmount=500.0,
+                        ingredientAmountUnit="G"
+                    )
+                )
+            )
+        ),
+        servings=2,
+        mealType="Dessert",
+        method=listOf("Wash the cherries"),
+        tags=listOf("VEGAN"),
+        storage="Eat immediately.",
+        recipeNotPossible=false,
+        emoji="🍜",
+        colour="PINK"
     )
 
     val llmRecipe_recipeNotPossible = LlmRecipe(
@@ -775,6 +802,18 @@ object TestData {
         fibre = 20.0
     )
 
+    val llmNutrition_salad = LlmNutrition(
+        servings = 1,
+        calories = 180,
+        fat = 4.0,
+        saturates = 5.0,
+        carbohydrate = 10.0,
+        sugars = 7.0,
+        protein = 1.0,
+        salt = 0.5,
+        fibre = 20.0
+    )
+
     val recipeQuery_salad_healthiness = RecipeQuery(
         id = 0,
         recipeId = 0,
@@ -794,5 +833,8 @@ object TestData {
         recipeQuery_salad_protein
     )
 
+    val llmQuestionResponse = LlmQuestionResponse(
+        answer = "This recipe is healthy."
+    )
 
 }

@@ -133,7 +133,6 @@ class FakeApiManager(): ApiManager {
                 }
             }
         }
-
     }
 
     override fun makeRetrofitLlmActionCall(
@@ -145,7 +144,29 @@ class FakeApiManager(): ApiManager {
         onNutritionGenerated: (LlmNutrition?) -> Unit,
         onError: (String) -> Unit
     ) {
-        TODO("Not yet implemented")
+        if (bearerToken == "triggerError") {
+            onError("An error occurred.")
+        }
+        else {
+            when (type) {
+                LlmActionType.NUTRITIONAL_VALUES -> {
+                    onNutritionGenerated(TestData.llmNutrition_salad)
+                }
+                LlmActionType.NONE -> {
+                    onError("No type selected.")
+                }
+                LlmActionType.ALTERATION -> {
+                    if (bearerToken == "triggerRecipeNotPossible") {
+                        onRecipeAltered(TestData.llmRecipe_recipeNotPossible)
+                    } else {
+                        onRecipeAltered(TestData.llmRecipe_salad)
+                    }
+                }
+                LlmActionType.QUESTION -> {
+                    onQuestionAnswered(TestData.llmQuestionResponse)
+                }
+            }
+        }
     }
 
 }

@@ -27,6 +27,7 @@ import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.network.request.LlmActionType
+import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.recipebook.ActionChatStage
 import uk.co.imoqen.nourish.recipebook.RecipeBookViewModel
 import uk.co.imoqen.nourish.recipebook.RecipeCardExpanded
@@ -34,6 +35,7 @@ import uk.co.imoqen.nourish.recipebook.RecipeCardUnexpanded
 import uk.co.imoqen.nourish.recipebook.ShoppingListIngredient
 import uk.co.imoqen.nourish.recipebook.TagSelection
 import uk.co.imoqen.nourish.recipebook.TypeSelection
+import uk.co.imoqen.nourish.recipediscovery.LlmMode
 import uk.co.imoqen.nourish.setup.MainDispatcherRule
 import kotlin.collections.emptyList
 import kotlin.collections.listOf
@@ -620,4 +622,120 @@ class RecipeBookViewModelTest {
             "5.14"
         )
     }
+
+    @Test
+    fun `parseRecipeToLlmRecipe converts a recipe to an llmRecipe, and includes servings if true`() = runTest {
+        Assert.assertEquals(
+            vm.parseRecipeToLlmRecipe(TestData.recipe_salad, true),
+            TestData.llmRecipe_correspondingToRecipe_Salad
+        )
+    }
+
+    @Test
+    fun `parseRecipeToLlmRecipe converts a recipe to an llmRecipe, and does not include servings if false`() = runTest {
+        Assert.assertEquals(
+            vm.parseRecipeToLlmRecipe(TestData.recipe_salad, false),
+            TestData.llmRecipe_correspondingToRecipe_Salad.copy(servings = 1)
+        )
+    }
+
+    @Test
+    fun `makeLlmApiCall should not make the call if the userActionRequest is null`() {
+        Assert.assertEquals(vm.uiState.value.userActionRequest, "")
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // for valid token
+        vm.makeLlmApiCall(LlmActionType.NUTRITIONAL_VALUES)
+        Assert.assertEquals(fakeRecipeRepository.lastCalled, "") // no call made
+        Assert.assertEquals(vm.uiState.value.actionChatStage, ActionChatStage.USER_INPUT)
+    }
+
+    @Test
+    fun `makeLlmApiCall should not make the call if the recipe is not selected (null)`() {
+        vm.setUserActionRequest("Is this recipe healthy?")
+        fakeAuthenticationManager.setLoginState(true, "valid_user") // for valid token
+        vm.makeLlmApiCall(LlmActionType.NUTRITIONAL_VALUES)
+        Assert.assertEquals(fakeRecipeRepository.lastCalled, "") // no call made
+        Assert.assertEquals(vm.uiState.value.actionChatStage, ActionChatStage.USER_INPUT)
+    }
+
+    @Test
+    fun `makeLlmApiCall should not make the call if the token is null`() {
+        vm.setUserActionRequest("Is this recipe healthy?")
+        vm.setSelectedRecipe(TestData.recipe_salad)
+        fakeAuthenticationManager.setLoginState(false) // for invalid token
+        vm.makeLlmApiCall(LlmActionType.NUTRITIONAL_VALUES)
+        Assert.assertEquals(fakeRecipeRepository.lastCalled, "") // no call made
+    }
+
+    @Test
+    fun `makeLlmApiCall works correctly for question`() {
+        vm.setUserActionRequest("Is this recipe healthy?")
+        vm.setSelectedRecipe(TestData.recipe_salad)
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.makeLlmApiCall(LlmActionType.QUESTION)
+        Assert.assertEquals(fakeRecipeRepository.lastCalled, "updateRecipeQuery") // call made to update the query result
+        Assert.assertEquals(vm.uiState.value.actionChatStage, ActionChatStage.RESPONSE_RECEIVED)
+        Assert.assertEquals(vm.uiState.value.llmAwaitActionType, LlmActionType.NONE)
+    }
+
+    @Test
+    fun `makeLlmApiCall works correctly for alteration`() {
+        vm.setUserActionRequest("Make this recipe with more protein.")
+        vm.setSelectedRecipe(TestData.recipe_salad)
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        Assert.assertEquals(vm.uiState.value.alteredRecipe, null)
+        vm.makeLlmApiCall(LlmActionType.ALTERATION)
+        Assert.assertEquals(vm.uiState.value.alteredRecipe, TestData.llmRecipe_salad) // altered recipe is updated
+        Assert.assertEquals(vm.uiState.value.actionChatStage, ActionChatStage.RESPONSE_RECEIVED)
+        Assert.assertEquals(vm.uiState.value.llmAwaitActionType, LlmActionType.NONE)
+    }
+
+    @Test
+    fun `makeLlmApiCall handles the case where alteration causes an infeasible recipe (eg make recipe for socks)`() {
+        vm.setUserActionRequest("Make this recipe with socks.")
+        vm.setSelectedRecipe(TestData.recipe_salad)
+        fakeAuthenticationManager.setLoginState(true, "triggerRecipeNotPossible")
+        Assert.assertEquals(vm.uiState.value.alteredRecipe, null)
+        vm.makeLlmApiCall(LlmActionType.ALTERATION)
+        Assert.assertEquals(vm.uiState.value.alteredRecipe, null) // altered recipe is not updated
+        Assert.assertEquals(vm.uiState.value.actionChatStage, ActionChatStage.RESPONSE_RECEIVED)
+        Assert.assertEquals(vm.uiState.value.llmAwaitActionType, LlmActionType.NONE)
+    }
+
+    @Test
+    fun `makeLlmApiCall works correctly for nutrition generation`() {
+        vm.setUserActionRequest("Generate nutrition")
+        vm.setSelectedRecipe(TestData.recipe_salad)
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.makeLlmApiCall(LlmActionType.NUTRITIONAL_VALUES)
+        Assert.assertEquals(fakeRecipeRepository.lastCalled, "insertRecipeNutrition") // call made to update the query result
+        Assert.assertEquals(vm.uiState.value.actionChatStage, ActionChatStage.RESPONSE_RECEIVED)
+        Assert.assertEquals(vm.uiState.value.llmAwaitActionType, LlmActionType.NONE)
+    }
+
+    @Test
+    fun `makeLlmApiCall handles errors generated in the result`() {
+        vm.setUserActionRequest("Generate nutrition")
+        vm.setSelectedRecipe(TestData.recipe_salad)
+        fakeAuthenticationManager.setLoginState(true, "invalid") // will trigger onError to run
+        vm.makeLlmApiCall(LlmActionType.NUTRITIONAL_VALUES)
+        Assert.assertEquals(vm.uiState.value.actionChatStage, ActionChatStage.USER_INPUT)
+        Assert.assertEquals(vm.uiState.value.llmAwaitActionType, LlmActionType.NONE)
+    }
+
+    @Test
+    fun `makeLlmApiCall handles null query`() {
+        vm.setUserActionRequest("trigger error") // will trigger the query to have id of -1 which causes null
+        vm.setSelectedRecipe(TestData.recipe_salad)
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.makeLlmApiCall(LlmActionType.QUESTION)
+        Assert.assertEquals(vm.uiState.value.actionChatStage, ActionChatStage.RESPONSE_RECEIVED)
+        Assert.assertEquals(vm.uiState.value.llmAwaitActionType, LlmActionType.NONE)
+    }
+
+    @Test
+    fun `formatIngredientText returns empty string for invalid ingredient`() {
+        Assert.assertEquals(vm.formatIngredientText(TestData.llmIngredient_invalidUnit), "")
+    }
+
+    
 }

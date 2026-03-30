@@ -237,7 +237,7 @@ class FakeRecipeRepository(): RecipeRepository {
     }
 
     override suspend fun insertRecipeNutrition(recipeNutrition: RecipeNutrition) {
-        TODO("Not yet implemented")
+        lastCalled = "insertRecipeNutrition"
     }
 
     override fun getNutritionForRecipe(recipeId: Long): Flow<RecipeNutrition?> {
@@ -249,11 +249,15 @@ class FakeRecipeRepository(): RecipeRepository {
     }
 
     override suspend fun insertRecipeQuery(recipeQuery: RecipeQuery): Long {
-        TODO("Not yet implemented")
+        if (recipeQuery.userQuestion == "trigger error") {
+            return -1 // for testing how errors are handled in makeLlmApiCall
+        }
+        // else, run as normal:
+        return 0
     }
 
     override suspend fun updateRecipeQuery(recipeQuery: RecipeQuery) {
-        TODO("Not yet implemented")
+        lastCalled = "updateRecipeQuery"
     }
 
     override fun getAllQueriesForRecipe(recipeId: Long): Flow<List<RecipeQuery?>> {
@@ -261,7 +265,9 @@ class FakeRecipeRepository(): RecipeRepository {
     }
 
     override fun getRecipeQueryById(recipeQueryId: Long): Flow<RecipeQuery?> {
-        TODO("Not yet implemented")
+        return flowOf(
+            TestData.recipeQuery_salad_healthiness
+        )
     }
 
     override suspend fun createRecipe(
