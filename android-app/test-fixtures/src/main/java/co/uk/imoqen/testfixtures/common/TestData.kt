@@ -228,6 +228,18 @@ object TestData {
         recipeType_side, recipeType_drink
     )
 
+    val typeSelection_breakfast = TypeSelection(type=RecipeType(id=0, title="Breakfast", ordinal=0), selected=false)
+    val typeSelection_lunch = TypeSelection(type=RecipeType(id=1, title="Lunch", ordinal=1), selected=false)
+    val typeSelection_dinner= TypeSelection(type=RecipeType(id=2, title="Dinner", ordinal=2), selected=false)
+    val typeSelection_dessert = TypeSelection(type=RecipeType(id=3, title="Dessert", ordinal=3), selected=false)
+    val typeSelection_side = TypeSelection(type=RecipeType(id=4, title="Side", ordinal=4), selected=false)
+    val typeSelection_drink = TypeSelection(type=RecipeType(id=5, title="Drink", ordinal=5), selected=false)
+
+    // type selection corresponding to recipeTypes above ^
+    val typeSelection_allRecipeTypes = listOf(
+        typeSelection_breakfast, typeSelection_lunch, typeSelection_dinner, typeSelection_dessert,
+        typeSelection_side, typeSelection_drink
+    )
     // Dishes proposed
 
     val llmDishesProposed_pasta = LlmDishesProposed(

@@ -568,13 +568,11 @@ class RecipeBookViewModel @Inject constructor(
         viewModelScope.launch() {
             val recipe = mutableUiState.value.selectedRecipe
             if (recipe == null) {
-                Log.i("Serving", "Cannot update serving size of a null recipe.")
                 return@launch
             }
 
             val currentServingSize = recipe.numberOfServings
             if (currentServingSize == 1 && !increase) {
-                Log.i("Serving", "Cannot decrease serving size from 1.")
                 return@launch
             }
 
@@ -598,7 +596,6 @@ class RecipeBookViewModel @Inject constructor(
             (recipeActions.getAllRecipeTypesSelectionList(
                 mutableUiState.value.recipeTypes
             ))?.let { updatedTypes ->
-                Log.i("setting types", "not null: ${updatedTypes}")
                 setRecipeTypes(updatedTypes) // only sets if not null
             }
         }

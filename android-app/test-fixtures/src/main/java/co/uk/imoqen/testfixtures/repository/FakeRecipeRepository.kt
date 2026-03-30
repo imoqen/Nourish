@@ -19,6 +19,9 @@ import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 
 class FakeRecipeRepository(): RecipeRepository {
+
+    var lastCalled: String = "" // to tell if a call was last made to a certain method, in the test
+
     override fun getAllRecipes(uid: String): Flow<List<Recipe>> {
         if (uid == "has_recipe_with_invalid_recipeTypeId") {
             return flowOf(
@@ -290,7 +293,7 @@ class FakeRecipeRepository(): RecipeRepository {
         currentServingSize: Int,
         increase: Boolean
     ) {
-        TODO("Not yet implemented")
+        lastCalled = "scaleRecipe"
     }
 
     override suspend fun updateRecipe(recipe: Recipe) {

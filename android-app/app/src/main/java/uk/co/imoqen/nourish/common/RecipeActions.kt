@@ -107,7 +107,6 @@ class RecipeActions @Inject constructor(
             val updatedTypes = recipeRepository.getAllRecipeTypes().first()
             // only set if not already set or value updated:
             if (previousTypes == null || updatedTypes.size != previousTypes.size) {
-                Log.i("get types", "not null")
                 return (recipeRepository.getAllRecipeTypes().first().map { type ->
                     TypeSelection(
                         type,
@@ -120,9 +119,7 @@ class RecipeActions @Inject constructor(
                 uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
                     "Couldn't fetch recipe types. Please try again later."
                 ))
-                Log.i("recipe types", "failed: $e")
             }
-        Log.i("get types", "null")
         return null // failure occurred
     }
 
@@ -174,7 +171,6 @@ class RecipeActions @Inject constructor(
         recipeTypes: List<TypeSelection>?
     ): List<TypeSelection>? {
         runCatching {
-            Log.i("updating","updating type: ${type.title}")
             if (recipeTypes == null) {
                 throw NullPointerException()
             }
@@ -190,7 +186,6 @@ class RecipeActions @Inject constructor(
                 uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
                     "The type could not be selected. Please try again later."
                 ))
-                Log.i("type select", "failed: $e")
             }
         return null
     }

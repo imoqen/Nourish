@@ -9,6 +9,9 @@ import co.uk.imoqen.testfixtures.repository.FakeIngredientRepository
 import co.uk.imoqen.testfixtures.repository.FakeRecipeRepository
 import co.uk.imoqen.testfixtures.repository.FakeShoppingListEntryRepository
 import co.uk.imoqen.testfixtures.repository.FakeTagRepository
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -21,6 +24,7 @@ import uk.co.imoqen.nourish.common.RecipeActions
 import uk.co.imoqen.nourish.common.tag.FilterState
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.Recipe
+import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.network.request.LlmActionType
 import uk.co.imoqen.nourish.recipebook.ActionChatStage
@@ -28,6 +32,8 @@ import uk.co.imoqen.nourish.recipebook.RecipeBookViewModel
 import uk.co.imoqen.nourish.recipebook.RecipeCardExpanded
 import uk.co.imoqen.nourish.recipebook.RecipeCardUnexpanded
 import uk.co.imoqen.nourish.recipebook.ShoppingListIngredient
+import uk.co.imoqen.nourish.recipebook.TagSelection
+import uk.co.imoqen.nourish.recipebook.TypeSelection
 import uk.co.imoqen.nourish.setup.MainDispatcherRule
 import kotlin.collections.emptyList
 import kotlin.collections.listOf
@@ -531,5 +537,87 @@ class RecipeBookViewModelTest {
         fakeAuthenticationManager.setLoginState(true, "has_recipe_with_invalid_recipeTypeId") // not logged in
         vm.getRecipeBookMap()
         Assert.assertEquals(vm.uiState.value.recipeBookMap, null)
+    }
+
+    @Test
+    fun `alterServingSize can increase the serving size`() {
+        vm.setSelectedRecipe(TestData.recipe_salad)
+        vm.alterServingSize(true) // true for increase
+        Assert.assertEquals(fakeRecipeRepository.lastCalled, "scaleRecipe") // ensure last called was the scaling operation
+    }
+
+    @Test
+    fun `alterServingSize can decrease the serving size`() {
+        vm.setSelectedRecipe(TestData.recipe_salad)
+        vm.alterServingSize(false) // false for decrease
+        Assert.assertEquals(fakeRecipeRepository.lastCalled, "scaleRecipe") // ensure last called was the scaling operation
+    }
+
+    @Test
+    fun `alterServingSize cannot decrease the serving size below 1`() {
+        vm.setSelectedRecipe(TestData.recipe_salad.copy(numberOfServings = 1))
+        vm.alterServingSize(false) // false for decrease
+        Assert.assertEquals(fakeRecipeRepository.lastCalled, "") // ensure no scaling
+    }
+
+    @Test
+    fun `alterServingSize cannot decrease the serving size if the recipe is null`() {
+        vm.alterServingSize(true)
+        Assert.assertEquals(fakeRecipeRepository.lastCalled, "") // ensure no scaling
+        vm.alterServingSize(false)
+        Assert.assertEquals(fakeRecipeRepository.lastCalled, "") // ensure no scaling
+    }
+
+    // Testing the exposed tag methods
+    @Test
+    fun `getAllTagsForUser returns all tags authored by a user`() {
+        Assert.assertNull(vm.uiState.value.recipeTags)
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.getAllTagsForUser()
+        Assert.assertEquals(vm.uiState.value.recipeTags, listOf(
+            TestData.tagSelection_lowcalorie, TestData.tagSelection_vegan
+        ))
+    }
+
+    @Test
+    fun `getAllRecipeTypes returns all recipe types, user independent`() {
+        Assert.assertNull(vm.uiState.value.recipeTypes)
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.getAllRecipeTypes()
+        Assert.assertEquals(vm.uiState.value.recipeTypes, TestData.typeSelection_allRecipeTypes)
+    }
+
+    @Test
+    fun `updateSelected for a tag updates a tag's selected status`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.getAllTagsForUser()
+        Assert.assertEquals(vm.uiState.value.recipeTags?.get(1), TagSelection(TestData.tag_vegan, false))
+        vm.updateSelected(TestData.tag_vegan, true)
+        Assert.assertEquals(vm.uiState.value.recipeTags?.get(1), TagSelection(TestData.tag_vegan, true))
+    }
+
+    @Test
+    fun `updateSelected for a recipeType updates a type's selected status`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+        vm.getAllRecipeTypes()
+        Assert.assertEquals(vm.uiState.value.recipeTypes?.get(1), TestData.typeSelection_lunch)
+        vm.updateSelected(RecipeType(1, "Lunch", 1), true)
+        Assert.assertEquals(vm.uiState.value.recipeTypes?.get(1), TestData.typeSelection_lunch.copy(selected = true))
+    }
+
+    @Test
+    fun `formatIngredientAmount rounds to the nearest quarter`() {
+        Assert.assertEquals(
+            vm.formatIngredientAmount(5.2),
+            "5.25"
+        )
+    }
+
+    @Test
+    fun `formatIngredientAmount rounds to the nearest 2 decimal place`() {
+        Assert.assertEquals(
+            vm.formatIngredientAmount(5.135, roundToNearestQuarter = false),
+            "5.14"
+        )
     }
 }
