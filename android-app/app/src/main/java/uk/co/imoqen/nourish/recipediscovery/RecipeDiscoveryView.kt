@@ -695,7 +695,6 @@ fun GeneratedRecipe(
     uiState: RecipeDiscoveryUiState,
     recipe: LlmRecipe
 ) {
-    Log.i("recipe res", "not null")
     val context = LocalContext.current
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
@@ -785,9 +784,6 @@ fun RecipeCardPreview(
                             fontWeight = FontWeight.SemiBold
                         )
                     }
-
-                    Log.i("LLM RECIPE", "ingredients: ${ingredientSection.ingredients}")
-
                     ingredientSection.ingredients.forEach { ingredient ->
                         val ingredientText = if (alteredRecipe) {
                             // scale the ingredient if it is an alteration, because it is returned for 1 sevring unlike others which return for the actual number of servings.
@@ -1140,7 +1136,7 @@ fun UserInputSection(
                             )
                         },
                         painter = painterResource(R.drawable.camera),
-                        modifier = Modifier.padding(end = 4.dp)
+                        modifier = Modifier.padding(end = 4.dp).testTag("selectImage")
                     )
                 }
             }
@@ -1258,9 +1254,6 @@ fun sendToLlm(
     viewModel: RecipeDiscoveryViewModel,
     context: Context
 ) {
-
-    Log.i("user request:", uiState.userRequest)
-
     var validRequest = false
     val lowQualityFilename = uiState.savedImageMipmap.lowQualityFilename
 

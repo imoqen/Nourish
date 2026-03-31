@@ -100,6 +100,9 @@ dependencies {
     val lifecycle_version = "2.10.0"
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:${lifecycle_version}")
 
+    // For picking photos in tests:
+    androidTestImplementation("androidx.test.uiautomator:uiautomator:2.4.0-alpha05")
+
     // Taken from: https://firebase.google.com/docs/android/setup At the end of this page,
     // it also specifies all firebase services which are available to use.
 

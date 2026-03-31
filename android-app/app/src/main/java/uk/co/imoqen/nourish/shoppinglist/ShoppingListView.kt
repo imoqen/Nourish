@@ -565,14 +565,11 @@ fun IngredientAmount(
                     )
                 }${
                     if (unit == IngredientUnit.UNIT) {
-                        Log.i("unit", "it is unit")
                         ""
                     } else {
                         if (ceil(amount) > 1) {
-                            Log.i("plur", "plural")
                             " " + unit.pluralName
                         } else {
-                            Log.i("sing", "singular")
                             " " + unit.singularName
                         }
                     }

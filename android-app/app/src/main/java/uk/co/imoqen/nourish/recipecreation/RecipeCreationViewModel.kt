@@ -715,12 +715,6 @@ class RecipeCreationViewModel @Inject constructor(
                     setImageFile(highQualityFilename)
                 }
             }
-                .onSuccess {
-                    Log.i("PhotoPicker", "image saved successfully")
-                }
-                .onFailure { e ->
-                    Log.i("PhotoPicker", "image not saved: $e")
-                }
         }
 
     }

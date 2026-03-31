@@ -56,16 +56,6 @@ data class RecipeIngredient(
 
 // defines how to join the two objects:
 
-// recipe ingredient to ingredient relation
-data class IngredientWithRecipeIngredients(
-    @Embedded val ingredient: Ingredient, // parent
-    @Relation(
-        parentColumn = "id", // the primary key of the parent (Ingredient)
-        entityColumn = "ingredientId" // the foreign key in RecipeIngredient referencing it
-    )
-    val recipeIngredients: List<RecipeIngredient>, // entity
-)
-
 data class RecipeWithRecipeIngredients(
     @Embedded val recipe: Recipe, // parent
     @Relation(
@@ -73,14 +63,4 @@ data class RecipeWithRecipeIngredients(
         entityColumn = "recipeId" // the foreign key in RecipeIngredient referencing it
     )
     val ingredients: List<RecipeIngredient>, // entity
-)
-
-// recipe ingredient to recipe relation
-data class RecipeIngredientSectionWithIngredients(
-    @Embedded val recipeIngredientSection: RecipeIngredientSection, // parent
-    @Relation(
-        parentColumn = "id", // the primary key of the parent (RecipeIngredientSection)
-        entityColumn = "sectionId" // the foreign key in RecipeIngredient referencing it
-    )
-    val ingredients: List<Ingredient>, // entity
 )

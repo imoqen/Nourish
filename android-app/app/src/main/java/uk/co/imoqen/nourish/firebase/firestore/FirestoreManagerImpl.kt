@@ -60,12 +60,6 @@ class FirestoreManagerImpl @Inject constructor(
         db.collection("users")
             .document(uid) // adds new doc with uid title
             .set(userData) // sets the email of the user in it
-            .addOnSuccessListener {
-                Log.i("FIRESTORE", "User (${email}) with uid ${uid} successfully added to Firestore")
-            }
-            .addOnFailureListener { e ->
-                Log.e("FIRESTORE", "User could not be added to Firestore: $e")
-            }
     }
 
 }

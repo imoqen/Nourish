@@ -196,11 +196,9 @@ fun RecipeBookScreen(
             // set all nutritional tags and recipe types for the dropdown, only change when those change.
 
             LaunchedEffect(uiState.recipeTypes?.size) {
-                Log.i("size:", "${uiState.recipeTypes?.size}")
                 recipeBookViewModel.getAllRecipeTypes()
             }
             LaunchedEffect(uiState.recipeTags?.size) {
-                Log.i("size:", "${uiState.recipeTags?.size}")
                 recipeBookViewModel.getAllTagsForUser()
             }
 

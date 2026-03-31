@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish
 
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -14,6 +15,10 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.printToLog
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.Until
 import co.uk.imoqen.testfixtures.firebase.FakeAuthenticationManager
 import co.uk.imoqen.testfixtures.firebase.FakeFirestoreManager
 import co.uk.imoqen.testfixtures.network.FakeApiManager
@@ -207,6 +212,60 @@ class RecipeDiscoveryViewTest {
         composeRule
             .onNodeWithText("Healthy Salad")
             .assertExists()
+    }
+
+    @Test
+    fun `Recipe generation by Photo of a Dish works correctly and then handles recipeNotPossible case`() {
+        composeRule.onNode(
+            hasText("Photo of a Dish")
+        ).performClick()
+
+        composeRule
+            .onNodeWithContentDescription("Trailing Icon")
+            .performClick()
+
+        composeRule.onNodeWithTag("selectImage")
+            .assertIsDisplayed()
+            .performClick()
+
+        // Uses UIAutomator provided by Android: https://developer.android.com/training/testing/other-components/ui-automator
+        // to select an image
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+
+        device.waitForIdle()
+
+        // Pick the photo and wait for it to be updated in the UI:
+        device.wait(Until.hasObject(By.pkg("com.google.android.providers.media.module")), 5_000)
+        val image = device.findObject(
+            By.descContains("Photo taken on") // uses the accessibility tag to identify the photo. chooses the first.
+        )
+        val clickableParent = image?.parent
+        clickableParent?.click()
+        device.waitForIdle()
+        device.wait(
+            Until.hasObject(By.pkg(composeRule.activity.packageName)),
+            5_000
+        )
+        composeRule.waitForIdle()
+
+        composeRule
+            .onNodeWithContentDescription("Trailing Icon")
+            .performClick()
+
+        composeRule
+            .onNodeWithTag("recipeDiscoveryLazyColumn")
+            .performScrollToNode(
+                hasText("Pasta Pesto", substring = true)
+            )
+
+        composeRule.onNode(
+            hasText("Pasta Pesto")
+        ).performClick()
+
+        composeRule
+            .onNodeWithText("A valid recipe could not be generated. Please try another dish.")
+            .assertExists()
+
     }
 
 }
