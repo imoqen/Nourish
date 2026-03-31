@@ -132,7 +132,7 @@ fun NourishTextField(
                 ) {
                     Icon(
                         imageVector = trailingIcon,
-                        contentDescription = null,
+                        contentDescription = "Trailing Icon",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }

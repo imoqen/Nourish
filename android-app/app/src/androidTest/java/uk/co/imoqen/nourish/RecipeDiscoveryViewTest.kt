@@ -3,9 +3,16 @@ package uk.co.imoqen.nourish
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.printToLog
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import co.uk.imoqen.testfixtures.firebase.FakeAuthenticationManager
 import co.uk.imoqen.testfixtures.firebase.FakeFirestoreManager
@@ -119,18 +126,87 @@ class RecipeDiscoveryViewTest {
     }
 
     @Test
-    fun `Sign out flow works correctly`() {
+    fun `Recipe generation by Dish or Description works correctly`() {
         composeRule.onNode(
-            hasText("Profile")
+            hasText("Dish or Description")
         ).performClick()
-        // have to dismiss the previous snackbar or new one wont show:
-        composeRule.onNode(
-            hasText("Dismiss")
-        ).performClick()
-        composeRule.onNode(
-            hasText("Sign out") and hasClickAction()
-        ).performClick()
-        composeRule.onNodeWithText("Sign out successful.").assertExists()
+
+        // Will not send if the input is blank:
+        composeRule
+            .onNodeWithContentDescription("Trailing Icon")
+            .performClick()
+
+        // Will send if the user enters something:
+        composeRule
+            .onNodeWithText("Enter dish or description")
+            .performTextInput("Healthy salad")
+        composeRule
+            .onNodeWithContentDescription("Trailing Icon")
+            .performClick()
+
+        composeRule.onRoot(useUnmergedTree = true).printToLog("TEST")
+
+        composeRule
+            .onNodeWithTag("recipeDiscoveryLazyColumn")
+            .performScrollToNode(
+                hasText("Healthy Salad", substring = true)
+            )
+
+        composeRule
+            .onNodeWithText("Healthy Salad", substring = true, useUnmergedTree = true)
+            .assertExists()
+
+        // Ingredients are generated
+        composeRule
+            .onNodeWithText("For the salad", useUnmergedTree = true)
+            .assertExists()
+        composeRule
+            .onNodeWithText("0.25 cucumber")
+            .assertExists()
+        composeRule
+            .onNodeWithText("100 g tomatoes")
+            .assertExists()
+        composeRule
+            .onNodeWithText("4 leaves of lettuce")
+            .assertExists()
+
+        // Method is generated
+        composeRule
+            .onNodeWithText("First, wash the vegetables.")
+            .assertExists()
+        composeRule
+            .onNodeWithText("Cut the vegetables.")
+            .assertExists()
+
+        composeRule
+            .onNodeWithTag("recipeDiscoveryLazyColumn")
+            .performScrollToNode(
+                hasText("Save Recipe", substring = true)
+            )
+
+        // User can then save the recipe and view it in their saved recipes
+        composeRule
+            .onNodeWithText("Save Recipe")
+            .performClick()
+
+        composeRule
+            .onNodeWithContentDescription("Go to view recipes", useUnmergedTree = true)
+            .performClick()
+
+        // As it is the first time loading the recipes in this instance, the loading bar appears.
+        // This lasts 5 seconds, hence a 6 second delay is provided to ensure it has finished loading.
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodesWithTag("loadingBar")
+                .fetchSemanticsNodes().isEmpty()
+        }
+
+        composeRule.onRoot(useUnmergedTree = true).printToLog("RECIPEBOOKSCREEN")
+
+        // the recipe has been saved:
+        composeRule
+            .onNodeWithText("Healthy Salad")
+            .assertExists()
     }
 
 }
