@@ -34,7 +34,7 @@ android {
         versionName = "1.0"
 
         // Instrumentation test runner:
-        testInstrumentationRunner = "uk.co.imoqen.nourish.NourishTestRunner"
+        testInstrumentationRunner = "uk.co.imoqen.nourish.setup.NourishTestRunner"
     }
 
     buildTypes {
