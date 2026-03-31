@@ -481,10 +481,6 @@ fun RecipeCard(
                                                                 onCheckedChange = {
                                                                     recipeBookViewModel.alterIngredientShoppingListStatus(
                                                                         ingredient, i, !selected
-                                                                    );
-                                                                    Log.i(
-                                                                        "alter",
-                                                                        "${uiState.ingredientsToAddToShoppingList}"
                                                                     )
                                                                 }
                                                             )
@@ -969,6 +965,12 @@ fun AlterationLlmAction(
                             "Simply enter your alteration below, and a new recipe will be generated. You can then choose whether to replace the previous recipe with it, save it as a new recipe, or discard it.",
                             modifier = Modifier.padding(16.dp),
                             textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = "Note that the alteration is performed from the saved recipe, not the previous alteration if present.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(0.95f).padding(bottom = 8.dp)
                         )
                     }
                     HorizontalDivider(modifier = Modifier.padding(bottom = 10.dp))

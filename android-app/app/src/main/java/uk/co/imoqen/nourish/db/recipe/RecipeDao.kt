@@ -20,12 +20,6 @@ interface RecipeDao {
     @Query("SELECT * FROM recipe WHERE id = :id LIMIT 1")
     fun getById(id: Long): Flow<Recipe?>
 
-    /*@Insert
-    fun insertAllRecipes(vararg recipes: Recipe)
-
-    @Delete
-    fun deleteRecipe(recipe: Recipe)*/
-
     // insert one
     @Insert
     suspend fun insert(recipe: Recipe): Long
@@ -35,10 +29,6 @@ interface RecipeDao {
 
     @Delete
     suspend fun delete(recipe: Recipe)
-
-    /*@Transaction
-    @Query("SELECT * FROM Recipe WHERE id = :recipeId")
-    fun getRecipeWithIngredients(recipeId: Long): Flow<RecipeWithIngredients>*/
 
     @Transaction
     @Query("SELECT * FROM Recipe WHERE id = :recipeId")

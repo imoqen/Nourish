@@ -60,6 +60,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -119,11 +120,9 @@ fun RecipeDiscoveryScreen(
 
     // set all nutritional tags and recipe types for the dropdown, only change when those change.
     LaunchedEffect(uiState.recipeTypes?.size) {
-        Log.i("size:", "${uiState.recipeTypes?.size}")
         viewModel.getAllRecipeTypes()
     }
     LaunchedEffect(uiState.tagSheetState.recipeTags?.size) {
-        Log.i("size:", "${uiState.tagSheetState.recipeTags?.size}")
         viewModel.getAllTagsForUser()
     }
 
@@ -147,7 +146,8 @@ fun RecipeDiscoveryScreen(
                 ) {
                     LazyColumn(
                         state = listState,
-                        contentPadding = PaddingValues(bottom = 8.dp)
+                        contentPadding = PaddingValues(bottom = 8.dp),
+                        modifier = Modifier.testTag("recipeDiscoveryLazyColumn") // for identification in tests
                     ) {
                         item {
                             InitialMessage(viewModel, uiState)
@@ -481,7 +481,7 @@ fun InitialMessage(
                         )
                     },
                     painter = painterResource(R.drawable.ingredients),
-                    description = "List or Photo of ingredients",
+                    description = "List or Photo of Ingredients",
                     modifier = Modifier
                         .padding(4.dp)
                         .fillMaxWidth(0.9f),
@@ -695,7 +695,6 @@ fun GeneratedRecipe(
     uiState: RecipeDiscoveryUiState,
     recipe: LlmRecipe
 ) {
-    Log.i("recipe res", "not null")
     val context = LocalContext.current
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
@@ -785,9 +784,6 @@ fun RecipeCardPreview(
                             fontWeight = FontWeight.SemiBold
                         )
                     }
-
-                    Log.i("LLM RECIPE", "ingredients: ${ingredientSection.ingredients}")
-
                     ingredientSection.ingredients.forEach { ingredient ->
                         val ingredientText = if (alteredRecipe) {
                             // scale the ingredient if it is an alteration, because it is returned for 1 sevring unlike others which return for the actual number of servings.
@@ -1140,7 +1136,7 @@ fun UserInputSection(
                             )
                         },
                         painter = painterResource(R.drawable.camera),
-                        modifier = Modifier.padding(end = 4.dp)
+                        modifier = Modifier.padding(end = 4.dp).testTag("selectImage")
                     )
                 }
             }

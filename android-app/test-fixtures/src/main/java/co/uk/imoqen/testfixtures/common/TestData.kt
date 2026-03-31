@@ -295,7 +295,6 @@ object TestData {
         colour = "PINK",
         generated = false,
         imagePath = "image.png",
-        archived = false,
         storageInstructions = "Eat immediately.",
         recipeTypeId = 1,
         emoji = "\uD83C\uDF5C"
@@ -309,7 +308,6 @@ object TestData {
         colour = "PINK",
         generated = false,
         imagePath = "image.png",
-        archived = false,
         storageInstructions = "Eat immediately.",
         recipeTypeId = -1,
         emoji = "\uD83C\uDF5C"
@@ -323,7 +321,6 @@ object TestData {
         colour = "PINK",
         generated = false,
         imagePath = "image.png",
-        archived = false,
         storageInstructions = "Eat immediately.",
         recipeTypeId = 2,
         emoji = "\uD83C\uDF5C"
@@ -337,7 +334,6 @@ object TestData {
         colour = "PINK",
         generated = false,
         imagePath = "image.png",
-        archived = false,
         storageInstructions = "Eat immediately.",
         recipeTypeId = -1,
         emoji = "\uD83C\uDF5C"
@@ -351,7 +347,6 @@ object TestData {
         colour = "PINK",
         generated = false,
         imagePath = "image.png",
-        archived = false,
         storageInstructions = "Freezable.",
         recipeTypeId = 1,
         emoji = "\uD83C\uDF5C"
@@ -365,7 +360,6 @@ object TestData {
         colour = "PINK",
         generated = false,
         imagePath = "image.png",
-        archived = false,
         storageInstructions = "Freezable.",
         recipeTypeId = -1,
         emoji = "\uD83C\uDF5C"
@@ -379,7 +373,6 @@ object TestData {
         colour = "PINK",
         generated = false,
         imagePath = "image.png",
-        archived = false,
         storageInstructions = "Freezable.",
         recipeTypeId = -1,
         emoji = "\uD83C\uDF5C"
@@ -393,7 +386,6 @@ object TestData {
         colour = "PINK",
         generated = false,
         imagePath = "image.png",
-        archived = false,
         storageInstructions = "Freezable.",
         recipeTypeId = -1,
         emoji = "\uD83C\uDF5C"

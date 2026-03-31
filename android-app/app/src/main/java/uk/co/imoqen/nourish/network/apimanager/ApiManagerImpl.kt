@@ -43,7 +43,6 @@ class ApiManagerImpl @Inject constructor(
             when (type) {
                 // generate recipe
                 LlmRequestType.RECIPE -> {
-                    Log.i("calling llm", "pompt: $request")
                     handleRequestCall(
                         apiService.generateRecipe(request, "Bearer $bearerToken"),
                         onDishesProposed,
@@ -54,7 +53,6 @@ class ApiManagerImpl @Inject constructor(
 
                 // generate recipe from image and the chosen dish
                 LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH -> {
-                    Log.i("calling llm", "pompt: $request")
                     val file = File(filesDir, imageFilename)
                     val requestBody = file.asRequestBody("image/jpg".toMediaType())
                     val multipartBody =
@@ -70,7 +68,6 @@ class ApiManagerImpl @Inject constructor(
 
                 // generate 4x dishes from ingredients
                 LlmRequestType.DISHES_FROM_INGREDIENTS -> {
-                    Log.i("calling llm", "pompt: $request")
                     handleRequestCall(
                         apiService.generateDishesFromIngredients(request, "Bearer $bearerToken"),
                         onDishesProposed,
@@ -251,7 +248,6 @@ class ApiManagerImpl @Inject constructor(
             }
             // Timeout or no internet:
             override fun onFailure(call: Call<T>, t: Throwable) {
-                Log.i("Llm Action", "${t.message}")
                 onError("Internal Server Error. Please try again later, or check your internet connection.")
             }
         })
@@ -264,7 +260,6 @@ class ApiManagerImpl @Inject constructor(
     ) {
         try {
             val error = response.errorBody()?.string()
-            Log.i("Server error llm", "$error")
             val errorJson = Gson().fromJson(error, LlmError::class.java)
             // likely due to token limit being reached.
             onError("An error occurred. ${errorJson.error}")

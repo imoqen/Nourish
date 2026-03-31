@@ -28,7 +28,6 @@ import javax.inject.Inject
 
 class RecipeRepositoryImpl @Inject constructor(
     private val db: NourishDatabase,
-
     // internal recipe types, therefore must use Dao as all use this shared Repository:
     private val recipeDao: RecipeDao,
     private val recipeTypeDao: RecipeTypeDao,
@@ -38,7 +37,6 @@ class RecipeRepositoryImpl @Inject constructor(
     private val recipeStepDao: RecipeStepDao,
     private val recipeNutritionDao: RecipeNutritionDao,
     private val recipeQueryDao: RecipeQueryDao,
-
     // external therefore use Repositories:
     private val ingredientRepository: IngredientRepositoryImpl,
     private val tagRepository: TagRepositoryImpl,
@@ -53,14 +51,11 @@ class RecipeRepositoryImpl @Inject constructor(
     override fun getRecipeWithRecipeTags(recipeId: Long): Flow<RecipeWithRecipeTags> = recipeDao.getRecipeWithRecipeTags(recipeId)
     override fun getRecipeWithRecipeSteps(recipeId: Long): Flow<RecipeWithRecipeSteps> = recipeDao.getRecipeWithRecipeSteps(recipeId)
 
-
-
     // RECIPE TYPE LOGIC:
     override fun getAllRecipeTypes(): Flow<List<RecipeType>> = recipeTypeDao.getAll()
     override fun getRecipeTypeById(id: Long): Flow<RecipeType?> = recipeTypeDao.getById(id)
     override suspend fun insertRecipeType(recipeType: RecipeType): Long = recipeTypeDao.insert(recipeType)
     override suspend fun getIdByTitle(title: String): Long? = recipeTypeDao.getIdByTitle(title)
-
 
     // RECIPE INGREDIENT LOGIC:
     override fun getAllRecipeIngredients(): Flow<List<RecipeIngredient>> = recipeIngredientDao.getAll()
@@ -143,7 +138,6 @@ class RecipeRepositoryImpl @Inject constructor(
                     colour = llmRecipe.colour.uppercase(),
                     generated = llmGenerated,
                     imagePath = imagePath,
-                    archived = false,
                     storageInstructions = llmRecipe.storage,
                     recipeTypeId = recipeTypeId,
                     emoji = llmRecipe.emoji
@@ -156,7 +150,6 @@ class RecipeRepositoryImpl @Inject constructor(
                     colour = llmRecipe.colour.uppercase(),
                     generated = llmGenerated,
                     imagePath = imagePath,
-                    archived = false,
                     storageInstructions = llmRecipe.storage,
                     recipeTypeId = recipeTypeId,
                     emoji = llmRecipe.emoji
@@ -172,8 +165,8 @@ class RecipeRepositoryImpl @Inject constructor(
                 val sectionId = recipeIngredientSectionDao.insert(RecipeIngredientSection(title = section))
                 // for each Ingredient in the section:
                 ingredients.forEach{ingredient ->
-                    val singular = ingredient.ingredientSingular
-                    val plural = ingredient.ingredientPlural
+                    val singular = if (llmGenerated) { ingredient.ingredientSingular.lowercase() } else { ingredient.ingredientSingular } // always lowercase from LLM
+                    val plural = if (llmGenerated) { ingredient.ingredientPlural.lowercase() } else { ingredient.ingredientPlural } // always lowercase from LLM
                     // purpose of shouldNotScaleIngredients is to ensure that altered recipes dont get divided by serving size. only LLM generated reicpes should have this. Otherwise, this is handled in the parseToLlmRecipe for user-added/-edited recipes, and already by the LLM in alterations.
                     val amount = if (shouldNotScaleIngredients) {ingredient.ingredientAmount} else { ingredient.ingredientAmount / recipe.numberOfServings }// divide by number of servings, so ingredient is stored for 1 serving.
                     val unit = ingredient.ingredientAmountUnit
@@ -254,38 +247,12 @@ class RecipeRepositoryImpl @Inject constructor(
     override suspend fun scaleRecipe(recipe: Recipe, currentServingSize: Int, increase: Boolean) {
         db.withTransaction {
             val newServingSize = if (increase) { currentServingSize+1 } else { currentServingSize-1 }
-           /* val scalingFactor = newServingSize.toFloat() / currentServingSize.toFloat()
-
-            val recipeIngredients = getRecipeWithRecipeIngredients(recipe.id).first()
-
-            recipeIngredients.ingredients.forEach { recipeIngredient ->
-                // rounds so that it is to nearest 0.25 to prevent weird numbers
-                var scaledAmount = recipeIngredient.amount*scalingFactor
-                if (scaledAmount < 0.25) {
-                    scaledAmount = 0.25 // cant go less than 0.25
-                }
-                updateRecipeIngredient(
-                    recipeIngredient.copy(amount = scaledAmount)
-                )
-            }*/
-
             // update serving size:
             recipeDao.update(recipe.copy(numberOfServings = newServingSize))
         }
     }
 
     override suspend fun replaceRecipe(currentRecipe: Recipe, newRecipe: LlmRecipe, updatedImagePath: String, llmGenerated: Boolean) {
-        // things to update:
-
-        // DELETE ALL AND UPLOAD NEW with the currentRecipe id:
-        // recipe ingredients
-        // ingredient sections
-        // will potentially have to add new ingredients as a result, BUT DONT DELETE THE OLD INGREDIENTS.
-        // recipe tags
-
-        // replace the recipe
-
-        // oir just save the original recipe id, then add recipe USING that recipe id.
         val originalRecipeId = currentRecipe.id
         val originalRecipeAuthor = currentRecipe.authorUid
 

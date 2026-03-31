@@ -130,7 +130,6 @@ fun TagsDisplayForFiltering(
                                     //if (onTrailingIconPress != null && setTagOnTrailingIconPress != null) {
 
                                         Modifier.clickable {
-                                            Log.i("tag delete", "setting tag to delete")
                                             // invoke is required because the methods are nullable
                                             setTagOnTrailingIconPress(tag) // set thetag (to delete)
                                             onTrailingIconPress()

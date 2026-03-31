@@ -132,7 +132,7 @@ fun NourishTextField(
                 ) {
                     Icon(
                         imageVector = trailingIcon,
-                        contentDescription = null,
+                        contentDescription = "Trailing Icon",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -640,11 +640,11 @@ fun NourishConfirmationDialog (
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     NourishButton(
-                        text = "Cancel",
+                        text = "No",
                         onClick = { onDismiss() }
                     )
                     NourishButton(
-                        text = "Confirm",
+                        text = "Yes",
                         onClick = { onConfirmation(); onDismiss() } // confirm then dismsis it
                     )
                 }

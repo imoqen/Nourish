@@ -59,6 +59,7 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -195,11 +196,9 @@ fun RecipeBookScreen(
             // set all nutritional tags and recipe types for the dropdown, only change when those change.
 
             LaunchedEffect(uiState.recipeTypes?.size) {
-                Log.i("size:", "${uiState.recipeTypes?.size}")
                 recipeBookViewModel.getAllRecipeTypes()
             }
             LaunchedEffect(uiState.recipeTags?.size) {
-                Log.i("size:", "${uiState.recipeTags?.size}")
                 recipeBookViewModel.getAllTagsForUser()
             }
 
@@ -567,7 +566,7 @@ fun RecipeLoadingBar(
         if (loading) {
             Text(loadingMessage)
             LinearProgressIndicator(
-                modifier = Modifier.fillMaxWidth(0.6f),
+                modifier = Modifier.fillMaxWidth(0.6f).testTag("loadingBar"),
                 color = MaterialTheme.colorScheme.secondary,
                 trackColor = MaterialTheme.colorScheme.surfaceVariant,
             )
