@@ -16,7 +16,9 @@ import org.junit.Rule
 import org.junit.Test
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.RecipeActions
+import uk.co.imoqen.nourish.common.ingredient.IngredientSheetAction
 import uk.co.imoqen.nourish.common.tag.FilterState
+import uk.co.imoqen.nourish.common.tag.TagSheetAction
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.network.response.LlmIngredient
@@ -854,6 +856,83 @@ class RecipeCreationViewModelTest {
         Assert.assertEquals(vm.uiState.value.imageFile, "")
         Assert.assertEquals(vm.uiState.value.emoji, "\uD83E\uDD57") // default emoji is salad
         Assert.assertEquals(vm.uiState.value.colour, null)
+    }
+
+    @Test
+    fun `onIngredientSheetAction handles ingredient sheet actions appropriately`() {
+        // OnDismissRequest:
+        vm.onIngredientSheetAction(IngredientSheetAction.OnDismissRequest())
+        Assert.assertEquals(vm.uiState.value.showAddIngredientSheet,false)
+
+        // OnComplete:
+        vm.setIngredientToAddName("Cherry")
+        vm.setIngredientToAddAmount("300")
+        vm.setIngredientToAddUnit(IngredientUnit.G)
+        vm.onIngredientSheetAction(IngredientSheetAction.OnComplete())
+        Assert.assertEquals(vm.uiState.value.ingredientToAdd.error, "") // no error
+        Assert.assertEquals(vm.uiState.value.ingredients, listOf(LlmIngredient("Cherry", "Cherry", 300.0, "G")))
+
+        // SetIngredientAmount:
+        vm.onIngredientSheetAction(IngredientSheetAction.SetIngredientAmount("25"))
+        Assert.assertEquals(vm.uiState.value.ingredientToAdd.amount,"25")
+
+        // SetIngredientName:
+        vm.onIngredientSheetAction(IngredientSheetAction.SetIngredientName("Beef"))
+        Assert.assertEquals(vm.uiState.value.ingredientToAdd.name,"Beef")
+
+        // SetIngredientUnit:
+        vm.onIngredientSheetAction(IngredientSheetAction.SetIngredientUnit(IngredientUnit.KG))
+        Assert.assertEquals(vm.uiState.value.ingredientToAdd.unit,IngredientUnit.KG)
+
+    }
+
+    @Test
+    fun `onTagSheetAction handles actions for the tag sheet appropriately`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+
+        // SetFilterDisplayState:
+        vm.onTagSheetAction(TagSheetAction.SetFilterDisplayState(FilterState.APPLY))
+        Assert.assertEquals(vm.uiState.value.tagSheetState.filterDisplayState, FilterState.APPLY)
+
+        // CloseTagCreation:
+        vm.onTagSheetAction(TagSheetAction.CloseTagCreation())
+        Assert.assertEquals(vm.uiState.value.tagSheetState.filterDisplayState, FilterState.APPLY)
+        Assert.assertEquals(vm.uiState.value.tagSheetState.createdTagColour, null)
+        Assert.assertEquals(vm.uiState.value.tagSheetState.createdTagName, "")
+        Assert.assertEquals(vm.uiState.value.tagSheetState.tagCreationError, "")
+
+        // CreateTag:
+        vm.setCreatedTagName("Vegetarian")
+        vm.setCreatedTagColour(NourishColour.PINK)
+        vm.onTagSheetAction(TagSheetAction.CreateTag())
+        Assert.assertEquals(vm.uiState.value.tagSheetState.tagCreationError, "")
+
+        // DeleteTag:
+        vm.setTagToDelete(TestData.tag_lowcalorie)
+        vm.onTagSheetAction(TagSheetAction.DeleteTag())
+        Assert.assertEquals(vm.uiState.value.tagSheetState.tagToDelete, TestData.tag_lowcalorie)
+
+        // SetCreatedTagColour:
+        vm.onTagSheetAction(TagSheetAction.SetCreatedTagColour(NourishColour.PURPLE))
+        Assert.assertEquals(vm.uiState.value.tagSheetState.createdTagColour, NourishColour.PURPLE)
+
+        // SetCreatedTagName:
+        vm.onTagSheetAction(TagSheetAction.SetCreatedTagName("High Protein"))
+        Assert.assertEquals(vm.uiState.value.tagSheetState.createdTagName,"High Protein")
+
+        // SetTagToDelete:
+        vm.onTagSheetAction(TagSheetAction.SetTagToDelete(TestData.tag_vegan))
+        Assert.assertEquals(vm.uiState.value.tagSheetState.tagToDelete,TestData.tag_vegan)
+
+        // ShowTagConfirmationDialog:
+        vm.onTagSheetAction(TagSheetAction.ShowTagConfirmationDialog(true))
+        Assert.assertEquals(vm.uiState.value.tagSheetState.showTagConfirmationDialog,true)
+
+        // UpdateSelected:
+        vm.getAllTagsForUser()
+        Assert.assertEquals(vm.uiState.value.tagSheetState.recipeTags?.get(0), TagSelection(TestData.tag_lowcalorie, false))
+        vm.onTagSheetAction(TagSheetAction.UpdateSelected(TestData.tag_lowcalorie, true))
+        Assert.assertEquals(vm.uiState.value.tagSheetState.recipeTags?.get(0), TagSelection(TestData.tag_lowcalorie, true))
     }
 
 }

@@ -14,7 +14,9 @@ import org.junit.Rule
 import org.junit.Test
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.RecipeActions
+import uk.co.imoqen.nourish.common.ingredient.IngredientSheetAction
 import uk.co.imoqen.nourish.common.tag.FilterState
+import uk.co.imoqen.nourish.common.tag.TagSheetAction
 import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.recipebook.TagSelection
 import uk.co.imoqen.nourish.recipediscovery.LlmChatStage
@@ -477,4 +479,52 @@ class RecipeDiscoveryViewModelTest {
         Assert.assertEquals(vm.uiState.value.tagSheetState.tagCreationError, "")
     }
 
+    @Test
+    fun `onTagSheetAction handles actions for the tag sheet appropriately`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+
+        // SetFilterDisplayState:
+        vm.onTagSheetAction(TagSheetAction.SetFilterDisplayState(FilterState.APPLY))
+        Assert.assertEquals(vm.uiState.value.tagSheetState.filterDisplayState, FilterState.APPLY)
+
+        // CloseTagCreation:
+        vm.onTagSheetAction(TagSheetAction.CloseTagCreation())
+        Assert.assertEquals(vm.uiState.value.tagSheetState.filterDisplayState, FilterState.APPLY)
+        Assert.assertEquals(vm.uiState.value.tagSheetState.createdTagColour, null)
+        Assert.assertEquals(vm.uiState.value.tagSheetState.createdTagName, "")
+        Assert.assertEquals(vm.uiState.value.tagSheetState.tagCreationError, "")
+
+        // CreateTag:
+        vm.setCreatedTagName("Vegetarian")
+        vm.setCreatedTagColour(NourishColour.PINK)
+        vm.onTagSheetAction(TagSheetAction.CreateTag())
+        Assert.assertEquals(vm.uiState.value.tagSheetState.tagCreationError, "")
+
+        // DeleteTag:
+        vm.setTagToDelete(TestData.tag_lowcalorie)
+        vm.onTagSheetAction(TagSheetAction.DeleteTag())
+        Assert.assertEquals(vm.uiState.value.tagSheetState.tagToDelete, TestData.tag_lowcalorie)
+
+        // SetCreatedTagColour:
+        vm.onTagSheetAction(TagSheetAction.SetCreatedTagColour(NourishColour.PURPLE))
+        Assert.assertEquals(vm.uiState.value.tagSheetState.createdTagColour, NourishColour.PURPLE)
+
+        // SetCreatedTagName:
+        vm.onTagSheetAction(TagSheetAction.SetCreatedTagName("High Protein"))
+        Assert.assertEquals(vm.uiState.value.tagSheetState.createdTagName,"High Protein")
+
+        // SetTagToDelete:
+        vm.onTagSheetAction(TagSheetAction.SetTagToDelete(TestData.tag_vegan))
+        Assert.assertEquals(vm.uiState.value.tagSheetState.tagToDelete,TestData.tag_vegan)
+
+        // ShowTagConfirmationDialog:
+        vm.onTagSheetAction(TagSheetAction.ShowTagConfirmationDialog(true))
+        Assert.assertEquals(vm.uiState.value.tagSheetState.showTagConfirmationDialog,true)
+
+        // UpdateSelected:
+        vm.getAllTagsForUser()
+        Assert.assertEquals(vm.uiState.value.tagSheetState.recipeTags?.get(0), TagSelection(TestData.tag_lowcalorie, false))
+        vm.onTagSheetAction(TagSheetAction.UpdateSelected(TestData.tag_lowcalorie, true))
+        Assert.assertEquals(vm.uiState.value.tagSheetState.recipeTags?.get(0), TagSelection(TestData.tag_lowcalorie, true))
+    }
 }

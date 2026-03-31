@@ -19,6 +19,9 @@ import org.junit.Rule
 import org.junit.Test
 import uk.co.imoqen.nourish.common.RecipeActions
 import uk.co.imoqen.nourish.common.ingredient.AddIngredientSheetState
+import uk.co.imoqen.nourish.common.ingredient.IngredientSheetAction
+import uk.co.imoqen.nourish.common.tag.FilterState
+import uk.co.imoqen.nourish.common.tag.TagSheetAction
 import uk.co.imoqen.nourish.db.NourishDatabase
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.setup.MainDispatcherRule
@@ -465,5 +468,33 @@ class ShoppingListViewModelTest {
         Assert.assertEquals(vm.uiState.value.ingredientToEdit.amount, "")
     }
 
+    @Test
+    fun `onIngredientSheetAction handles actions for the ingredient sheet appropriately`() {
+        fakeAuthenticationManager.setLoginState(true, "valid_user")
+
+        // OnDismissRequest:
+        vm.onIngredientSheetAction(IngredientSheetAction.OnDismissRequest())
+        Assert.assertEquals(vm.uiState.value.userInteractionStatus, UserInteractionStatus.BROWSE)
+
+        // OnComplete:
+        vm.setShoppingListEntries(listOf())
+        vm.setIngredientToAddName("strawberries")
+        vm.setIngredientToAddAmount("200.0")
+        vm.setIngredientToAddUnit(IngredientUnit.G)
+        vm.onIngredientSheetAction(IngredientSheetAction.OnComplete())
+        Assert.assertTrue(vm.uiState.value.shoppingListEntries.isNotEmpty()) // not empty; populated with ingredient
+
+        // SetIngredientAmount:
+        vm.onIngredientSheetAction(IngredientSheetAction.SetIngredientAmount("50"))
+        Assert.assertEquals(vm.uiState.value.ingredientToAdd.amount, "50")
+        
+        // SetIngredientName:
+        vm.onIngredientSheetAction(IngredientSheetAction.SetIngredientName("Potatoes"))
+        Assert.assertEquals(vm.uiState.value.ingredientToAdd.name, "Potatoes")
+
+        // SetIngredientUnit:
+        vm.onIngredientSheetAction(IngredientSheetAction.SetIngredientUnit(IngredientUnit.G))
+        Assert.assertEquals(vm.uiState.value.ingredientToAdd.unit, IngredientUnit.G)
+    }
 
 }
