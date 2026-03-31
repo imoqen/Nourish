@@ -314,7 +314,7 @@ fun TypesDisplayForFiltering(
                             if (selected) {
                                 Modifier.border(
                                     width = 1.dp,
-                                    color = MaterialTheme.colorScheme.error,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                     shape = RoundedCornerShape(12.dp)
                                 )
                             } else {

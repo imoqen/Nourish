@@ -377,7 +377,7 @@ fun GoogleButton(
     ) {
         Image(
             painter = painterResource(R.drawable.google_logo),
-            contentDescription = "Nourish Logo",
+            contentDescription = "Google Logo",
             modifier = Modifier
                 .size(32.dp)
                 .padding(end = 4.dp)

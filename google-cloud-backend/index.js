@@ -159,8 +159,6 @@ function recipeSchemaZod(allNutritionalFilters, dishType) {
     .split(",")
     .map((v) => v.trim());
   const dishTypeList = dishType.split(",").map((v) => v.trim());
-  console.log("nutritional filter list: ", nutritionalFilterList);
-  console.log("dish type list: ", dishTypeList);
 
   return z.object({
     title: z
@@ -694,8 +692,6 @@ async function generateNutritionalValues(
     responseFormat: toolStrategy(NutritionSchemaZod),
   });
 
-  console.log("Generating nutritional values for: " + JSON.stringify(recipe));
-
   const result = await agent.invoke({
     messages: [
       {
@@ -714,7 +710,6 @@ async function generateNutritionalValues(
   });
 
   // note: this returns the tokens. should use this value to increment the token count instead.
-  console.log(JSON.stringify(result.structuredResponse));
   return result.structuredResponse;
 }
 
@@ -735,13 +730,6 @@ async function generateQuestionAnswer(
     tools: [],
     responseFormat: toolStrategy(QuestionAnswerSchemaZod),
   });
-
-  console.log(
-    "Answering the question: " +
-      query +
-      " for recipe:" +
-      JSON.stringify(recipe),
-  );
 
   const result = await agent.invoke({
     messages: [
@@ -764,7 +752,6 @@ async function generateQuestionAnswer(
   });
 
   // note: this returns the tokens. should use this value to increment the token count instead.
-  console.log(JSON.stringify(result.structuredResponse));
   return result.structuredResponse;
 }
 
@@ -790,13 +777,6 @@ async function generateAlteredRecipe(
     ),
   });
 
-  console.log(
-    "Answering the question: " +
-      query +
-      " for recipe:" +
-      JSON.stringify(recipe),
-  );
-
   const result = await agent.invoke({
     messages: [
       {
@@ -819,7 +799,6 @@ async function generateAlteredRecipe(
   });
 
   // note: this returns the tokens. should use this value to increment the token count instead.
-  console.log(JSON.stringify(result.structuredResponse));
   return result.structuredResponse;
 }
 
@@ -860,18 +839,6 @@ async function generateRecipe(
     ),
   });
 
-  console.log(
-    "Generating recipe for: " +
-      prompt +
-      " with nutritional filters: " +
-      chosenNutritionalFilters +
-      "and dish type: " +
-      dishType +
-      "and all nutritional filters: " +
-      allNutritionalFilters +
-      ":",
-  );
-
   const result = await agent.invoke({
     messages: [
       {
@@ -896,7 +863,6 @@ async function generateRecipe(
   });
 
   // note: this returns the tokens. should use this value to increment the token count instead.
-  console.log(JSON.stringify(result.structuredResponse));
   return result.structuredResponse;
 }
 
@@ -919,15 +885,6 @@ async function generateDishesFromIngredients(
     tools: [],
     responseFormat: toolStrategy(recipeListFromIngredientsSchemaZod(dishType)),
   });
-
-  console.log(
-    "Generating dishes for ingredients: " +
-      prompt +
-      " with filters: " +
-      chosenNutritionalFilters +
-      " and type: " +
-      dishType,
-  );
 
   const result = await agent.invoke({
     messages: [
@@ -954,8 +911,6 @@ async function generateDishesFromIngredients(
   });
 
   // note: this returns the tokens. should use this value to increment the token count instead.
-
-  console.log(result.structuredResponse);
   return result.structuredResponse;
 }
 
@@ -994,16 +949,6 @@ async function generateRecipeFromDishImage(
     ),
   });
 
-  console.log(
-    "Generating recipe for: " +
-      dish +
-      " From image" +
-      " With filters: " +
-      chosenNutritionalFilters +
-      " And type: " +
-      dishType,
-  );
-
   const result = await agent.invoke({
     messages: [
       {
@@ -1035,8 +980,6 @@ async function generateRecipeFromDishImage(
   });
 
   // note: this returns the tokens. should use this value to increment the token count instead.
-
-  console.log(JSON.stringify(result.structuredResponse));
   return result.structuredResponse;
 }
 
@@ -1083,14 +1026,6 @@ async function generateDishesFromIngredientsImage(
     ),
   });
 
-  console.log(
-    "Identifying ingredients and potential dishes" +
-      " with filters: " +
-      chosenNutritionalFilters +
-      " and type: " +
-      dishType,
-  );
-
   const result = await agent.invoke({
     messages: [
       {
@@ -1119,8 +1054,6 @@ async function generateDishesFromIngredientsImage(
   });
 
   // note: this returns the tokens. should use this value to increment the token count instead.
-
-  console.log(result.structuredResponse);
   return result.structuredResponse;
 }
 
@@ -1167,14 +1100,6 @@ async function generateDishesFromImage(
     responseFormat: toolStrategy(recipeListFromImageSchemaZod(dishType)),
   });
 
-  console.log(
-    "Identifying dishes in the image" +
-      " with filters: " +
-      chosenNutritionalFilters +
-      " and type: " +
-      dishType,
-  );
-
   const result = await agent.invoke({
     messages: [
       {
@@ -1202,8 +1127,6 @@ async function generateDishesFromImage(
   });
 
   // note: this returns the tokens. should use this value to increment the token count instead.
-
-  console.log(result.structuredResponse);
   return result.structuredResponse;
 }
 
