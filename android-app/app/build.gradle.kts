@@ -91,7 +91,6 @@ dependencies {
     // drag and drop lists
     implementation("sh.calvin.reorderable:reorderable:3.0.0")
 
-
     // Navigation:
     val nav_version = "2.9.6"
     implementation("androidx.navigation:navigation-compose:$nav_version")
@@ -111,16 +110,8 @@ dependencies {
     // https://firebase.google.com/docs/android/learn-more
     // for firebase auth and firebase firestore.
     implementation(platform("com.google.firebase:firebase-bom:34.8.0"))
-
-    // TODO: Add the dependencies for Firebase products you want to use
-    // When using the BoM, don't specify versions in Firebase dependencies
-    // https://firebase.google.com/docs/android/setup#available-libraries
-    // For example, add the dependencies for Firebase Authentication and Cloud Firestore
-    //implementation("com.google.firebase:firebase-auth")
-    //implementation("com.google.firebase:firebase-firestore")
-
+    implementation("com.google.firebase:firebase-appcheck-playintegrity")
     // Firebase Authentication
-    // When using BoM, you don't specify versions in Firebase library dependencies
     implementation("com.google.firebase:firebase-auth")
 
     // Firebase Google account authentication (for logins with Google):

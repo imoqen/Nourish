@@ -10,11 +10,6 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
-import uk.co.imoqen.nourish.db.tag.Tag
 import javax.inject.Singleton
 
 // Hilt dependency injection for Room database
@@ -36,7 +31,6 @@ object NourishDatabaseModule {
             NourishDatabase::class.java,
             "nourish_database"
         )
-            // IMPORTANT: when i release the app, need to remove allow destructive migration AND set allowBackup back to true (set to false currently to prevent bug).
             // Seed the database using a callback https://matthiaslischka.at/2019/01/15/seed-room-database/
             .addCallback(object: RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
