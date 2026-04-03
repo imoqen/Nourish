@@ -23,6 +23,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.printToLog
@@ -707,6 +708,332 @@ class RecipeBookViewTest {
             .assertExists()
         composeRule
             .onNodeWithText("20.0g")
+            .assertExists()
+    }
+
+    @Test
+    fun `Recipes can be searched`() {
+        composeRule.onNode(
+            hasText("Search for a recipe")
+        ).performTextInput("unhealthy")
+        composeRule.onNode(
+            hasText("Healthy Salad")
+        ).assertDoesNotExist()
+
+        composeRule.onNode(
+            hasText("unhealthy")
+        ).performTextClearance()
+        composeRule.onNode(
+            hasText("Search for a recipe")
+        ).performTextInput("healthy")
+        composeRule.onNode(
+            hasText("Healthy Salad")
+        ).assertExists()
+
+        composeRule.onNode(
+            hasText("healthy")
+        ).performTextClearance()
+        composeRule.onNode(
+            hasText("Healthy Salad")
+        ).assertExists()
+    }
+
+    @Test
+    fun `Recipes can be filtered by tags`() {
+        // add freezer friendly tag
+        composeRule.onNodeWithContentDescription("Filter")
+            .performClick()
+        composeRule.onNode(
+            hasText("Freezer-friendly")
+        ).performClick()
+        // salad recipe not displayed:
+        composeRule.onNode(
+            hasText("Healthy Salad")
+        ).assertDoesNotExist()
+
+        // remove freezer friendly tag and add low calorie and vegan tag
+        composeRule.onNode(
+            hasText("Freezer-friendly") and hasClickAction()
+        ).performClick()
+        // salad recipe displayed:
+        composeRule.onNode(
+            hasText("Healthy Salad")
+        ).assertExists()
+        composeRule.onAllNodes(
+            hasText("Vegan") and hasClickAction()
+        )[1].performClick()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasText("Healthy Salad"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onAllNodes(
+            hasText("Low calorie") and hasClickAction()
+        )[1].performClick()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasText("Healthy Salad"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
+    @Test
+    fun `Recipes can be filtered by type`() {
+        // breakfast:
+        composeRule.onNodeWithContentDescription("Filter")
+            .performClick()
+        composeRule.onNode(
+            hasText("Breakfast")
+        ).performClick()
+
+        // salad recipe not displayed:
+        composeRule.onNode(
+            hasText("Healthy Salad")
+        ).assertDoesNotExist()
+        composeRule.onNode(
+            hasText("You do not have any saved Breakfast recipes.")
+        ).assertExists()
+
+        // lunch:
+        composeRule.onNode(
+            hasText("Lunch")
+        ).performClick()
+
+        // salad recipe not displayed:
+        composeRule.onNode(
+            hasText("Healthy Salad")
+        ).assertExists()
+        composeRule.onNode(
+            hasText("You do not have any saved Breakfast or Lunch recipes.")
+        ).assertDoesNotExist()
+
+        // dinner:
+        composeRule.onNode(
+            hasText("Dinner")
+        ).performClick()
+        composeRule.onNode(
+            hasText("You do not have any saved Breakfast or Dinner recipes.")
+        ).assertExists()
+
+        // dessert:
+        composeRule.onNode(
+            hasText("Dessert")
+        ).performClick()
+        composeRule.onNode(
+            hasText("You do not have any saved Breakfast or Dinner or Dessert recipes.")
+        ).assertExists()
+
+        // side:
+        composeRule.onNode(
+            hasText("Side")
+        ).performClick()
+        composeRule.onNode(
+            hasText("You do not have any saved Breakfast or Dinner or Dessert or Side recipes.")
+        ).assertExists()
+
+        // drink:
+        composeRule.onNode(
+            hasText("Drink")
+        ).performClick()
+        composeRule.onNode(
+            hasText("You do not have any saved Breakfast or Dinner or Dessert or Side or Drink recipes.")
+        ).assertExists()
+    }
+
+    @Test
+    fun `Ingredients can be scaled by serving size and the serving size cannot go below one`() {
+        // go to the healthy salad recipe:
+        composeRule.onNode(
+            hasText("Healthy Salad")
+        ).performClick()
+
+        // wait for the data to load from the DB:
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasText("Healthy Salad"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+
+        composeRule.onRoot(useUnmergedTree = true).printToLog("RECIPEBOOKSCREEN")
+
+        // check that all additional data is present:
+        composeRule
+            .onNodeWithText("Serving")
+            .assertExists()
+        composeRule
+            .onNodeWithText("1") // serving size
+            .assertExists()
+        // check initial ingredient values for serving size of 1:
+        composeRule
+            .onNodeWithText("Ingredients")
+            .assertExists()
+        composeRule
+            .onNodeWithText("For the salad")
+            .assertExists()
+        composeRule
+            .onNodeWithText("0.25 cucumber")
+            .assertExists()
+        composeRule
+            .onNodeWithText("100 g tomatoes")
+            .assertExists()
+        composeRule
+            .onNodeWithText("4 leaves of lettuce")
+            .assertExists()
+        composeRule
+            .onNodeWithText("For the dressing")
+            .assertExists()
+        composeRule
+            .onNodeWithText("5 ml honey")
+            .assertExists()
+        composeRule
+            .onNodeWithText("1 dash of vinegar")
+            .assertExists()
+        composeRule
+            .onNodeWithText("1 drop of lemon juice")
+            .assertExists()
+        composeRule
+            .onNodeWithText("1 sprinkle of salt")
+            .assertExists()
+        composeRule
+            .onNodeWithText("1 dash of pepper")
+            .assertExists()
+
+        // increase serving size:
+        composeRule
+            .onNodeWithTag("increaseServingSize")
+            .performClick()
+        // wait for the calculation to complete:
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasText("2"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule
+            .onNodeWithText("2") // serving size
+            .assertExists()
+
+        composeRule
+            .onNodeWithText("Ingredients")
+            .assertExists()
+        composeRule
+            .onNodeWithText("For the salad")
+            .assertExists()
+        composeRule
+            .onNodeWithText("0.5 cucumber")
+            .assertExists()
+        composeRule
+            .onNodeWithText("200 g tomatoes")
+            .assertExists()
+        composeRule
+            .onNodeWithText("8 leaves of lettuce")
+            .assertExists()
+        composeRule
+            .onNodeWithText("For the dressing")
+            .assertExists()
+        composeRule
+            .onNodeWithText("10 ml honey")
+            .assertExists()
+        composeRule
+            .onNodeWithText("2 dashes of vinegar")
+            .assertExists()
+        composeRule
+            .onNodeWithText("2 drops of lemon juice")
+            .assertExists()
+        composeRule
+            .onNodeWithText("2 sprinkles of salt")
+            .assertExists()
+        composeRule
+            .onNodeWithText("2 dashes of pepper")
+            .assertExists()
+
+        // decrease serving size, cannot go below 1:
+        composeRule
+            .onNodeWithTag("decreaseServingSize")
+            .performClick()
+        // wait for the calculation to complete:
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasText("1"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+
+        composeRule
+            .onNodeWithText("1") // serving size
+            .assertExists()
+        composeRule
+            .onNodeWithText("Ingredients")
+            .assertExists()
+        composeRule
+            .onNodeWithText("For the salad")
+            .assertExists()
+        composeRule
+            .onNodeWithText("0.25 cucumber")
+            .assertExists()
+        composeRule
+            .onNodeWithText("100 g tomatoes")
+            .assertExists()
+        composeRule
+            .onNodeWithText("4 leaves of lettuce")
+            .assertExists()
+        composeRule
+            .onNodeWithText("For the dressing")
+            .assertExists()
+        composeRule
+            .onNodeWithText("5 ml honey")
+            .assertExists()
+        composeRule
+            .onNodeWithText("1 dash of vinegar")
+            .assertExists()
+        composeRule
+            .onNodeWithText("1 drop of lemon juice")
+            .assertExists()
+        composeRule
+            .onNodeWithText("1 sprinkle of salt")
+            .assertExists()
+        composeRule
+            .onNodeWithText("1 dash of pepper")
+            .assertExists()
+
+        // stays at 1 if decreased further:
+        composeRule
+            .onNodeWithTag("decreaseServingSize")
+            .performClick()
+        composeRule
+            .onNodeWithText("1") // serving size
+            .assertExists()
+
+        composeRule
+            .onNodeWithText("Ingredients")
+            .assertExists()
+        composeRule
+            .onNodeWithText("For the salad")
+            .assertExists()
+        composeRule
+            .onNodeWithText("0.25 cucumber")
+            .assertExists()
+        composeRule
+            .onNodeWithText("100 g tomatoes")
+            .assertExists()
+        composeRule
+            .onNodeWithText("4 leaves of lettuce")
+            .assertExists()
+        composeRule
+            .onNodeWithText("For the dressing")
+            .assertExists()
+        composeRule
+            .onNodeWithText("5 ml honey")
+            .assertExists()
+        composeRule
+            .onNodeWithText("1 dash of vinegar")
+            .assertExists()
+        composeRule
+            .onNodeWithText("1 drop of lemon juice")
+            .assertExists()
+        composeRule
+            .onNodeWithText("1 sprinkle of salt")
+            .assertExists()
+        composeRule
+            .onNodeWithText("1 dash of pepper")
             .assertExists()
     }
 }
