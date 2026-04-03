@@ -4,13 +4,16 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -498,7 +501,7 @@ class RecipeDiscoveryViewTest {
 
     // tests related to recipe actions:
     @Test
-    fun `Tag can be added in the recipe generation view`() {
+    fun `Tag can be created and added in the recipe discovery view`() {
 
         // to identify modal bottom sheet, to close it when required:
         val hasDismissAction =
@@ -513,32 +516,25 @@ class RecipeDiscoveryViewTest {
             .onNodeWithContentDescription("Trailing Icon")
             .performClick()
 
-        // Will send if the user enters something:
-        composeRule
-            .onNodeWithText("Enter dish or description")
-            .performTextInput("Healthy salad")
-
-        // Select dish type:
-        composeRule
-            .onNodeWithText("Dish Type: Any")
-            .performClick()
-        composeRule
-            .onNodeWithText("Lunch")
-            .performClick()
-        // dismiss the model bottom sheet:
-        composeRule
-            .onNode(hasDismissAction, useUnmergedTree = true)
-            .performSemanticsAction(SemanticsActions.Dismiss)
-
-        // Filter by nutritional tags: (low calorie and vegetarian)
+        // Make a nutritional tag and add it:
         composeRule
             .onNodeWithContentDescription("Leading Icon") // the filter icon is the leading icon.
             .performClick()
         composeRule
-            .onNodeWithText("Low calorie")
+            .onNodeWithText("Add your own")
             .performClick()
         composeRule
-            .onNodeWithText("Vegan")
+            .onNodeWithText("Enter a description, e.g. 'Vegan'")
+            .performTextInput("My custom tag")
+        composeRule
+            .onNodeWithText("Pink")
+            .performClick()
+        composeRule
+            .onNodeWithText("Create tag")
+            .performClick()
+        // add the new tag:
+        composeRule
+            .onNodeWithText("My custom tag")
             .performClick()
 
         // dismiss the modal bottom sheet:
@@ -546,93 +542,151 @@ class RecipeDiscoveryViewTest {
             .onNode(hasDismissAction, useUnmergedTree = true)
             .performSemanticsAction(SemanticsActions.Dismiss)
 
+        // tag has been added:
+        composeRule
+            .onNodeWithText("My custom tag")
+            .assertExists()
+    }
+
+    // tests related to recipe actions:
+    @Test
+    fun `Tag cannot be created and added in the recipe discovery view if no description is entered`() {
+
+        composeRule.onNode(
+            hasText("Dish or Description")
+        ).performClick()
+
+        // Will not send if the input is blank:
         composeRule
             .onNodeWithContentDescription("Trailing Icon")
             .performClick()
 
-        // check that the meal type and tags were applied:
+        // Make a nutritional tag and add it:
         composeRule
-            .onNodeWithText("Low calorie")
-            .assertExists()
+            .onNodeWithContentDescription("Leading Icon") // the filter icon is the leading icon.
+            .performClick()
         composeRule
-            .onNodeWithText("Vegan")
-            .assertExists()
+            .onNodeWithText("Add your own")
+            .performClick()
         composeRule
-            .onNodeWithText("Dish type: Lunch")
-            .assertExists()
+            .onNodeWithText("Enter a description, e.g. 'Vegan'")
+            .performTextInput(" ") // blank
+        composeRule
+            .onNodeWithText("Pink")
+            .performClick()
+        composeRule
+            .onNodeWithText("Create tag")
+            .performClick()
+        composeRule
+            .onNodeWithText("Please enter a description.")
+            .performClick()
+    }
 
-        composeRule
-            .onNodeWithTag("recipeDiscoveryLazyColumn")
-            .performScrollToNode(
-                hasText("Healthy Salad", substring = true)
-            )
+    @Test
+    fun `Tag cannot be created and added in the recipe discovery view if no colour is entered`() {
 
-        composeRule
-            .onNodeWithText("Healthy Salad", substring = true, useUnmergedTree = true)
-            .assertExists()
+        composeRule.onNode(
+            hasText("Dish or Description")
+        ).performClick()
 
-        // Ingredients are generated
+        // Will not send if the input is blank:
         composeRule
-            .onNodeWithText("For the salad", useUnmergedTree = true)
-            .assertExists()
-        composeRule
-            .onNodeWithText("0.25 cucumber")
-            .assertExists()
-        composeRule
-            .onNodeWithText("100 g tomatoes")
-            .assertExists()
-        composeRule
-            .onNodeWithText("4 leaves of lettuce")
-            .assertExists()
+            .onNodeWithContentDescription("Trailing Icon")
+            .performClick()
 
-        // Method is generated
+        // Make a nutritional tag and add it:
         composeRule
-            .onNodeWithText("First, wash the vegetables.")
-            .assertExists()
+            .onNodeWithContentDescription("Leading Icon") // the filter icon is the leading icon.
+            .performClick()
         composeRule
-            .onNodeWithText("Cut the vegetables.")
-            .assertExists()
+            .onNodeWithText("Add your own")
+            .performClick()
+        composeRule
+            .onNodeWithText("Enter a description, e.g. 'Vegan'")
+            .performTextInput("My test tag")
+        composeRule
+            .onNodeWithText("Create tag")
+            .performClick()
+        composeRule
+            .onNodeWithText("Please select a colour.")
+            .performClick()
+    }
 
-        composeRule
-            .onNodeWithTag("recipeDiscoveryLazyColumn")
-            .performScrollToNode(
-                hasText("Save Recipe", substring = true)
-            )
+    @Test
+    fun `Tag can be discarded when creating in the recipe discovery view`() {
 
-        // User can then save the recipe and view it in their saved recipes
+        composeRule.onNode(
+            hasText("Dish or Description")
+        ).performClick()
+
+        // Will not send if the input is blank:
         composeRule
-            .onNodeWithText("Save Recipe")
+            .onNodeWithContentDescription("Trailing Icon")
+            .performClick()
+
+        // Make a nutritional tag and add it:
+        composeRule
+            .onNodeWithContentDescription("Leading Icon") // the filter icon is the leading icon.
+            .performClick()
+        composeRule
+            .onNodeWithText("Add your own")
+            .performClick()
+        composeRule
+            .onNodeWithText("Enter a description, e.g. 'Vegan'")
+            .performTextInput("My test tag")
+        composeRule
+            .onNodeWithText("Purple")
             .performClick()
 
         composeRule
-            .onNodeWithContentDescription("Go to view recipes", useUnmergedTree = true)
+            .onNodeWithText("Discard tag")
             .performClick()
 
-        // As it is the first time loading the recipes in this instance, the loading bar appears.
-        // This lasts 5 seconds, hence a 6 second delay is provided to ensure it has finished loading.
-        composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule
-                .onAllNodesWithTag("loadingBar")
-                .fetchSemanticsNodes().isEmpty()
-        }
+        // tag not created:
+        composeRule
+            .onNodeWithText("My test tag")
+            .assertDoesNotExist()
+    }
 
-        composeRule.onRoot(useUnmergedTree = true).printToLog("RECIPEBOOKSCREEN")
+    @Test
+    fun `Tag can be deleted in the recipe discovery view`() {
 
-        // the recipe has been saved:
-        composeRule
-            .onNodeWithText("Healthy Salad")
-            .assertExists()
+        composeRule.onNode(
+            hasText("Dish or Description")
+        ).performClick()
 
-        // the tags and type has been applied:
+        // Will not send if the input is blank:
         composeRule
-            .onNodeWithText("Low calorie")
-            .assertExists()
+            .onNodeWithContentDescription("Trailing Icon")
+            .performClick()
+
+        // delete the first tag:
         composeRule
-            .onNodeWithText("Vegan")
-            .assertExists()
+            .onNodeWithContentDescription("Leading Icon") // the filter icon is the leading icon.
+            .performClick()
         composeRule
-            .onNodeWithText("Lunch")
-            .assertExists()
+            .onNodeWithText("Edit")
+            .performClick()
+        composeRule
+            .onAllNodesWithContentDescription("Tag Trailing Icon").onFirst() // delete the first tag: Dairy-free
+            .performClick()
+        // confirm deletion:
+        composeRule
+            .onNodeWithText("Yes")
+            .performClick()
+
+        // tag deleted:
+        composeRule
+            .onNodeWithText("Dairy-free")
+            .assertDoesNotExist()
+
+        composeRule
+            .onNodeWithText("Back")
+            .performClick()
+
+        composeRule
+            .onNodeWithText("Dairy-free")
+            .assertDoesNotExist()
     }
 
 }

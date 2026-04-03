@@ -50,7 +50,7 @@ fun TagsDisplayForFiltering(
     displayEditButton: Boolean = false,
     onEditButtonPressed: () -> Unit = {},
     trailingIcon: Painter? = null,
-    trailingIconDescription: String = "",
+    trailingIconDescription: String = "Tag Trailing Icon",
     onTrailingIconPress: () -> Unit = {  },
     setTagOnTrailingIconPress: (Tag?) -> Unit = {  },
 ) {
