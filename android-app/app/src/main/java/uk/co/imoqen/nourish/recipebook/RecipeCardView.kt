@@ -69,6 +69,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
@@ -124,6 +125,7 @@ fun RecipeCardScreen(
         modifier = Modifier
             .fillMaxWidth()
             .verticalScroll(scrollState)
+            .testTag("recipeBookColumn")
     ) {
         val recipe = recipeBookViewModel.getRecipeById(recipeId).collectAsState(initial = null).value
         // should constrain it to only return recipe made by that user, for security. address in a future stepping stone ^
@@ -150,7 +152,6 @@ fun RecipeCard(
         enter = fadeIn(),
         exit = fadeOut()
     ) {
-        val recipe = recipeBookViewModel.uiState.collectAsState().value.selectedRecipe
         recipeBookViewModel.buildRecipeCard()
         val recipeCard = recipeBookViewModel.uiState.collectAsState().value.selectedRecipeCard
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -530,7 +531,7 @@ fun RecipeCard(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Checkbox(
-                                        modifier = Modifier.padding(0.dp),
+                                        modifier = Modifier.padding(0.dp).testTag("stepCheckbox"),
                                         checked = complete,
                                         onCheckedChange = {
                                             recipeBookViewModel.markStepAsComplete(
@@ -618,17 +619,20 @@ fun RecipeCard(
                                 },
                                 painter = painterResource(R.drawable.forkchart),
                                 description = "Nutrition",
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                testTag = "Nutrition"
                             )
                             RecipeActionButton(
                                 onClick = {
                                     recipeBookViewModel.setUserActionRequest("")
                                     recipeBookViewModel.setLlmActionType(LlmActionType.ALTERATION)
                                     recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
+                                    Log.i("MAKING ALT", "DOING ALTERATION")
                                 },
                                 painter = painterResource(R.drawable.adjust),
                                 description = "Make Alteration",
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                testTag = "Make Alteration"
                             )
 
                         }
@@ -644,7 +648,8 @@ fun RecipeCard(
                                 },
                                 painter = painterResource(R.drawable.live_question),
                                 description = "Ask Question",
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                testTag = "Ask Question"
                             )
 
                             if (uiState.selectedRecipe != null) {
@@ -654,7 +659,8 @@ fun RecipeCard(
                                     },
                                     painter = painterResource(R.drawable.edit),
                                     description = "Edit Manually",
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.weight(1f),
+                                    testTag = "Edit Manually"
                                 )
                             }
                         }
@@ -770,6 +776,7 @@ fun RecipeActionButton(
     painter: Painter,
     description: String,
     onClick: () -> Unit,
+    testTag: String, // for getting the button during testing
     modifier: Modifier = Modifier // for assigning equal weight to the buttons so they fill the screen equally
 ) {
     Box(
@@ -779,8 +786,9 @@ fun RecipeActionButton(
             onClick = onClick,
             colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.background.copy(),
-                    contentColor = MaterialTheme.colorScheme.onBackground.copy(alpha=0.90f),
+                    contentColor = MaterialTheme.colorScheme.onBackground.copy(alpha=0.90f)
             ),
+            modifier = Modifier.testTag(testTag)
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -977,7 +985,7 @@ fun AlterationLlmAction(
                 } else {
                     HorizontalDivider(modifier = Modifier.padding(bottom = 10.dp))
                     LazyColumn(
-                        modifier = Modifier.fillMaxWidth().fillMaxHeight(0.75f),
+                        modifier = Modifier.fillMaxWidth().fillMaxHeight(0.75f).testTag("alterationColumn"),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         item {

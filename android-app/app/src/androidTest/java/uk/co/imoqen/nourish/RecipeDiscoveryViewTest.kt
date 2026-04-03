@@ -2,17 +2,12 @@ package uk.co.imoqen.nourish
 
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.SemanticsMatcher
-import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithTag
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -22,9 +17,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.printToLog
-import androidx.test.espresso.action.ViewActions.swipeDown
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
@@ -40,7 +33,6 @@ import dagger.hilt.android.testing.UninstallModules
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -56,7 +48,6 @@ import uk.co.imoqen.nourish.db.recipe.recipestep.RecipeStepDao
 import uk.co.imoqen.nourish.db.recipe.recipetag.RecipeTagDao
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeTypeDao
 import uk.co.imoqen.nourish.db.shoppinglistentry.ShoppingListEntryDao
-import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.db.tag.TagDao
 import uk.co.imoqen.nourish.db.user.UserDao
 import uk.co.imoqen.nourish.firebase.FirebaseModule
