@@ -84,7 +84,7 @@ fun NourishTextField(
                 ) {
                     Icon(
                         imageVector = leadingIcon,
-                        contentDescription = null,
+                        contentDescription = "Leading Icon", // e.g. for the filter
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }

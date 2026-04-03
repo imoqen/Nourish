@@ -1,8 +1,13 @@
 package uk.co.imoqen.nourish
 
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -12,8 +17,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.printToLog
+import androidx.test.espresso.action.ViewActions.swipeDown
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
@@ -29,6 +37,7 @@ import dagger.hilt.android.testing.UninstallModules
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -266,6 +275,364 @@ class RecipeDiscoveryViewTest {
             .onNodeWithText("A valid recipe could not be generated. Please try another dish.")
             .assertExists()
 
+    }
+
+    @Test
+    fun `Recipe generation by List of Ingredients works correctly and handles recipeNotPossible case`() {
+        composeRule.onNode(
+            hasText("List or Photo of Ingredients")
+        ).performClick()
+
+        composeRule
+            .onNodeWithContentDescription("Trailing Icon")
+            .performClick()
+
+        // Enter ingredients:
+        composeRule
+            .onNodeWithText("Enter ingredients")
+            .performTextInput("Pasta, pesto, tomatoes, bacon, cheese, eggs, parmesan")
+        composeRule
+            .onNodeWithContentDescription("Trailing Icon")
+            .performClick()
+
+        composeRule
+            .onNodeWithTag("recipeDiscoveryLazyColumn")
+            .performScrollToNode(
+                hasText("Pasta Pesto", substring = true)
+            )
+
+        composeRule.onNode(
+            hasText("Pasta Pesto")
+        ).performClick()
+
+        composeRule
+            .onNodeWithText("Generate a recipe for")
+            .assertExists()
+
+        composeRule
+            .onNode(hasText("Using ingredients: Pasta, pesto, tomatoes, bacon, cheese, eggs, parmesan", substring = true))
+            .assertExists()
+    }
+
+    @Test
+    fun `Recipe generation by Photo of Ingredients works correctly and handles recipeNotPossible case for potential dishes`() {
+        composeRule.onNode(
+            hasText("List or Photo of Ingredients")
+        ).performClick()
+
+        composeRule
+            .onNodeWithContentDescription("Trailing Icon")
+            .performClick()
+
+        composeRule.onNodeWithTag("selectImage")
+            .assertIsDisplayed()
+            .performClick()
+
+        // Uses UIAutomator provided by Android: https://developer.android.com/training/testing/other-components/ui-automator
+        // to select an image
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+
+        device.waitForIdle()
+
+        // Pick the photo and wait for it to be updated in the UI:
+        device.wait(Until.hasObject(By.pkg("com.google.android.providers.media.module")), 5_000)
+        val image = device.findObject(
+            By.descContains("Photo taken on") // uses the accessibility tag to identify the photo. chooses the first.
+        )
+        val clickableParent = image?.parent
+        clickableParent?.click()
+        device.waitForIdle()
+        device.wait(
+            Until.hasObject(By.pkg(composeRule.activity.packageName)),
+            5_000
+        )
+        composeRule.waitForIdle()
+
+        composeRule
+            .onNodeWithContentDescription("Trailing Icon")
+            .performClick()
+
+        composeRule
+            .onNodeWithText("Valid dishes could not be generated. Please enter something different.")
+            .assertExists()
+
+    }
+
+    @Test
+    fun `Recipe generation works with tags and meal type applied`() {
+
+        // to identify model bottmo sheet, to close it when required:
+        val hasDismissAction =
+            SemanticsMatcher.keyIsDefined(SemanticsActions.Dismiss)
+
+        composeRule.onNode(
+            hasText("Dish or Description")
+        ).performClick()
+
+        // Will not send if the input is blank:
+        composeRule
+            .onNodeWithContentDescription("Trailing Icon")
+            .performClick()
+
+        // Will send if the user enters something:
+        composeRule
+            .onNodeWithText("Enter dish or description")
+            .performTextInput("Healthy salad")
+
+        // Select dish type:
+        composeRule
+            .onNodeWithText("Dish Type: Any")
+            .performClick()
+        composeRule
+            .onNodeWithText("Lunch")
+            .performClick()
+        // dismiss the model bottom sheet:
+        composeRule
+            .onNode(hasDismissAction, useUnmergedTree = true)
+            .performSemanticsAction(SemanticsActions.Dismiss)
+
+        // Filter by nutritional tags: (low calorie and vegetarian)
+        composeRule
+            .onNodeWithContentDescription("Leading Icon") // the filter icon is the leading icon.
+            .performClick()
+        composeRule
+            .onNodeWithText("Low calorie")
+            .performClick()
+        composeRule
+            .onNodeWithText("Vegan")
+            .performClick()
+
+        // dismiss the modal bottom sheet:
+        composeRule
+            .onNode(hasDismissAction, useUnmergedTree = true)
+            .performSemanticsAction(SemanticsActions.Dismiss)
+
+        composeRule
+            .onNodeWithContentDescription("Trailing Icon")
+            .performClick()
+
+        // check that the meal type and tags were applied:
+        composeRule
+            .onNodeWithText("Low calorie")
+            .assertExists()
+        composeRule
+            .onNodeWithText("Vegan")
+            .assertExists()
+        composeRule
+            .onNodeWithText("Dish type: Lunch")
+            .assertExists()
+
+        composeRule
+            .onNodeWithTag("recipeDiscoveryLazyColumn")
+            .performScrollToNode(
+                hasText("Healthy Salad", substring = true)
+            )
+
+        composeRule
+            .onNodeWithText("Healthy Salad", substring = true, useUnmergedTree = true)
+            .assertExists()
+
+        // Ingredients are generated
+        composeRule
+            .onNodeWithText("For the salad", useUnmergedTree = true)
+            .assertExists()
+        composeRule
+            .onNodeWithText("0.25 cucumber")
+            .assertExists()
+        composeRule
+            .onNodeWithText("100 g tomatoes")
+            .assertExists()
+        composeRule
+            .onNodeWithText("4 leaves of lettuce")
+            .assertExists()
+
+        // Method is generated
+        composeRule
+            .onNodeWithText("First, wash the vegetables.")
+            .assertExists()
+        composeRule
+            .onNodeWithText("Cut the vegetables.")
+            .assertExists()
+
+        composeRule
+            .onNodeWithTag("recipeDiscoveryLazyColumn")
+            .performScrollToNode(
+                hasText("Save Recipe", substring = true)
+            )
+
+        // User can then save the recipe and view it in their saved recipes
+        composeRule
+            .onNodeWithText("Save Recipe")
+            .performClick()
+
+        composeRule
+            .onNodeWithContentDescription("Go to view recipes", useUnmergedTree = true)
+            .performClick()
+
+        // As it is the first time loading the recipes in this instance, the loading bar appears.
+        // This lasts 5 seconds, hence a 6 second delay is provided to ensure it has finished loading.
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodesWithTag("loadingBar")
+                .fetchSemanticsNodes().isEmpty()
+        }
+
+        composeRule.onRoot(useUnmergedTree = true).printToLog("RECIPEBOOKSCREEN")
+
+        // the recipe has been saved:
+        composeRule
+            .onNodeWithText("Healthy Salad")
+            .assertExists()
+
+        // the tags and type has been applied:
+        composeRule
+            .onNodeWithText("Low calorie")
+            .assertExists()
+        composeRule
+            .onNodeWithText("Vegan")
+            .assertExists()
+        composeRule
+            .onNodeWithText("Lunch")
+            .assertExists()
+    }
+
+    // tests related to recipe actions:
+    @Test
+    fun `Tag can be added in the recipe generation view`() {
+
+        // to identify modal bottom sheet, to close it when required:
+        val hasDismissAction =
+            SemanticsMatcher.keyIsDefined(SemanticsActions.Dismiss)
+
+        composeRule.onNode(
+            hasText("Dish or Description")
+        ).performClick()
+
+        // Will not send if the input is blank:
+        composeRule
+            .onNodeWithContentDescription("Trailing Icon")
+            .performClick()
+
+        // Will send if the user enters something:
+        composeRule
+            .onNodeWithText("Enter dish or description")
+            .performTextInput("Healthy salad")
+
+        // Select dish type:
+        composeRule
+            .onNodeWithText("Dish Type: Any")
+            .performClick()
+        composeRule
+            .onNodeWithText("Lunch")
+            .performClick()
+        // dismiss the model bottom sheet:
+        composeRule
+            .onNode(hasDismissAction, useUnmergedTree = true)
+            .performSemanticsAction(SemanticsActions.Dismiss)
+
+        // Filter by nutritional tags: (low calorie and vegetarian)
+        composeRule
+            .onNodeWithContentDescription("Leading Icon") // the filter icon is the leading icon.
+            .performClick()
+        composeRule
+            .onNodeWithText("Low calorie")
+            .performClick()
+        composeRule
+            .onNodeWithText("Vegan")
+            .performClick()
+
+        // dismiss the modal bottom sheet:
+        composeRule
+            .onNode(hasDismissAction, useUnmergedTree = true)
+            .performSemanticsAction(SemanticsActions.Dismiss)
+
+        composeRule
+            .onNodeWithContentDescription("Trailing Icon")
+            .performClick()
+
+        // check that the meal type and tags were applied:
+        composeRule
+            .onNodeWithText("Low calorie")
+            .assertExists()
+        composeRule
+            .onNodeWithText("Vegan")
+            .assertExists()
+        composeRule
+            .onNodeWithText("Dish type: Lunch")
+            .assertExists()
+
+        composeRule
+            .onNodeWithTag("recipeDiscoveryLazyColumn")
+            .performScrollToNode(
+                hasText("Healthy Salad", substring = true)
+            )
+
+        composeRule
+            .onNodeWithText("Healthy Salad", substring = true, useUnmergedTree = true)
+            .assertExists()
+
+        // Ingredients are generated
+        composeRule
+            .onNodeWithText("For the salad", useUnmergedTree = true)
+            .assertExists()
+        composeRule
+            .onNodeWithText("0.25 cucumber")
+            .assertExists()
+        composeRule
+            .onNodeWithText("100 g tomatoes")
+            .assertExists()
+        composeRule
+            .onNodeWithText("4 leaves of lettuce")
+            .assertExists()
+
+        // Method is generated
+        composeRule
+            .onNodeWithText("First, wash the vegetables.")
+            .assertExists()
+        composeRule
+            .onNodeWithText("Cut the vegetables.")
+            .assertExists()
+
+        composeRule
+            .onNodeWithTag("recipeDiscoveryLazyColumn")
+            .performScrollToNode(
+                hasText("Save Recipe", substring = true)
+            )
+
+        // User can then save the recipe and view it in their saved recipes
+        composeRule
+            .onNodeWithText("Save Recipe")
+            .performClick()
+
+        composeRule
+            .onNodeWithContentDescription("Go to view recipes", useUnmergedTree = true)
+            .performClick()
+
+        // As it is the first time loading the recipes in this instance, the loading bar appears.
+        // This lasts 5 seconds, hence a 6 second delay is provided to ensure it has finished loading.
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodesWithTag("loadingBar")
+                .fetchSemanticsNodes().isEmpty()
+        }
+
+        composeRule.onRoot(useUnmergedTree = true).printToLog("RECIPEBOOKSCREEN")
+
+        // the recipe has been saved:
+        composeRule
+            .onNodeWithText("Healthy Salad")
+            .assertExists()
+
+        // the tags and type has been applied:
+        composeRule
+            .onNodeWithText("Low calorie")
+            .assertExists()
+        composeRule
+            .onNodeWithText("Vegan")
+            .assertExists()
+        composeRule
+            .onNodeWithText("Lunch")
+            .assertExists()
     }
 
 }

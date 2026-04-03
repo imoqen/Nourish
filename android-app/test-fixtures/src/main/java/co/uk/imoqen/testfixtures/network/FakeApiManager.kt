@@ -117,7 +117,11 @@ class FakeApiManager(): ApiManager {
                 }
 
                 LlmRequestType.DISHES_FROM_INGREDIENTS -> {
-                    onDishesProposed(TestData.llmDishesProposed_dishNotPossible)
+                    if (imageFilename == "") {
+                        onDishesProposed(TestData.llmDishesProposed_pasta)
+                    } else {
+                        onDishesProposed(TestData.llmDishesProposed_dishNotPossible)
+                    }
                 }
 
                 LlmRequestType.DISHES_FROM_IMAGE -> {
