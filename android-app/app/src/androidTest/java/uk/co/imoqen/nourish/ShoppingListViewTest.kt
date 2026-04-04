@@ -12,8 +12,10 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import co.uk.imoqen.testfixtures.firebase.FakeAuthenticationManager
 import co.uk.imoqen.testfixtures.firebase.FakeFirestoreManager
@@ -478,5 +480,150 @@ class ShoppingListViewTest {
         composeRule
             .onNodeWithText("lemon juice")
             .assertDoesNotExist()
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `Ingredients can be added and edited manually in the shopping list`() = runTest {
+        // go to the shopping list:
+        composeRule
+            .onNodeWithContentDescription("Go to shopping list", useUnmergedTree = true)
+            .performClick()
+        // wait for the ingredients to load:
+        advanceUntilIdle()
+        composeRule.waitForIdle()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasText("There are no items in your shopping list."), useUnmergedTree = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        // check no ingredients present:
+        composeRule
+            .onNodeWithText("There are no items in your shopping list.", useUnmergedTree = true)
+            .assertExists()
+
+        // add items manually:
+
+        // no amount or unit:
+        composeRule
+            .onNodeWithContentDescription("Add Item")
+            .performClick()
+        // show blank item error:
+        composeRule
+            .onNodeWithText("Add to Shopping List")
+            .performClick()
+        composeRule
+            .onNodeWithText("The item cannot be blank.")
+            .assertExists()
+        composeRule
+            .onNodeWithText("Enter an item to add")
+            .performTextInput("strawberries")
+        composeRule
+            .onNodeWithText("strawberries")
+            .performImeAction() // close the keyboard
+        composeRule
+            .onNodeWithText("Add to Shopping List")
+            .performClick()
+        composeRule
+            .onNodeWithText("strawberries")
+            .assertExists()
+
+        // amount provided, no unit:
+        composeRule
+            .onNodeWithContentDescription("Add Item")
+            .performClick()
+        composeRule
+            .onNodeWithText("Enter an item to add")
+            .performTextInput("bananas")
+        composeRule
+            .onNodeWithText("bananas")
+            .performImeAction() // close the keyboard
+        composeRule
+            .onNodeWithText("Enter amount")
+            .performTextInput("5")
+        composeRule
+            .onNodeWithText("5")
+            .performImeAction() // close the keyboard
+        composeRule
+            .onNodeWithText("Add to Shopping List")
+            .performClick()
+        composeRule
+            .onNodeWithText("bananas")
+            .assertExists()
+        composeRule
+            .onNodeWithText("5")
+            .assertExists()
+
+        // amount and unit provided:
+        composeRule
+            .onNodeWithContentDescription("Add Item")
+            .performClick()
+        composeRule
+            .onNodeWithText("Enter an item to add")
+            .performTextInput("oat milk")
+        composeRule
+            .onNodeWithText("oat milk")
+            .performImeAction() // close the keyboard
+        composeRule
+            .onNodeWithText("Enter amount")
+            .performTextInput("1")
+        composeRule
+            .onNodeWithText("1")
+            .performImeAction() // close the keyboard
+        composeRule
+            .onNodeWithText("L")
+            .performClick()
+        composeRule
+            .onNodeWithText("Add to Shopping List")
+            .performClick()
+        composeRule
+            .onNodeWithText("oat milk")
+            .assertExists()
+        composeRule
+            .onNodeWithText("1 L")
+            .assertExists()
+
+        // edit milk:
+        composeRule
+            .onNodeWithTag("editList")
+            .performClick()
+        composeRule
+            .onAllNodesWithContentDescription("Edit Item Amount")[1]
+            .performClick()
+        composeRule
+            .onNodeWithText("1.0")
+            .performTextReplacement("0.5") // converts down to 500ml
+        composeRule
+            .onNodeWithText("Update Amount")
+            .performClick()
+        composeRule
+            .onNodeWithText("500 ml")
+            .assertExists()
+        composeRule
+            .onAllNodesWithContentDescription("Edit Item Amount")[1]
+            .performClick()
+        composeRule
+            .onNodeWithText("500.0")
+            .performTextReplacement("2000") // converts back to L
+        composeRule
+            .onNodeWithText("Update Amount")
+            .performClick()
+        composeRule
+            .onNodeWithText("2 L")
+            .assertExists()
+
+        // test that making amount null just makes it 1.0:
+        composeRule
+            .onAllNodesWithContentDescription("Edit Item Amount")[0]
+            .performClick()
+        composeRule
+            .onNodeWithText("5.0")
+            .performTextReplacement("") // converts back to L
+        composeRule
+            .onNodeWithText("Update Amount")
+            .performClick()
+        composeRule
+            .onNodeWithText("1") // just makes it 1
+            .assertExists()
     }
 }
