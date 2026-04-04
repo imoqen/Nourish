@@ -355,7 +355,7 @@ class RecipeDiscoveryViewTest {
     @Test
     fun `Recipe generation works with tags and meal type applied`() {
 
-        // to identify model bottmo sheet, to close it when required:
+        // to identify model bottom sheet, to close it when required:
         val hasDismissAction =
             SemanticsMatcher.keyIsDefined(SemanticsActions.Dismiss)
 

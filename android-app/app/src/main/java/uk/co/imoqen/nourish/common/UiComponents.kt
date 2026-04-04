@@ -341,6 +341,7 @@ fun NourishIconTextButton(
 fun NourishIconButton(
     onClick: () -> Unit,
     painter: Painter,
+    contentDescription: String,
     modifier: Modifier = Modifier,
     backgroundColour: Color = MaterialTheme.colorScheme.primaryContainer,
     iconColour: Color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -356,7 +357,7 @@ fun NourishIconButton(
     ) {
         Icon(
             painter = painter,
-            contentDescription = null,
+            contentDescription = contentDescription,
             tint = iconColour,
         )
     }

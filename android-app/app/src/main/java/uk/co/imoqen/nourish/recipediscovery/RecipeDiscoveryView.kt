@@ -264,7 +264,8 @@ fun RecipeDiscoveryScreen(
                                     .align(
                                         Alignment.CenterEnd
                                     )
-                                    .offset(x = (16).dp)
+                                    .offset(x = (16).dp),
+                                contentDescription = "Close"
                             )
                         }
                     }
@@ -1136,7 +1137,8 @@ fun UserInputSection(
                             )
                         },
                         painter = painterResource(R.drawable.camera),
-                        modifier = Modifier.padding(end = 4.dp).testTag("selectImage")
+                        modifier = Modifier.padding(end = 4.dp).testTag("selectImage"),
+                        contentDescription = "Select image"
                     )
                 }
             }
@@ -1195,7 +1197,8 @@ fun UserUploadedImage(
                                 Alignment.TopEnd
                             )
                             .offset(x = 16.dp),
-                        backgroundColour = MaterialTheme.colorScheme.background
+                        backgroundColour = MaterialTheme.colorScheme.background,
+                        contentDescription = "View image"
                     )
 
                     if (allowEdit && pickMedia != null) {
@@ -1213,7 +1216,8 @@ fun UserUploadedImage(
                                     Alignment.CenterEnd
                                 )
                                 .offset(x = 16.dp),
-                            backgroundColour = MaterialTheme.colorScheme.background
+                            backgroundColour = MaterialTheme.colorScheme.background,
+                            contentDescription = "Edit image"
                         )
                     }
                     if (allowDelete) {
@@ -1239,7 +1243,8 @@ fun UserUploadedImage(
                                 )
                                 .offset(x = 16.dp),
                             backgroundColour = MaterialTheme.colorScheme.background,
-                            iconColour = MaterialTheme.colorScheme.error
+                            iconColour = MaterialTheme.colorScheme.error,
+                            contentDescription = "Delete image"
                         )
                     }
                 }

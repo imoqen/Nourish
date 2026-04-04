@@ -1305,7 +1305,8 @@ fun ServingSizeUpdater(
             NourishIconButton(
                 onClick = { alterServingSize(false) },
                 painter = painterResource(R.drawable.subtract),
-                modifier = Modifier.size(38.dp).testTag("decreaseServingSize")
+                modifier = Modifier.size(38.dp).testTag("decreaseServingSize"),
+                contentDescription = "Decrease serving size"
             )
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -1324,7 +1325,8 @@ fun ServingSizeUpdater(
             NourishIconButton(
                 onClick = { alterServingSize(true) },
                 painter = painterResource(R.drawable.add),
-                modifier = Modifier.size(38.dp).testTag("increaseServingSize")
+                modifier = Modifier.size(38.dp).testTag("increaseServingSize"),
+                contentDescription = "Increase serving size"
             )
         }
         Text(

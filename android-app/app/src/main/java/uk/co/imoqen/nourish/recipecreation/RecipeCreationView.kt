@@ -75,6 +75,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
@@ -183,6 +184,7 @@ fun RecipeCreationScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
+                .testTag("recipeCreationColumn")
         ) {
             Box(
                 modifier = Modifier
@@ -321,6 +323,7 @@ fun RecipeCreationScreen(
 
                             },
                             painter = painterResource(R.drawable.camera),
+                            contentDescription = "Update image"
                         )
                         if (uiState.imageFile != "") {
                             // allow user to delete image
@@ -334,7 +337,8 @@ fun RecipeCreationScreen(
                                     viewModel.setImageFile("")
                                 },
                                 painter = painterResource(R.drawable.delete),
-                                iconColour = MaterialTheme.colorScheme.error
+                                iconColour = MaterialTheme.colorScheme.error,
+                                contentDescription = "Delete image"
                             )
                         } else {
                             // display colour picker button
@@ -342,7 +346,8 @@ fun RecipeCreationScreen(
                                 onClick = {
                                     viewModel.setShowColourSelector(true)
                                 },
-                                painter = painterResource(R.drawable.palette)
+                                painter = painterResource(R.drawable.palette),
+                                contentDescription = "Choose colour"
                             )
                         }
                     }
@@ -575,7 +580,7 @@ fun RecipeCreationScreen(
                                         )
                                         Icon(
                                             painter = painterResource(R.drawable.delete),
-                                            contentDescription = "Delete Ingredient",
+                                            contentDescription = "Delete ingredient",
                                             tint = MaterialTheme.colorScheme.error.copy(
                                                 alpha = 0.8f
                                             ),
@@ -828,7 +833,7 @@ fun RecipeCreationScreen(
                             NourishH2("Select an Emoji")
                             Column(
                                 modifier = Modifier.weight(1f)
-                                    .verticalScroll(rememberScrollState()),
+                                    .verticalScroll(rememberScrollState()).testTag("emojiSelectorColumn"),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
 
@@ -1193,11 +1198,12 @@ fun DraggableStepsList(
                                             placeholder = "",
                                             onDone = { keyboardFocusManager.clearFocus() },
                                             trailingIcon = ImageVector.vectorResource(R.drawable.tick),
-                                            onTrailingIconPress = { viewModel.updateStep() }
+                                            onTrailingIconPress = { viewModel.updateStep() },
+                                            modifier = Modifier.testTag("editStep")
                                         )
                                         Icon(
                                             painter = painterResource(R.drawable.delete),
-                                            contentDescription = "Delete Step",
+                                            contentDescription = "Delete step",
                                             tint = MaterialTheme.colorScheme.error.copy(
                                                 alpha = 0.8f
                                             ),
@@ -1231,7 +1237,7 @@ fun DraggableStepsList(
                                 }
                                 Icon(
                                     painter = painterResource(R.drawable.edit),
-                                    contentDescription = "Edit Step",
+                                    contentDescription = "Edit step",
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier
                                         .padding(end = 6.dp)

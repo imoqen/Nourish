@@ -276,7 +276,8 @@ fun TypesDisplayForMutuallyExclusiveFiltering(
             NourishIconButton(
                 onClick = { updateSelectedType(null) }, // reset back to all types
                 painter = painterResource(R.drawable.cross),
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(32.dp),
+                contentDescription = "reset"
             )
         }
     }

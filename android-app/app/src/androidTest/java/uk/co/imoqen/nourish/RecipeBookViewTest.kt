@@ -1036,4 +1036,36 @@ class RecipeBookViewTest {
             .onNodeWithText("1 dash of pepper")
             .assertExists()
     }
+
+    @Test
+    fun `Recipe can be deleted`() {
+        // go to the healthy salad recipe:
+        composeRule.onNode(
+            hasText("Healthy Salad")
+        ).performClick()
+
+        // wait for the data to load from the DB:
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasText("Healthy Salad"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+
+        composeRule
+            .onNodeWithTag("recipeBookColumn")
+            .performScrollToNode(
+                hasText("Delete Recipe", substring = true)
+            )
+        composeRule
+            .onNodeWithText("Delete Recipe")
+            .performClick()
+        composeRule
+            .onNodeWithText("Yes")
+            .performClick()
+
+        // healthy salad recipe is now gone:
+        composeRule
+            .onNodeWithText("Healthy Salad")
+            .assertDoesNotExist()
+    }
 }
