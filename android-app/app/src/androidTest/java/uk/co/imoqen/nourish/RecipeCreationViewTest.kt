@@ -2,6 +2,7 @@ package uk.co.imoqen.nourish
 
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
@@ -1068,5 +1069,344 @@ class RecipeCreationViewTest {
         composeRule.onNode(
             hasText("Unhealthy Burger")
         ).assertDoesNotExist()
+    }
+
+    @Test
+    fun `Recipe cannot be added or edited if fields are invalid and error message displays instead`() {
+        composeRule
+            .onNodeWithContentDescription("Go to view recipes", useUnmergedTree = true)
+            .performClick()
+        // wait for the data to load:
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasText("You have not saved any recipes!"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        // go to add a recipe manually
+        composeRule.onNode(
+            hasTestTag("addManuallyButton")
+        ).performClick()
+
+        // wait for the data to load:
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasText("Add a Recipe"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+
+        // add photo:
+        composeRule
+            .onNodeWithContentDescription("Update image")
+            .performClick()
+        // Uses UIAutomator provided by Android: https://developer.android.com/training/testing/other-components/ui-automator
+        // to select an image
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+
+        device.waitForIdle()
+
+        // Pick the photo and wait for it to be updated in the UI:
+        device.wait(Until.hasObject(By.pkg("com.google.android.providers.media.module")), 5_000)
+        val image = device.findObject(
+            By.descContains("Photo taken on") // uses the accessibility tag to identify the photo. chooses the first.
+        )
+        val clickableParent = image?.parent
+        clickableParent?.click()
+        device.waitForIdle()
+        device.wait(
+            Until.hasObject(By.pkg(composeRule.activity.packageName)),
+            5_000
+        )
+        composeRule.waitForIdle()
+
+        // emoji:
+        composeRule
+            .onNodeWithText("\uD83E\uDD57")
+            .performClick()
+
+        // scroll to strawberry emoji:
+        composeRule
+            .onNodeWithTag("emojiSelectorColumn")
+            .performScrollToNode(
+                hasText("\uD83C\uDF53", substring = true)
+            )
+        composeRule
+            .onNodeWithText("\uD83C\uDF53") // select strawberry emoji
+            .performClick()
+        composeRule
+            .onNodeWithText("Done", useUnmergedTree = true)
+            .performClick()
+
+        // name, type and tags:
+        // to identify model bottom sheet, to close it when required:
+        val hasDismissAction =
+            SemanticsMatcher.keyIsDefined(SemanticsActions.Dismiss)
+
+        // attempt to submit without title:
+        composeRule
+            .onNodeWithTag("recipeCreationColumn")
+            .performScrollToNode(
+                hasText("Create Recipe", substring = true)
+            )
+        composeRule
+            .onNodeWithText("Create Recipe", useUnmergedTree = true)
+            .performClick()
+        composeRule
+            .onNodeWithText("You must enter a title.")
+            .assertExists()
+        composeRule
+            .onNodeWithTag("recipeCreationColumn")
+            .performScrollToNode(
+                hasText("Enter Title*", substring = true)
+            )
+
+        composeRule
+            .onNodeWithText("Enter Title*")
+            .performTextInput("Strawberry Milkshake")
+
+        // attempt to submit without recipe type:
+        composeRule
+            .onNodeWithTag("recipeCreationColumn")
+            .performScrollToNode(
+                hasText("Create Recipe", substring = true)
+            )
+        composeRule
+            .onNodeWithText("Create Recipe", useUnmergedTree = true)
+            .performClick()
+        composeRule
+            .onNodeWithText("Your recipe could not be saved.")
+            .assertExists()
+        composeRule
+            .onNodeWithTag("recipeCreationColumn")
+            .performScrollToNode(
+                hasText("Recipe Type*", substring = true)
+            )
+
+        composeRule
+            .onAllNodesWithText("None")[0]
+            .performClick()
+        composeRule
+            .onNodeWithText("Drink")
+            .performClick()
+        // dismiss the modal bottom sheet:
+        composeRule
+            .onAllNodes(hasDismissAction, useUnmergedTree = true)[1]
+            .performSemanticsAction(SemanticsActions.Dismiss)
+
+        composeRule
+            .onAllNodesWithText("None")[0]
+            .performClick()
+        composeRule
+            .onAllNodesWithText("Freezer-friendly")[0]
+            .performClick()
+        composeRule
+            .onAllNodesWithText("Soy-free")[0]
+            .performClick()
+        composeRule
+            .onAllNodesWithText("Dairy-free")[0]
+            .performClick()
+        composeRule
+            .onAllNodesWithText("Vegetarian")[0]
+            .performClick()
+        // close the modal bottom sheet:
+        composeRule
+            .onNode(hasDismissAction, useUnmergedTree = true)
+            .performSemanticsAction(SemanticsActions.Dismiss)
+        composeRule
+            .onNodeWithText("Freezer-friendly")
+            .assertExists()
+        composeRule
+            .onNodeWithText("Soy-free")
+            .assertExists()
+        composeRule
+            .onNodeWithText("Dairy-free")
+            .assertExists()
+        composeRule
+            .onNodeWithText("Vegetarian")
+            .assertExists()
+
+        // add ingredients:
+        // attempt to submit without ingredients:
+        composeRule
+            .onNodeWithTag("recipeCreationColumn")
+            .performScrollToNode(
+                hasText("Create Recipe", substring = true)
+            )
+        composeRule
+            .onNodeWithText("Create Recipe", useUnmergedTree = true)
+            .performClick()
+        composeRule
+            .onNodeWithText("You must enter at least 1 ingredient.")
+            .assertExists()
+        composeRule
+            .onNodeWithTag("recipeCreationColumn")
+            .performScrollToNode(
+                hasText("Add Ingredient", substring = true)
+            )
+
+        // scroll to ingredients:
+        composeRule
+            .onNodeWithTag("recipeCreationColumn")
+            .performScrollToNode(
+                hasText("Add Ingredient", substring = true)
+            )
+
+        // add strawberry milkshake ingredients and check blank inputs:
+        composeRule
+            .onNodeWithText("Add Ingredient", useUnmergedTree = true)
+            .performClick()
+        composeRule
+            .onNodeWithText("Add to Recipe")
+            .performClick()
+        // error displayed:
+        composeRule
+            .onNodeWithText("The name cannot be blank.")
+            .assertExists()
+        // now fill everything in:
+        composeRule
+            .onNodeWithText("Enter an ingredient to add")
+            .performTextInput("Strawberries")
+        composeRule
+            .onNodeWithText("Strawberries")
+            .performImeAction() // to press "done" on the keyboard so closes keyboard
+        composeRule
+            .onNodeWithText("Add to Recipe")
+            .performClick()
+        // error displayed:
+        composeRule.onAllNodes(isRoot())[1].printToLog("BEFOER")
+        composeRule
+            .onNodeWithText("The amount cannot be blank.")
+            .assertExists()
+        composeRule
+            .onAllNodesWithText("Enter amount")[1]
+            .performTextInput("250")
+        composeRule
+            .onAllNodesWithText("250")[0]
+            .performImeAction() // to press "done" on the keyboard so closes keyboard
+        composeRule
+            .onNodeWithText("g")
+            .performClick()
+        composeRule
+            .onNodeWithText("Add to Recipe")
+            .performClick()
+
+        composeRule
+            .onNodeWithText("Add Ingredient", useUnmergedTree = true)
+            .performClick()
+        // now fill everything in:
+        composeRule
+            .onNodeWithText("Enter an ingredient to add")
+            .performTextInput("Oat milk")
+        composeRule
+            .onNodeWithText("Oat milk")
+            .performImeAction() // to press "done" on the keyboard so closes keyboard
+        composeRule
+            .onAllNodesWithText("Enter amount")[1]
+            .performTextInput("200")
+        composeRule
+            .onAllNodesWithText("200")[0]
+            .performImeAction() // to press "done" on the keyboard so closes keyboard
+        composeRule
+            .onNodeWithText("ml")
+            .performClick()
+        composeRule
+            .onNodeWithText("Add to Recipe")
+            .performClick()
+        composeRule.onNode(
+            hasText("Dismiss")
+        ).performClick()
+
+        // scroll to add button:
+        composeRule
+            .onNodeWithTag("recipeCreationColumn")
+            .performScrollToNode(
+                hasText("Add Ingredient", substring = true)
+            )
+        composeRule.onNode(
+            hasText("Dismiss")
+        ).performClick()
+        composeRule
+            .onNodeWithText("Add Ingredient", useUnmergedTree = true)
+            .performClick()
+        // now fill everything in:
+        composeRule
+            .onNodeWithText("Enter an ingredient to add")
+            .performTextInput("Honey")
+        composeRule
+            .onNodeWithText("Honey")
+            .performImeAction() // to press "done" on the keyboard so closes keyboard
+        composeRule
+            .onAllNodesWithText("Enter amount")[1]
+            .performTextInput("10")
+        composeRule
+            .onAllNodesWithText("10")[0]
+            .performImeAction() // to press "done" on the keyboard so closes keyboard
+        composeRule
+            .onNodeWithText("ml")
+            .performClick()
+        composeRule
+            .onNodeWithText("Add to Recipe")
+            .performClick()
+        composeRule.onNode(
+            hasText("Dismiss")
+        ).performClick()
+
+        // attempt to submit without method:
+        composeRule
+            .onNodeWithTag("recipeCreationColumn")
+            .performScrollToNode(
+                hasText("Create Recipe", substring = true)
+            )
+        composeRule
+            .onNodeWithText("Create Recipe", useUnmergedTree = true)
+            .performClick()
+        composeRule
+            .onNodeWithText("You must enter at least 1 method step.")
+            .assertExists()
+        // first scroll down, then add  method:
+        composeRule
+            .onNodeWithTag("recipeCreationColumn")
+            .performScrollToNode(
+                hasText("Create Recipe", substring = true)
+            )
+        composeRule
+            .onNodeWithText("Add Step", useUnmergedTree = true)
+            .performClick()
+        // discard:
+        composeRule
+            .onNodeWithContentDescription("Trailing Icon")
+            .performClick()
+        // add again without discarding this time:
+        composeRule
+            .onNodeWithText("Add Step", useUnmergedTree = true)
+            .performClick()
+        // fill in and submit:
+        composeRule
+            .onNodeWithText("Enter the step")
+            .performTextInput("Put all ingredients in a blender and blend")
+        composeRule
+            .onNodeWithText("Save Step")
+            .performClick()
+
+        composeRule
+            .onNodeWithText("Add Step", useUnmergedTree = true)
+            .performClick()
+        // fill in and submit:
+        composeRule
+            .onNodeWithText("Enter the step")
+            .performTextInput("Pour into a cup and enjoy!")
+        composeRule
+            .onNodeWithText("Save Step")
+            .performClick()
+
+
+        // then save the recipe:
+        composeRule
+            .onNodeWithText("Create Recipe", useUnmergedTree = true)
+            .performClick()
+
+        // recipe has been saved successfully:
+        composeRule
+            .onNodeWithText("Strawberry Milkshake")
+            .assertExists()
     }
 }

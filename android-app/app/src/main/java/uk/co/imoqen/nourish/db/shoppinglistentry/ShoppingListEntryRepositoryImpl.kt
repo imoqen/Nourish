@@ -1,5 +1,6 @@
 package uk.co.imoqen.nourish.db.shoppinglistentry
 
+import android.util.Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
@@ -62,6 +63,7 @@ class ShoppingListEntryRepositoryImpl @Inject constructor(
                     ordinal = getMaxOrdinalForUser(uid) + 1 // increment max to get next val (put it at the end of the list by default)
                 )
             )
+            Log.i("inserted db", shoppingListIngredient.plural)
         }
     }
 

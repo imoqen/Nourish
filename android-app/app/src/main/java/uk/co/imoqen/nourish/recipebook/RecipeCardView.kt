@@ -477,7 +477,7 @@ fun RecipeCard(
                                                                 formatIngredientAmount = recipeBookViewModel::formatIngredientAmount
                                                             )
                                                             Checkbox(
-                                                                modifier = Modifier.padding(0.dp),
+                                                                modifier = Modifier.padding(0.dp).testTag("addIngredientCheckbox"),
                                                                 checked = selected,
                                                                 onCheckedChange = {
                                                                     recipeBookViewModel.alterIngredientShoppingListStatus(

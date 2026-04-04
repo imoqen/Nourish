@@ -1052,6 +1052,10 @@ class RecipeBookViewTest {
         }
 
         composeRule
+            .onNodeWithText("Dismiss")
+            .performClick()
+
+        composeRule
             .onNodeWithTag("recipeBookColumn")
             .performScrollToNode(
                 hasText("Delete Recipe", substring = true)
@@ -1062,6 +1066,13 @@ class RecipeBookViewTest {
         composeRule
             .onNodeWithText("Yes")
             .performClick()
+
+        // wait for recipes to update:
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasText("Healthy Salad"))
+                .fetchSemanticsNodes().isEmpty()
+        }
 
         // healthy salad recipe is now gone:
         composeRule

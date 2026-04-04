@@ -332,6 +332,7 @@ class RecipeBookViewModel @Inject constructor(
                 // go through them all and add the ones to the db which should be added:
                 shoppingListIngredients?.forEach { (ingredient, selected) ->
                     if (selected) {
+                        Log.i("adding ing:", "${ingredient.plural}")
                         // add to db and account for if the ingredient is already in the db.
                         // this is handled in the repository.
                         shoppingListEntryRepository.addShoppingListEntry(ingredient, uid, userAdded=false)
