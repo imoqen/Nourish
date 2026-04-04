@@ -269,7 +269,7 @@ fun RecipeCreationScreen(
                         onClick = {
                             viewModel.setShowBackConfirmation(true)
                         },
-                        modifier = Modifier.align(Alignment.CenterStart)
+                        modifier = Modifier.align(Alignment.CenterStart).testTag("goBack")
                     ) {
                         Icon(
                             imageVector = Icons.Filled.KeyboardArrowLeft,

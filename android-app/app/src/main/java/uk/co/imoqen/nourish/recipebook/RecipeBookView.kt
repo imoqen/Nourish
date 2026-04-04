@@ -442,7 +442,7 @@ fun RecipeList(
             modifier = Modifier.align(Alignment.BottomEnd)
         ) {
             ExtendedFloatingActionButton(
-                modifier = Modifier.padding(12.dp),
+                modifier = Modifier.padding(12.dp).testTag("addManuallyButton"),
                 onClick = {
                     onAddRecipe()
                 },

@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isRoot
@@ -600,37 +601,23 @@ class RecipeCreationViewTest {
         composeRule
             .onNodeWithContentDescription("Go to view recipes", useUnmergedTree = true)
             .performClick()
-
-        // go to the healthy salad recipe:
-        composeRule.onNode(
-            hasText("Healthy Salad")
-        ).performClick()
-
-        // wait for the data to load from the DB:
+        // wait for the data to load:
         composeRule.waitUntil(timeoutMillis = 10_000) {
             composeRule
-                .onAllNodes(hasText("Healthy Salad"))
+                .onAllNodes(hasText("You have not saved any recipes!"))
                 .fetchSemanticsNodes().isNotEmpty()
         }
+        // go to add a recipe manually
+        composeRule.onNode(
+            hasTestTag("addManuallyButton")
+        ).performClick()
 
-        // scroll to and click on the edit button:
-        composeRule
-            .onNodeWithTag("recipeBookColumn")
-            .performScrollToNode(
-                hasText("Edit Manually", substring = true)
-            )
-
-        composeRule.onRoot(useUnmergedTree = true).printToLog("RECIPEBOOKSCREEN1")
-        composeRule
-            // have to use test tag as the text is embedded within the button so not clickable itself
-            // and semantics action rather than .performClick() otherwise not clicked
-            .onNodeWithTag("Edit Manually", useUnmergedTree = true)
-            .assertIsDisplayed()
-            .assertIsEnabled()
-            .assertHasClickAction()
-            .performSemanticsAction(SemanticsActions.OnClick)
-
-        // edit all of the fields:
+        // wait for the data to load:
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasText("Add a Recipe"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
 
         // change photo, then remove photo:
         composeRule
@@ -666,7 +653,7 @@ class RecipeCreationViewTest {
             .onNodeWithContentDescription("Choose colour")
             .performClick()
         composeRule
-            .onNodeWithText("Brown")
+            .onNodeWithText("Pink")
             .performClick()
         composeRule
             .onNodeWithText("Done", useUnmergedTree = true)
@@ -676,14 +663,14 @@ class RecipeCreationViewTest {
             .onNodeWithText("\uD83E\uDD57")
             .performClick()
 
-        // scroll to burger emoji:
+        // scroll to strawberry emoji:
         composeRule
             .onNodeWithTag("emojiSelectorColumn")
             .performScrollToNode(
-                hasText("\uD83C\uDF54", substring = true)
+                hasText("\uD83C\uDF53", substring = true)
             )
         composeRule
-            .onNodeWithText("\uD83C\uDF54") // select burger emoji
+            .onNodeWithText("\uD83C\uDF53") // select burger emoji
             .performClick()
         composeRule
             .onNodeWithText("Done", useUnmergedTree = true)
@@ -695,33 +682,33 @@ class RecipeCreationViewTest {
             SemanticsMatcher.keyIsDefined(SemanticsActions.Dismiss)
 
         composeRule
-            .onNodeWithText("Healthy Salad")
-            .performTextClearance()
-        composeRule
             .onNodeWithText("Enter Title*")
-            .performTextInput("Unhealthy Burger")
+            .performTextInput("Strawberry Milkshake")
         composeRule
-            .onNodeWithText("Lunch")
+            .onAllNodesWithText("None")[0]
             .performClick()
         composeRule
-            .onNodeWithText("Dinner")
+            .onNodeWithText("Drink")
             .performClick()
         // dismiss the modal bottom sheet:
         composeRule
             .onNode(hasDismissAction, useUnmergedTree = true)
             .performSemanticsAction(SemanticsActions.Dismiss)
+
         composeRule
-            .onNodeWithText("Vegan")
+            .onAllNodesWithText("None")[0]
             .performClick()
-        // remove vegan and low calorie tags and add freezer-friendly:
-        composeRule.onAllNodes(
-            hasText("Vegan") and hasClickAction()
-        )[1].performClick()
-        composeRule.onAllNodes(
-            hasText("Low calorie") and hasClickAction()
-        )[1].performClick()
         composeRule
-            .onNodeWithText("Freezer-friendly")
+            .onAllNodesWithText("Freezer-friendly")[0]
+            .performClick()
+        composeRule
+            .onAllNodesWithText("Soy-free")[0]
+            .performClick()
+        composeRule
+            .onAllNodesWithText("Dairy-free")[0]
+            .performClick()
+        composeRule
+            .onAllNodesWithText("Vegetarian")[0]
             .performClick()
         // close the modal bottom sheet:
         composeRule
@@ -730,85 +717,27 @@ class RecipeCreationViewTest {
         composeRule
             .onNodeWithText("Freezer-friendly")
             .assertExists()
-        // delete, edit, and add ingredients:
+        composeRule
+            .onNodeWithText("Soy-free")
+            .assertExists()
+        composeRule
+            .onNodeWithText("Dairy-free")
+            .assertExists()
+        composeRule
+            .onNodeWithText("Vegetarian")
+            .assertExists()
 
-        // scroll to the final ingredient so all ingredients are displayed:
+        // add ingredients:
+
+        // scroll to ingredients:
         composeRule
             .onNodeWithTag("recipeCreationColumn")
             .performScrollToNode(
-                hasText("pepper", substring = true)
+                hasText("Add Ingredient", substring = true)
             )
 
-        // delete cucumber (also testing dismiss functionality of confirmation):
+        // add strawberry milkshake ingredients and check blank inputs:
         composeRule
-            .onAllNodesWithContentDescription("Delete ingredient")[0].performClick()
-        composeRule
-            .onNodeWithText("No")
-            .performClick()
-        composeRule
-            .onAllNodesWithContentDescription("Delete ingredient")[0].performClick()
-        composeRule
-            .onNodeWithText("Yes")
-            .performClick()
-        // edit tomato and lettuce:
-        composeRule
-            .onAllNodesWithContentDescription("Edit Ingredient Amount")[0].performClick()
-        composeRule
-            .onNodeWithText("100.0")
-            .performTextClearance()
-        composeRule
-            .onNodeWithText("Enter new amount")
-            .performTextInput("25")
-        composeRule
-            .onNodeWithText("Update Amount")
-            .performClick()
-        // test cancelling edit and goes to 1 if nothing entered:
-        composeRule
-            .onAllNodesWithContentDescription("Edit Ingredient Amount")[1].performClick()
-        // close the modal bottom sheet:
-        composeRule
-            .onAllNodes(hasDismissAction, useUnmergedTree = true)[1]
-            .performSemanticsAction(SemanticsActions.Dismiss)
-        composeRule
-            .onAllNodesWithContentDescription("Edit Ingredient Amount")[1].performClick()
-        composeRule
-            .onNodeWithText("4.0")
-            .performTextClearance()
-        composeRule
-            .onNodeWithText("Update Amount")
-            .performClick()
-
-        // delete all of the other ingredients (dressing):
-        composeRule
-            .onAllNodesWithContentDescription("Delete ingredient")[2].performClick()
-        composeRule
-            .onNodeWithText("Yes")
-            .performClick()
-        composeRule
-            .onAllNodesWithContentDescription("Delete ingredient")[2].performClick()
-        composeRule
-            .onNodeWithText("Yes")
-            .performClick()
-        composeRule
-            .onAllNodesWithContentDescription("Delete ingredient")[2].performClick()
-        composeRule
-            .onNodeWithText("Yes")
-            .performClick()
-        composeRule
-            .onAllNodesWithContentDescription("Delete ingredient")[2].performClick()
-        composeRule
-            .onNodeWithText("Yes")
-            .performClick()
-        composeRule
-            .onAllNodesWithContentDescription("Delete ingredient")[2].performClick()
-        composeRule
-            .onNodeWithText("Yes")
-            .performClick()
-
-        // add 2 ingredients and check blank inputs:
-        composeRule
-            // have to use test tag as the text is embedded within the button so not clickable itself
-            // and semantics action rather than .performClick() otherwise not clicked
             .onNodeWithText("Add Ingredient", useUnmergedTree = true)
             .performClick()
         composeRule
@@ -821,9 +750,9 @@ class RecipeCreationViewTest {
         // now fill everything in:
         composeRule
             .onNodeWithText("Enter an ingredient to add")
-            .performTextInput("Burger bun")
+            .performTextInput("Strawberries")
         composeRule
-            .onNodeWithText("Burger bun")
+            .onNodeWithText("Strawberries")
             .performImeAction() // to press "done" on the keyboard so closes keyboard
         composeRule
             .onNodeWithText("Add to Recipe")
@@ -835,27 +764,26 @@ class RecipeCreationViewTest {
             .assertExists()
         composeRule
             .onAllNodesWithText("Enter amount")[1]
-            .performTextInput("1")
+            .performTextInput("250")
         composeRule
-            .onAllNodesWithText("1")[1]
+            .onAllNodesWithText("250")[0]
             .performImeAction() // to press "done" on the keyboard so closes keyboard
-
+        composeRule
+            .onNodeWithText("g")
+            .performClick()
         composeRule
             .onNodeWithText("Add to Recipe")
             .performClick()
 
-        // add burger:
         composeRule
-            // have to use test tag as the text is embedded within the button so not clickable itself
-            // and semantics action rather than .performClick() otherwise not clicked
             .onNodeWithText("Add Ingredient", useUnmergedTree = true)
             .performClick()
         // now fill everything in:
         composeRule
             .onNodeWithText("Enter an ingredient to add")
-            .performTextInput("Beef burger")
+            .performTextInput("Oat milk")
         composeRule
-            .onNodeWithText("Beef burger")
+            .onNodeWithText("Oat milk")
             .performImeAction() // to press "done" on the keyboard so closes keyboard
         composeRule
             .onAllNodesWithText("Enter amount")[1]
@@ -864,7 +792,7 @@ class RecipeCreationViewTest {
             .onAllNodesWithText("200")[0]
             .performImeAction() // to press "done" on the keyboard so closes keyboard
         composeRule
-            .onNodeWithText("g")
+            .onNodeWithText("ml")
             .performClick()
         composeRule
             .onNodeWithText("Add to Recipe")
@@ -873,50 +801,47 @@ class RecipeCreationViewTest {
             hasText("Dismiss")
         ).performClick()
 
-        // edit the method:
-        // scroll to the method first
+        // scroll to add button:
         composeRule
             .onNodeWithTag("recipeCreationColumn")
             .performScrollToNode(
-                hasText("Add Step", substring = true)
+                hasText("Add Ingredient", substring = true)
             )
-        // delete the first two
-        composeRule
-            .onAllNodesWithContentDescription("Edit step")[0].performClick()
-        composeRule.onRoot(useUnmergedTree = true).printToLog("EDITSTEP")
-        composeRule
-            .onNodeWithContentDescription("Delete step").performClick()
-        composeRule
-            .onNodeWithText("Yes")
-            .performClick()
         composeRule.onNode(
             hasText("Dismiss")
         ).performClick()
         composeRule
-            .onAllNodesWithContentDescription("Edit step")[0].performClick()
-        composeRule.onRoot(useUnmergedTree = true).printToLog("editSTEP2")
+            .onNodeWithText("Add Ingredient", useUnmergedTree = true)
+            .performClick()
+        // now fill everything in:
         composeRule
-            .onNodeWithContentDescription("Delete step").performClick()
+            .onNodeWithText("Enter an ingredient to add")
+            .performTextInput("Honey")
         composeRule
-            .onNodeWithText("Yes")
+            .onNodeWithText("Honey")
+            .performImeAction() // to press "done" on the keyboard so closes keyboard
+        composeRule
+            .onAllNodesWithText("Enter amount")[1]
+            .performTextInput("10")
+        composeRule
+            .onAllNodesWithText("10")[0]
+            .performImeAction() // to press "done" on the keyboard so closes keyboard
+        composeRule
+            .onNodeWithText("ml")
+            .performClick()
+        composeRule
+            .onNodeWithText("Add to Recipe")
             .performClick()
         composeRule.onNode(
             hasText("Dismiss")
         ).performClick()
-        // edit the new first step:
-        composeRule
-            .onAllNodesWithContentDescription("Edit step")[0].performClick()
-        composeRule
-            .onNodeWithText("Make the dressing.")
-            .performTextClearance()
-        composeRule
-            .onNodeWithTag("editStep")
-            .performTextInput("Cook the burger")
-        composeRule
-            .onNodeWithContentDescription("Trailing Icon")
-            .performClick()
 
-        // add a new step:
+        // first scroll down, then add  method:
+        composeRule
+            .onNodeWithTag("recipeCreationColumn")
+            .performScrollToNode(
+                hasText("Create Recipe", substring = true)
+            )
         composeRule
             .onNodeWithText("Add Step", useUnmergedTree = true)
             .performClick()
@@ -931,29 +856,217 @@ class RecipeCreationViewTest {
         // fill in and submit:
         composeRule
             .onNodeWithText("Enter the step")
-            .performTextInput("Eat the burger")
+            .performTextInput("Put all ingredients in a blender and blend")
+        composeRule
+            .onNodeWithText("Save Step")
+            .performClick()
+
+        composeRule
+            .onNodeWithText("Add Step", useUnmergedTree = true)
+            .performClick()
+        // fill in and submit:
+        composeRule
+            .onNodeWithText("Enter the step")
+            .performTextInput("Pour into a cup and enjoy!")
         composeRule
             .onNodeWithText("Save Step")
             .performClick()
 
         // edit the storage guidance: by making it empty:
         composeRule
-            .onNodeWithText("Eat immediately.")
-            .performTextClearance()
+            .onNodeWithText("Enter Storage Guidance")
+            .performTextInput("Drink immediately.")
+
+        // increase serving size:
+        composeRule
+            .onNodeWithTag("increaseServingSize")
+            .performClick()
+        // wait for the calculation to complete:
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasText("2"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule
+            .onNodeWithText("2") // serving size
+            .assertExists()
+
+        // decrease serving size, cannot go below 1:
+        composeRule
+            .onNodeWithTag("decreaseServingSize")
+            .performClick()
+        // wait for the calculation to complete:
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasText("1"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        // stays at 1 if decreased further:
+        composeRule
+            .onNodeWithTag("decreaseServingSize")
+            .performClick()
+        composeRule
+            .onNodeWithText("1") // serving size
+            .assertExists()
+
+        composeRule
+            .onNodeWithText("1") // serving size
+            .assertExists()
 
         // then save the recipe:
         composeRule
-            // have to use test tag as the text is embedded within the button so not clickable itself
-            // and semantics action rather than .performClick() otherwise not clicked
-            .onNodeWithText("Update Recipe", useUnmergedTree = true)
+            .onNodeWithText("Create Recipe", useUnmergedTree = true)
             .performClick()
 
-        // recipe has been updated successfully:
+        // recipe has been saved successfully:
+        composeRule
+            .onNodeWithText("Strawberry Milkshake")
+            .assertExists()
+    }
+
+    @Test
+    fun `Can discard a manually added recipe`() {
+        composeRule
+            .onNodeWithContentDescription("Go to view recipes", useUnmergedTree = true)
+            .performClick()
+        // wait for the data to load:
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasText("You have not saved any recipes!"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        // go to add a recipe manually
+        composeRule.onNode(
+            hasTestTag("addManuallyButton")
+        ).performClick()
+
+        // wait for the data to load:
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasText("Add a Recipe"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+
+        // go back, do not confirm, then go back again and confirm this time.
+        composeRule
+            .onNodeWithTag("goBack")
+            .performClick()
+        composeRule
+            .onNodeWithText("No")
+            .performClick()
+        composeRule
+            .onNodeWithTag("goBack")
+            .performClick()
+        composeRule
+            .onNodeWithText("Yes")
+            .performClick()
+
+        // wait for the data to load:
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasText("You have not saved any recipes!"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        // go to add a recipe manually
+        composeRule.onNode(
+            hasText("You have not saved any recipes!")
+        ).assertExists()
+    }
+
+    @Test
+    fun `Can discard changes made to an edited recipe`() {
+        // generate the salad recipe to edit:
+        generateSaladRecipe()
+
+        // go to the healthy salad recipe:
+        composeRule.onNode(
+            hasText("Healthy Salad")
+        ).performClick()
+
+        // wait for the data to load from the DB:
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasText("Healthy Salad"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+
+        // scroll to and click on the edit button:
+        composeRule
+            .onNodeWithTag("recipeBookColumn")
+            .performScrollToNode(
+                hasText("Edit Manually", substring = true)
+            )
+
+        composeRule.onRoot(useUnmergedTree = true).printToLog("RECIPEBOOKSCREEN1")
+        composeRule
+            // have to use test tag as the text is embedded within the button so not clickable itself
+            // and semantics action rather than .performClick() otherwise not clicked
+            .onNodeWithTag("Edit Manually", useUnmergedTree = true)
+            .assertIsDisplayed()
+            .assertIsEnabled()
+            .assertHasClickAction()
+            .performSemanticsAction(SemanticsActions.OnClick)
+
+        // change photo:
+        composeRule
+            .onNodeWithContentDescription("Update image")
+            .performClick()
+        // Uses UIAutomator provided by Android: https://developer.android.com/training/testing/other-components/ui-automator
+        // to select an image
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+
+        device.waitForIdle()
+
+        // Pick the photo and wait for it to be updated in the UI:
+        device.wait(Until.hasObject(By.pkg("com.google.android.providers.media.module")), 5_000)
+        val image = device.findObject(
+            By.descContains("Photo taken on") // uses the accessibility tag to identify the photo. chooses the first.
+        )
+        val clickableParent = image?.parent
+        clickableParent?.click()
+        device.waitForIdle()
+        device.wait(
+            Until.hasObject(By.pkg(composeRule.activity.packageName)),
+            5_000
+        )
+        composeRule.waitForIdle()
+
+        // now change the title:
         composeRule
             .onNodeWithText("Healthy Salad")
-            .assertDoesNotExist()
+            .performTextClearance()
         composeRule
-            .onNodeWithText("Unhealthy Burger")
-            .assertExists()
+            .onNodeWithText("Enter Title*")
+            .performTextInput("Unhealthy Burger")
+
+        // go back, do not confirm, then go back again and confirm this time.
+        composeRule
+            .onNodeWithTag("goBack")
+            .performClick()
+        composeRule
+            .onNodeWithText("No")
+            .performClick()
+        composeRule
+            .onNodeWithTag("goBack")
+            .performClick()
+        composeRule
+            .onNodeWithText("Yes")
+            .performClick()
+
+        // changes reverted:
+
+        // wait for the data to load:
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasText("Healthy Salad"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        // no unhealthy burger: changes are lost. healthy salad remains.
+        composeRule.onNode(
+            hasText("Healthy Salad")
+        ).assertExists()
+        composeRule.onNode(
+            hasText("Unhealthy Burger")
+        ).assertDoesNotExist()
     }
 }
