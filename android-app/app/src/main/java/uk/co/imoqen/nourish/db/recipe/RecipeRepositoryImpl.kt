@@ -58,21 +58,17 @@ class RecipeRepositoryImpl @Inject constructor(
     override suspend fun getIdByTitle(title: String): Long? = recipeTypeDao.getIdByTitle(title)
 
     // RECIPE INGREDIENT LOGIC:
-    override fun getAllRecipeIngredients(): Flow<List<RecipeIngredient>> = recipeIngredientDao.getAll()
     override suspend fun insertRecipeIngredient(recipeIngredient: RecipeIngredient): Long = recipeIngredientDao.insert(recipeIngredient)
 
     // RECIPE INGREDIENT SECTION LOGIC:
-    override fun getAllRecipeIngredientSections(): Flow<List<RecipeIngredientSection>> = recipeIngredientSectionDao.getAll()
     override suspend fun insertRecipeIngredientSection(recipeIngredientSection: RecipeIngredientSection): Long = recipeIngredientSectionDao.insert(recipeIngredientSection)
     override fun getRecipeSectionById(id: Long): Flow<RecipeIngredientSection?> = recipeIngredientSectionDao.getById(id)
 
     // RECIPE STEP LOGIC:
-    override fun getAllRecipeSteps(): Flow<List<RecipeStep>> = recipeStepDao.getAll()
     override suspend fun insertRecipeStep(recipeStep: RecipeStep): Long = recipeStepDao.insert(recipeStep)
     override suspend fun updateStepCompleteness(recipeStepId: Long, complete: Boolean) = recipeStepDao.updateStepCompleteness(recipeStepId, complete)
 
     // RECIPE TAG LOGIC:
-    override fun getAllRecipeTags(): Flow<List<RecipeTag>> = recipeTagDao.getAll()
     override suspend fun insertRecipeTag(recipeTag: RecipeTag): Long = recipeTagDao.insert(recipeTag)
 
     // RECIPE NUTRITION LOGIC:
@@ -233,10 +229,6 @@ class RecipeRepositoryImpl @Inject constructor(
                 }
             }
         }
-    }
-
-    override suspend fun updateRecipeIngredient(recipeIngredient: RecipeIngredient) {
-        recipeIngredientDao.update(recipeIngredient)
     }
 
     override suspend fun updateRecipe(recipe: Recipe) {

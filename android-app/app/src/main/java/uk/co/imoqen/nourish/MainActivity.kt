@@ -88,14 +88,8 @@ class MainActivity : ComponentActivity() {
             val snackbarHostState = remember { SnackbarHostState() }
 
             // Collect and perform UiEvents across entire app:
-            val context = LocalContext.current
             suspend fun onEvent(event: UiEvent) {
                 when (event) {
-                    is UiEvent.MakeToast -> {
-                        // To show a Toast. potentially remove as have replaced with Snackbar.
-                        val toast = Toast.makeText(context, event.message, Toast.LENGTH_LONG)
-                        toast.show()
-                    }
                     is UiEvent.ShowSnackbar -> {
                         // Snackbar: https://developer.android.com/develop/ui/compose/components/snackbar
                         snackbarHostState.showSnackbar(

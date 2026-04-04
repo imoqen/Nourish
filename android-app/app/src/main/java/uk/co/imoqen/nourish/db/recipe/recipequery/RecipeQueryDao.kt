@@ -8,9 +8,6 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface RecipeQueryDao {
-    @Query("SELECT * FROM RecipeQuery")
-    fun getAll(): Flow<List<RecipeQuery>> // flow is better than normal list for things which should update. as cant access db on main thread
-
     // insert one
     @Insert
     suspend fun insert(recipeQuery: RecipeQuery): Long

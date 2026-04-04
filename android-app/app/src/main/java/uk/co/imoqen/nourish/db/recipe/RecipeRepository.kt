@@ -29,21 +29,17 @@ interface RecipeRepository {
     suspend fun getIdByTitle(title: String): Long?
 
     // RECIPE INGREDIENT LOGIC:
-    fun getAllRecipeIngredients(): Flow<List<RecipeIngredient>>
     suspend fun insertRecipeIngredient(recipeIngredient: RecipeIngredient): Long
 
     // RECIPE INGREDIENT SECTION LOGIC:
-    fun getAllRecipeIngredientSections(): Flow<List<RecipeIngredientSection>>
     suspend fun insertRecipeIngredientSection(recipeIngredientSection: RecipeIngredientSection): Long
     fun getRecipeSectionById(id: Long): Flow<RecipeIngredientSection?>
 
     // RECIPE STEP LOGIC:
-    fun getAllRecipeSteps(): Flow<List<RecipeStep>>
     suspend fun insertRecipeStep(recipeStep: RecipeStep): Long
     suspend fun updateStepCompleteness(recipeStepId: Long, complete: Boolean)
 
     // RECIPE TAG LOGIC:
-    fun getAllRecipeTags(): Flow<List<RecipeTag>>
     suspend fun insertRecipeTag(recipeTag: RecipeTag): Long
 
     // RECIPE NUTRITION LOGIC:
@@ -64,8 +60,6 @@ interface RecipeRepository {
     suspend fun createRecipe(uid: String, llmRecipe: LlmRecipe, shouldNotScaleIngredients: Boolean, recipeId: Long = -1, imagePath: String = "", llmGenerated: Boolean = true)
 
     suspend fun replaceRecipe(currentRecipe: Recipe, newRecipe: LlmRecipe, updatedImagePath: String, llmGenerated: Boolean = true)
-
-    suspend fun updateRecipeIngredient(recipeIngredient: RecipeIngredient)
 
     suspend fun scaleRecipe(recipe: Recipe, currentServingSize: Int, increase: Boolean)
 

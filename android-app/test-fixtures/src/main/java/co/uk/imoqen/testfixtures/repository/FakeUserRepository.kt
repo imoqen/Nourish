@@ -7,8 +7,4 @@ class FakeUserRepository(): UserRepository {
     override suspend fun insert(user: User) {
         TODO("Not yet implemented")
     }
-
-    override suspend fun getByUid(uid: String): User? {
-        TODO("Not yet implemented")
-    }
 }

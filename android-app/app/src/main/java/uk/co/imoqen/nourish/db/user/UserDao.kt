@@ -9,18 +9,6 @@ import uk.co.imoqen.nourish.db.ingredient.Ingredient
 
 @Dao
 interface UserDao {
-    @Query("SELECT * FROM user")
-    fun getAllUsers(): List<User>
-
-    @Query("SELECT * FROM user WHERE uid = :uid")
-    suspend fun getByUid(uid: String): User?
-
-    @Insert
-    fun insertAllUsers(vararg users: User)
-
-    @Delete
-    fun deleteUser(user: User)
-
     // insert one, ignore if already exists
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(user: User)

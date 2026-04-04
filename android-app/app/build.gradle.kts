@@ -190,7 +190,8 @@ val instrumentedTestExclusions = listOf(
     // Exclude files that shouldn't be in instrumented tests, as they are faked instead:
     "**/firebase/**",
     "**/network/**",
-    "/**/ui/theme/**"
+    "/**/ui/theme/**",
+    "**/NourishDatabase_Impl*"
 )
 
 val unitTestInclusions = listOf(

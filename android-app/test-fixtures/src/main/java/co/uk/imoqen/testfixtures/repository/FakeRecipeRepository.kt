@@ -186,15 +186,7 @@ class FakeRecipeRepository(): RecipeRepository {
         TODO("Not yet implemented")
     }
 
-    override fun getAllRecipeIngredients(): Flow<List<RecipeIngredient>> {
-        TODO("Not yet implemented")
-    }
-
     override suspend fun insertRecipeIngredient(recipeIngredient: RecipeIngredient): Long {
-        TODO("Not yet implemented")
-    }
-
-    override fun getAllRecipeIngredientSections(): Flow<List<RecipeIngredientSection>> {
         TODO("Not yet implemented")
     }
 
@@ -213,10 +205,6 @@ class FakeRecipeRepository(): RecipeRepository {
         return flowOf(TestData.recipeIngredientSection_salad)
     }
 
-    override fun getAllRecipeSteps(): Flow<List<RecipeStep>> {
-        TODO("Not yet implemented")
-    }
-
     override suspend fun insertRecipeStep(recipeStep: RecipeStep): Long {
         TODO("Not yet implemented")
     }
@@ -229,10 +217,6 @@ class FakeRecipeRepository(): RecipeRepository {
             throw Exception() // to test how it handles exceptions
         }
         // else, do nothing to simulate success
-    }
-
-    override fun getAllRecipeTags(): Flow<List<RecipeTag>> {
-        TODO("Not yet implemented")
     }
 
     override suspend fun insertRecipeTag(recipeTag: RecipeTag): Long {
@@ -291,10 +275,6 @@ class FakeRecipeRepository(): RecipeRepository {
         llmGenerated: Boolean
     ) {
         lastCalled = "replaceRecipe"
-    }
-
-    override suspend fun updateRecipeIngredient(recipeIngredient: RecipeIngredient) {
-        TODO("Not yet implemented")
     }
 
     override suspend fun scaleRecipe(

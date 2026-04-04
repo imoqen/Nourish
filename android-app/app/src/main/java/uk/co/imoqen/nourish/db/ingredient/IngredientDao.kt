@@ -10,9 +10,6 @@ import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQuery
 
 @Dao
 interface IngredientDao {
-    @Query("SELECT * FROM ingredient")
-    fun getAll(): Flow<List<Ingredient>>
-
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(ingredient: Ingredient): Long
 

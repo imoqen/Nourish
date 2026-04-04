@@ -7,10 +7,6 @@ import uk.co.imoqen.nourish.db.ingredient.Ingredient
 import uk.co.imoqen.nourish.db.ingredient.IngredientRepository
 
 class FakeIngredientRepository(): IngredientRepository {
-    override fun getAll(): Flow<List<Ingredient>> {
-        TODO("Not yet implemented")
-    }
-
     override fun getById(id: Long): Flow<Ingredient?> {
         if (id == -1L) {
             return flowOf(null)
@@ -54,5 +50,4 @@ class FakeIngredientRepository(): IngredientRepository {
     override suspend fun update(ingredient: Ingredient) {
         TODO("Not yet implemented")
     }
-
 }
