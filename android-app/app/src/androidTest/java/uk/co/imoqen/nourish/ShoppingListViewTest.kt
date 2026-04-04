@@ -626,4 +626,133 @@ class ShoppingListViewTest {
             .onNodeWithText("1") // just makes it 1
             .assertExists()
     }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `Ingredients can be searched in the shopping list`() = runTest {
+        // go to the shopping list:
+        composeRule
+            .onNodeWithContentDescription("Go to shopping list", useUnmergedTree = true)
+            .performClick()
+        // wait for the ingredients to load:
+        advanceUntilIdle()
+        composeRule.waitForIdle()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasText("There are no items in your shopping list."), useUnmergedTree = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        // check no ingredients present:
+        composeRule
+            .onNodeWithText("There are no items in your shopping list.", useUnmergedTree = true)
+            .assertExists()
+
+        // add items manually:
+
+        // no amount or unit:
+        composeRule
+            .onNodeWithContentDescription("Add Item")
+            .performClick()
+        // show blank item error:
+        composeRule
+            .onNodeWithText("Add to Shopping List")
+            .performClick()
+        composeRule
+            .onNodeWithText("The item cannot be blank.")
+            .assertExists()
+        composeRule
+            .onNodeWithText("Enter an item to add")
+            .performTextInput("strawberries")
+        composeRule
+            .onNodeWithText("strawberries")
+            .performImeAction() // close the keyboard
+        composeRule
+            .onNodeWithText("Add to Shopping List")
+            .performClick()
+        composeRule
+            .onNodeWithText("strawberries")
+            .assertExists()
+
+        // amount provided, no unit:
+        composeRule
+            .onNodeWithContentDescription("Add Item")
+            .performClick()
+        composeRule
+            .onNodeWithText("Enter an item to add")
+            .performTextInput("bananas")
+        composeRule
+            .onNodeWithText("bananas")
+            .performImeAction() // close the keyboard
+        composeRule
+            .onNodeWithText("Enter amount")
+            .performTextInput("5")
+        composeRule
+            .onNodeWithText("5")
+            .performImeAction() // close the keyboard
+        composeRule
+            .onNodeWithText("Add to Shopping List")
+            .performClick()
+        composeRule
+            .onNodeWithText("bananas")
+            .assertExists()
+        composeRule
+            .onNodeWithText("5")
+            .assertExists()
+
+        // amount and unit provided:
+        composeRule
+            .onNodeWithContentDescription("Add Item")
+            .performClick()
+        composeRule
+            .onNodeWithText("Enter an item to add")
+            .performTextInput("oat milk")
+        composeRule
+            .onNodeWithText("oat milk")
+            .performImeAction() // close the keyboard
+        composeRule
+            .onNodeWithText("Enter amount")
+            .performTextInput("1")
+        composeRule
+            .onNodeWithText("1")
+            .performImeAction() // close the keyboard
+        composeRule
+            .onNodeWithText("L")
+            .performClick()
+        composeRule
+            .onNodeWithText("Add to Shopping List")
+            .performClick()
+        composeRule
+            .onNodeWithText("oat milk")
+            .assertExists()
+        composeRule
+            .onNodeWithText("1 L")
+            .assertExists()
+
+        // search for milk:
+       composeRule
+           .onNodeWithText("Search for an item")
+           .performTextInput("MILK")
+       composeRule
+           .onNodeWithText("oat milk")
+           .assertExists()
+       composeRule
+           .onNodeWithText("strawberries")
+           .assertDoesNotExist()
+       composeRule
+           .onNodeWithText("bananas")
+           .assertDoesNotExist()
+
+       // the clear the search:
+       composeRule.onNodeWithContentDescription("Trailing Icon")
+           .performClick()
+       composeRule
+           .onNodeWithText("oat milk")
+           .assertExists()
+       composeRule
+           .onNodeWithText("strawberries")
+           .assertExists()
+       composeRule
+           .onNodeWithText("bananas")
+           .assertExists()
+    }
 }

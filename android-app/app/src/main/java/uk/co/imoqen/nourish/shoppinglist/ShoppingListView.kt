@@ -196,7 +196,7 @@ fun ShoppingListScreen(
                     // add it as a disclaimer under an existing item.
                     // removed it - think i was obvercomplicating it
 
-                    if (shoppingListItem.plural.contains(uiState.searchTerm)) { // applies the search
+                    if (shoppingListItem.plural.lowercase().contains(uiState.searchTerm.lowercase())) { // applies the search
                         // Uses ReorderableItem library: https://github.com/Calvin-LL/Reorderable
                         ReorderableItem(
                             reorderableLazyListState,
