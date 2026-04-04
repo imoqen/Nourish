@@ -42,6 +42,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -231,6 +232,7 @@ fun ShoppingListScreen(
                                                 )
                                             }
                                         },
+                                        modifier = Modifier.testTag("checkOffIngredient")
                                     )
 
                                     Column(
@@ -346,7 +348,7 @@ fun ShoppingListScreen(
                         // Delete All button:
                         if (uiState.userInteractionStatus == UserInteractionStatus.EDIT) {
                             ExtendedFloatingActionButton(
-                                modifier = Modifier.padding(vertical=12.dp,horizontal=6.dp),
+                                modifier = Modifier.padding(vertical=12.dp,horizontal=6.dp).testTag("deleteAll"),
                                 text = {
                                     Text(
                                         text = "All",
@@ -366,7 +368,7 @@ fun ShoppingListScreen(
                                 containerColor = MaterialTheme.colorScheme.primaryContainer
                             )
                             ExtendedFloatingActionButton(
-                                modifier = Modifier.padding(vertical=12.dp,horizontal=6.dp),
+                                modifier = Modifier.padding(vertical=12.dp,horizontal=6.dp).testTag("deletePurchased"),
                                 text = {
                                     Text(
                                         text = "Purchased",
@@ -390,7 +392,7 @@ fun ShoppingListScreen(
                         if (uiState.userInteractionStatus == UserInteractionStatus.BROWSE || uiState.userInteractionStatus == UserInteractionStatus.EDIT) {
                             if (uiState.userInteractionStatus == UserInteractionStatus.BROWSE) {
                                 ExtendedFloatingActionButton(
-                                    modifier = Modifier.padding(vertical=12.dp,horizontal=6.dp),
+                                    modifier = Modifier.padding(vertical=12.dp,horizontal=6.dp).testTag("editList"),
                                     text = {
                                         Text(
                                             text = "Edit List",
@@ -416,7 +418,7 @@ fun ShoppingListScreen(
                             }
                             if (uiState.userInteractionStatus == UserInteractionStatus.EDIT) {
                                 FloatingActionButton(
-                                    modifier = Modifier.padding(vertical=12.dp,horizontal=6.dp),
+                                    modifier = Modifier.padding(vertical=12.dp,horizontal=6.dp).testTag("finishEditing"),
                                     onClick = {
                                             viewModel.setUserInteractionStatus(UserInteractionStatus.BROWSE)
                                     },
@@ -439,7 +441,7 @@ fun ShoppingListScreen(
                 ) {
                     if (uiState.userInteractionStatus == UserInteractionStatus.BROWSE) {
                         ExtendedFloatingActionButton(
-                            modifier = Modifier.padding(vertical=12.dp,horizontal=6.dp),
+                            modifier = Modifier.padding(vertical=12.dp,horizontal=6.dp).testTag("addItem"),
                             onClick = {
                                 viewModel.setUserInteractionStatus(UserInteractionStatus.ADD)
                             },

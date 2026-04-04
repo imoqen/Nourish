@@ -5,6 +5,7 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -29,6 +30,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
+import okhttp3.internal.wait
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -310,6 +312,171 @@ class ShoppingListViewTest {
             .assertDoesNotExist()
         composeRule
             .onNodeWithText("pepper")
+            .assertDoesNotExist()
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `Ingredients can be checked off individually and all and purchased ingredients can be checked off`() = runTest {
+        generateSaladRecipe()
+        // go to the healthy salad recipe:
+        composeRule.onNode(
+            hasText("Healthy Salad")
+        ).performClick()
+
+        // wait for the data to load from the DB:
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasText("Healthy Salad"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNode(
+            hasText("Dismiss")
+        ).performClick()
+        // add the ingredients to the shopping list:
+        composeRule
+            .onNodeWithTag("recipeBookColumn")
+            .performScrollToNode(
+                hasText("Add to Shopping List", substring = true)
+            )
+        composeRule.onNode(
+            hasText("Add to Shopping List")
+        ).performClick()
+        // wait for the selection to load:
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasTestTag("addIngredientCheckbox"))
+                .fetchSemanticsNodes().size == 8
+        }
+        // then selectively deselect salt and pepper:
+        composeRule.onAllNodesWithTag("addIngredientCheckbox")[6].performClick() // deselect salt
+        composeRule.onAllNodesWithTag("addIngredientCheckbox")[6].performClick() // reselect salt
+        composeRule.onAllNodesWithTag("addIngredientCheckbox")[6].performClick() // deselect salt
+        composeRule.onAllNodesWithTag("addIngredientCheckbox")[7].performClick() // deselect pepper
+        composeRule.onAllNodesWithText("Add to Shopping List")[2].performClick()
+        // wait 10 seconds so that db reliably updates correctly
+        Thread.sleep(10_000)
+        composeRule.waitForIdle()
+        composeRule
+            .onNodeWithText("Dismiss")
+            .performClick()
+
+        // then go to the shopping list:
+        composeRule
+            .onNodeWithContentDescription("Go to shopping list", useUnmergedTree = true)
+            .performClick()
+        // wait for the ingredients to load:
+        advanceUntilIdle()
+        composeRule.waitForIdle()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasText("cucumbers"), useUnmergedTree = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        // check the ingredients are present:
+        composeRule
+            .onNodeWithText("cucumbers", useUnmergedTree = true)
+            .assertExists()
+        composeRule
+            .onNodeWithText("1", useUnmergedTree = true)
+            .assertExists()
+        composeRule
+            .onNodeWithText("tomatoes", useUnmergedTree = true)
+            .assertExists()
+        composeRule
+            .onNodeWithText("100 g", useUnmergedTree = true)
+            .assertExists()
+        composeRule
+            .onNodeWithText("lettuce", useUnmergedTree = true)
+            .assertExists()
+        composeRule
+            .onNodeWithText("honey", useUnmergedTree = true)
+            .assertExists()
+        composeRule
+            .onNodeWithText("vinegar", useUnmergedTree = true)
+            .assertExists()
+        composeRule
+            .onNodeWithText("lemon juice", useUnmergedTree = true)
+            .assertExists()
+        // salt and pepper not added:
+        composeRule
+            .onNodeWithText("salt", useUnmergedTree = true)
+            .assertDoesNotExist()
+        composeRule
+            .onNodeWithText("pepper", useUnmergedTree = true)
+            .assertDoesNotExist()
+
+        // check off cucumber and honey:
+        composeRule
+            .onAllNodesWithTag("checkOffIngredient")[0]
+            .performClick()
+        Thread.sleep(500) // wait 0.5 sec so that its realistic and not like 2 items are checked at the same time
+        composeRule
+            .onAllNodesWithTag("checkOffIngredient")[2]
+            .performClick()
+        Thread.sleep(500) // wait 0.5 sec so that its realistic and not like 2 items are checked at the same time
+
+        composeRule
+            .onNodeWithTag("editList")
+            .performClick()
+        // delete purchased:
+        composeRule
+            .onNodeWithContentDescription("Clear Purchased")
+            .performClick()
+        composeRule
+            .onNodeWithText("Yes")
+            .performClick()
+        composeRule.waitForIdle()
+        composeRule
+            .onNodeWithText("cucumbers")
+            .assertDoesNotExist()
+        composeRule
+            .onNodeWithText("honey")
+            .assertDoesNotExist()
+
+        // delete an individual one:
+        composeRule
+            .onNodeWithTag("editList")
+            .performClick()
+        // delete tomatoes:
+        composeRule
+            .onAllNodesWithContentDescription("Delete Item")[0]
+            .performClick()
+        composeRule
+            .onNodeWithText("Yes")
+            .performClick()
+        composeRule.waitForIdle()
+        composeRule
+            .onNodeWithText("tomatoes")
+            .assertDoesNotExist()
+        composeRule
+            .onNodeWithText("100 g")
+            .assertDoesNotExist()
+
+        // test the finished button:
+        composeRule
+            .onNodeWithContentDescription("Finish Editing Items")
+            .performClick()
+
+        // delete all:
+        composeRule
+            .onNodeWithTag("editList")
+            .performClick()
+        composeRule
+            .onNodeWithContentDescription("Clear All")
+            .performClick()
+        composeRule
+            .onNodeWithText("Yes")
+            .performClick()
+        composeRule.waitForIdle()
+        composeRule
+            .onNodeWithText("honey")
+            .assertDoesNotExist()
+        composeRule
+            .onNodeWithText("vinegar")
+            .assertDoesNotExist()
+        composeRule
+            .onNodeWithText("lemon juice")
             .assertDoesNotExist()
     }
 }
