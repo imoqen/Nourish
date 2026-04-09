@@ -63,7 +63,6 @@ class ShoppingListEntryRepositoryImpl @Inject constructor(
                     ordinal = getMaxOrdinalForUser(uid) + 1 // increment max to get next val (put it at the end of the list by default)
                 )
             )
-            Log.i("inserted db", shoppingListIngredient.plural)
         }
     }
 
