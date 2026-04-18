@@ -1,7 +1,6 @@
 package uk.co.imoqen.nourish.recipebook
 
 import android.content.Context
-import android.util.Log
 import androidx.compose.animation.AnimatedContent
 import uk.co.imoqen.nourish.R
 import androidx.compose.animation.AnimatedVisibility
@@ -32,7 +31,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,10 +44,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,11 +65,9 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.NourishDivider
 import uk.co.imoqen.nourish.common.NourishH2
-import uk.co.imoqen.nourish.common.NourishH3
 import uk.co.imoqen.nourish.common.NourishTextDivider
 import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.common.SelectedTags
@@ -84,13 +78,16 @@ import uk.co.imoqen.nourish.common.dimmedBackgroundColour
 import uk.co.imoqen.nourish.common.onBackgroundColour
 import uk.co.imoqen.nourish.common.recipeColour
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
-import uk.co.imoqen.nourish.shoppinglist.UserInteractionStatus
 import java.io.File
 import kotlin.enumValueOf
 
-
 /**
- * Recipe Book view
+ * View for RecipeBook, where the user can access all their recipes, search them, filter
+ * them by nutritional value, and create a new recipe. When a recipe is selected, it will be loaded
+ * and displayed in the Ui, along with actions to perform on that recipe.
+ * @param recipeBookViewModel - the ViewModel for this view, holding the required logic.
+ * @param onViewRecipeCard - Function which runs to output a recipe card when selected.
+ * @param onAddRecipe - Function which runs to create a recipe.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -99,15 +96,11 @@ fun RecipeBookScreen(
     onViewRecipeCard: (Long) -> Unit,
     onAddRecipe: () -> Unit,
 ) {
-
     val scrollState = rememberScrollState()
     val uiState = recipeBookViewModel.uiState.collectAsState().value
     val keyboardFocusManager =
         LocalFocusManager.current // To close the keyboard once user submits input
-
     Column() {
-        // search bar: https://developer.android.com/develop/ui/compose/components/search-bar
-
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal=8.dp),
             horizontalArrangement = Arrangement.Center,
@@ -130,10 +123,10 @@ fun RecipeBookScreen(
                 )
             }
 
-            // filter button:
+            // Filter button:
             Box(
                 modifier = Modifier
-                    .height(48.dp) // height of nourishTextField = 54+8 = 64 (the 8 bits are for padding)
+                    .height(48.dp) // height of nourishTextField, with padding
                     .padding(top = 8.dp)
                     .padding(horizontal = 6.dp)
                     .background(
@@ -142,7 +135,9 @@ fun RecipeBookScreen(
                     ),
                 contentAlignment = Alignment.Center,
             ) {
-                IconButton(onClick = { recipeBookViewModel.setDisplayDropdownFilter(!uiState.displayDropdownFilter) }) {
+                IconButton(onClick = {
+                    recipeBookViewModel.setDisplayDropdownFilter(!uiState.displayDropdownFilter)
+                }) {
                     Icon(
                         painter = painterResource(R.drawable.filter_icon),
                         contentDescription = "Filter",
@@ -177,7 +172,7 @@ fun RecipeBookScreen(
             }
         }
 
-        // display selected recipe tags:
+        // Display selected recipe tags:
         Row(
             modifier = Modifier.fillMaxWidth().padding(bottom=4.dp)
         ) {
@@ -187,26 +182,32 @@ fun RecipeBookScreen(
                 updateSelectedTag = recipeBookViewModel::updateSelected
             )
         }
+        // Set all recipes
+        recipeBookViewModel.getRecipeBookMap()
 
-            // set all recipes
-            // maybe should putthis in launched effect in the future
-            recipeBookViewModel.getRecipeBookMap()
+        // Set all nutritional tags and recipe types for the dropdown, only change when those
+        // change.
+        LaunchedEffect(uiState.recipeTypes?.size) {
+            recipeBookViewModel.getAllRecipeTypes()
+        }
+        // Set all tags and recipe types for the dropdown
+        LaunchedEffect(uiState.recipeTags?.size) {
+            recipeBookViewModel.getAllTagsForUser()
+        }
 
-            // set all tags and recipe types for the dropdown
-            // set all nutritional tags and recipe types for the dropdown, only change when those change.
-
-            LaunchedEffect(uiState.recipeTypes?.size) {
-                recipeBookViewModel.getAllRecipeTypes()
-            }
-            LaunchedEffect(uiState.recipeTags?.size) {
-                recipeBookViewModel.getAllTagsForUser()
-            }
-
-            RecipeList(recipeBookViewModel, onViewRecipeCard, scrollState, onAddRecipe)
-
+        // Display all recipes:
+        RecipeList(recipeBookViewModel, onViewRecipeCard, scrollState, onAddRecipe)
     }
 }
 
+/**
+ * The list of all recipes which can be searched and filtered.
+ * Tapping on a recipe navigates to its Recipe Card view. A new recipe can also be created.
+ * @param recipeBookViewModel - the ViewModel for this view, holding the required logic.
+ * @param onViewRecipeCard - Function which runs to load a recipe into a recipe card, to display it.
+ * @param scrollState - The scroll state
+ * @param onAddRecipe - Function which runs to add a recipe.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeList(
@@ -218,10 +219,7 @@ fun RecipeList(
     val uiState = recipeBookViewModel.uiState.collectAsState().value
     val recipeBookMap = uiState.recipeBookMap
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-
     val totalRecipeAmount = recipeBookMap?.values?.size ?: 0
-
     AnimatedContent(
         targetState = (totalRecipeAmount != 0),
     ) { recipesExist ->
@@ -233,7 +231,6 @@ fun RecipeList(
 
             var loading by remember { mutableStateOf(true) }
             LaunchedEffect("TIME_FOR_LOADING") {
-                //delay(150)
                 loading = false
             }
 
@@ -268,13 +265,14 @@ fun RecipeList(
                                 }
 
                                 val list: MutableList<Pair<String, NourishColour>> = mutableListOf()
-                                //uiState.allTags!!.map { tag -> Pair(tag.tag.displayName, enumValueOf<NourishColour>(tag.tag.colour))}.toMutableList()
                                 uiState.recipeTags!!.forEach { tagSelection ->
                                     if (tagSelection.selected) {
                                         list.add(
                                             Pair(
                                                 tagSelection.tag.displayName,
-                                                enumValueOf<NourishColour>(tagSelection.tag.colour)
+                                                enumValueOf<NourishColour>(
+                                                    tagSelection.tag.colour
+                                                )
                                             )
                                         )
                                     }
@@ -297,7 +295,8 @@ fun RecipeList(
                                             .animateContentSize()
                                     ) {
                                         items(
-                                            recipeCardsUnexpanded.reversed(), // reversed so most recent recipes first
+                                            // Reversed so most recent recipes first:
+                                            recipeCardsUnexpanded.reversed(),
                                             key = { it.recipeId }) { recipeCardUnexpanded ->
                                             AnimatedVisibility(
                                                 visible = (recipeCardUnexpanded.title.contains(
@@ -310,7 +309,9 @@ fun RecipeList(
                                                 exit = fadeOut(tween(300))
                                             ) {
                                                 Box(
-                                                    modifier = Modifier.padding(horizontal = 4.dp) // padding goes here instead so it stays fine even when a box is invisibkle
+                                                    // Padding goes here instead so it stays fine
+                                                    // even when a box is invisible
+                                                    modifier = Modifier.padding(horizontal = 4.dp)
                                                 ) {
                                                     Card(
                                                         modifier = Modifier
@@ -341,8 +342,15 @@ fun RecipeList(
                                                                     horizontalAlignment = Alignment.CenterHorizontally,
                                                                     verticalArrangement = Arrangement.Center
                                                                 ) {
+                                                                    // Determine which tags to display
+                                                                    // and use ... if there are more
+                                                                    // than can be displayed:
                                                                     Text(
-                                                                        text = if (recipeCardUnexpanded.title.length <= 54) { recipeCardUnexpanded.title } else { "${recipeCardUnexpanded.title.take(50)}..." },
+                                                                        text = if (recipeCardUnexpanded.title.length <= 54) {
+                                                                            recipeCardUnexpanded.title
+                                                                        } else {
+                                                                            "${recipeCardUnexpanded.title.take(50)}..."
+                                                                               },
                                                                         textAlign = TextAlign.Center,
                                                                         modifier = Modifier.padding(
                                                                             4.dp
@@ -412,7 +420,7 @@ fun RecipeList(
                         }
                     }
 
-                    // message for if user selected a type but does not have any of those recipes saved:
+                    // Message for if user selected a type but does not have any of those recipes saved:
 
                     if (!recipeBookMap.keys.containsAll(recipeTypesSelected)) {
                         val selectedTypesWithoutRecipes = (recipeTypesSelected - recipeBookMap.keys)
@@ -431,7 +439,7 @@ fun RecipeList(
             }
 
         } else {
-            // display loading for when app first starts then display error msg for when no recipes yet
+            // Display loading for when app first starts then display error msg for when no recipes yet
             RecipeLoadingBar(
                 "Loading your recipes...",
                 { Text("You have not saved any recipes!") })
@@ -465,6 +473,15 @@ fun RecipeList(
     }
 }
 
+/**
+ * The image header of the recipe card, either the image of the recipe or its colour
+ * and the emoji displayed accordingly.
+ * @param imagePath - The path of the image attached to a recipe
+ * @param emoji - The emoji attached to a recipe
+ * @param context - The local context, required to load the image
+ * @param colour - The colour of the recipe
+ * @param fillMaxWidth - whether the image card header should fill the max width of its parent.
+ */
 @Composable
 fun ImageCardHeader(
     imagePath: String,
@@ -493,7 +510,7 @@ fun ImageCardHeader(
         var displayImage = false
         if (imageFile.exists() && imagePath != "") {
             displayImage = true
-            //Use Coil to display the selected image
+            // Use Coil to display the selected image
             val painter =
                 rememberAsyncImagePainter(
                     ImageRequest
@@ -504,28 +521,38 @@ fun ImageCardHeader(
                         .build()
                 )
 
+            // 2/3 of the card height:
             Image(
                 painter = painter,
                 contentDescription = null,
                 modifier =
-                    if (fillMaxWidth) { Modifier.fillMaxWidth() } else { Modifier.width(240.dp)  } // matches the card width
-                    .height(100.dp), // 2/3 of the card height - maybe use consts for this in future to ensure they match upon changes
+                    // Matches the card width
+                    if (fillMaxWidth) {
+                        Modifier.fillMaxWidth()
+                    } else {
+                        Modifier.width(240.dp)
+                    }
+                    .height(100.dp),
                 contentScale = ContentScale.Crop
             )
         } else {
             Box(
-                modifier = if (fillMaxWidth) { Modifier.fillMaxWidth() } else { Modifier.width(240.dp)  }// matches the card width
+                modifier = if (fillMaxWidth) {
+                    Modifier.fillMaxWidth()
+                } else {
+                    Modifier.width(240.dp) // Matches card width
+                }
                     .height(100.dp)
                     .background(
                         color = colour
-                    ) // put the chosen colour
+                    )
             )
         }
         // Emoji:
         Text(
             text = emoji,
             fontSize = 32.sp,
-            // center emoji if no image, otherwise put at bottom center
+            // Centre emoji if no image, otherwise put at bottom centre.
             modifier = if (displayImage) {
                 Modifier.align(Alignment.BottomCenter)
             } else {
@@ -542,7 +569,11 @@ fun ImageCardHeader(
     }
 }
 
-// holds the loading bar and a message for if no recipes exist yet after loading
+/**
+ * Holds the loading bar and a message for if no recipes exist yet after loading
+ * @param loadingMessage - The loading message to display.
+ * @param noContentPresent - Composable for if there are no recipes to display.
+ */
 @Composable
 fun RecipeLoadingBar(
     loadingMessage: String,
@@ -551,7 +582,7 @@ fun RecipeLoadingBar(
     var noRecipes by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(true) }
 
-    // wait a bit for recipes to come
+    // Wait a bit for recipes to come
     LaunchedEffect(Unit) {
         delay(5000)
         loading = false
@@ -577,12 +608,16 @@ fun RecipeLoadingBar(
     }
 }
 
+/**
+ * Display a list of the Tags
+ * @param tags - All Tags in a pair of their name and colour.
+ */
 @Composable
 fun TagsDisplay(
     tags: List<Pair<String, NourishColour>>
 ) {
     tags.forEach { (tag, colour) ->
-        // alternate colour of tag depending on dark / light mode
+        // Alternate colour of tag depending on dark / light mode
         Text(
             text = tag,
             fontSize = 14.sp,
@@ -605,18 +640,23 @@ fun TagsDisplay(
     }
 }
 
-// determines if the length of the Tags belonging to a recipe can fit into one line (27 chars) or two lines (54 chars)
+/**
+ * Auxiliary function to determine if the length of the Tags belonging to a recipe can fit into
+ * one line (27 chars) or two lines (54 chars).
+ * @param recipeCardUnexpanded - The recipe with the tags to check the length of.
+ */
 fun determineSpaceAvailable(
     recipeCardUnexpanded: RecipeCardUnexpanded,
 ): Int {
-    // determine the amount of space available:
+    // First, determine the amount of space available:
     var spaceAvailable = 54 // 2 lines of space available
     if (recipeCardUnexpanded.title.length > 27) {
         spaceAvailable = 27 // 1 line of space available
     }
-    // then determine which tags to put:
+    // Then determine which tags to put:
     var fits = false
-    var amountOfTagsToDisplay = recipeCardUnexpanded.recipeTags.size // begin with all tags, try to fit them all in
+    // Begin with all tags, try to fit them all in
+    var amountOfTagsToDisplay = recipeCardUnexpanded.recipeTags.size
     while (!fits && amountOfTagsToDisplay > 0) {
         fits = ((recipeCardUnexpanded.recipeTags.take(amountOfTagsToDisplay).sumOf { (tag, _) ->
             tag.length

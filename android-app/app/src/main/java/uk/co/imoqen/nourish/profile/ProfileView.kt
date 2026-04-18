@@ -18,7 +18,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import uk.co.imoqen.nourish.common.NourishBottomCard
@@ -69,7 +68,8 @@ fun ProfileScreen(
                 Text("Sign out")
             }
 
-            // Ensures password reset is only possible for username/password accounts (not Google accounts)
+            // Ensures password reset is only possible for username/password accounts
+            // (not Google accounts)
             if (uiState.hasPasswordProvider) {
                 Button(
                     onClick = {
@@ -120,7 +120,9 @@ fun ProfileScreen(
                             NourishButton(
                                 onClick = {
                                     profileViewModel.updatePassword(
-                                        onSuccess = { profileViewModel.setShowPasswordChangeBottomSheet(false) }
+                                        onSuccess = {
+                                            profileViewModel.setShowPasswordChangeBottomSheet(false)
+                                        }
                                     )
                                 },
                                 text = "Update Password"
@@ -153,7 +155,7 @@ fun ProfileScreen(
                     sheetState = deleteAccountSheetState,
                     modifier = Modifier.fillMaxSize().padding(bottom = 20.dp)
                 ) {
-                    val keyboardFocusManager = LocalFocusManager.current // local to modal bottom sheet, otherwise wont close
+                    val keyboardFocusManager = LocalFocusManager.current
                     // Bottom sheet for account deletion:
                     Column(
                         modifier = Modifier.fillMaxSize(),
@@ -161,6 +163,7 @@ fun ProfileScreen(
                     ) {
                         NourishH2("Are you sure?")
                         NourishText("This will delete all data associated with your account, and cannot be undone.\n")
+
                         // Case: password-provider account
                         if (uiState.hasPasswordProvider) {
                             NourishText("To confirm, type your password below.")
@@ -184,6 +187,7 @@ fun ProfileScreen(
                                 text = "Confirm and Delete"
                             )
                         }
+
                         // Case: Google-provider account
                         else {
                             NourishText("Confirm by signing back in to Google")
