@@ -1,7 +1,6 @@
 package uk.co.imoqen.nourish.authentication
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,10 +15,8 @@ import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.db.tag.TagRepository
-import uk.co.imoqen.nourish.db.tag.TagRepositoryImpl
 import uk.co.imoqen.nourish.db.user.User
 import uk.co.imoqen.nourish.db.user.UserRepository
-import uk.co.imoqen.nourish.db.user.UserRepositoryImpl
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import javax.inject.Inject
 
@@ -38,8 +35,7 @@ class AuthenticationViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val tagRepository: TagRepository
 ): ViewModel() {
-    // Purpose: pattern to encapsulate the mutable state to ensure it is not mutable from the viewmodel.
-    // pattern taken from advice in: https://medium.com/@rowaido.game/managing-ui-states-in-jetpack-compose-7eb15e4f6931
+
     private val mutableUiState = MutableStateFlow(AuthenticationUiState())
     // Observable from the Authentication composables; not used within the view model.
     val uiState: StateFlow<AuthenticationUiState> = mutableUiState.asStateFlow()
@@ -135,7 +131,10 @@ class AuthenticationViewModel @Inject constructor(
         }
     }
 
-    // only add the user if not already in. this conflict is handled by the Dao (onconflict).
+    /**
+     * Adds a user to the Room database, given a uid and email address.
+     * If the user already exists in the database, it is simply ignored (handled in the repository).
+     */
     fun addUserToRoom() {
         viewModelScope.launch() {
             val uid = authenticationManager.getUid()
@@ -146,6 +145,10 @@ class AuthenticationViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Populates the database with Nutritional Tags to ensure the default tags are provided upon
+     * first sign in.
+     */
     fun populateDbWithTags() {
         // add the recipe tags if they are not already in the DB:
         viewModelScope.launch() {
@@ -184,8 +187,6 @@ class AuthenticationViewModel @Inject constructor(
             }
         }
     }
-
-    // Functions used within the View to perform actions:
 
     /**
      * Sign in with email and password: password-provider account.

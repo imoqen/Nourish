@@ -191,7 +191,11 @@ val instrumentedTestExclusions = listOf(
     "**/firebase/**",
     "**/network/**",
     "/**/ui/theme/**",
-    "**/NourishDatabase_Impl*"
+    "**/NourishDatabase_Impl*",
+    // fine database implementation aspects are excluded:
+    "**/Converters*",
+    "**/NourishDatabaseModule*",
+    "**/RepositoryModule*"
 )
 
 val unitTestInclusions = listOf(
