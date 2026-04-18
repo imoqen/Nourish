@@ -5,6 +5,9 @@ import android.content.Context
 import kotlinx.coroutines.flow.StateFlow
 import uk.co.imoqen.nourish.authentication.AuthenticationState
 
+/**
+ * The AuthenticationManager, used to communicate with Firebase Authentication for authentication.
+ */
 interface AuthenticationManager {
 
     // State to manage the currently logged in user's uid and state (logged in or logged out)
@@ -99,10 +102,10 @@ interface AuthenticationManager {
      */
     suspend fun getUserToken(): String?
 
-    // required for adding the user to room db:
+    // Required for adding the user to room db:
     fun getUid(): String
     fun getEmail(): String?
 
-    // for determining if it is user's first time logging in
+    // For determining if it is user's first time logging in
     fun getIsFirstLogin(): Boolean
 }
