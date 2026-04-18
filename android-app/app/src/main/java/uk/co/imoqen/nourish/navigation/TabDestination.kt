@@ -9,9 +9,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 /** Destination for the navigation bar: Tab Destinations
  * @param route - the route to navigate to in the NavigationController
- *                 Routes are prepended with x/ to denote the tab they belong to, useful in RouteDestinations
- *                 to determine which tab to display as currently selected in the top/bottom navbars.
- *                 Bottom navbar: f = RecipeFinder tab, b = RecipeBook tab, l = ShoppingList tab, p = Profile tab.
+ *                 Routes are prepended with x/ to denote the tab they belong to, useful in
+ *                 RouteDestinations to determine which tab to display as currently selected in the
+ *                 top/bottom navbars.
+ *                 Bottom navbar:
+ *                 f = RecipeFinder tab,
+ *                 b = RecipeBook tab,
+ *                 l = ShoppingList tab,
+ *                 p = Profile tab.
  * @param title - the title displayed underneath the icon for this navigation element
  * @param icon - the icon displayed for this navigation element
  * @param iconContentDescription - describes the icon content, for screen readers
@@ -22,8 +27,28 @@ enum class TabDestination(
     val icon: ImageVector,
     val iconContentDescription: String
 ) {
-    RECIPE_FINDER("f/recipe-finder", "Discover", Icons.Filled.Create, "Go to find a recipe"),
-    RECIPE_BOOK("b/recipe-book","Saved", Icons.Filled.FavoriteBorder, "Go to view recipes"),
-    SHOPPING_LIST("l/shopping-list", "Shopping", Icons.AutoMirrored.Filled.List, "Go to shopping list"),
-    PROFILE("p/profile", "Profile", Icons.Filled.Person, "Go to profile"),
+    RECIPE_FINDER(
+        "f/recipe-finder",
+        "Discover",
+        Icons.Filled.Create,
+        "Go to find a recipe"
+    ),
+    RECIPE_BOOK(
+        "b/recipe-book",
+        "Saved",
+        Icons.Filled.FavoriteBorder,
+        "Go to view recipes"
+    ),
+    SHOPPING_LIST(
+        "l/shopping-list",
+        "Shopping",
+        Icons.AutoMirrored.Filled.List,
+        "Go to shopping list"
+    ),
+    PROFILE(
+        "p/profile",
+        "Profile",
+        Icons.Filled.Person,
+        "Go to profile"
+    ),
 }
