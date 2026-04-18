@@ -3,6 +3,13 @@ package uk.co.imoqen.nourish.db.ingredient
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
+/**
+ * The IngredientRepositoryImpl, implementing the repository for Ingredient by interacting with
+ * the required DAO.
+ * Doc comments are not provided for most methods, because most are trivial CRUD operations explained
+ * simply by their signature.
+ * @param ingredientDao - the Ingredient DAO
+ */
 class IngredientRepositoryImpl @Inject constructor(
     private val ingredientDao: IngredientDao
 ): IngredientRepository {

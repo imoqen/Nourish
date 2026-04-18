@@ -2,6 +2,10 @@ package uk.co.imoqen.nourish.db.tag
 
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * The TagRepository, providing a contract of methods to interact with the DAO regarding
+ * Tag-related logic.
+ */
 interface TagRepository {
     fun getAllForUser(uid: String): Flow<List<Tag>>
 
