@@ -41,17 +41,25 @@ import uk.co.imoqen.nourish.common.backgroundColour
 import uk.co.imoqen.nourish.common.dimmedBackgroundColour
 import uk.co.imoqen.nourish.common.onBackgroundColour
 
+/**
+ * The modal bottom sheet Composable for selecting, creating, and deleting tags. Used in the
+ * RecipeDiscovery, RecipeBook, RecipeCreation, and editing views.
+ * @param sheetState - The state of the modal bottom sheet for tags.
+ * @param tagSheetState - The UiState of the TagSheet, which holds data such as the tag to be created
+ * @param tagSheetAction - Possible tag actions such as creation and deletion of tags.
+ * @param title - The text to display as the title in the bottom sheet.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeTagSelection(
-    sheetState: SheetState, // the modal bottom sheet state
-    tagSheetState: TagSheetState, // the ui state of the tag sheet
-    tagSheetAction: (TagSheetAction) -> Unit, // trying to refactor into shared actions, then just 1 function needs to be passed in. unfinished
+    sheetState: SheetState,
+    tagSheetState: TagSheetState,
+    tagSheetAction: (TagSheetAction) -> Unit,
     title: String = "Filter by Nutritional Tag(s)"
 ) {
     ModalBottomSheet(
         onDismissRequest = {
-            tagSheetAction(TagSheetAction.SetFilterDisplayState(FilterState.NONE)) // not workingm need to work out how to send it will do ater
+            tagSheetAction(TagSheetAction.SetFilterDisplayState(FilterState.NONE))
         },
         sheetState = sheetState
     ) {
@@ -76,11 +84,15 @@ fun RecipeTagSelection(
                                 tagSheetAction(TagSheetAction.UpdateSelected(tag, selected)) },
                             displayAddButton = true,
                             onAddButtonPressed = {
-                                tagSheetAction(TagSheetAction.SetFilterDisplayState(FilterState.CREATE))
+                                tagSheetAction(
+                                    TagSheetAction.SetFilterDisplayState(FilterState.CREATE)
+                                )
                             },
                             displayEditButton = true,
                             onEditButtonPressed = {
-                                tagSheetAction(TagSheetAction.SetFilterDisplayState(FilterState.EDIT))
+                                tagSheetAction(
+                                    TagSheetAction.SetFilterDisplayState(FilterState.EDIT)
+                                )
                             }
                         )
                     }
@@ -90,7 +102,7 @@ fun RecipeTagSelection(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 20.dp) // to add padding to bottom to ensure not too close to bottom of screen
+                            .padding(bottom = 20.dp) // Ensures its not too close to the screen.
                             .animateContentSize(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
@@ -103,19 +115,21 @@ fun RecipeTagSelection(
 
                         NourishTextField(
                             value = tagSheetState.createdTagName,
-                            onValueChange = { tagSheetAction(TagSheetAction.SetCreatedTagName(it)) },
+                            onValueChange = {
+                                tagSheetAction(TagSheetAction.SetCreatedTagName(it))
+                                            },
                             placeholder = "Enter a description, e.g. 'Vegan'",
                             onDone = { keyboardFocusManager.clearFocus() }
                         )
 
-                        // identifier is created by making the display name all caps and replacing spaces with -. only alphanumerics can be added. so need to vberify this.
-
+                        // Identifier is created by making the display name all caps and replacing
+                        // spaces with -. only alphanumerics can be added.
                         NourishTextDivider(
                             "Choose a colour",
                             modifier = Modifier.padding(top = 6.dp)
                         )
 
-                        // colour picker too from predefined colours.
+                        // Colour picker too from predefined colours.
                         // 3x3 as there are 9 colours
                         LazyVerticalGrid(
                             columns = GridCells.Fixed(3),
@@ -151,7 +165,7 @@ fun RecipeTagSelection(
                                                 )
                                             }
                                             .then(
-                                                // highlight if this is the selected colour for the tag:
+                                                // Highlight if this is the selected colour for the tag:
                                                 if (tagSheetState.createdTagColour == colour) {
                                                     Modifier.border(
                                                         width = 1.dp,
@@ -220,14 +234,20 @@ fun RecipeTagSelection(
                         TagsDisplayForFiltering(
                             tags = tagSheetState.recipeTags,
                             trailingIcon = painterResource(R.drawable.delete),
-                            onTrailingIconPress = { tagSheetAction(TagSheetAction.ShowTagConfirmationDialog(true)) },
-                            setTagOnTrailingIconPress = { tag -> tagSheetAction(TagSheetAction.SetTagToDelete(tag)) }
+                            onTrailingIconPress = {
+                                tagSheetAction(TagSheetAction.ShowTagConfirmationDialog(true))
+                                                  },
+                            setTagOnTrailingIconPress = {
+                                tag -> tagSheetAction(TagSheetAction.SetTagToDelete(tag))
+                            }
                         )
 
                         HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
                         NourishIconTextButton(
-                            onClick = { tagSheetAction(TagSheetAction.SetFilterDisplayState(FilterState.APPLY)) },
+                            onClick = { tagSheetAction(
+                                TagSheetAction.SetFilterDisplayState(FilterState.APPLY))
+                                      },
                             painter = painterResource(R.drawable.arrow_left),
                             description = "Back",
                         )

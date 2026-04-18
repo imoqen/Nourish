@@ -5,20 +5,33 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
-import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.core.graphics.scale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.IOException
-import java.util.UUID
 
-// with help from https://www.geeksforgeeks.org/android/how-to-compress-image-in-android-before-uploading-it-to-firebase-storage/
-// and for saving: https://github.com/philipplackner/ImageCompression/blob/master/app/src/main/java/com/plcoding/imagecompression/FileManager.kt
+/**
+ * Functions in this file handle the compression, local saving, and saving an image as a MipMap
+ * (lower quality and higher quality).
+ * A MipMapping approach was adopted so that a higher quality image can be stored locally with the
+ * recipe, and a lower quality image can be sent to the LLM. Thus, reducing token usage and cost
+ * of the LLM call while preserving the higher quality for saving on the device.
+ *
+ * Image Compression: adapted from
+ * https://www.geeksforgeeks.org/android/how-to-compress-image-in-android-before-uploading-it-to-firebase-storage/
+ *
+ * Image Saving: adapted from
+ * https://github.com/philipplackner/ImageCompression/blob/master/app/src/main/java/com/plcoding/imagecompression/FileManager.kt
+ */
 
-// compress the image to ensure low file size for sending to cloud run service and LLM
-// returns a mipmap of pair low qual, high qual
+/**
+ * Produces the MipMap pair of low quality, high quality.
+ * @param uri - The uri of the image to MipMap
+ * @param contentResolver - The content resolver used to assist image saving
+ * @returns The MipMap as a pair.
+ */
 fun produceMipmap(
     uri: Uri,
     contentResolver: ContentResolver
@@ -36,9 +49,9 @@ fun produceMipmap(
         val width = bitmap.width
         val height = bitmap.height
         val greatestDimension = if (width > height) width else height
-        // todo could adopt a mipmapping approach where the smallest is sent to the llm (512kb) and then
-        // larger is displayed to the user (1024+). can write about this in the report.
-        if (greatestDimension > 1024) { // CAN ALTER THIS VALUE IN THE REPORT AND SHOW HOW THE COMPRESSION CHANGES
+        // Larger is displayed to the user (1024+). can write about this in the report.
+        // Can alter this value in the report and show how compression changes.
+        if (greatestDimension > 1024) {
             val scale = 1024f / greatestDimension
             val newWidth = (width * scale).toInt()
             val newHeight = (height * scale).toInt()
@@ -46,20 +59,28 @@ fun produceMipmap(
             bitmap = bitmap.scale(newWidth, newHeight, false)
         }
         // Compress: 2nd param is compression quality 0-100; 25 is highly compressed.
-        // MIP MAPPING APPROACH: the highly compressed (25) is used to send to the LLM. the less compressed (50) is used to
-        // be displayed to the user.
+        // MipMapping approach: the highly compressed (25) is used to send to the LLM.
+        // The less compressed (75) is used for displaying to the user.
         val lowQuality = compressImage(bitmap, 25) // 25% of original quality
         val highQuality = compressImage(bitmap, 75) // 75% of original quality
         if (lowQuality != null && highQuality != null) {
-            return Pair(lowQuality, highQuality) // first is low qual, second is high qual
+            // first is low quality, second is high quality:
+            return Pair(lowQuality, highQuality)
         }
     }
     return null
 }
 
+/**
+ * Compresses an image given a bitmap.
+ * @param bitmap - The image bitmap to compress.
+ * @param quality - value from 0 to 100 reflecting quality preservation: 100 is 100% of original quality,
+ *                  25 is 25% of original quality. Therefore lower = lower quality.
+ * @returns The compressed image as a ByteArray, or null if an error occurred.
+ */
 fun compressImage(
     bitmap: Bitmap,
-    quality: Int // val from 0 to 100: 100 is 100% of original quality, 25 is 25% of original quality etc. so lower = lower quality.
+    quality: Int
 ): ByteArray? {
     val byteArrayOutputStream = ByteArrayOutputStream()
     bitmap.compress(Bitmap.CompressFormat.JPEG, quality, byteArrayOutputStream)
@@ -67,22 +88,26 @@ fun compressImage(
     return fileInBytes
 }
 
-// save the image locally to be used when making the llm call
+/**
+ * Saves the MipMap locally.
+ * @param uri - The uri of the image to save as a MipMap
+ * @param context - The local context, required to access device's local storage
+ * @param onSave - function which runs when the image save has complete.
+ */
 suspend fun saveMipmap(
     uri: Uri?,
     context: Context,
     onSave: (String, String) -> Unit
 ) {
     if (uri != null) {
-        Log.d("PhotoPicker", "Selected URI: $uri")
         val contentResolver = context.contentResolver
-
-        // mime type is like image/png etc
+        // Mime type is like png, jpg, etc
         val mimeType = contentResolver.getType(uri)
-        // gets the file type:
+        // Gets the file type:
         val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
         val compressedByteArrayMipmap = produceMipmap(uri, contentResolver)
 
+        // Uses timestamp to ensure each saved image is unique; no overwriting.
         if (compressedByteArrayMipmap != null) {
             val time = System.currentTimeMillis()
             val lowQualityFilename = "compressed-low-quality-recipe-image-$time.$extension"
@@ -91,21 +116,23 @@ suspend fun saveMipmap(
             saveImage(highQualityFilename, compressedByteArrayMipmap.second, context)
             onSave(lowQualityFilename, highQualityFilename)
         }
-    } else {
-        Log.d("PhotoPicker", "No media selected")
     }
 }
 
+/**
+ * Saves the image locally.
+ * @param filename - The name to save the image file under.
+ * @param byteArray - the byte array of the image to save.
+ * @param context - The local context, required to access the device's local storage.
+ */
 suspend fun saveImage(
     filename: String,
     byteArray: ByteArray,
     context: Context
 ) {
     withContext(Dispatchers.IO) {
-        Log.d("IMG", "Saving $filename exists=${context.getFileStreamPath(filename).exists()}")
         context
-            // save to internal storage
-            // filename, context mode, then writes to the byte array
+            // Save to internal storage:
             .openFileOutput(filename, Context.MODE_PRIVATE)
             .use { outputStream ->
                 outputStream.write(byteArray)

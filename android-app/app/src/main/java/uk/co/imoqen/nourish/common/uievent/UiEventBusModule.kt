@@ -7,7 +7,7 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 /**
- * Module to bind the UiEventBus, providing the dependency via Hilt.
+ * Hilt Module to bind the UiEventBus, providing the dependency via Hilt.
  */
 @Module
 @InstallIn(SingletonComponent::class)

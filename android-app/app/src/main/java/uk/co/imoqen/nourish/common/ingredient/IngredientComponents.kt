@@ -27,6 +27,18 @@ import uk.co.imoqen.nourish.common.NourishTextField
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.shoppinglist.UnitSelectionButton
 
+/**
+ * The modal bottom sheet Composable for adding ingredients. Used in both the shopping list and
+ * recipe creation.
+ * @param ingredient - The UiState of the ingredient to add, filled in by the user.
+ * @param action - The possible IngredientSheetActions within this composable
+ * @param possibleUnits - The possible units of an ingredient to add. These differ for the shopping
+ *                        list vs the recipe creation.
+ * @param text - The text to display as the title in the bottom sheet
+ * @param noneUnit - The unit which should be set when no unit has been selected by the user; the
+ *                   "default unit". For the shopping list, this is SINGLE. for the recipe creation,
+ *                   this is UNIT.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddIngredientBottomSheet(
@@ -34,19 +46,19 @@ fun AddIngredientBottomSheet(
     action: (IngredientSheetAction) -> Unit,
     possibleUnits: List<IngredientUnit>,
     text: AddIngredientSheetText,
-    noneUnit: IngredientUnit // the default unit which is the none value. for the shopping list, this is SINGLE. for the recipe creation, this is UNIT.
+    noneUnit: IngredientUnit
 ) {
     val modalBottomSheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true // makes it fill the screen with the required amount rather than stuck at half the screen size
+        skipPartiallyExpanded = true
     )
 
     ModalBottomSheet(
         onDismissRequest = {
-            action(IngredientSheetAction.OnDismissRequest()) // not workingm need to work out how to send it will do ater
+            action(IngredientSheetAction.OnDismissRequest())
         },
         sheetState = modalBottomSheetState
     ) {
-        val keyboardFocusManager = LocalFocusManager.current // keyboard focus manager which is local to the modal bottom sheet. doesnt work otherwise.
+        val keyboardFocusManager = LocalFocusManager.current
 
         Column(
             modifier = Modifier
@@ -63,7 +75,7 @@ fun AddIngredientBottomSheet(
             NourishTextField(
                 value = ingredient.name,
                 onValueChange = { action(IngredientSheetAction.SetIngredientName(it)) },
-                placeholder = text.name, // user language consideration: although the app is built for ingredients, users will likely add other things. hence, "item" is used.
+                placeholder = text.name,
                 onDone = { keyboardFocusManager.clearFocus(force=true) }
             )
 
@@ -77,7 +89,7 @@ fun AddIngredientBottomSheet(
                     // Only allow valid double inputs
                     action(IngredientSheetAction.SetIngredientAmount(it))
                 },
-                placeholder = "Enter amount", // user language consideration: although the app is built for ingredients, users will likely add other things. hence, "item" is used.
+                placeholder = "Enter amount",
                 onDone = { keyboardFocusManager.clearFocus(force=true) },
                 keyboardType = KeyboardType.Number // only allows numeric input
             )
@@ -93,7 +105,7 @@ fun AddIngredientBottomSheet(
                     color = MaterialTheme.colorScheme.primaryContainer
                 )
             ) {
-                // this one is done separately, it is always possible. Has a different output "none"
+                // unit selection is done separately, it is always possible. Has a different output "none"
                 item {
                     UnitSelectionButton(
                         ingredient.unit,
@@ -130,6 +142,15 @@ fun AddIngredientBottomSheet(
     }
 }
 
+/**
+ * The modal bottom sheet Composable for editing ingredients.
+ * @param onDismiss - to close the modal bottom sheet.
+ * @param unitName - the name of the unit to edit.
+ * @param amount - the amount of the unit to edit.
+ * @param setAmount - function to alter the amount of the unit being edited.
+ * @param persistAmountUpdate - function to save changes to the db; update the change in the db.
+ * @param keyboardFocusManager - focus manager for the keyboard, to close it when Enter is pressed.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditIngredientBottomSheet(
@@ -167,7 +188,7 @@ fun EditIngredientBottomSheet(
                         // Only allow valid double inputs
                         setAmount(it)
                     },
-                    placeholder = "Enter new amount", // user language consideration: although the app is built for ingredients, users will likely add other things. hence, "item" is used.
+                    placeholder = "Enter new amount",
                     onDone = { keyboardFocusManager.clearFocus(force = true) },
                     keyboardType = KeyboardType.Number // only allows numeric input
                 )

@@ -40,7 +40,10 @@ class AuthenticationViewModel @Inject constructor(
     // Observable from the Authentication composables; not used within the view model.
     val uiState: StateFlow<AuthenticationUiState> = mutableUiState.asStateFlow()
 
-    // Setters for the UiState values
+    /**
+     * Setters for the UiState values
+     */
+
     fun setSigninEmail(signinEmail: String) {
         mutableUiState.update { currentState ->
             currentState.copy(
@@ -195,7 +198,9 @@ class AuthenticationViewModel @Inject constructor(
         viewModelScope.launch() {
             if (mutableUiState.value.signinEmail.trim() == "" || mutableUiState.value.signinPassword == "") {
                 setSigninError(ErrorMessage.INPUT_ERROR_BLANK)
-                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNIN))
+                uiEventBus.enqueueEvent(
+                    UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNIN)
+                )
                 return@launch
             }
             setSigninError("")
@@ -219,7 +224,9 @@ class AuthenticationViewModel @Inject constructor(
                     resetUiState()
                 }
                 .onFailure {
-                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNIN))
+                    uiEventBus.enqueueEvent(
+                        UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNIN)
+                    )
                 }
         }
     }
@@ -244,7 +251,9 @@ class AuthenticationViewModel @Inject constructor(
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Sign in successful."))
                 }
                 .onFailure { e ->
-                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNIN))
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
+                        ErrorMessage.USER_ERROR_SIGNIN)
+                    )
                 }
         }
     }
@@ -261,13 +270,17 @@ class AuthenticationViewModel @Inject constructor(
                 mutableUiState.value.signupPasswordConfirmation == ""
             ) {
                 setSignupError(ErrorMessage.INPUT_ERROR_BLANK)
-                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNUP))
+                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
+                    ErrorMessage.USER_ERROR_SIGNUP)
+                )
                 return@launch
             }
             // Passwords do not match:
             if (mutableUiState.value.signupPassword != mutableUiState.value.signupPasswordConfirmation) {
                 setSignupError(ErrorMessage.PASSWORD_ERROR_MATCH)
-                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNUP))
+                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
+                    ErrorMessage.USER_ERROR_SIGNUP)
+                )
                 return@launch
             }
             runCatching {
@@ -285,13 +298,18 @@ class AuthenticationViewModel @Inject constructor(
                     populateDbWithTags()
                     // reset state as now signed in
                     resetUiState()
-                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Sign up successful. You have now been signed in."))
+                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
+                        "Sign up successful. You have now been signed in.")
+                    )
                 }
                 .onFailure { fail ->
-                    if (fail.message != null && fail.message!!.contains(ErrorMessage.FIREBASE_PASSWORD_ERROR)) {
+                    if (fail.message != null &&
+                        fail.message!!.contains(ErrorMessage.FIREBASE_PASSWORD_ERROR)) {
                         setSignupError(ErrorMessage.USER_ERROR_WEAK_PASSWORD)
                     } else {
-                        uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_SIGNUP_EMAIL))
+                        uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
+                            ErrorMessage.USER_ERROR_SIGNUP_EMAIL)
+                        )
                     }
                 }
         }
@@ -321,7 +339,9 @@ class AuthenticationViewModel @Inject constructor(
                 }
                 .onFailure {
                     setPasswordResetStatus(ErrorMessage.USER_ERROR_EMAIL_SEND)
-                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_EMAIL_SEND))
+                    uiEventBus.enqueueEvent(
+                        UiEvent.ShowSnackbar(ErrorMessage.USER_ERROR_EMAIL_SEND)
+                    )
                 }
         }
     }
