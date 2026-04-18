@@ -7,13 +7,18 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * The TagDao, holding logic to perform CRUD operations on the database relating to Tag.
+ */
+
 @Dao
 interface TagDao {
     @Query("SELECT * FROM Tag WHERE authorId = :uid")
-    fun getAllForUser(uid: String): Flow<List<Tag>> // flow is better than normal list for things which should update. as cant access db on main thread
+    fun getAllForUser(uid: String): Flow<List<Tag>>
 
-    // insert one
-    @Insert(onConflict = OnConflictStrategy.IGNORE) // will ignore if tag already exists which has the authorId (uid) and displayName combination. due to the index defined in Tag
+    // Inserting one will be ignored if a Tag already exists which has the authorId (uid) and
+    // displayName combination. due to the index defined in Tag
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(tag: Tag): Long
 
     @Delete

@@ -1,10 +1,13 @@
 package uk.co.imoqen.nourish.db
 
-import android.util.Log
 import androidx.room.TypeConverter
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 
-// to use enums: https://developer.android.com/training/data-storage/room/referencing-data
+/**
+ * Converter class, used to convert a String to an IngredientUnit and conversely.
+ * This is required because the Room database can only store basic types, however IngredientUnits are
+ * required.
+ */
 class Converters {
 
     @TypeConverter
@@ -18,7 +21,6 @@ class Converters {
             return IngredientUnit.valueOf(string)
         }
         catch (e: Exception) {
-            Log.e("FORMAT ERROR", "$e")
             return null
         }
     }

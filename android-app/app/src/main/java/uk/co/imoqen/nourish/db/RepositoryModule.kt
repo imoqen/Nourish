@@ -15,11 +15,15 @@ import uk.co.imoqen.nourish.db.tag.TagRepositoryImpl
 import uk.co.imoqen.nourish.db.user.UserRepository
 import uk.co.imoqen.nourish.db.user.UserRepositoryImpl
 
+/**
+ * Hilt dependency injection to bind Repositories.
+ */
+
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
 
-    // binds as the objects have concrete implementations, just need to map interface to implementation.
+    // Binds as the objects have concrete implementations, just need to map interface to implementation.
     @Binds
     abstract fun bindUserRepository(
         impl: UserRepositoryImpl

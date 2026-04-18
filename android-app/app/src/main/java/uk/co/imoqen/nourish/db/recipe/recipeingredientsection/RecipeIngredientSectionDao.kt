@@ -5,6 +5,11 @@ import androidx.room.Insert
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * The RecipeIngredientSectionDao, holding logic to perform CRUD operations on the database relating
+ * to RecipeIngredientSection.
+ */
+
 @Dao
 interface RecipeIngredientSectionDao {
     // insert one
@@ -13,7 +18,4 @@ interface RecipeIngredientSectionDao {
 
     @Query("SELECT * FROM RecipeIngredientSection WHERE id = :id LIMIT 1")
     fun getById(id: Long): Flow<RecipeIngredientSection?>
-
-    //@Query("DELETE FROM RecipeIngredientSection")
-
 }

@@ -7,20 +7,20 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
-import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeIngredient
 import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeWithRecipeIngredients
 
-// keeping recipes stuff together for simplicity
+/**
+ * The RecipeDao, holding logic to perform CRUD operations on the database relating to Recipe.
+ */
 
 @Dao
 interface RecipeDao {
     @Query("SELECT * FROM recipe WHERE ownerUid = :uid")
-    fun getAll(uid: String): Flow<List<Recipe>> // flow is better than normal list for things which should update. as cant access db on main thread
+    fun getAll(uid: String): Flow<List<Recipe>>
 
     @Query("SELECT * FROM recipe WHERE id = :id LIMIT 1")
     fun getById(id: Long): Flow<Recipe?>
 
-    // insert one
     @Insert
     suspend fun insert(recipe: Recipe): Long
 

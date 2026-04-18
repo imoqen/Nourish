@@ -3,11 +3,14 @@ package uk.co.imoqen.nourish.db.recipe.recipestep
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
-import kotlinx.coroutines.flow.Flow
+
+/**
+ * The RecipeStepDao, holding logic to perform CRUD operations on the database relating to
+ * RecipeStep.
+ */
 
 @Dao
 interface RecipeStepDao {
-    // insert one
     @Insert
     suspend fun insert(recipeStep: RecipeStep): Long
 
