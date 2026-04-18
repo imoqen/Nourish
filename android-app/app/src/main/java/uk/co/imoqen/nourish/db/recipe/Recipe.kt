@@ -12,16 +12,21 @@ import uk.co.imoqen.nourish.db.recipe.recipetag.RecipeTag
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.user.User
 
+/**
+ * The Recipe table in the Room database.
+ */
+
 @Entity(
     tableName = "Recipe",
     foreignKeys = [
-        // user relation:
+        // User relation:
         ForeignKey(
             entity = User::class,
             parentColumns = ["uid"], // the primary key of User
             childColumns = ["ownerUid"], // the foreign key which holds this reference, in Recipe
             onDelete = ForeignKey.CASCADE
         ),
+        // RecipeType relation:
         ForeignKey(
             entity = RecipeType::class,
             parentColumns = ["id"], // the primary key of RecipeType
@@ -47,7 +52,7 @@ data class Recipe(
     @ColumnInfo(name = "emoji") val emoji: String
 )
 
-// all types for a recipe
+// All types for a recipe:
 data class RecipeWithRecipeTags(
     @Embedded val recipe: Recipe, // parent
     @Relation(
@@ -57,7 +62,7 @@ data class RecipeWithRecipeTags(
     val recipeTags: List<RecipeTag>, // entity
 )
 
-// all steps for a recipe
+// All steps for a recipe:
 data class RecipeWithRecipeSteps(
     @Embedded val recipe: Recipe, // parent
     @Relation(

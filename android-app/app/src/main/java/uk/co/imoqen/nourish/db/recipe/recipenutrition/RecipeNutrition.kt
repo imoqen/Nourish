@@ -7,6 +7,9 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import uk.co.imoqen.nourish.db.recipe.Recipe
 
+/**
+ * The RecipeNutrition table in the Room database.
+ */
 @Entity(
     tableName = "RecipeNutrition",
     foreignKeys = [
@@ -14,7 +17,7 @@ import uk.co.imoqen.nourish.db.recipe.Recipe
         ForeignKey(
             entity = Recipe::class,
             parentColumns = ["id"], // the primary key of Recipe
-            childColumns = ["recipeId"], // the foreign key which holds this reference, in RecipeStep
+            childColumns = ["recipeId"], // the foreign key which holds this reference
             onDelete = ForeignKey.CASCADE
         ),
     ],
