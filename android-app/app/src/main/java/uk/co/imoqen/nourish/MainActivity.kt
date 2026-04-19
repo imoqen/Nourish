@@ -1,31 +1,18 @@
 package uk.co.imoqen.nourish
 
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContent
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -40,7 +27,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -62,7 +48,7 @@ import uk.co.imoqen.nourish.ui.theme.NourishTheme
 import javax.inject.Inject
 
 /**
- * The entry point for the app.
+ * The entry point of the Nourish app.
  * Hilt is used to wrap the component activity, creating a dependency container to inject ViewModels
  * and other dependencies e.g. managers and repositories.
  */
@@ -91,7 +77,6 @@ class MainActivity : ComponentActivity() {
             suspend fun onEvent(event: UiEvent) {
                 when (event) {
                     is UiEvent.ShowSnackbar -> {
-                        // Snackbar: https://developer.android.com/develop/ui/compose/components/snackbar
                         snackbarHostState.showSnackbar(
                             message = event.message,
                             actionLabel = "Dismiss",
@@ -100,6 +85,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+
             // Handle UiEvents: (this is for sending Toasts currently)
             LaunchedEffect(Unit) {
                 uiEventBus.uiEvents.collect { event ->
@@ -107,6 +93,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            // The colour scheme theme:
             NourishTheme {
                 MainContent(Modifier, snackbarHostState)
             }
@@ -118,13 +105,15 @@ class MainActivity : ComponentActivity() {
  * Main content of the app, different depending on if logged in or not logged in.
  * When logged in, NavHost is used to allow for navigation around the app. Otherwise, the user can
  * only access login/signup views.
+ * @param modifier - the modifier
+ * @param snackbarHostState - the state for the Snackbar, to enqueue and display alerts to the user.
  */
 @Composable
 fun MainContent(
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState
 ) {
-
+    // Navigation when logged in always begins on the recipe discovery view:
     val startDestination = TabDestination.RECIPE_FINDER
 
     // Authentication ViewModel and App ViewModel are used across the whole app therefore instantiated
@@ -145,7 +134,7 @@ fun MainContent(
             // User is not logged in: display login/signup view
             Scaffold(
                 modifier = modifier,
-                // Display all potential snackbar messages:
+                // Display all potential Snackbar messages:
                 snackbarHost = {
                     SnackbarHost(hostState = snackbarHostState)
                 }
@@ -154,21 +143,23 @@ fun MainContent(
             }
         } else {
             // User is logged in: display app.
-            // Uses key to ensure different ViewModels are instantiated for each user, for clean state between logins.
+            // Uses key to ensure different ViewModels are instantiated for each user,
+            // for clean state between logins.
             key(authenticationState.uid) {
                 // new nav controller for each logged in user
                 val navController = rememberNavController()
 
                 // The currently selected tab value to display (dynamically determined based on the route
-                // first char of the string x/route),
-                // required as RouteDestinations are within tabs. So must determine which tab to display for each route.
+                // first char of the string x/route), required as RouteDestinations are within tabs.
+                // So must determine which tab to display for each route.
                 val selectedDestinationTab =
-                    navController.currentBackStackEntryAsState().value?.destination?.route?.firstOrNull()
+                    navController.currentBackStackEntryAsState()
+                        .value?.destination?.route?.firstOrNull()
                         ?: startDestination.route[0]
 
                 Scaffold(
                     modifier = modifier,
-                    // Display all potential snackbar messages:
+                    // Display all potential Snackbar messages:
                     snackbarHost = {
                         SnackbarHost(hostState = snackbarHostState)
                     },
@@ -183,6 +174,7 @@ fun MainContent(
                         NourishTopBar()
                     }
                 ) { contentPadding ->
+
                     // Navigation around the app is controlled by the app navigation host
                     AppNavHost(
                         navController,
@@ -196,6 +188,9 @@ fun MainContent(
     }
 }
 
+/**
+ * The top bar of the Nourish app, containing padding and the Nourish text logo.
+ */
 @Composable
 fun NourishTopBar() {
     Box(

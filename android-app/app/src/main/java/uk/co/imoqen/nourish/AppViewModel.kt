@@ -14,6 +14,7 @@ class AppViewModel @Inject constructor(
     private val authenticationManager: AuthenticationManager
 ): ViewModel() {
 
+    // Authentication state is accessible anywhere across the app:
     val authenticationState = authenticationManager.authenticationState
 
 }
