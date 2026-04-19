@@ -16,6 +16,8 @@ import uk.co.imoqen.nourish.network.response.LlmRecipe
  * Recipe-related logic.
  * These are all bundled together into this interface to reduce the number of dependencies on
  * ViewModels, providing a simple, single repository for all Recipe-related CRUD operations.
+ *
+ * @author Imogen Pemberton, 2026
  */
 interface RecipeRepository {
 

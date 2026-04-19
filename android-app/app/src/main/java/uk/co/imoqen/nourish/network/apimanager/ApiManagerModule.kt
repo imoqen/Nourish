@@ -8,6 +8,8 @@ import javax.inject.Singleton
 
 /**
  * Module to bind the api manager, providing the dependency via Hilt.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @Module
 @InstallIn(SingletonComponent::class)

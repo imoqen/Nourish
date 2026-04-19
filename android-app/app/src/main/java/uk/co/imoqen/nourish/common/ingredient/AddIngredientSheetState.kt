@@ -4,6 +4,8 @@ import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 
 /**
  * The UiState used in the add ingredient modal bottom sheet.
+ *
+ * @author Imogen Pemberton, 2026
  */
 data class AddIngredientSheetState(
     // this will be set to the singular and plural of a new Ingredient. then when the LLM produces

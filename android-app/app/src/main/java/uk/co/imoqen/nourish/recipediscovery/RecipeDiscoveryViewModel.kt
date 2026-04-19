@@ -47,6 +47,8 @@ import kotlin.onSuccess
  * @param uiEventBus - The UiEventBus to display alerts / Snackbar messages.
  * @param recipeRepository - The Recipe Repository, to access the Recipe db table.
  * @param recipeActions - The Auxiliary class RecipeActions to access and use these common Recipe actions.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @HiltViewModel
 class RecipeDiscoveryViewModel @Inject constructor(

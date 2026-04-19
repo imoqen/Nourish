@@ -10,6 +10,8 @@ import javax.inject.Singleton
 /**
  * Implementation for the FirestoreManager
  * @param db - the external Firebase Firestore database.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @Singleton
 class FirestoreManagerImpl @Inject constructor(

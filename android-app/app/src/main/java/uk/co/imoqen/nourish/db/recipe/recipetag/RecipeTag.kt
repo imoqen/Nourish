@@ -12,6 +12,8 @@ import uk.co.imoqen.nourish.db.tag.Tag
  * The RecipeTag table in the Room database.
  * This is a junction table between Recipe and Tag, to prevent a many-to-many relationship.
  * One Tag can have many RecipeTags, and one Recipe can have many RecipeTags.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @Entity(
     tableName = "RecipeTag",

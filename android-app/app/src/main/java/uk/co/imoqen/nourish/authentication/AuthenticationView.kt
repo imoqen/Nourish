@@ -50,6 +50,8 @@ import uk.co.imoqen.nourish.common.NourishTextField
  * View for Authentication, where the user can sign up, sign in and send a password reset link to
  * their account's email address.
  * @param authenticationViewModel - the view model holding methods and state for use in the view.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

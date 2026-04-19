@@ -13,6 +13,8 @@ import java.io.File
 /**
  * APIManager, provides the contract for making Retrofit calls to the Google Cloud Run service,
  * and handle the result appropriately.
+ *
+ * @author Imogen Pemberton, 2026
  */
 interface ApiManager {
 

@@ -44,6 +44,8 @@ import javax.inject.Inject
  * the following tables are external to Recipe, so Repositories are used instead:
  * @param ingredientRepository - the IngredientRepository, for accessing CRUD logic on Ingredient
  * @param tagRepository - the TagRepository, for accessing CRUD logic on Tag.
+ *
+ * @author Imogen Pemberton, 2026
  */
 class RecipeRepositoryImpl @Inject constructor(
     private val db: NourishDatabase,

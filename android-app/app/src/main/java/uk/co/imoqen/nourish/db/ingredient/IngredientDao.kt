@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.Flow
 
 /**
  * The IngredientDao, holding logic to perform CRUD operations on the database relating to Ingredient.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @Dao
 interface IngredientDao {

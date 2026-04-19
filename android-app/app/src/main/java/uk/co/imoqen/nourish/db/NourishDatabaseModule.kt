@@ -15,6 +15,8 @@ import javax.inject.Singleton
 /**
  * Hilt dependency injection for the Room database (NourishDatabase)
  * https://stackoverflow.com/questions/63146318/how-to-create-and-use-a-room-database-in-kotlin-dagger-hilt
+ *
+ * @author Imogen Pemberton, 2026
  */
 
 @Module

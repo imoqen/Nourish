@@ -4,10 +4,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 /**
- * Declares colours to use throughout the app; used within the tag colours and recipe background colours.
- * These colours are also sent to the LLM, for determination of the recipe's colour if an
+ * Declares colours to use throughout the app; used within the tag colours and recipe background
+ * colours. These colours are also sent to the LLM, for determination of the recipe's colour if an
  * image is not present.
  * Support is provided for both light and dark mode; the colour types are selected appropriately.
+ *
+ * @author Imogen Pemberton, 2026
  */
 
 enum class NourishColour() {

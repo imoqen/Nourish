@@ -9,6 +9,8 @@ import javax.inject.Inject
  * Doc comments are not provided for most methods, because most are trivial. For those which are non
  * -trivial, a doc comment is present.
  * @param tagDao - the Tag DAO
+ *
+ * @author Imogen Pemberton, 2026
  */
 class TagRepositoryImpl @Inject constructor(
     private val tagDao: TagDao

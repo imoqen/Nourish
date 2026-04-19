@@ -6,6 +6,8 @@ import uk.co.imoqen.nourish.recipebook.ShoppingListIngredient
 /**
  * The ShoppingListEntryRepository, providing a contract of methods to interact with the DAO regarding
  * ShoppingListEntry-related logic.
+ *
+ * @author Imogen Pemberton, 2026
  */
 
 interface ShoppingListEntryRepository {

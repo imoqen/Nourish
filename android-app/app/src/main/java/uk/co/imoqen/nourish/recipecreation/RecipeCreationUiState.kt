@@ -13,6 +13,8 @@ import java.util.UUID
  * UiState for RecipeCreation: accessed in the View/ViewModel and mutated in the ViewModel.
  * This encapsulation allows state to persist and be updated reliably, adhering to
  * Unidirectional Data Flow UDF.
+ *
+ * @author Imogen Pemberton, 2026
  */
 data class RecipeCreationUiState(
     // Ui state of recipe creation. nothing should be added to the DB until the user presses save.

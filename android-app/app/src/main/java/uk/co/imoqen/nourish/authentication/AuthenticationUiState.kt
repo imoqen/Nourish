@@ -3,6 +3,8 @@ package uk.co.imoqen.nourish.authentication
 /**
  * UiState for Authentication: accessed in the View/ViewModel and mutated in the ViewModel.
  * This encapsulation allows state to persist and be updated reliably.
+ *
+ * @author Imogen Pemberton, 2026
  */
 data class AuthenticationUiState(
     // For signing in:

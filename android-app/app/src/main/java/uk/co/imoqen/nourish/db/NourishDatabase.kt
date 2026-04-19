@@ -30,6 +30,8 @@ import uk.co.imoqen.nourish.db.user.UserDao
 
 /**
  * The Nourish Database, a persistent local database using Room.
+ *
+ * @author Imogen Pemberton, 2026
  */
 
 @Database(

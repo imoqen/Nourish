@@ -12,6 +12,8 @@ import javax.inject.Inject
  * Doc comments are not provided for most methods, because most are trivial. For those which are non
  * -trivial, a doc comment is present.
  * @param shoppingListEntryDao - the ShoppingListEntry DAO
+ *
+ * @author Imogen Pemberton, 2026
  */
 class ShoppingListEntryRepositoryImpl @Inject constructor(
     private val shoppingListEntryDao: ShoppingListEntryDao

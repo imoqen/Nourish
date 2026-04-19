@@ -3,6 +3,8 @@ package uk.co.imoqen.nourish.network.response
 /**
  * The JSON, ensured by LangChain, of the dish proposal LLM response. Obtained in the application
  * as such, and handled accordingly.
+ *
+ * @author Imogen Pemberton, 2026
  */
 data class LlmDishesProposed(
     val ingredientsIdentified: String? = "",

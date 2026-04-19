@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.Flow
 
 /**
  * The TagDao, holding logic to perform CRUD operations on the database relating to Tag.
+ *
+ * @author Imogen Pemberton, 2026
  */
 
 @Dao

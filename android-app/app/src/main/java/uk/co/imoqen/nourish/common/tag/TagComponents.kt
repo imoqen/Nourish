@@ -48,6 +48,8 @@ import uk.co.imoqen.nourish.common.onBackgroundColour
  * @param tagSheetState - The UiState of the TagSheet, which holds data such as the tag to be created
  * @param tagSheetAction - Possible tag actions such as creation and deletion of tags.
  * @param title - The text to display as the title in the bottom sheet.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

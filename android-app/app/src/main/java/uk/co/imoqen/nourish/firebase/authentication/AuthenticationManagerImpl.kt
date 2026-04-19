@@ -33,6 +33,8 @@ import javax.inject.Singleton
  * with them appropriately in a runCatching block.
  * @param auth - FirebaseAuth authentication platform holding a list of all users.
  * @param firestoreManager - provides access to the FirebaseFirestore database holding user data.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @Singleton
 class AuthenticationManagerImpl @Inject constructor(

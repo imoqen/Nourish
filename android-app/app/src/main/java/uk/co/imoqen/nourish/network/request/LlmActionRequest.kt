@@ -5,6 +5,8 @@ import uk.co.imoqen.nourish.network.response.LlmRecipe
 /**
  * Data class for the Llm Action Request; used in the RecipeBook to perform an action on a recipe
  * (alteration, nutrition generation, or question).
+ *
+ * @author Imogen Pemberton, 2026
  */
 data class LlmActionRequest (
     val recipe: LlmRecipe,

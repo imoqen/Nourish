@@ -16,6 +16,8 @@ import uk.co.imoqen.nourish.network.response.LlmRecipe
 
 /**
  * Retrofit2 API service, this declares the endpoints to the API which can be called.
+ *
+ * @author Imogen Pemberton, 2026
  */
 interface ApiService {
 

@@ -9,6 +9,8 @@ import javax.inject.Inject
  * Doc comments are not provided for most methods, because most are trivial CRUD operations explained
  * simply by their signature.
  * @param ingredientDao - the Ingredient DAO
+ *
+ * @author Imogen Pemberton, 2026
  */
 class IngredientRepositoryImpl @Inject constructor(
     private val ingredientDao: IngredientDao

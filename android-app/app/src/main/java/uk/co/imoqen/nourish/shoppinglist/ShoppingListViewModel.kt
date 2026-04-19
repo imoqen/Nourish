@@ -36,6 +36,7 @@ import javax.inject.Inject
  *                                      db table.
  * @param ingredientRepository - The Ingredient Repository, to access the Ingredient db table.
  *
+ * @author Imogen Pemberton, 2026
  */
 @HiltViewModel
 class ShoppingListViewModel @Inject constructor(

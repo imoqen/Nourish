@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.Flow
 /**
  * The RecipeNutritionDao, holding logic to perform CRUD operations on the database relating to
  * RecipeNutrition.
+ *
+ * @author Imogen Pemberton, 2026
  */
 
 @Dao

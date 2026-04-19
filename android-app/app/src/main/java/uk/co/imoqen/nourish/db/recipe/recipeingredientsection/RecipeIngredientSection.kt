@@ -6,6 +6,8 @@ import androidx.room.PrimaryKey
 
 /**
  * The RecipeIngredientSection table in the Room database.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @Entity(
     tableName = "RecipeIngredientSection"

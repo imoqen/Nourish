@@ -38,6 +38,8 @@ import uk.co.imoqen.nourish.shoppinglist.UnitSelectionButton
  * @param noneUnit - The unit which should be set when no unit has been selected by the user; the
  *                   "default unit". For the shopping list, this is SINGLE. for the recipe creation,
  *                   this is UNIT.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

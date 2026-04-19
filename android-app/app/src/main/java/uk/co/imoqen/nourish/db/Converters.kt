@@ -7,6 +7,8 @@ import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
  * Converter class, used to convert a String to an IngredientUnit and conversely.
  * This is required because the Room database can only store basic types, however IngredientUnits are
  * required.
+ *
+ * @author Imogen Pemberton, 2026
  */
 class Converters {
 

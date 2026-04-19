@@ -4,6 +4,8 @@ package uk.co.imoqen.nourish.network.response
  * The Api Request returns a recipe in this format, using LangChain to structure the output.
  * LlmIngredientSection is a further data class to add sections to ingredients,
  *      e.g. "For the sauce"
+ *
+ * @author Imogen Pemberton, 2026
  */
 data class LlmRecipe(
     val title: String,

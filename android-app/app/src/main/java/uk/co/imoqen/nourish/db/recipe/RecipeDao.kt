@@ -11,6 +11,8 @@ import uk.co.imoqen.nourish.db.recipe.recipeingredient.RecipeWithRecipeIngredien
 
 /**
  * The RecipeDao, holding logic to perform CRUD operations on the database relating to Recipe.
+ *
+ * @author Imogen Pemberton, 2026
  */
 
 @Dao

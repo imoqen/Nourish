@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 
 /**
  * The Nourish Colour Scheme.
+ *
  * @author Android Material 3 and Imogen Pemberton, 2026
  */
 

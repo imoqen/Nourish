@@ -9,6 +9,8 @@ import uk.co.imoqen.nourish.db.tag.Tag
  * Namely, the RecipeDiscovery, RecipeBook, RecipeCreation, and editing.
  * Hence, these are shared actions which can be used across different view models, rather than
  * through duplicate code.
+ *
+ * @author Imogen Pemberton, 2026
  */
 sealed interface TagSheetAction {
     data class SetFilterDisplayState(val displayState: FilterState): TagSheetAction

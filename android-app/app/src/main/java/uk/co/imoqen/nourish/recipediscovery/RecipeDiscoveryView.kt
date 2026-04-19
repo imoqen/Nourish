@@ -103,6 +103,8 @@ import java.io.File
 /**
  * View for RecipeDiscovery, where LLM calls can be made and recipes thus generated.
  * @param viewModel - the view model holding methods and state for use in the view.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @Composable
 fun RecipeDiscoveryScreen(

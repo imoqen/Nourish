@@ -16,6 +16,8 @@ import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSe
  * The RecipeIngredient table in the Room database; this is a junction table to relate ingredients
  * to recipes.
  * Amounts are stored for 1 serving size and scaled accordingly in the UI.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @Entity(
     tableName = "RecipeIngredient",

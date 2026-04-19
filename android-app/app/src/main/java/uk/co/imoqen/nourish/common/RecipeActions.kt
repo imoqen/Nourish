@@ -24,7 +24,9 @@ import kotlin.math.round
  * @param authenticationManager - The authentication manager, for user authentication.
  *                                Required to access the uid of the currently logged in user.
  * @param tagRepository - The repository providing access to CRUD operations on the Tag database table.
- * @param recipeRepository - The repository providing access to CRUD operations on the Recipe database table.
+ * @param recipeRepository - The repository providing access to CRUD operations on the Recipe
+ *                           database table.
+ * @author Imogen Pemberton, 2026
  */
 class RecipeActions @Inject constructor(
     private val uiEventBus: UiEventBus,

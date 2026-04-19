@@ -88,6 +88,8 @@ import kotlin.enumValueOf
  * @param recipeBookViewModel - the ViewModel for this view, holding the required logic.
  * @param onViewRecipeCard - Function which runs to output a recipe card when selected.
  * @param onAddRecipe - Function which runs to create a recipe.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

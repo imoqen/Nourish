@@ -47,6 +47,8 @@ import kotlin.math.round
  * @param recipeActions - The Auxiliary class RecipeActions to access and use these common Recipe actions.
  * @param tagRepository - The Tag Repository, to access the Tag db table.
  * @param ingredientRepository - The Ingredient Repository, to access the Ingredient db table.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @HiltViewModel
 class RecipeCreationViewModel @Inject constructor(

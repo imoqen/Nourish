@@ -118,6 +118,8 @@ import java.io.File
  *                 hence discarding all creation/editing progress.
  * @param onFinishEdit - Function to save the changes by creating a new Recipe and deleting the
  *                       previous; only used for editing.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

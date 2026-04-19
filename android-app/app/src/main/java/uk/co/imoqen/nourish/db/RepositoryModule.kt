@@ -17,6 +17,8 @@ import uk.co.imoqen.nourish.db.user.UserRepositoryImpl
 
 /**
  * Hilt dependency injection to bind Repositories.
+ *
+ * @author Imogen Pemberton, 2026
  */
 
 @Module

@@ -9,6 +9,8 @@ import javax.inject.Singleton
  * Implements the methods defined in UiEventBus.
  * This provides a way to trigger a Snackbar display for messages / notifications, from anywhere
  * in the application.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @Singleton
 class UiEventBusImpl @Inject constructor(): UiEventBus {

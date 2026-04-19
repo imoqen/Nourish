@@ -31,6 +31,8 @@ import java.io.IOException
  * @param uri - The uri of the image to MipMap
  * @param contentResolver - The content resolver used to assist image saving
  * @returns The MipMap as a pair.
+ *
+ * @author Imogen Pemberton, 2026
  */
 fun produceMipmap(
     uri: Uri,

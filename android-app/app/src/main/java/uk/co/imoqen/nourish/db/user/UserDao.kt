@@ -6,6 +6,8 @@ import androidx.room.OnConflictStrategy
 
 /**
  * The UserDao, holding logic to perform CRUD operations on the database relating to User.
+ *
+ * @author Imogen Pemberton, 2026
  */
 
 @Dao

@@ -14,6 +14,8 @@ import javax.inject.Singleton
  * Retrofit2 API module, building the Retrofit instance which is called in the service.
  * This is connected to the Google Cloud URL which is called.
  * This module binds the dependency using Hilt.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @Module
 @InstallIn(SingletonComponent::class)

@@ -8,6 +8,8 @@ import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
  * (shopping list and recipe creation).
  * Hence, these are shared actions which can be used across different view models, rather than
  * through duplicate code.
+ *
+ * @author Imogen Pemberton, 2026
  */
 sealed interface IngredientSheetAction {
     class OnDismissRequest(): IngredientSheetAction

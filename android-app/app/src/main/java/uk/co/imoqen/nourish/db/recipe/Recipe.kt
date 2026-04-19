@@ -14,6 +14,8 @@ import uk.co.imoqen.nourish.db.user.User
 
 /**
  * The Recipe table in the Room database.
+ *
+ * @author Imogen Pemberton, 2026
  */
 
 @Entity(

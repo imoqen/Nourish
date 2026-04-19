@@ -11,6 +11,8 @@ import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 /**
  * The ShoppingListEntryDao, holding logic to perform CRUD operations on the database relating to
  * ShoppingListEntry.
+ *
+ * @author Imogen Pemberton, 2026
  */
 
 @Dao

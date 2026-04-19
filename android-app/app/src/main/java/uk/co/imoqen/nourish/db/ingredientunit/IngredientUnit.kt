@@ -16,6 +16,8 @@ package uk.co.imoqen.nourish.db.ingredientunit
  * @param keepUnitInShoppingList - If the unit is quite small like tsp, no point in putting it in the
  *                                 shopping list - no one is going to buy just 1 tsp of something etc.
  *                                 So consider these just as "1 UNIT" (has no unit).
+ *
+ * @author Imogen Pemberton, 2026
  */
 enum class IngredientUnit(
     val singularName: String,

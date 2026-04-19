@@ -57,6 +57,8 @@ import kotlin.math.round
  * @param recipeActions - The Auxiliary class RecipeActions to access and use these common Recipe actions.
  * @param shoppingListEntryRepository - The ShoppingListEntry Repository, to access the
  *                                      ShoppingListEntry db table.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @HiltViewModel
 class RecipeBookViewModel @Inject constructor(

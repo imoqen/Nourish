@@ -7,6 +7,8 @@ import uk.co.imoqen.nourish.authentication.AuthenticationState
 
 /**
  * The AuthenticationManager, used to communicate with Firebase Authentication for authentication.
+ *
+ * @author Imogen Pemberton, 2026
  */
 interface AuthenticationManager {
 

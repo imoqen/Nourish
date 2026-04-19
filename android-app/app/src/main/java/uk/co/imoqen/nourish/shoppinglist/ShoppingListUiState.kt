@@ -7,6 +7,8 @@ import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
  * UiState for ShoppingList: accessed in the View/ViewModel and mutated in the ViewModel.
  * This encapsulation allows state to persist and be updated reliably, adhering to
  * Unidirectional Data Flow UDF.
+ *
+ * @author Imogen Pemberton, 2026
  */
 data class ShoppingListUiState(
     // List must be used, so when it is updated then the whole list is updated to trigger recomposition:

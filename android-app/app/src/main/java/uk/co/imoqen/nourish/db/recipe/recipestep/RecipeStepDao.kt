@@ -7,6 +7,8 @@ import androidx.room.Query
 /**
  * The RecipeStepDao, holding logic to perform CRUD operations on the database relating to
  * RecipeStep.
+ *
+ * @author Imogen Pemberton, 2026
  */
 
 @Dao

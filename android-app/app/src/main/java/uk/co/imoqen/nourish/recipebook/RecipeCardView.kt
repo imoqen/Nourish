@@ -114,6 +114,8 @@ import java.io.File
  * @param recipeId - Id of the Recipe to display in the RecipeCard.
  * @param onBack - Function to go back to the RecipeBook when in a RecipeCard.
  * @param onEditRecipe - Function to navigate to the RecipeCreationView upon choosing to edit a recipe.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @Composable
 fun RecipeCardScreen(

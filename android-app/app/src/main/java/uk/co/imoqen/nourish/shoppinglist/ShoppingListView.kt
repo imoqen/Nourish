@@ -63,6 +63,8 @@ import kotlin.math.ceil
  * View for ShoppingList, used for viewing the shopping list, adding, editing, reordering,
  * and deleting items from it.
  * @param viewModel - the ViewModel for this view, holding the required logic.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

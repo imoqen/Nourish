@@ -8,6 +8,7 @@ import androidx.compose.ui.unit.sp
 
 /**
  * Set of Material typography styles
+ *
  * @author Android Material 3
  */
 val Typography = Typography(

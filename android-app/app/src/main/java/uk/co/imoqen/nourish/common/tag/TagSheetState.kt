@@ -6,6 +6,8 @@ import uk.co.imoqen.nourish.recipebook.TagSelection
 
 /**
  * The UiState used in the Tag Sheet, for selecting, creating and deleting, tags.
+ *
+ * @author Imogen Pemberton, 2026
  */
 data class TagSheetState (
     // Determines what part of the filter selection is shown

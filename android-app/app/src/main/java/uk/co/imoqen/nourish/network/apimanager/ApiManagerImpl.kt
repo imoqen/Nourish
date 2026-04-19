@@ -28,6 +28,8 @@ import javax.inject.Singleton
  *   - Llm Action Request: To perform an action on an existing recipe: nutrition, query, or alteration.
  * @param apiService - the API Service, to send the LLM request to Google Cloud Service and
  *                     return the response, asynchronously.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @Singleton
 class ApiManagerImpl @Inject constructor(

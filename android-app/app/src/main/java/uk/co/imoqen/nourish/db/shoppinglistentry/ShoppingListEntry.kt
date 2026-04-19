@@ -11,6 +11,8 @@ import uk.co.imoqen.nourish.db.user.User
 
 /**
  * The ShoppingListEntry table in the Room database.
+ *
+ * @author Imogen Pemberton, 2026
  */
 
 @Entity(

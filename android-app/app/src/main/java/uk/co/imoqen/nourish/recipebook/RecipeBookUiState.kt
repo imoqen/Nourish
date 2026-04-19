@@ -12,6 +12,8 @@ import uk.co.imoqen.nourish.network.response.LlmRecipe
  * UiState for RecipeBook: accessed in the View/ViewModel and mutated in the ViewModel.
  * This encapsulation allows state to persist and be updated reliably, adhering to
  * Unidirectional Data Flow UDF.
+ *
+ * @author Imogen Pemberton, 2026
  */
 data class RecipeBookUiState(
     // Displaying and searching recipes:

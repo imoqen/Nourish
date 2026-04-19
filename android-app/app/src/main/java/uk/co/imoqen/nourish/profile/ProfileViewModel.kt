@@ -22,6 +22,8 @@ import javax.inject.Inject
  * sign out, password changing and account deletion.
  * @param authenticationManager - dependent on the AuthenticationManager
  * @param uiEventBus - event bus for handling Ui events such as Toasts, shared across the app
+ *
+ * @author Imogen Pemberton, 2026
  */
 @HiltViewModel
 class ProfileViewModel @Inject constructor(

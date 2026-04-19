@@ -5,6 +5,8 @@ import kotlinx.coroutines.flow.Flow
 /**
  * The IngredientRepository, providing a contract of methods to interact with the DAO regarding
  * Ingredient-related logic.
+ *
+ * @author Imogen Pemberton, 2026
  */
 interface IngredientRepository {
     fun getById(id: Long): Flow<Ingredient?>

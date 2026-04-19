@@ -9,6 +9,8 @@ import uk.co.imoqen.nourish.db.user.User
 
 /**
  * The Tag table in the Room database.
+ *
+ * @author Imogen Pemberton, 2026
  */
 
 @Entity(

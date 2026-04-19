@@ -20,6 +20,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
  * @param title - the title displayed underneath the icon for this navigation element
  * @param icon - the icon displayed for this navigation element
  * @param iconContentDescription - describes the icon content, for screen readers
+ *
+ * @author Imogen Pemberton, 2026
  */
 enum class TabDestination(
     val route: String,

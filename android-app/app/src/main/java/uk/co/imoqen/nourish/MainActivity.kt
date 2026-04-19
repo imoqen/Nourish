@@ -51,6 +51,8 @@ import javax.inject.Inject
  * The entry point of the Nourish app.
  * Hilt is used to wrap the component activity, creating a dependency container to inject ViewModels
  * and other dependencies e.g. managers and repositories.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {

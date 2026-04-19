@@ -2,6 +2,8 @@ package uk.co.imoqen.nourish.network.request
 
 /**
  * Enum outlining generations that an LLM can perform, to generate a recipe. Used in RecipeDiscovery.
+ *
+ * @author Imogen Pemberton, 2026
  */
 enum class LlmRequestType {
     // Generate recipe:

@@ -8,6 +8,8 @@ import androidx.room.PrimaryKey
 /**
  * The RecipeType table in the Room database.
  * This is pre-populated upon login on a device.
+ *
+ * @author Imogen Pemberton, 2026
  */
 
 @Entity(

@@ -34,6 +34,8 @@ import uk.co.imoqen.nourish.common.NourishTextField
  * View for Profile, where the user can log out, delete their account and (if their account is
  * password-provider), change their password.
  * @param profileViewModel - the view model holding methods and state for use in the view.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

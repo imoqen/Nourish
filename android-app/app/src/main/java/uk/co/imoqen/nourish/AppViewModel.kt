@@ -8,6 +8,8 @@ import javax.inject.Inject
 /**
  * View model accessible across the entire app, for holding state such as the login state.
  * @param authenticationManager - dependent on the AuthenticationManager
+ *
+ * @author Imogen Pemberton, 2026
  */
 @HiltViewModel
 class AppViewModel @Inject constructor(

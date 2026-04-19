@@ -36,6 +36,8 @@ import uk.co.imoqen.nourish.shoppinglist.ShoppingListViewModel
  * @param navController - the navController used to control the navigation
  * @param startDestination - default destination to navigate to
  * @param modifier - the modifier for the navigation Composable
+ *
+ * @author Imogen Pemberton, 2026
  */
 @Composable
 fun AppNavHost(

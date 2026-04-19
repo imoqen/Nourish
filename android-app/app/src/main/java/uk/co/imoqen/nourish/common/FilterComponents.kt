@@ -35,9 +35,6 @@ import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.recipebook.TagSelection
 import uk.co.imoqen.nourish.recipebook.TypeSelection
 
-// Contains Composables used across the app in Tag (Nutritional Filter)
-// and Recipe Type (aka Meal Type) selection.
-
 /**
  * Composable to display the tag selection options for filtering by nutritional tag. This is used
  * in the RecipeDiscovery view and RecipeBook view, to apply the tags.
@@ -55,6 +52,8 @@ import uk.co.imoqen.nourish.recipebook.TypeSelection
  *                              e.g. to delete a tag.
  * @param setTagOnTrailingIconPress - Function to set the tag when the trailing icon is pressed.
  *                                    e.g. to set it as the tag to be deleted.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @Composable
 fun TagsDisplayForFiltering(

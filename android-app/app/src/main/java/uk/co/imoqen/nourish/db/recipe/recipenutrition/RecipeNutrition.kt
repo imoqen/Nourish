@@ -9,6 +9,8 @@ import uk.co.imoqen.nourish.db.recipe.Recipe
 
 /**
  * The RecipeNutrition table in the Room database.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @Entity(
     tableName = "RecipeNutrition",

@@ -53,6 +53,8 @@ import uk.co.imoqen.nourish.R
  * The custom Nourish UI Composable Library.
  * Doc comments are not provided for each Composable as they are simple Composables.
  * Where further explanation is required pertaining to parameters, these are provided inline.
+ *
+ * @author Imogen Pemberton, 2026
  */
 
 @Composable
