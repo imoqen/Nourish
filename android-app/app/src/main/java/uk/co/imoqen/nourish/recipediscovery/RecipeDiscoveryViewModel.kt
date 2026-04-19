@@ -2,7 +2,6 @@ package uk.co.imoqen.nourish.recipediscovery
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -38,14 +37,16 @@ import kotlin.onSuccess
 
 /**
  * ViewModel for RecipeDiscovery.
- * Uses the ApiService to make a call to the Google Cloud Run Service.
+ * Uses the ApiService to make a call to the Google Cloud Run Service, then saves the recipe in the db.
  * This uses retrofit2 to make the request.
  * The following tutorials were followed to assist with this:
- *       https://developer.android.com/codelabs/basic-android-kotlin-compose-getting-data-internet#6
- *       https://medium.com/@imkuldeepsinghrai/api-calls-with-retrofit-in-android-kotlin-a-comprehensive-guide-e049e19deba9
  * Furthermore, dependent on the authenticationManager to get the token of the logged in user, for
  * authentication.
- * @param authenticationManager - dependent on the AuthenticationManager to access user's token
+ * @param authenticationManager - The AuthenticationManager to get the user's token to send as Bearer.
+ * @param apiManager - The ApiManager to communicate with the Google Cloud function, and thus LLM.
+ * @param uiEventBus - The UiEventBus to display alerts / Snackbar messages.
+ * @param recipeRepository - The Recipe Repository, to access the Recipe db table.
+ * @param recipeActions - The Auxiliary class RecipeActions to access and use these common Recipe actions.
  */
 @HiltViewModel
 class RecipeDiscoveryViewModel @Inject constructor(
@@ -289,7 +290,14 @@ class RecipeDiscoveryViewModel @Inject constructor(
      * Enqueues the call and when a response is received, stores it in the UiState to display in
      * the view.
      * If an error occurs, the error is stored as above and displayed in the view.
-     * type determines if it should do from image or generate recipe text
+     * type determines if it should do from image or generate recipe text.
+     *
+     * The following sources were used to assist with this:
+     *   https://developer.android.com/codelabs/basic-android-kotlin-compose-getting-data-internet#6
+     *   https://medium.com/@imkuldeepsinghrai/api-calls-with-retrofit-in-android-kotlin-a-comprehensive-guide-e049e19deba9
+     * @param type - The type of the LLM request
+     * @param imageFilename - The filename of the image to send to the LLM
+     * @param filesDir - The device's files directory.
      */
     fun makeLlmApiCall(
         type: LlmRequestType,
@@ -300,16 +308,19 @@ class RecipeDiscoveryViewModel @Inject constructor(
         viewModelScope.launch() {
             runCatching {
                 val userPrompt =
-                    // GENERATE POSSIBLE DISHES
-                    if (type == LlmRequestType.DISHES_FROM_INGREDIENTS || type == LlmRequestType.DISHES_FROM_IMAGE || type == LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE ) {
-                        mutableUiState.value.userRequest // additional detail along with their inputted ingredients or image
+                    // Generate possible dishes:
+                    if (type == LlmRequestType.DISHES_FROM_INGREDIENTS ||
+                        type == LlmRequestType.DISHES_FROM_IMAGE ||
+                        type == LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE ) {
+                        // Additional detail, along with their inputted ingredients or image
+                        mutableUiState.value.userRequest
                     }
-                    // GENERATE RECIPE FROM DISH CHOICE
+                    // Generate Recipe from Dish choice:
                     else if (mutableUiState.value.userChoice != LlmMode.FROM_DESCRIPTION) {
-                        // input to generate the recipe must be from the dish chosen
+                        // Input to generate the recipe must be from the dish chosen
                         mutableUiState.value.chosenDish
                     }
-                    // GENERATE RECIPE FROM DESCRIPTION
+                    // Generate Recipe from Description:
                     else {
                         // input to generate the recipe is simply the request
                         mutableUiState.value.userRequest
@@ -318,36 +329,44 @@ class RecipeDiscoveryViewModel @Inject constructor(
                 // Get filters selected and the meal type:
                 var chosenNutritionalFilters =
                     mutableUiState.value.tagSheetState.recipeTags?.filter { it.selected }
-                        ?.joinToString(", ") { it.tag.identifier } // only gets the selected filters and puts them into a string
+                        ?.joinToString(", ") { it.tag.identifier }
                 if (chosenNutritionalFilters == null) {
                     chosenNutritionalFilters = "[]" // signifies empty list
                 }
-                var allNutritionalFilters = mutableUiState.value.tagSheetState.recipeTags?.joinToString(", ") { it.tag.identifier }
+                var allNutritionalFilters = mutableUiState.value.tagSheetState.recipeTags?.joinToString(", ") {
+                    it.tag.identifier
+                }
                 if (allNutritionalFilters == null) {
                     allNutritionalFilters = "[]" // signifies empty list
                 }
 
-                val dishType = mutableUiState.value.selectedRecipeType?.title?: "Breakfast, Lunch, Dinner, Dessert, Side, Drink" // if none provided, all.
+                // if no dish type was selected, provide all by default.
+                val dishType = mutableUiState.value.selectedRecipeType?.title?: "Breakfast, Lunch, Dinner, Dessert, Side, Drink"
 
-                // if the user submitted empty string as prompt, and this string is NOT optional for this call type, return error:
-                if ((type == LlmRequestType.RECIPE || type == LlmRequestType.DISHES_FROM_INGREDIENTS || type == LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH) && userPrompt == "") {
+                // if the user submitted empty string as prompt, and this string is NOT optional
+                // for this call type, return error:
+                if ((type == LlmRequestType.RECIPE ||
+                            type == LlmRequestType.DISHES_FROM_INGREDIENTS ||
+                            type == LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH) && userPrompt == "") {
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_BLANK_PROMPT))
-                    // error occurred; go back to the USER_INPUT stage (MAY NOT WORK: TEST THIS).
+                    // Error occurred; go back to the USER_INPUT stage.
                     setLlmChatStage(LlmChatStage.USER_INPUT)
                     return@launch
                 }
 
-                if ((type == LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE || type == LlmRequestType.DISHES_FROM_IMAGE || type == LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH) && imageFilename == "") {
+                if ((type == LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE ||
+                            type == LlmRequestType.DISHES_FROM_IMAGE ||
+                            type == LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH) && imageFilename == "") {
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("A photo must be uploaded to proceed."))
-                    // error occurred; go back to the USER_INPUT stage (MAY NOT WORK: TEST THIS).
+                    // Error occurred; go back to the USER_INPUT stage.
                     setLlmChatStage(LlmChatStage.USER_INPUT)
                     return@launch
                 }
 
-                // make it into a request:
+                // Make it into a request:
                 val request = LlmRequest(userPrompt, chosenNutritionalFilters, allNutritionalFilters, dishType)
 
-                // validate the user's token:
+                // Get the user's token, for validation:
                 val tokenResult = authenticationManager.getUserToken()
                 if (tokenResult == null) {
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(ErrorMessage.API_ERROR_SERVICE_UNREACHABLE))
@@ -360,7 +379,8 @@ class RecipeDiscoveryViewModel @Inject constructor(
                     type,
                     request,
                     tokenResult,
-                    imageFilename, // will just be "" and null if not used, so optional in that sense. handled appropriately.
+                    // will just be "" and null if not used, so optional in that sense.
+                    imageFilename,
                     filesDir,
                     onError = { errorMessage ->
                         viewModelScope.launch() {
@@ -370,13 +390,16 @@ class RecipeDiscoveryViewModel @Inject constructor(
                         }
                     },
                     onDishesProposed = { dishesJson ->
-                        // safe because only occurs if not null. if it is null, handles by onResponse which is below.
+                        // safe because only occurs if not null. if it is null,
+                        // handled by onResponse which is below.
                         if (dishesJson != null) {
 
                             viewModelScope.launch() {
                                 if (dishesJson.dishNotPossible) {
                                     // user inputted invalid prompt / image; recipe cannot be generated.
-                                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Valid dishes could not be generated. Please enter something different."))
+                                    uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
+                                        "Valid dishes could not be generated. Please enter something different."
+                                    ))
                                     // error occurred; go back to the USER_INPUT stage (MAY NOT WORK: TEST THIS).
                                     setLlmChatStage(LlmChatStage.USER_INPUT)
                                     return@launch
@@ -404,7 +427,9 @@ class RecipeDiscoveryViewModel @Inject constructor(
                         if (response != null) {
                             if (response.recipeNotPossible) {
                                 // user inputted invalid prompt / image; recipe cannot be generated.
-                                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("A valid recipe could not be generated. Please try another dish."))
+                                uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
+                                    "A valid recipe could not be generated. Please try another dish."
+                                ))
                                 setLlmChatStage(LlmChatStage.USER_INPUT)
                                 return@launch
                             }
@@ -426,26 +451,41 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Resets the Ui State after an error occurred.
+     */
     fun resetAfterError() {
         setDishes(null)
         setChosenDish("")
     }
 
+    /**
+     * Displays an error when no input was provided.
+     */
     fun displayBlankInputError(
         requestType: LlmRequestType
     ) {
         viewModelScope.launch() {
             val errorMessage = when (requestType) {
-                LlmRequestType.RECIPE -> "Please enter a dish or description before sending the request."
-                LlmRequestType.DISHES_FROM_INGREDIENTS -> "Please enter ingredients or an image before sending the request."
-                LlmRequestType.DISHES_FROM_IMAGE, LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE, LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH -> "Please upload an image before sending the request."
+                LlmRequestType.RECIPE ->
+                    "Please enter a dish or description before sending the request."
+                LlmRequestType.DISHES_FROM_INGREDIENTS ->
+                    "Please enter ingredients or an image before sending the request."
+                LlmRequestType.DISHES_FROM_IMAGE,
+                LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE,
+                LlmRequestType.RECIPE_FROM_IMAGE_AND_DISH ->
+                    "Please upload an image before sending the request."
             }
             uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(errorMessage))
             setLlmChatStage(LlmChatStage.USER_INPUT)
         }
     }
 
-    // Saves the image mipmap using the ImageHandler helper function, catching errors if they occur.
+    /**
+     * Saves the image mipmap using the ImageHandler helper function, catching errors if they occur.
+     * @param uri - The uri of the image to display.
+     * @param context - The Context, used to display the image.
+     */
     fun handleImage(
         uri: Uri?,
         context: Context
@@ -459,6 +499,10 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Adds an LLM-generated Recipe to the database.
+     * @param llmRecipe - the LLM-generated Recipe.
+     */
     fun addRecipe(llmRecipe: LlmRecipe) {
         viewModelScope.launch() {
             runCatching {
@@ -493,7 +537,9 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
-    // to restart from fresh to gen a new recipe
+    /**
+     * To restart from the beginning, to generate a new Recipe
+     */
     fun restart() {
         setUserRequest("")
         setChosenDish("")
@@ -509,7 +555,11 @@ class RecipeDiscoveryViewModel @Inject constructor(
         setRecipeSaved(false)
     }
 
-    // only used for llmingredient as they are dealt with differently.
+    /**
+     * Formats the ingredient text, used for displaying LLM ingredients as they are handled differently.
+     * @param ingredient - The LlmIngredient to format.
+     * @returns String of the formatted ingredient text.
+     */
     fun formatIngredientText(
         ingredient: LlmIngredient
     ): String {
@@ -534,7 +584,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
-    // only sets if the update is not null.
+    // Only sets if the update is not null.
     fun getAllRecipeTypes() {
         viewModelScope.launch() {
             (recipeActions.getAllRecipeTypes())?.let { updatedTypes ->
@@ -543,6 +593,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
+    // Updates the selected tag.
     fun updateSelected(tag: Tag, status: Boolean) {
         viewModelScope.launch() {
             setRecipeTags(
@@ -551,6 +602,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
+    // Creates a Tag.
     fun createTag() {
         viewModelScope.launch() {
             runCatching {
@@ -574,6 +626,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
+    // Deletes a Tag.
     fun deleteTag() {
         viewModelScope.launch() {
             runCatching {
@@ -587,7 +640,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
         }
     }
 
-    // closes the tag creation area. Purely for updating the UI state and does not use any shared action.
+    // Closes the tag creation area. Purely for updating the UI state and does not use any shared action.
     fun closeTagCreation() {
         setFilterDisplayState(FilterState.APPLY) // go back to apply filter menu
         setCreatedTagColour(null)
@@ -595,7 +648,7 @@ class RecipeDiscoveryViewModel @Inject constructor(
         setTagCreationError("")
     }
 
-    // the actions for the tag sheet:
+    // The actions for the tag sheet:
     fun onTagSheetAction(action: TagSheetAction) {
         when (action) {
             is TagSheetAction.SetFilterDisplayState -> setFilterDisplayState(action.displayState)
