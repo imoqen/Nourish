@@ -5,6 +5,5 @@ import uk.co.imoqen.nourish.db.user.UserRepository
 
 class FakeUserRepository(): UserRepository {
     override suspend fun insert(user: User) {
-        TODO("Not yet implemented")
     }
 }

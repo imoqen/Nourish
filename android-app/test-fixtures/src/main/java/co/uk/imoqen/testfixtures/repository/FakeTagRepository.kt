@@ -33,7 +33,7 @@ class FakeTagRepository(): TagRepository {
         identifier: String,
         uid: String
     ): Long? {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override fun getById(id: Long): Flow<Tag?> {
