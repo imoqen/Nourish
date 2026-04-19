@@ -28,6 +28,12 @@ import uk.co.imoqen.nourish.db.tag.TagDao
 import uk.co.imoqen.nourish.db.user.User
 import uk.co.imoqen.nourish.db.user.UserDao
 
+/**
+ * The Nourish Database, a persistent local database using Room.
+ *
+ * @author Imogen Pemberton, 2026
+ */
+
 @Database(
     entities = [
         // classes relating to Recipe:
@@ -40,7 +46,6 @@ import uk.co.imoqen.nourish.db.user.UserDao
 )
 @TypeConverters(Converters::class)
 abstract class NourishDatabase : RoomDatabase() {
-
     abstract fun recipeDao(): RecipeDao
     abstract fun userDao(): UserDao
     abstract fun ingredientDao(): IngredientDao

@@ -1,8 +1,14 @@
 package uk.co.imoqen.nourish.db.shoppinglistentry
 
 import kotlinx.coroutines.flow.Flow
-import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.recipebook.ShoppingListIngredient
+
+/**
+ * The ShoppingListEntryRepository, providing a contract of methods to interact with the DAO regarding
+ * ShoppingListEntry-related logic.
+ *
+ * @author Imogen Pemberton, 2026
+ */
 
 interface ShoppingListEntryRepository {
 
@@ -10,8 +16,11 @@ interface ShoppingListEntryRepository {
 
     fun getById(id: Long): Flow<ShoppingListEntry?>
 
-    // insert function:
-    suspend fun addShoppingListEntry(shoppingListIngredient: ShoppingListIngredient, uid: String, userAdded: Boolean)
+    suspend fun addShoppingListEntry(
+        shoppingListIngredient: ShoppingListIngredient,
+        uid: String,
+        userAdded: Boolean
+    )
 
     suspend fun update(shoppingListEntry: ShoppingListEntry)
 

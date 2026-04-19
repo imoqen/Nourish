@@ -1,16 +1,21 @@
 package uk.co.imoqen.nourish.network.request
 
-// Actions that an LLM can doto generate a recipe. From the recipe discovery screen.
+/**
+ * Enum outlining generations that an LLM can perform, to generate a recipe. Used in RecipeDiscovery.
+ *
+ * @author Imogen Pemberton, 2026
+ */
 enum class LlmRequestType {
-    // generate recipe:
+    // Generate recipe:
     RECIPE,
 
-    // generate dishes:
+    // Generate dishes:
     DISHES_FROM_INGREDIENTS,
     DISHES_FROM_IMAGE,
     DISHES_FROM_INGREDIENTS_IMAGE,
 
-    // to generate a recipe after a dish has been chosen and if an image is included.
-    // otherwise, the recipe can simply be generated from the "recipe" method, as only strings are involved.
+    // To generate a recipe after a dish has been chosen and if an image is included.
+    // otherwise, the recipe can simply be generated from the "recipe" method,
+    // as only strings are involved.
     RECIPE_FROM_IMAGE_AND_DISH,
 }

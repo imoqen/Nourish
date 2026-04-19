@@ -1,13 +1,20 @@
 package uk.co.imoqen.nourish.db.shoppinglistentry
 
-import android.util.Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
-import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.recipebook.ShoppingListIngredient
 import javax.inject.Inject
 
+/**
+ * The ShoppingListEntryRepositoryImpl, implementing the repository for ShoppingListEntry by
+ * interacting with the required DAO.
+ * Doc comments are not provided for most methods, because most are trivial. For those which are non
+ * -trivial, a doc comment is present.
+ * @param shoppingListEntryDao - the ShoppingListEntry DAO
+ *
+ * @author Imogen Pemberton, 2026
+ */
 class ShoppingListEntryRepositoryImpl @Inject constructor(
     private val shoppingListEntryDao: ShoppingListEntryDao
 ): ShoppingListEntryRepository {
@@ -20,30 +27,47 @@ class ShoppingListEntryRepositoryImpl @Inject constructor(
         return shoppingListEntryDao.getById(id)
     }
 
-    // not override as private, used as helper method for addShoppingListEntry
-    fun getUnpurchasedByIngredientAndUidAndUnit(ingredientId: Long, uid: String, unit: IngredientUnit): Flow<ShoppingListEntry?> {
+    /**
+     * Private, non-overriding auxiliary function for addShoppingListEntry.
+     * Finds all unpurchased items by ingredient id, uid, and unit.
+     * @param ingredientId - the id of the ingredient to find
+     * @param uid - the id of the user which authored the ingredient to find.
+     * @param unit - the unit of the ingredient to find.
+     */
+    fun getUnpurchasedByIngredientAndUidAndUnit(
+        ingredientId: Long,
+        uid: String,
+        unit: IngredientUnit
+    ): Flow<ShoppingListEntry?> {
         return shoppingListEntryDao.getByIngredientAndUidAndUnitUnpurchased(ingredientId, uid, unit)
     }
 
+    /**
+     * Adds a shopping list entry to the database.
+     * @param shoppingListIngredient - The ingredient to add.
+     * @param uid - The id of the user adding the entry.
+     * @param userAdded - declares if added from a recipe, or manually added by the user. user has
+     *                    more freedom than adding from a recipe.
+     */
     override suspend fun addShoppingListEntry(
         shoppingListIngredient: ShoppingListIngredient,
         uid: String,
-        userAdded: Boolean, // declares if added from a recipe, or was added by the user. user has more freedom than adding from a recipe.
+        userAdded: Boolean,
     ) {
         val unit = shoppingListIngredient.unit
         val amount = shoppingListIngredient.amount
         val ingredientId = shoppingListIngredient.ingredientId
-
-        // need to check that a shopping list entry doesnt already exist for this ingredient by this uid. if it does, simply increment
-        // the amount if appropriate:
-
-        val existingShoppingListEntry = getUnpurchasedByIngredientAndUidAndUnit(ingredientId, uid, unit).first()
+        // Checks that a shopping list entry doesn't already exist for this ingredient by this uid.
+        // If it does, simply increment the amount if appropriate.
+        val existingShoppingListEntry =
+            getUnpurchasedByIngredientAndUidAndUnit(ingredientId, uid, unit).first()
         if (existingShoppingListEntry != null && !existingShoppingListEntry.purchased) {
-
             // if the unit should be displayed in the shopping list, or it is added by the user, update it
             update(existingShoppingListEntry.copy(amount =
                 // only update it if the unit should be kept in the shopping list & above the threshold
-                if (unit.keepUnitInShoppingList || userAdded) { // user has more freedom, if user added it is assumed that they intend to add even if its something like oil, salt, etc.
+                if (unit.keepUnitInShoppingList || userAdded) {
+                    // user has more freedom, if user added it is assumed that they intend to add
+                    // even if its something like oil, salt, etc.
                     existingShoppingListEntry.amount.plus(
                         shoppingListIngredient.amount
                     )
@@ -59,15 +83,20 @@ class ShoppingListEntryRepositoryImpl @Inject constructor(
                     purchaserUid = uid,
                     unit = unit,
                     amount = amount,
-                    purchased = false, // set by default to not have been purchased.
-                    ordinal = getMaxOrdinalForUser(uid) + 1 // increment max to get next val (put it at the end of the list by default)
+                    // set by default to not have been purchased:
+                    purchased = false,
+                    // increment max to get next val (put it at the end of the list by default):
+                    ordinal = getMaxOrdinalForUser(uid) + 1
                 )
             )
         }
     }
 
-    // private helper method to find the max ordinal, this incremented will be the position of
-    // the next item to add.
+    /**
+     * Private auxiliary non-overridden method to find the max ordinal, this incremented will be the
+     * position of the next item to add.
+     * @param uid - The id of the user adding the entry.
+     */
     suspend fun getMaxOrdinalForUser(uid: String): Int {
         return shoppingListEntryDao.getMaxOrdinalForUser(uid)
     }

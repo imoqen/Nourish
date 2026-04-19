@@ -35,6 +35,9 @@ import uk.co.imoqen.nourish.shoppinglist.ShoppingListViewModel
  * Based on https://developer.android.com/guide/navigation/design#compose
  * @param navController - the navController used to control the navigation
  * @param startDestination - default destination to navigate to
+ * @param modifier - the modifier for the navigation Composable
+ *
+ * @author Imogen Pemberton, 2026
  */
 @Composable
 fun AppNavHost(
@@ -56,7 +59,11 @@ fun AppNavHost(
         }
         composable(TabDestination.RECIPE_BOOK.route) {
             val recipeBookViewModel: RecipeBookViewModel = hiltViewModel()
-            RecipeBookScreen(recipeBookViewModel, onViewRecipeCard = { id -> navController.navigate("b/recipe-card/$id") }, onAddRecipe = { navController.navigate("b/add-recipe") } )
+            RecipeBookScreen(
+                recipeBookViewModel,
+                onViewRecipeCard = { id -> navController.navigate("b/recipe-card/$id") },
+                onAddRecipe = { navController.navigate("b/add-recipe") }
+            )
         }
         composable(TabDestination.SHOPPING_LIST.route) {
             val shoppingListViewModel: ShoppingListViewModel = hiltViewModel()
@@ -70,12 +77,19 @@ fun AppNavHost(
         // within the Recipe Book, can navigate to a specific Recipe Card:
         composable(
             route = "b/recipe-card/{id}",
-            arguments = listOf(navArgument("id") { type = NavType.LongType }) // the recipeId to display the recipe card of
+            // the recipeId to display the recipe card of:
+            arguments = listOf(navArgument("id") { type = NavType.LongType })
         ) { backStackEntry ->
             val recipeId = backStackEntry.arguments?.getLong("id")!!
             val recipeBookViewModel: RecipeBookViewModel = hiltViewModel()
             val recipeBookUiState = recipeBookViewModel.uiState.collectAsState().value
-            RecipeCardScreen(recipeBookViewModel, recipeBookUiState, recipeId, onBack={ navController.popBackStack() }, onEditRecipe = {id -> navController.navigate("b/edit-recipe/$id")})
+            RecipeCardScreen(
+                recipeBookViewModel,
+                recipeBookUiState,
+                recipeId,
+                onBack={ navController.popBackStack() },
+                onEditRecipe = { id -> navController.navigate("b/edit-recipe/$id") }
+            )
         }
         // Within the Recipe Book, can add a new Recipe Card:
         composable(
@@ -87,19 +101,31 @@ fun AppNavHost(
         // Edit recipe card:
         composable(
             route = "b/edit-recipe/{id}",
-            arguments = listOf(navArgument("id") { type = NavType.LongType }) // the recipeId to edit
+            // the recipeId to edit:
+            arguments = listOf(navArgument("id") { type = NavType.LongType })
         ) { backStackEntry ->
             val recipeId = backStackEntry.arguments?.getLong("id")!!
-            val recipeCreationViewModel: RecipeCreationViewModel = hiltViewModel() //uses recipe creation, but just parses the recipe to be displayed within it. then user can make changes to it.
+            // Uses recipe creation, but just parses the recipe to be displayed within it.
+            // then user can make changes to it.
+            val recipeCreationViewModel: RecipeCreationViewModel = hiltViewModel()
             if (recipeCreationViewModel.uiState.collectAsState().value.recipeEditId != recipeId) {
-                // if the recipe to edit doesn't match the current recipe being edited, update it:
+                // If the recipe to edit doesn't match the current recipe being edited, update it:
                 recipeCreationViewModel.populateFromId(recipeId)
             }
-            RecipeCreationScreen(recipeCreationViewModel, onBack={ navController.popBackStack() }, onFinishEdit={navController.navigate("b/recipe-card/$recipeId") { popUpTo("b/edit-recipe/$recipeId") { inclusive = true }; launchSingleTop = true } } ) // go to the new recipe, and remove the edit from the stack as if it was never there. so user cant go back to back. and single top to ensure that the new recipe REPLACES the old one
+            // go to the new recipe, and remove the edit from the stack as if it was never there.
+            // So user cant go back to back. and single top to ensure that the new recipe
+            // replaces the old one
+            RecipeCreationScreen(
+                recipeCreationViewModel,
+                onBack={ navController.popBackStack() },
+                onFinishEdit={ navController.navigate("b/recipe-card/$recipeId") {
+                    popUpTo("b/edit-recipe/$recipeId") {
+                        inclusive = true
+                    };
+                    launchSingleTop = true }
+                }
+            )
         }
-        // Can add Route destinations too (those not from tabs)
-        // can add here. then can add params to them as shown in this video: https://www.youtube.com/watch?v=wJKwsI5WUI4
-        // only pass IDs, not complex data, then can find the data from the view model and it can make calls to the db.
     }
 }
 
@@ -118,13 +144,16 @@ fun NourishNavigationBar(
     NavigationBar(windowInsets = NavigationBarDefaults.windowInsets) {
         navigationItems.forEachIndexed { index, destination ->
             NavigationBarItem(
-                // If the selected destination is equal to the destination identified, highlight that as being selected
+                // If the selected destination is equal to the destination identified, highlight that
+                // as being selected.
                 selected = selectedDestinationTab == destination.route[0],
                 onClick = {
-                    navController.navigate(route = destination.route) { // Update the currently selected item in navigation
+                    // Update the currently selected item in navigation
+                    navController.navigate(route = destination.route) {
                         launchSingleTop = true // ensures destinations are not duplicated
-                        // the following 4 lines are to prevent previous destinations from being destroyed and recreated
-                        // from android docs https://developer.android.com/guide/navigation/backstack/multi-back-stacks
+                        // The following lines are to prevent previous destinations from being
+                        // destroyed and recreated,
+                        // from Android docs https://developer.android.com/guide/navigation/backstack/multi-back-stacks
                         restoreState = true // to reset view models as user has changed
                         popUpTo(navController.graph.findStartDestination().id) {
                             saveState = true

@@ -3,6 +3,8 @@ package uk.co.imoqen.nourish.common
 /**
  * Constants file consisting of error messages used throughout the app.
  * Their relevant app area is provided in the first word, e.g. API, INPUT, PASSWORD
+ *
+ * @author Imogen Pemberton, 2026
  */
 object ErrorMessage {
     // API errors, relating to LLM requests

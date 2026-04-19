@@ -2,7 +2,10 @@ package uk.co.imoqen.nourish.profile
 
 /**
  * UiState for Profile: accessed in the View/ViewModel and mutated in the ViewModel.
- * This encapsulation allows state to persist and be updated reliably.
+ * This encapsulation allows state to persist and be updated reliably, adhering to
+ * Unidirectional Data Flow UDF.
+ *
+ * @author Imogen Pemberton, 2026
  */
 data class ProfileUiState (
     // Password provider, for determining if password reset should be displayed:

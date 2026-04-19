@@ -12,29 +12,34 @@ import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSection
 
-// junction table to relate ingredients to recipes
-// store for 1 serving size then can multiply accordingly
+/**
+ * The RecipeIngredient table in the Room database; this is a junction table to relate ingredients
+ * to recipes.
+ * Amounts are stored for 1 serving size and scaled accordingly in the UI.
+ *
+ * @author Imogen Pemberton, 2026
+ */
 @Entity(
     tableName = "RecipeIngredient",
     foreignKeys = [
-        // recipe relation:
+        // Recipe relation:
         ForeignKey(
             entity = Recipe::class,
-            parentColumns = ["id"], // the primary key of Recipe
-            childColumns = ["recipeId"], // the foreign key which holds this reference, in RecipeIngredient
+            parentColumns = ["id"],
+            childColumns = ["recipeId"],
             onDelete = ForeignKey.CASCADE
         ),
-        // ingredient relation:
+        // Ingredient relation:
         ForeignKey(
             entity = Ingredient::class,
-            parentColumns = ["id"], // the primary key of Ingredient
-            childColumns = ["ingredientId"], // the foreign key which holds this reference, in RecipeIngredient
+            parentColumns = ["id"],
+            childColumns = ["ingredientId"],
             onDelete = ForeignKey.CASCADE
         ),
-        // ingredient section relation:
+        // IngredientSection relation:
         ForeignKey(
             entity = RecipeIngredientSection::class,
-            parentColumns = ["id"], // the primary key of Recipe
+            parentColumns = ["id"],
             childColumns = ["sectionId"],
             onDelete = ForeignKey.CASCADE
         )
@@ -47,20 +52,20 @@ import uk.co.imoqen.nourish.db.recipe.recipeingredientsection.RecipeIngredientSe
 )
 data class RecipeIngredient(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    @ColumnInfo(name = "recipeId") val recipeId: Long, // foreign key for recipe relation
-    @ColumnInfo(name = "ingredientId") val ingredientId: Long, // foreign key for ingredient relation
-    @ColumnInfo(name = "ingredientUnit") val ingredientUnit: IngredientUnit, // IngredientUnit is an enum and gets converted using converters class
-    @ColumnInfo(name = "amount") val amount: Double, // foreign key for ingredient relation
-    @ColumnInfo(name = "sectionId") val sectionId: Long // the section of this ingredient (e.g. "for the pastry ...")
+    @ColumnInfo(name = "recipeId") val recipeId: Long, // Foreign key for Recipe relation
+    @ColumnInfo(name = "ingredientId") val ingredientId: Long, // Foreign key for Ingredient relation
+    // IngredientUnit is an enum and gets converted using converters class
+    @ColumnInfo(name = "ingredientUnit") val ingredientUnit: IngredientUnit,
+    @ColumnInfo(name = "amount") val amount: Double, // Amount of ingredient for 1 serving size
+    @ColumnInfo(name = "sectionId") val sectionId: Long // The section of this ingredient (e.g. "for the pastry ...")
 )
 
-// defines how to join the two objects:
-
+// defines how to join the Recipe and its RecipeIngredients
 data class RecipeWithRecipeIngredients(
     @Embedded val recipe: Recipe, // parent
     @Relation(
         parentColumn = "id", // the primary key of the parent (Recipe)
         entityColumn = "recipeId" // the foreign key in RecipeIngredient referencing it
     )
-    val ingredients: List<RecipeIngredient>, // entity
+    val ingredients: List<RecipeIngredient>,
 )

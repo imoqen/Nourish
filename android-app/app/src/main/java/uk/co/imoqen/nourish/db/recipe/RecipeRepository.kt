@@ -11,9 +11,17 @@ import uk.co.imoqen.nourish.db.recipe.recipetag.RecipeTag
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 
+/**
+ * The RecipeRepository, providing a contract of methods to interact with the DAO regarding
+ * Recipe-related logic.
+ * These are all bundled together into this interface to reduce the number of dependencies on
+ * ViewModels, providing a simple, single repository for all Recipe-related CRUD operations.
+ *
+ * @author Imogen Pemberton, 2026
+ */
 interface RecipeRepository {
 
-    // RECIPE LOGIC:
+    // Recipe Logic:
     fun getAllRecipes(uid: String): Flow<List<Recipe>>
 
     fun getRecipeById(recipeId: Long): Flow<Recipe?>
@@ -22,41 +30,39 @@ interface RecipeRepository {
     fun getRecipeWithRecipeTags(recipeId: Long): Flow<RecipeWithRecipeTags>
     fun getRecipeWithRecipeSteps(recipeId: Long): Flow<RecipeWithRecipeSteps>
 
-    // RECIPE TYPE LOGIC:
+    // Recipe Type Logic:
     fun getAllRecipeTypes(): Flow<List<RecipeType>>
     fun getRecipeTypeById(id: Long): Flow<RecipeType?>
     suspend fun insertRecipeType(recipeType: RecipeType): Long
     suspend fun getIdByTitle(title: String): Long?
 
-    // RECIPE INGREDIENT LOGIC:
+    // Recipe Ingredient Logic:
     suspend fun insertRecipeIngredient(recipeIngredient: RecipeIngredient): Long
 
-    // RECIPE INGREDIENT SECTION LOGIC:
+    // Recipe Ingredient Section Logic:
     suspend fun insertRecipeIngredientSection(recipeIngredientSection: RecipeIngredientSection): Long
     fun getRecipeSectionById(id: Long): Flow<RecipeIngredientSection?>
 
-    // RECIPE STEP LOGIC:
+    // Recipe Step Logic:
     suspend fun insertRecipeStep(recipeStep: RecipeStep): Long
     suspend fun updateStepCompleteness(recipeStepId: Long, complete: Boolean)
 
-    // RECIPE TAG LOGIC:
+    // Recipe Tag Logic:
     suspend fun insertRecipeTag(recipeTag: RecipeTag): Long
 
-    // RECIPE NUTRITION LOGIC:
+    // Recipe Nutrition Logic:
     suspend fun insertRecipeNutrition(recipeNutrition: RecipeNutrition)
     fun getNutritionForRecipe(recipeId: Long): Flow<RecipeNutrition?>
     suspend fun deleteNutritionForRecipeId(recipeId: Long)
 
-    // RECIPE QUERY LOGIC:
+    // Recipe Query Logic:
     suspend fun insertRecipeQuery(recipeQuery: RecipeQuery): Long
     suspend fun updateRecipeQuery(recipeQuery: RecipeQuery)
     fun getAllQueriesForRecipe(recipeId: Long): Flow<List<RecipeQuery?>>
 
     fun getRecipeQueryById(recipeQueryId: Long): Flow<RecipeQuery?>
 
-    /**
-     * Creates a recipe in the database and its corresponding entities
-     */
+    // Creates a recipe in the database and its corresponding entities
     suspend fun createRecipe(uid: String, llmRecipe: LlmRecipe, shouldNotScaleIngredients: Boolean, recipeId: Long = -1, imagePath: String = "", llmGenerated: Boolean = true)
 
     suspend fun replaceRecipe(currentRecipe: Recipe, newRecipe: LlmRecipe, updatedImagePath: String, llmGenerated: Boolean = true)

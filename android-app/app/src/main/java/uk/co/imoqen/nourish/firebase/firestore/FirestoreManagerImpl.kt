@@ -1,6 +1,5 @@
 package uk.co.imoqen.nourish.firebase.firestore
 
-import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
@@ -8,6 +7,12 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Implementation for the FirestoreManager
+ * @param db - the external Firebase Firestore database.
+ *
+ * @author Imogen Pemberton, 2026
+ */
 @Singleton
 class FirestoreManagerImpl @Inject constructor(
     private val db: FirebaseFirestore

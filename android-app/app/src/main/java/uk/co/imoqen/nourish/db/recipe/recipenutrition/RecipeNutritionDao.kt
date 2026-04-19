@@ -3,12 +3,17 @@ package uk.co.imoqen.nourish.db.recipe.recipenutrition
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
-import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
+
+/**
+ * The RecipeNutritionDao, holding logic to perform CRUD operations on the database relating to
+ * RecipeNutrition.
+ *
+ * @author Imogen Pemberton, 2026
+ */
 
 @Dao
 interface RecipeNutritionDao {
-    // insert one
     @Insert
     suspend fun insert(recipeNutrition: RecipeNutrition): Long
 

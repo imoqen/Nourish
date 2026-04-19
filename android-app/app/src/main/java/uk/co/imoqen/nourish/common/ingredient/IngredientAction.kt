@@ -1,10 +1,16 @@
 package uk.co.imoqen.nourish.common.ingredient
 
-import uk.co.imoqen.nourish.common.NourishColour
-import uk.co.imoqen.nourish.common.tag.FilterState
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
-import uk.co.imoqen.nourish.db.tag.Tag
 
+/**
+ * Declares the actions which can be performed in the Ingredient Sheet,
+ * utilised and implemented across all ViewModels in which ingredients can be added.
+ * (shopping list and recipe creation).
+ * Hence, these are shared actions which can be used across different view models, rather than
+ * through duplicate code.
+ *
+ * @author Imogen Pemberton, 2026
+ */
 sealed interface IngredientSheetAction {
     class OnDismissRequest(): IngredientSheetAction
     data class SetIngredientName(val name: String): IngredientSheetAction

@@ -33,6 +33,8 @@ import javax.inject.Singleton
  * with them appropriately in a runCatching block.
  * @param auth - FirebaseAuth authentication platform holding a list of all users.
  * @param firestoreManager - provides access to the FirebaseFirestore database holding user data.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @Singleton
 class AuthenticationManagerImpl @Inject constructor(
@@ -55,7 +57,10 @@ class AuthenticationManagerImpl @Inject constructor(
      */
     private fun updateLoggedInState() {
         if (isLoggedIn()) {
-            setLoginState(true, auth.currentUser!!.uid, auth.currentUser!!.email ?: "")
+            setLoginState(
+                true,
+                auth.currentUser!!.uid, auth.currentUser!!.email ?: ""
+            )
             return
         }
         setLoginState(false)
@@ -104,8 +109,10 @@ class AuthenticationManagerImpl @Inject constructor(
         auth.createUserWithEmailAndPassword(email, password).await()
         // If success, can now proceed to login:
         if (auth.currentUser != null) {
-            setLoginState(true, auth.currentUser!!.uid, auth.currentUser!!.email ?: "")
-
+            setLoginState(
+                true,
+                auth.currentUser!!.uid, auth.currentUser!!.email ?: ""
+            )
             // this is user's first time logging in because they have just signed up:
             setIsFirstLogin(true)
         }
@@ -119,7 +126,10 @@ class AuthenticationManagerImpl @Inject constructor(
     override suspend fun signInWithEmailAndPassword(email: String, password: String) {
         auth.signInWithEmailAndPassword(email, password).await()
         if (auth.currentUser != null) {
-            setLoginState(true, auth.currentUser!!.uid, auth.currentUser!!.email ?: "")
+            setLoginState(
+                true,
+                auth.currentUser!!.uid, auth.currentUser!!.email ?: ""
+            )
             // not user's first time logging in; as they are signing in so already have account
             setIsFirstLogin(false)
         }
@@ -159,7 +169,10 @@ class AuthenticationManagerImpl @Inject constructor(
 
                 // Check if validly signed in:
                 if (auth.currentUser != null) {
-                    setLoginState(true, auth.currentUser!!.uid, auth.currentUser!!.email ?: "")
+                    setLoginState(
+                        true,
+                        auth.currentUser!!.uid, auth.currentUser!!.email ?: ""
+                    )
 
                     // if this is the user's first time logging in:
                     if (result.additionalUserInfo != null && result.additionalUserInfo!!.isNewUser) {

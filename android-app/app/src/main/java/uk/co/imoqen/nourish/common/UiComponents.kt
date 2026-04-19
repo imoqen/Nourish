@@ -2,11 +2,9 @@ package uk.co.imoqen.nourish.common
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -37,12 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.geometry.center
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RadialGradientShader
-import androidx.compose.ui.graphics.Shader
-import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -55,6 +48,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import uk.co.imoqen.nourish.R
+
+/**
+ * The custom Nourish UI Composable Library.
+ * Doc comments are not provided for each Composable as they are simple Composables.
+ * Where further explanation is required pertaining to parameters, these are provided inline.
+ *
+ * @author Imogen Pemberton, 2026
+ */
 
 @Composable
 fun NourishTextField(
@@ -125,7 +126,8 @@ fun NourishTextField(
             onDone = { onDone() }
         ),
 
-        trailingIcon = { if (trailingIcon != null && (value != "" || alwaysDisplayTrailingIcon)) // trailing icon is only displayed if it is not null and the text entered is not empty (so there is something to remove.)
+        // trailing icon is only displayed if it is not null and the text entered is not empty
+        trailingIcon = { if (trailingIcon != null && (value != "" || alwaysDisplayTrailingIcon))
             {
                 IconButton(
                     onClick = onTrailingIconPress
@@ -242,7 +244,7 @@ fun NourishButton(
     }
 }
 
-// grey button instead of app theme (green)
+// Grey button instead of app theme (green)
 @Composable
 fun NourishSurfaceButton(
     onClick: () -> Unit,
@@ -290,7 +292,7 @@ fun NourishDangerButton(
     }
 }
 
-// also suports without text, just put "" and will scale accordingly.
+// Icon text button which also supports without text, just put "" and will scale accordingly.
 @Composable
 fun NourishIconTextButton(
     onClick: () -> Unit,
@@ -300,7 +302,8 @@ fun NourishIconTextButton(
     selected: Boolean = false,
     fillMaxWidth: Boolean = false,
     enabled: Boolean = true,
-    buttonColour: Color = MaterialTheme.colorScheme.primaryContainer // so that can change button colour, this is used in the add a recipe bit
+    // so that can change button colour, this is used in the add a recipe bit:
+    buttonColour: Color = MaterialTheme.colorScheme.primaryContainer
 ) {
     Button(
         onClick = {
@@ -322,7 +325,6 @@ fun NourishIconTextButton(
             Icon(
                 painter = painter,
                 contentDescription = null,
-                //tint = MaterialTheme.colorScheme.onPrimaryContainer,
                 modifier = Modifier
                     .size(24.dp)
             )
@@ -428,52 +430,6 @@ fun NourishDivider(
     }
 }
 
-// gradient button:
-// https://developer.android.com/develop/ui/compose/graphics/draw/brush
-@Composable
-fun GradientButton(text:String) {
-    val colorStops = arrayOf(
-        0.0f to Color.Yellow,
-        0.2f to Color.Red,
-        1f to Color.Blue
-    )
-    val nourishGreen = MaterialTheme.colorScheme.primary
-    //val gradient = Brush.radialGradient(colorStops = colorStops)
-    val largeRadialGradient = object : ShaderBrush() {
-        override fun createShader(size: Size): Shader {
-            val biggerDimension = maxOf(size.height, size.width)
-            return RadialGradientShader(
-                colors = listOf(Color(0xFF47734F), nourishGreen),
-                center = size.center,
-                radius = biggerDimension / 2f,
-                colorStops = listOf(0f, 0.95f)
-            )
-        }
-    }
-    val gradient = largeRadialGradient
-
-
-    //val gradient = Brush.horizontalGradient(listOf(Color(0xFF2C7745), MaterialTheme.colorScheme.primary))
-    Button(
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Transparent
-        ),
-        contentPadding = PaddingValues(0.dp),
-        onClick = {},
-        shape = RoundedCornerShape(24.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .background(gradient, shape = RoundedCornerShape(24.dp))
-                .padding(horizontal = 32.dp, vertical = 10.dp),
-            contentAlignment = Alignment.Center
-        )
-        {
-            Text(text = text, color = Color.White)
-        }
-    }
-}
-
 @Composable
 fun NourishBottomCard(
     titleSection: @Composable (()-> Unit)? = null,
@@ -487,7 +443,7 @@ fun NourishBottomCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 84.dp),//.background(MaterialTheme.colorScheme.surface),
+                    .padding(top = 84.dp),
                 contentAlignment = Alignment.TopCenter,
 
                 ) {
@@ -584,7 +540,11 @@ fun NourishTextMessage(
                 shape = textMessageShape
             )
             .background(
-                color = if (textSender == TextSender.LLM) { MaterialTheme.colorScheme.surface } else { MaterialTheme.colorScheme.surfaceContainer },
+                color = if (textSender == TextSender.LLM) {
+                    MaterialTheme.colorScheme.surface
+                } else {
+                    MaterialTheme.colorScheme.surfaceContainer
+                       },
                 shape = textMessageShape
             )
     ) {
@@ -592,12 +552,13 @@ fun NourishTextMessage(
     }
 }
 
+// To differentiate between LLM and User-sent texts in the above NourishTextMessage.
 enum class TextSender {
     LLM,
     USER
 }
 
-// alert dialog using android's built in: https://developer.android.com/develop/ui/views/components/dialogs
+// Alert dialog using android's built in Dialog.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NourishConfirmationDialog (
@@ -634,7 +595,7 @@ fun NourishConfirmationDialog (
                    },
 
             confirmButton = {
-                // contains both dismiss and confirm so i can override the right alignment in alert dialog
+                // Contains both dismiss and confirm, to override the right alignment in alert dialog
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,
@@ -646,7 +607,7 @@ fun NourishConfirmationDialog (
                     )
                     NourishButton(
                         text = "Yes",
-                        onClick = { onConfirmation(); onDismiss() } // confirm then dismsis it
+                        onClick = { onConfirmation(); onDismiss() } // confirm then dismisses it
                     )
                 }
             },
@@ -656,8 +617,8 @@ fun NourishConfirmationDialog (
     }
 }
 
-// Progress bar:
-// https://developer.android.com/develop/ui/compose/components/progress
+// Progress bar (loading bar):
+// Adapted from https://developer.android.com/develop/ui/compose/components/progress
 @Composable
 fun IndeterminateCircularIndicator(
     awaiting: Boolean

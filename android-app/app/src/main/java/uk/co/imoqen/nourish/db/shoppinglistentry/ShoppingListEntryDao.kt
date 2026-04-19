@@ -7,20 +7,31 @@ import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
-import uk.co.imoqen.nourish.db.recipe.Recipe
+
+/**
+ * The ShoppingListEntryDao, holding logic to perform CRUD operations on the database relating to
+ * ShoppingListEntry.
+ *
+ * @author Imogen Pemberton, 2026
+ */
 
 @Dao
 interface ShoppingListEntryDao {
 
-    // gets all for a specific user, no instance where would need to get for every user. also orderes by purchased status so FALSE ones are first then TRUE.
+    // Gets all for a specific user, no instance where would need to get for every user.
+    // Also, orders by purchased status so that unpurchased items come first.
     @Query("SELECT * FROM shoppingListEntry WHERE purchaserUid = :uid ORDER BY purchased ASC, ordinal ASC")
     fun getAll(uid: String): Flow<List<ShoppingListEntry>>
 
     @Query("SELECT * FROM shoppingListEntry WHERE id = :id LIMIT 1")
     fun getById(id: Long): Flow<ShoppingListEntry?>
 
-    @Query("SELECT * FROM shoppingListEntry WHERE purchaserUid = :uid AND ingredientId = :ingredientId AND unit = :unit AND purchased = 0 ORDER BY purchased ASC, ordinal ASC")
-    fun getByIngredientAndUidAndUnitUnpurchased(ingredientId: Long, uid: String, unit: IngredientUnit): Flow<ShoppingListEntry?>
+    @Query("SELECT * FROM shoppingListEntry WHERE purchaserUid = :uid " +
+            "AND ingredientId = :ingredientId AND unit = :unit " +
+            "AND purchased = 0 ORDER BY purchased ASC, ordinal ASC")
+    fun getByIngredientAndUidAndUnitUnpurchased(
+        ingredientId: Long, uid: String, unit: IngredientUnit
+    ): Flow<ShoppingListEntry?>
 
     @Insert
     suspend fun insert(shoppingListEntry: ShoppingListEntry): Long
@@ -31,18 +42,19 @@ interface ShoppingListEntryDao {
     @Delete
     suspend fun delete(shoppingListEntry: ShoppingListEntry)
 
-    // deletes all shopping list entries of a particular user.
+    // Deletes all shopping list entries of a particular user.
     @Query("DELETE FROM shoppingListEntry WHERE purchaserUid = :uid")
     suspend fun deleteAllForUser(uid: String)
 
-    // deletes only the purchased items
+    // Deletes only the purchased items
     @Query("DELETE FROM shoppingListEntry WHERE purchaserUid = :uid AND purchased = 1")
     suspend fun deletePurchasedForUser(uid: String)
 
     @Query("SELECT MAX(ordinal) FROM shoppingListEntry WHERE purchaserUid = :uid")
     suspend fun getMaxOrdinalForUser(uid: String): Int
 
-    // sets the ordinal, this represents the position of an entry in the shopping list. occurs when reordering items.
+    // Sets the ordinal, this represents the position of an entry in the shopping list.
+    // Called when reordering items.
     @Query("UPDATE shoppinglistentry SET ordinal = :ordinal WHERE id = :id")
     suspend fun setOrdinal(id: Long, ordinal: Int)
 

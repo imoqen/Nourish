@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateBounds
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
@@ -100,10 +99,24 @@ import uk.co.imoqen.nourish.db.recipe.Recipe
 import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQuery
 import uk.co.imoqen.nourish.network.request.LlmActionType
 import uk.co.imoqen.nourish.recipediscovery.RecipeCardPreview
-import uk.co.imoqen.nourish.recipediscovery.restart
 import uk.co.imoqen.nourish.shoppinglist.IngredientAmount
 import java.io.File
 
+/**
+ * View for RecipeCard, which displays a recipe. Actions can be performed on the recipe:
+ * checking off steps, performing an LLM alteration, asking a question, manually altering the recipe,
+ * generating nutritional values, and deleting a recipe. The logic for these actions is handled in
+ * the RecipeBookViewModel, as it is shared and accessible from the RecipeBook - they are very closely
+ * related. Thus, keeping them together keeps cohesion high and coupling low, preventing violation
+ * of the Law of Demeter.
+ * @param recipeBookViewModel - the ViewModel for this view, holding the required logic.
+ * @param uiState - The UiState holding the state displayed in the Ui for a given RecipeCard.
+ * @param recipeId - Id of the Recipe to display in the RecipeCard.
+ * @param onBack - Function to go back to the RecipeBook when in a RecipeCard.
+ * @param onEditRecipe - Function to navigate to the RecipeCreationView upon choosing to edit a recipe.
+ *
+ * @author Imogen Pemberton, 2026
+ */
 @Composable
 fun RecipeCardScreen(
     recipeBookViewModel: RecipeBookViewModel,
@@ -117,7 +130,7 @@ fun RecipeCardScreen(
     val keyboardFocusManager = LocalFocusManager.current
 
     if (uiState.selectedRecipe != null && uiState.selectedRecipe.id.toInt() == -1) {
-        // recipe has been deleted
+        // Recipe has been deleted:
         onBack()
     }
 
@@ -127,8 +140,8 @@ fun RecipeCardScreen(
             .verticalScroll(scrollState)
             .testTag("recipeBookColumn")
     ) {
-        val recipe = recipeBookViewModel.getRecipeById(recipeId).collectAsState(initial = null).value
-        // should constrain it to only return recipe made by that user, for security. address in a future stepping stone ^
+        val recipe =
+            recipeBookViewModel.getRecipeById(recipeId).collectAsState(initial = null).value
         if (recipe != null) {
             recipeBookViewModel.setSelectedRecipe(recipe)
             RecipeCard(recipeBookViewModel, onBack, uiState, keyboardFocusManager, onEditRecipe)
@@ -136,6 +149,12 @@ fun RecipeCardScreen(
     }
 
 }
+
+/**
+ * The individual RecipeCard, which is displayed in the RecipeCardScreen.
+ *
+ */
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -212,15 +231,18 @@ fun RecipeCard(
                                     painter = painter,
                                     contentDescription = null,
                                     modifier = Modifier
-                                        .height(320.dp - 92.dp + 64.dp + 32.dp) // total size of card - size of text bit (200 - 90) + extra for the rounded corner shape (32.dp)
-                                        .fillMaxWidth(), // 2/3 of the card height - maybe use consts for this in future to ensure they match upon changes
+                                        // total size of card - size of text bit + extra for the
+                                        // rounded corner shape
+                                        .height(320.dp - 92.dp + 64.dp + 32.dp)
+                                        .fillMaxWidth(),
                                     contentScale = ContentScale.Crop
                                 )
                             } else {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth() // matches the card width
-                                        .height(160.dp - 92.dp + 64.dp + 32.dp) // takes up much less space because no image
+                                        // takes up much less space because no image:
+                                        .height(160.dp - 92.dp + 64.dp + 32.dp)
                                         .background(colour) // put the chosen colour
                                 )
                             }
@@ -289,11 +311,15 @@ fun RecipeCard(
                                 modifier = if (displayImage) {
                                     Modifier
                                         .align(Alignment.BottomCenter)
-                                        .offset(y = (-2).dp) // offsets are added to account for the img displayed for the rounded corner shape
+                                        // offsets are added to account for the img displayed for
+                                        // the rounded corner shape:
+                                        .offset(y = (-2).dp)
                                 } else {
                                     Modifier
                                         .align(Alignment.Center)
-                                        .offset(y = (28).dp) // offsets are added to account for the bg displayed for the rounded corner shape
+                                        // offsets are added to account for the bg displayed for
+                                        // the rounded corner shape:
+                                        .offset(y = (28).dp)
                                 },
                                 style = TextStyle(
                                     shadow = Shadow(
@@ -316,16 +342,24 @@ fun RecipeCard(
                                     color = MaterialTheme.colorScheme.surfaceContainer,
                                     shape = RoundedCornerShape(16.dp)
                                 )
-                                .weight(1f), // tags takes up all remaining space, serving size takes up as much as it needs.
+                                // tags takes up all remaining space, serving size takes up as much
+                                // as it needs.
+                                .weight(1f),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
                             // indicates whether the recipe was llm generated or hand written
                             Text(
-                                text = if (recipeCard.llmGenerated) { "Generated by Gemini." } else { "Written by you." },
+                                text = if (recipeCard.llmGenerated) {
+                                    "Generated by Gemini."
+                                } else {
+                                    "Written by you."
+                                },
                                 style = MaterialTheme.typography.bodyMedium,
                                 textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth(0.95f).padding(top = 8.dp)
+                                modifier = Modifier
+                                    .fillMaxWidth(0.95f)
+                                    .padding(top = 8.dp)
                             )
                             // type of the recipe:
                             Text(
@@ -343,7 +377,7 @@ fun RecipeCard(
                         ServingSizeUpdater(recipeCard.serves, recipeBookViewModel::alterServingSize)
                     }
 
-                    HorizontalDivider(modifier = Modifier.padding(vertical=16.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
 
                     Column(
                         modifier = Modifier
@@ -362,17 +396,22 @@ fun RecipeCard(
 
                         Column(
                             modifier = Modifier
-                                .animateContentSize().fillMaxWidth().padding(vertical = 8.dp),
+                                .animateContentSize()
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             // then output the ingredients by section
                             recipeCard.sectionsWithIngredients.forEach { (section, ingredients) ->
                                 Column(
-                                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 8.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    // only output name of section if there is more than 1 section, otherwise it is irrelevant
+                                    // only output name of section if there is more than 1 section,
+                                    // otherwise it is irrelevant
                                     if (recipeCard.sectionsWithIngredients.size > 1) {
                                         Text(
                                             text = section,
@@ -399,7 +438,9 @@ fun RecipeCard(
                             }
                             NourishIconTextButton(
                                 onClick = {
-                                    recipeBookViewModel.formatIngredientsForShoppingList() // this sets it not to null, so the dialog will be triggered to display (if successful).
+                                    // this sets it not to null, so the dialog will be triggered to
+                                    // display (if successful).
+                                    recipeBookViewModel.formatIngredientsForShoppingList()
                                 },
                                 painter = painterResource(R.drawable.shopping_cart_add),
                                 description = "Add to Shopping List",
@@ -419,7 +460,8 @@ fun RecipeCard(
                                             modifier = Modifier.fillMaxHeight(0.7f)
                                         ) {
                                             Column(
-                                                modifier = Modifier.fillMaxWidth()
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
                                                     .padding(vertical = 12.dp),
                                                 horizontalAlignment = Alignment.CenterHorizontally,
                                                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -435,12 +477,16 @@ fun RecipeCard(
                                                     uiState.ingredientsToAddToShoppingList
 
                                                 LazyColumn(
-                                                    modifier = Modifier.weight(1f) // takes up as much space as possible; all other things have space then this uses up all the rest of the space.
+                                                    // takes up as much space as possible; all other
+                                                    // things have space then this uses up all the
+                                                    // rest of the space.
+                                                    modifier = Modifier.weight(1f)
                                                 ) {
                                                     itemsIndexed(ingredientsToAddToShoppingList) { i, (ingredient, selected) ->
 
                                                         Row(
-                                                            modifier = Modifier.fillMaxWidth()
+                                                            modifier = Modifier
+                                                                .fillMaxWidth()
                                                                 .padding(horizontal = 8.dp),
                                                             horizontalArrangement = Arrangement.Center,
                                                             verticalAlignment = Alignment.CenterVertically
@@ -452,9 +498,13 @@ fun RecipeCard(
                                                             var amount = ingredient.amount
                                                             var unit = ingredient.unit
 
-                                                            // convert the amounts in the UI if g and kg and >= 1000
-                                                            // only in the UI - not in the db so everything is still stored as G / ML so easy to compare and bundle together.
-                                                            if (amount >= 1000 && (unit == IngredientUnit.G || unit == IngredientUnit.ML)) {
+                                                            // convert the amounts in the UI if g
+                                                            // and kg and >= 1000
+                                                            // only in the UI - not in the db so
+                                                            // everything is still stored as G / ML
+                                                            // so easy to compare and bundle together.
+                                                            if (amount >= 1000 &&
+                                                                (unit == IngredientUnit.G || unit == IngredientUnit.ML)) {
                                                                 when (unit) {
                                                                     IngredientUnit.G -> {
                                                                         unit = IngredientUnit.KG
@@ -477,7 +527,9 @@ fun RecipeCard(
                                                                 formatIngredientAmount = recipeBookViewModel::formatIngredientAmount
                                                             )
                                                             Checkbox(
-                                                                modifier = Modifier.padding(0.dp).testTag("addIngredientCheckbox"),
+                                                                modifier = Modifier
+                                                                    .padding(0.dp)
+                                                                    .testTag("addIngredientCheckbox"),
                                                                 checked = selected,
                                                                 onCheckedChange = {
                                                                     recipeBookViewModel.alterIngredientShoppingListStatus(
@@ -489,9 +541,11 @@ fun RecipeCard(
                                                     }
                                                 }
 
+                                                // this sets it not to null, so the dialog will be
+                                                // triggered to display (if successful):
                                                 NourishIconTextButton(
                                                     onClick = {
-                                                        recipeBookViewModel.addIngredientsToShoppingList() // this sets it not to null, so the dialog will be triggered to display (if successful).
+                                                        recipeBookViewModel.addIngredientsToShoppingList()
                                                     },
                                                     painter = painterResource(R.drawable.shopping_cart_add),
                                                     description = "Add to Shopping List",
@@ -531,7 +585,9 @@ fun RecipeCard(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Checkbox(
-                                        modifier = Modifier.padding(0.dp).testTag("stepCheckbox"),
+                                        modifier = Modifier
+                                            .padding(0.dp)
+                                            .testTag("stepCheckbox"),
                                         checked = complete,
                                         onCheckedChange = {
                                             recipeBookViewModel.markStepAsComplete(
@@ -544,7 +600,6 @@ fun RecipeCard(
                                         fontSize = 18.sp,
                                         text = "Step ${i + 1}.",
                                         fontWeight = FontWeight.Bold,
-                                        //modifier = Modifier.padding(top=10.dp)
                                     )
                                 }
                                 Text(
@@ -597,7 +652,7 @@ fun RecipeCard(
                         }
                     }
 
-                    HorizontalDivider(modifier = Modifier.padding(vertical=16.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
 
                     Column(
                         modifier = Modifier
@@ -655,7 +710,8 @@ fun RecipeCard(
                             if (uiState.selectedRecipe != null) {
                                 RecipeActionButton(
                                     onClick = {
-                                        onEditRecipe(uiState.selectedRecipe.id)// edit the recipe with its id
+                                        // edit the recipe with its id:
+                                        onEditRecipe(uiState.selectedRecipe.id)
                                     },
                                     painter = painterResource(R.drawable.edit),
                                     description = "Edit Manually",
@@ -676,39 +732,6 @@ fun RecipeCard(
                                 text = "Delete Recipe",
                             )
                         }
-
-                        /*
-                        NourishIconTextButton(
-                            onClick = {
-                                recipeBookViewModel.setLlmActionType(LlmActionType.NUTRITIONAL_VALUES)
-                                recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
-                            },
-                            painter = painterResource(R.drawable.forkchart),
-                            description = "Nutritional Values",
-                            modifier = Modifier.fillMaxWidth(0.7f)
-                        )
-
-                        NourishIconTextButton(
-                            onClick = {
-                                recipeBookViewModel.setUserActionRequest("")
-                                recipeBookViewModel.setLlmActionType(LlmActionType.ALTERATION)
-                                recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
-                            },
-                            painter = painterResource(R.drawable.adjust),
-                            description = "Make an alteration",
-                            modifier = Modifier.fillMaxWidth(0.7f)
-                        )
-
-                        NourishIconTextButton(
-                            onClick = {
-                                recipeBookViewModel.setUserActionRequest("")
-                                recipeBookViewModel.setLlmActionType(LlmActionType.QUESTION)
-                                recipeBookViewModel.setActionChatStage(ActionChatStage.USER_INPUT)
-                            },
-                            painter = painterResource(R.drawable.live_question),
-                            description = "Ask a question",
-                            modifier = Modifier.fillMaxWidth(0.7f)
-                        )*/
                     }
 
                 }
@@ -730,9 +753,12 @@ fun RecipeCard(
                     }
 
                 }
-            } else if ((uiState.llmActionType == LlmActionType.ALTERATION || uiState.llmActionType == LlmActionType.QUESTION)
-                && uiState.selectedRecipe != null) {
-                // ALTERATION ACTION
+            } else if (
+                (uiState.llmActionType == LlmActionType.ALTERATION ||
+                        uiState.llmActionType == LlmActionType.QUESTION)
+                && uiState.selectedRecipe != null
+            ) {
+                // Alteration Action:
                 Dialog(
                     onDismissRequest = {
                         recipeBookViewModel.setLlmActionType(LlmActionType.NONE)
@@ -761,7 +787,7 @@ fun RecipeCard(
             }
         }
     }
-    // confirmation dialog for deletion of a recipe:
+    // Confirmation dialog for deletion of a recipe:
     NourishConfirmationDialog(
         show = uiState.deleteConfirmation,
         title = "Delete Recipe",
@@ -771,13 +797,21 @@ fun RecipeCard(
     )
 }
 
+/**
+ * Reusable Button component, with an icon, to display the actions that can be performed on Recipes.
+ * @param painter - The icon to display on the Button
+ * @param description - The text title on the Button
+ * @param onClick - The function which runs when the Button is clicked.
+ * @param testTag - Used for testing, to identify the it during testing.
+ * @modifier modifier - To assign equal weight to the buttons so they fill the screen equally
+ */
 @Composable
 fun RecipeActionButton(
     painter: Painter,
     description: String,
     onClick: () -> Unit,
-    testTag: String, // for getting the button during testing
-    modifier: Modifier = Modifier // for assigning equal weight to the buttons so they fill the screen equally
+    testTag: String,
+    modifier: Modifier = Modifier
 ) {
     Box(
         modifier = modifier
@@ -785,8 +819,8 @@ fun RecipeActionButton(
         OutlinedButton(
             onClick = onClick,
             colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.background.copy(),
-                    contentColor = MaterialTheme.colorScheme.onBackground.copy(alpha=0.90f)
+                containerColor = MaterialTheme.colorScheme.background.copy(),
+                contentColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.90f)
             ),
             modifier = Modifier.testTag(testTag)
         ) {
@@ -798,7 +832,6 @@ fun RecipeActionButton(
                 Icon(
                     painter = painter,
                     contentDescription = null,
-                    //tint = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier
                         .size(24.dp)
                 )
@@ -814,6 +847,14 @@ fun RecipeActionButton(
     }
 }
 
+/**
+ * The Dialog used to display the Query LLM action interface;
+ * this is like a chat interface where questions can be sent, and LLM response received as an answer.
+ * @param uiState - The Ui State of RecipeBook
+ * @param viewModel - The ViewModel of RecipeBook, holding logic for use here.
+ * @param recipe - The Recipe to query.
+ * @param keyboardFocusManager - The Keyboard Focus Manager.
+ */
 @Composable
 fun QueryLlmAction(
     uiState: RecipeBookUiState,
@@ -822,8 +863,12 @@ fun QueryLlmAction(
     keyboardFocusManager: FocusManager
 ) {
     Column(
-        modifier = Modifier.fillMaxWidth().navigationBarsPadding().fillMaxHeight(0.8f)
-            .padding(bottom = 12.dp).padding(horizontal = 10.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .fillMaxHeight(0.8f)
+            .padding(bottom = 12.dp)
+            .padding(horizontal = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
@@ -848,21 +893,25 @@ fun QueryLlmAction(
             val lazyListState = rememberLazyListState()
 
             LaunchedEffect(queries.size) {
-                lazyListState.animateScrollToItem(0) // scrolls to the llm message once it is received
+                lazyListState.animateScrollToItem(0) // scrolls to the llm message once received
             }
 
             LookaheadScope() {
                 LazyColumn(
-                    modifier = Modifier.fillMaxHeight(0.85f).animateBounds(this),
+                    modifier = Modifier
+                        .fillMaxHeight(0.85f)
+                        .animateBounds(this),
                     state = lazyListState,
                     reverseLayout = true // so that start at bottom of the chat
                 ) {
                     item {
                         Column(
-                            modifier = Modifier.fillMaxWidth().padding(8.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            HorizontalDivider(modifier = Modifier.padding(bottom=8.dp))
+                            HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp))
                             Text(
                                 "Please note that all answers are produced by Gemini; as such, there may be mistakes.",
                                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
@@ -877,10 +926,14 @@ fun QueryLlmAction(
                     }
                     item {
                         // the loading circle:
-                        IndeterminateCircularIndicator(uiState.llmAwaitActionType != LlmActionType.NONE) // only show if the await type is not none, as this indicates loading if not none.
+                        // only show if the await type is not none, as this indicates loading if not
+                        // none.
+                        IndeterminateCircularIndicator(uiState.llmAwaitActionType != LlmActionType.NONE)
                     }
 
-                    items(queries.reversed()) { query -> // queries have to be reversed due to the reverse layout. but still required so that start at bottom of chat.
+                    // queries have to be reversed due to the reverse layout. but still required so
+                    // that start at bottom of chat.
+                    items(queries.reversed()) { query ->
                         if (query != null) {
                             QueryDisplay(query)
                         }
@@ -890,10 +943,11 @@ fun QueryLlmAction(
 
         }
 
-        Spacer(modifier= Modifier.weight(1f))
+        Spacer(modifier = Modifier.weight(1f))
 
         AnimatedVisibility(
-            visible = uiState.llmAwaitActionType == LlmActionType.NONE // only visible if not currently awaiting an LLM response
+            // only visible if not currently awaiting an LLM response
+            visible = uiState.llmAwaitActionType == LlmActionType.NONE
         ) {
             NourishTextField(
                 value = uiState.userActionRequest,
@@ -915,6 +969,15 @@ fun QueryLlmAction(
     }
 }
 
+/**
+ * The Dialog used to display the Alteration LLM action interface;
+ * this is an interface where the user enters the alteration they wish to make, then the LLM responds
+ * with an updated recipe.
+ * @param uiState - The Ui State of RecipeBook
+ * @param viewModel - The ViewModel of RecipeBook, holding logic for use here.
+ * @param recipe - The Recipe to alter.
+ * @param keyboardFocusManager - The Keyboard Focus Manager.
+ */
 @Composable
 fun AlterationLlmAction(
     uiState: RecipeBookUiState,
@@ -923,8 +986,12 @@ fun AlterationLlmAction(
     keyboardFocusManager: FocusManager
 ) {
     Column(
-        modifier = Modifier.fillMaxWidth().navigationBarsPadding().fillMaxHeight(0.8f)
-            .padding(bottom = 12.dp).padding(horizontal = 10.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .fillMaxHeight(0.8f)
+            .padding(bottom = 12.dp)
+            .padding(horizontal = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
@@ -938,15 +1005,22 @@ fun AlterationLlmAction(
 
                 HorizontalDivider(modifier = Modifier.padding(top = 10.dp))
 
-                if (uiState.userActionRequest != "" && uiState.actionChatStage != ActionChatStage.USER_INPUT && uiState.actionChatStage != ActionChatStage.RESPONSE_RECEIVED) {
+                if (uiState.userActionRequest != "" &&
+                    uiState.actionChatStage != ActionChatStage.USER_INPUT &&
+                    uiState.actionChatStage != ActionChatStage.RESPONSE_RECEIVED) {
                     NourishTextMessage(
                         textSender = TextSender.USER,
                         modifier = Modifier.align(Alignment.End),
                         textMessage = {
                             Column(
-                                modifier = Modifier.fillMaxWidth().padding(16.dp)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
                             ) {
-                                Text("You", color = MaterialTheme.colorScheme.onBackground.copy(alpha=0.8f))
+                                Text(
+                                    "You",
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
+                                )
                                 Text(uiState.userActionRequest, modifier = Modifier.padding(8.dp))
                             }
                         }
@@ -978,14 +1052,19 @@ fun AlterationLlmAction(
                             text = "Note that the alteration is performed from the saved recipe, not the previous alteration if present.",
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth(0.95f).padding(bottom = 8.dp)
+                            modifier = Modifier
+                                .fillMaxWidth(0.95f)
+                                .padding(bottom = 8.dp)
                         )
                     }
                     HorizontalDivider(modifier = Modifier.padding(bottom = 10.dp))
                 } else {
                     HorizontalDivider(modifier = Modifier.padding(bottom = 10.dp))
                     LazyColumn(
-                        modifier = Modifier.fillMaxWidth().fillMaxHeight(0.75f).testTag("alterationColumn"),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(0.75f)
+                            .testTag("alterationColumn"),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         item {
@@ -1023,7 +1102,13 @@ fun AlterationLlmAction(
                                 )
                                 NourishButton(
                                     onClick = {
-                                        viewModel.addRecipe(uiState.alteredRecipe, alteration = true) // alteration flag ensures that ingredients get scaled correctly when parsing to the db, from the llm alteration
+                                        viewModel.addRecipe(
+                                            uiState.alteredRecipe,
+                                            // alteration flag ensures that ingredients get scaled
+                                            // correctly when parsing to the db, from the llm
+                                            // alteration:
+                                            alteration = true
+                                        )
                                         viewModel.setAlteredRecipe(null)
                                         viewModel.setLlmActionType(LlmActionType.NONE)
                                     },
@@ -1041,10 +1126,12 @@ fun AlterationLlmAction(
                         }
                         item {
                             Column(
-                                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                HorizontalDivider(modifier = Modifier.padding(bottom=8.dp))
+                                HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp))
                                 Text(
                                     "Please note that all answers are produced by Gemini; as such, there may be mistakes.",
                                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
@@ -1061,7 +1148,7 @@ fun AlterationLlmAction(
                     NourishTextDivider("Try another alteration")
                 }
 
-                Spacer(modifier= Modifier.weight(1f))
+                Spacer(modifier = Modifier.weight(1f))
 
                 AnimatedVisibility(
                     visible = uiState.llmAwaitActionType == LlmActionType.NONE
@@ -1088,6 +1175,12 @@ fun AlterationLlmAction(
     }
 }
 
+/**
+ * Reusable component to display a Nutritional value, e.g. protein, in a circle.
+ * These are all placed together to display all Nutritional values for a given recipe.
+ * @param name - The name of the nutrition, e.g. protein.
+ * @param amount - The amount of the nutrition in grams, e.g. 5.
+ */
 @Composable
 fun NutritionalFact(
     name: String,
@@ -1116,6 +1209,14 @@ fun NutritionalFact(
     }
 }
 
+/**
+ * The Dialog used to display the Nutrition LLM action interface;
+ * this is an interface where the user can choose to generate nutrition, and once generated it is
+ * displayed using the NutritionalFact composable for each.
+ * @param recipe - The Recipe to generate the nutritional values of.
+ * @param uiState - The Ui State of RecipeBook
+ * @param viewModel - The ViewModel of RecipeBook, holding logic for use here.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NutritionLlmAction(
@@ -1124,8 +1225,11 @@ fun NutritionLlmAction(
     viewModel: RecipeBookViewModel,
 ) {
     Column(
-        modifier = Modifier.fillMaxWidth().navigationBarsPadding()
-            .padding(bottom = 12.dp).padding(horizontal = 10.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(bottom = 12.dp)
+            .padding(horizontal = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -1148,12 +1252,14 @@ fun NutritionLlmAction(
                     text = "This can take some time.",
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(bottom=8.dp)
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
             }
         }
         if (nutrition == null && uiState.llmAwaitActionType == LlmActionType.NONE) {
-            viewModel.setUserActionRequest("Generate nutritional values for the provided dish in the provided JSON schema, for the given number of servings.")
+            viewModel.setUserActionRequest(
+                "Generate nutritional values for the provided dish in the provided JSON schema, for the given number of servings."
+            )
             NourishButton(
                 onClick = { viewModel.makeLlmApiCall(LlmActionType.NUTRITIONAL_VALUES) },
                 text = "Estimate Nutritional Values",
@@ -1186,7 +1292,8 @@ fun NutritionLlmAction(
                     )
 
                     LazyVerticalGrid(
-                        columns = GridCells.Adaptive(minSize = 92.dp), // size of the circles inside. should add padding inside too though
+                        // size of the circles inside. should add padding inside too though:
+                        columns = GridCells.Adaptive(minSize = 92.dp),
                         horizontalArrangement = Arrangement.spacedBy(
                             space = 10.dp,
                             alignment = Alignment.CenterHorizontally
@@ -1215,9 +1322,12 @@ fun NutritionLlmAction(
                             NutritionalFact("Salt", "${nutrition.salt}g")
                         }
                     }
-                    // fibre is separate to it is centred at the bottom, as it is the 7th element so doesn't fit into the 2x3 grid
+                    // Fibre is separate to it is centred at the bottom, as it is the 7th element
+                    // so doesn't fit into the 2x3 grid
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(top=10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 10.dp),
                         horizontalArrangement = Arrangement.Center
                     ) {
                         NutritionalFact("Fibre", "${nutrition.fibre}g")
@@ -1226,7 +1336,9 @@ fun NutritionLlmAction(
                     HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
 
                     Column(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
@@ -1246,6 +1358,10 @@ fun NutritionLlmAction(
     }
 }
 
+/**
+ * The display of a sent recipe query and its response if received.
+ * @param query - The recipe query
+ */
 @Composable
 fun QueryDisplay(
     query: RecipeQuery
@@ -1258,9 +1374,11 @@ fun QueryDisplay(
             modifier = Modifier.align(Alignment.End),
             textMessage = {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
                 ) {
-                    Text("You", color = MaterialTheme.colorScheme.onBackground.copy(alpha=0.8f))
+                    Text("You", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f))
                     Text(query.userQuestion, modifier = Modifier.padding(8.dp))
                 }
             }
@@ -1271,9 +1389,14 @@ fun QueryDisplay(
                 modifier = Modifier.align(Alignment.Start),
                 textMessage = {
                     Column(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
                     ) {
-                        Text("Gemini", color = MaterialTheme.colorScheme.onBackground.copy(alpha=0.8f))
+                        Text(
+                            "Gemini",
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
+                        )
                         Text(query.llmAnswer, modifier = Modifier.padding(8.dp))
                     }
                 }
@@ -1282,6 +1405,11 @@ fun QueryDisplay(
     }
 }
 
+/**
+ * The + - updater for serving size, displaying the current size and buttons to alter it.
+ * @param servings - The current number of servings.
+ * @param alterServingSize - Function to alter the serving size according to + or -.
+ */
 @Composable
 fun ServingSizeUpdater(
     servings: Int,
@@ -1299,13 +1427,16 @@ fun ServingSizeUpdater(
     ) {
         Row(
             modifier = Modifier
-                .padding(horizontal=8.dp).padding(top=8.dp) // for inner padding of the total item
+                .padding(horizontal = 8.dp)
+                .padding(top = 8.dp) // for inner padding of the total item
                 .animateContentSize()
         ) {
             NourishIconButton(
                 onClick = { alterServingSize(false) },
                 painter = painterResource(R.drawable.subtract),
-                modifier = Modifier.size(38.dp).testTag("decreaseServingSize"),
+                modifier = Modifier
+                    .size(38.dp)
+                    .testTag("decreaseServingSize"),
                 contentDescription = "Decrease serving size"
             )
             Column(
@@ -1325,7 +1456,9 @@ fun ServingSizeUpdater(
             NourishIconButton(
                 onClick = { alterServingSize(true) },
                 painter = painterResource(R.drawable.add),
-                modifier = Modifier.size(38.dp).testTag("increaseServingSize"),
+                modifier = Modifier
+                    .size(38.dp)
+                    .testTag("increaseServingSize"),
                 contentDescription = "Increase serving size"
             )
         }
@@ -1337,6 +1470,10 @@ fun ServingSizeUpdater(
     }
 }
 
+/**
+ * Displays the nutritional Tags present on a RecipeCard.
+ * @param tags - The Tags to display.
+ */
 @Composable
 fun RecipeCardTags(
     tags: MutableList<Pair<String, NourishColour>>

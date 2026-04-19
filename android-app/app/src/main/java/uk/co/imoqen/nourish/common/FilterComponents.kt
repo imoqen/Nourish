@@ -1,11 +1,8 @@
 package uk.co.imoqen.nourish.common
 
-import android.R.attr.clickable
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,7 +12,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -26,7 +22,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,14 +32,33 @@ import androidx.compose.ui.unit.sp
 import uk.co.imoqen.nourish.R
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.db.tag.Tag
-import uk.co.imoqen.nourish.recipebook.RecipeBookViewModel
 import uk.co.imoqen.nourish.recipebook.TagSelection
 import uk.co.imoqen.nourish.recipebook.TypeSelection
 
+/**
+ * Composable to display the tag selection options for filtering by nutritional tag. This is used
+ * in the RecipeDiscovery view and RecipeBook view, to apply the tags.
+ * @param tags - All tags for a user and whether they are selected.
+ * @param onTagPressed - Function which runs when a tag is pressed. This is optional, so null if not provided.
+ * @param displayAddButton - Whether tags should be create-able in this menu. (true in RecipeDiscovery,
+ *                           false in RecipeBook).
+ * @param onAddButtonPressed - Function which runs when the add tag button is pressed.
+ * @param displayEditButton - Whether tags should be edit-able in this menu. (true in RecipeDiscovery,
+ *                            false in RecipeBook).
+ * @param onEditButtonPressed - Function which runs when the edit tag button is pressed.
+ * @param trailingIcon - Trailing icon to display on the button, e.g. cross for deleting tag
+ * @param trailingIconDescription - Content description of the icon, used for screen readers and tests.
+ * @param onTrailingIconPress - Function which runs when the trailing icon button is pressed.
+ *                              e.g. to delete a tag.
+ * @param setTagOnTrailingIconPress - Function to set the tag when the trailing icon is pressed.
+ *                                    e.g. to set it as the tag to be deleted.
+ *
+ * @author Imogen Pemberton, 2026
+ */
 @Composable
 fun TagsDisplayForFiltering(
     tags: List<TagSelection>?,
-    onTagPressed: ((Tag, Boolean) -> Unit)? = null, // optional so that doesnt do anything when in the edit menu
+    onTagPressed: ((Tag, Boolean) -> Unit)? = null,
     displayAddButton: Boolean = false,
     onAddButtonPressed: () -> Unit = {},
     displayEditButton: Boolean = false,
@@ -54,14 +68,13 @@ fun TagsDisplayForFiltering(
     onTrailingIconPress: () -> Unit = {  },
     setTagOnTrailingIconPress: (Tag?) -> Unit = {  },
 ) {
-    //val tags = recipeBookViewModel.uiState.collectAsState().value.allTags
     FlowRow(
         modifier = Modifier.padding(2.dp),
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         tags?.forEach { (tag, selected) ->
-            // alternate colour of tag depending on dark / light mode
+            // Alternates colour of tag depending on dark / light mode
             val colour = enumValueOf<NourishColour>(tag.colour)
 
             Box(
@@ -98,7 +111,8 @@ fun TagsDisplayForFiltering(
                                 }
                             )
                             .then(
-                                if (selected && trailingIcon == null) { //dont display outline if trailing icon present (for deletion)
+                                // Don't display outline if trailing icon present (for deletion)
+                                if (selected && trailingIcon == null) {
                                     Modifier.border(
                                         width = 1.dp,
                                         color = MaterialTheme.colorScheme.onBackground,
@@ -127,14 +141,11 @@ fun TagsDisplayForFiltering(
                             modifier = Modifier
                                 .size(18.dp)
                                 .then(
-                                    //if (onTrailingIconPress != null && setTagOnTrailingIconPress != null) {
-
                                         Modifier.clickable {
-                                            // invoke is required because the methods are nullable
-                                            setTagOnTrailingIconPress(tag) // set thetag (to delete)
+                                            // Invoke is required because the methods are nullable
+                                            setTagOnTrailingIconPress(tag) // set the tag to delete
                                             onTrailingIconPress()
                                         }
-
                                 )
                                 .then(
                                     Modifier.padding(end = 2.dp)
@@ -213,13 +224,24 @@ fun TagsDisplayForFiltering(
     }
 }
 
-// used in recipe discovery
+/**
+ * Displays the Recipe Types (Breakfast, Lunch, Dinner, Dessert, Side, and Drink) such that they are
+ * mutually exclusive; only one type can be selected at once.
+ * This is used in RecipeDiscovery and RecipeCreation, to choose a recipe type to apply to the query
+ * / user-added recipe - important because only one recipe type can be selected for a dish.
+ * Note that Recipe Types are also referred to as Meal Types.
+ * @param types - All recipe types
+ * @param selectedType - The single recipe type which has been selected.
+ * @param updateSelectedType - Function which runs when the type to select should be updated.
+ * @param allowNone - Allows no recipe type to be selected. By default, the user is allowed to not
+ * enter a recipe type in RecipeDiscovery. However, not allowed for when adding recipe - it must have one.
+ */
 @Composable
 fun TypesDisplayForMutuallyExclusiveFiltering(
     types: List<RecipeType>?,
     selectedType: RecipeType?,
     updateSelectedType: (RecipeType?) -> Unit,
-    allowNone: Boolean = true // by default, allowed to not enter a recipe type. however, not allowed for when adding recipe - it must have one.
+    allowNone: Boolean = true
 ) {
     FlowRow(
         modifier = Modifier.padding(2.dp).fillMaxWidth(0.85f),
@@ -242,10 +264,10 @@ fun TypesDisplayForMutuallyExclusiveFiltering(
                         )
                         .clickable {
                             if (type == selectedType) {
-                                // deselect it: already selected.
+                                // Deselect it: already selected.
                                 updateSelectedType(null)
                             } else {
-                                // select it as its not already selected
+                                // Select it as its not already selected
                                 updateSelectedType(type)
                             }
                         }
@@ -274,7 +296,7 @@ fun TypesDisplayForMutuallyExclusiveFiltering(
         // reset button:
         if (allowNone) {
             NourishIconButton(
-                onClick = { updateSelectedType(null) }, // reset back to all types
+                onClick = { updateSelectedType(null) }, // Reset back to all types
                 painter = painterResource(R.drawable.cross),
                 modifier = Modifier.size(32.dp),
                 contentDescription = "reset"
@@ -283,6 +305,13 @@ fun TypesDisplayForMutuallyExclusiveFiltering(
     }
 }
 
+/**
+ * Composable to display all Recipe Types such that their selection does not need to be mutually
+ * exclusive; any number of Recipe Types can be selected at once. This is used in the RecipeBook
+ * to search for recipes by recipe type.
+ * @param types - All recipe types and for each, whether it is selected.
+ * @param updateSelectedType - Function to update the list of selected recipe types.
+ */
 // used in recipe book
 @Composable
 fun TypesDisplayForFiltering(
@@ -309,7 +338,7 @@ fun TypesDisplayForFiltering(
                             color = MaterialTheme.colorScheme.background
                         )
                         .clickable {
-                            updateSelectedType(type, !selected) // do the selection
+                            updateSelectedType(type, !selected) // Perform the selection
                         }
                         .then(
                             if (selected) {
@@ -336,22 +365,12 @@ fun TypesDisplayForFiltering(
     }
 }
 
-// recipe types are mutually exclusive: only one can be selected. so this is why a list isnt used
-@Composable
-fun SelectedType(
-    type: RecipeType,
-    updateSelectedType: (RecipeType) -> Unit
-) {
-    val scrollState = rememberScrollState()
-
-    Box(
-        modifier = Modifier
-            .heightIn(max = 140.dp)   // max height of 120px to match the image in the upload, this holds 3 rows of tags nicely
-            .verticalScroll(scrollState)
-    ) {
-
-    }}
-
+/**
+ * Composable to display the currently selected Tags.
+ * @param tags - All tags and for each whether they are selected or not.
+ * @param allowEdit - Whether the tags can be edited (selected / deselected) within this display.
+ * @param updateSelectedTag - If allowEdit is true, this function is used to update the selected tag.
+ */
 @Composable
 fun SelectedTags(
     tags: List<TagSelection>?,
@@ -362,7 +381,8 @@ fun SelectedTags(
 
     Box(
         modifier = Modifier
-            .heightIn(max = 140.dp)   // max height of 120px to match the image in the upload, this holds 3 rows of tags nicely
+            // Max height of 120px to match the image in the upload, this holds 3 rows of tags nicely
+            .heightIn(max = 140.dp)
             .verticalScroll(scrollState)
     ) {
         FlowRow(
@@ -376,7 +396,7 @@ fun SelectedTags(
                     enter = fadeIn(),
                     exit = fadeOut()
                 ) {
-                    // alternate colour of tag depending on dark / light mode
+                    // Alternate colour of tag depending on dark / light mode
                     val colour = enumValueOf<NourishColour>(tag.colour)
 
                     Box(
@@ -414,7 +434,7 @@ fun SelectedTags(
                                     contentDescription = "Remove Tag",
                                     modifier = Modifier
                                         .clickable {
-                                            updateSelectedTag(tag, false) // remove the tag
+                                            updateSelectedTag(tag, false) // Remove the tag
                                         }
                                         .size(18.dp)
                                         .padding(end = 2.dp),

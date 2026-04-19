@@ -9,6 +9,12 @@ import uk.co.imoqen.nourish.db.ingredient.Ingredient
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.user.User
 
+/**
+ * The ShoppingListEntry table in the Room database.
+ *
+ * @author Imogen Pemberton, 2026
+ */
+
 @Entity(
     tableName = "ShoppingListEntry",
     foreignKeys = [
@@ -16,13 +22,15 @@ import uk.co.imoqen.nourish.db.user.User
             entity = Ingredient::class,
             parentColumns = ["id"], // the primary key of Recipe
             childColumns = ["ingredientId"],
-            onDelete = ForeignKey.CASCADE // if the ingredient gets deleted, shopping list entry gets deleted. this wont be a problem, because ingredients never get deleted (unless the app gets deleted)
+            // if the corresponding Ingredient gets deleted, this shopping list entry gets deleted.
+            // this wont be a problem, because ingredients never get deleted (unless the app gets deleted)
+            onDelete = ForeignKey.CASCADE
         ),
         ForeignKey(
             entity = User::class,
             parentColumns = ["uid"], // the primary key of Recipe
             childColumns = ["purchaserUid"],
-            onDelete = ForeignKey.CASCADE // if the user gets deleted, shopping list entry gets deleted.
+            onDelete = ForeignKey.CASCADE // if the User gets deleted, this shopping list entry gets deleted.
         )
     ],
     indices = [
@@ -37,5 +45,7 @@ data class ShoppingListEntry(
     @ColumnInfo(name = "unit") val unit: IngredientUnit, // optional, not all users want to enter a unit
     @ColumnInfo(name = "amount") val amount: Double, // optional, not all users want to enter an amount
     @ColumnInfo(name = "purchased") val purchased: Boolean,
-    @ColumnInfo(name = "ordinal") val ordinal: Int // will get incremented from the current max ordinal when adding, so this represents a position in the list.
+    // will get incremented from the current max ordinal when adding, so this represents a
+    // position in the list.
+    @ColumnInfo(name = "ordinal") val ordinal: Int
 )

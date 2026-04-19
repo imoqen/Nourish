@@ -6,9 +6,15 @@ import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * The RecipeQueryDao, holding logic to perform CRUD operations on the database relating to
+ * RecipeQuery.
+ *
+ * @author Imogen Pemberton, 2026
+ */
+
 @Dao
 interface RecipeQueryDao {
-    // insert one
     @Insert
     suspend fun insert(recipeQuery: RecipeQuery): Long
 

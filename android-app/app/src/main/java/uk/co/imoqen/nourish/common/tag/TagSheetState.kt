@@ -4,6 +4,11 @@ import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.recipebook.TagSelection
 
+/**
+ * The UiState used in the Tag Sheet, for selecting, creating and deleting, tags.
+ *
+ * @author Imogen Pemberton, 2026
+ */
 data class TagSheetState (
     // Determines what part of the filter selection is shown
     val filterDisplayState: FilterState = FilterState.NONE,
@@ -26,6 +31,6 @@ data class TagSheetState (
 enum class FilterState {
     APPLY, // to apply filters to the query
     CREATE, // to add a new filter
-    EDIT, // delete filters
-    NONE // when the modal bottom sheet for filtering should not be displayed
+    EDIT, // to delete filters
+    NONE // to not display the tag sheet: modal bottom sheet is closed.
 }

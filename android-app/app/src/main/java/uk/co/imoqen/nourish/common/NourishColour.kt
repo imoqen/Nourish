@@ -1,8 +1,16 @@
 package uk.co.imoqen.nourish.common
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+
+/**
+ * Declares colours to use throughout the app; used within the tag colours and recipe background
+ * colours. These colours are also sent to the LLM, for determination of the recipe's colour if an
+ * image is not present.
+ * Support is provided for both light and dark mode; the colour types are selected appropriately.
+ *
+ * @author Imogen Pemberton, 2026
+ */
 
 enum class NourishColour() {
     RED,
@@ -16,10 +24,14 @@ enum class NourishColour() {
     BROWN
 }
 
-// mapping to colour, required because colorScheme can only be accessed from within a composable.
-// Colour:
+/**
+ * The remaining functions provide mapping to colour, required because colorScheme can only be
+ * accessed from within a composable.
+ */
+
+// Text colour in Dark Mode
 @Composable
-fun NourishColour.backgroundColour(): Color = when (this) { // used for text colour in dark mode
+fun NourishColour.backgroundColour(): Color = when (this) {
     NourishColour.RED -> Color(0xFFFFC9C9)
     NourishColour.PINK -> Color(0xFFFAC8FF)
     NourishColour.ORANGE -> Color(0xFFFFD5B8)
@@ -31,8 +43,9 @@ fun NourishColour.backgroundColour(): Color = when (this) { // used for text col
     NourishColour.BROWN -> Color(0xFFD7C1BB)
 }
 
+// Background colour in Light Mode
 @Composable
-fun NourishColour.dimmedBackgroundColour(): Color = when (this) { // used for background colour in light mode
+fun NourishColour.dimmedBackgroundColour(): Color = when (this) {
     NourishColour.RED -> Color(0xFFF8BCBC)
     NourishColour.PINK -> Color(0xFFF0BEF6)
     NourishColour.ORANGE -> Color(0xFFF3CBAE)
@@ -44,9 +57,9 @@ fun NourishColour.dimmedBackgroundColour(): Color = when (this) { // used for ba
     NourishColour.BROWN -> Color(0xFFE5CCC8)
 }
 
-// Background colour:
+// Background colour in Dark Mode and text colour in Light Mode
 @Composable
-fun NourishColour.onBackgroundColour(): Color = when (this) { // used for background colour in dark mode & text colour in ligth mode
+fun NourishColour.onBackgroundColour(): Color = when (this) {
     NourishColour.RED -> Color(0xFF3F0707)
     NourishColour.PINK -> Color(0xFF310634)
     NourishColour.ORANGE -> Color(0xFF341705)
@@ -58,6 +71,7 @@ fun NourishColour.onBackgroundColour(): Color = when (this) { // used for backgr
     NourishColour.BROWN -> Color(0xFF310E05)
 }
 
+// Colours of Recipe Cards, the same colour is used in both Light and Dark Mode.
 @Composable
 fun NourishColour.recipeColour(): Color = when (this) {
     NourishColour.RED -> Color(0xFFFFB9B9)

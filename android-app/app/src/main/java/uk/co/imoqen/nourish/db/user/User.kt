@@ -4,7 +4,13 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-// password not stored locally - only on firebase.
+/**
+ * The User table in the Room database. The password is not stored locally, only on Firebase.
+ * The purpose of the User table is to connect a user to its recipes and associated data,
+ * so that multiple users can use the app at a given time.
+ *
+ * @author Imogen Pemberton, 2026
+ */
 @Entity(tableName = "User")
 data class User(
     @PrimaryKey() val uid: String,

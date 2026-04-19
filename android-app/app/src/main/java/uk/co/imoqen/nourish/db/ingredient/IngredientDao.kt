@@ -6,8 +6,12 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
-import uk.co.imoqen.nourish.db.recipe.recipequery.RecipeQuery
 
+/**
+ * The IngredientDao, holding logic to perform CRUD operations on the database relating to Ingredient.
+ *
+ * @author Imogen Pemberton, 2026
+ */
 @Dao
 interface IngredientDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)

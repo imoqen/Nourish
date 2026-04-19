@@ -14,6 +14,8 @@ import javax.inject.Singleton
 /**
  * Module to provide Firebase dependencies.
  * These are used in the AuthenticationManager and the FirestoreManager.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @Module
 @InstallIn(SingletonComponent::class)

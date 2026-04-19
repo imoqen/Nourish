@@ -2,7 +2,6 @@ package uk.co.imoqen.nourish.recipediscovery
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import androidx.activity.compose.ManagedActivityResultLauncher
 import uk.co.imoqen.nourish.R
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -99,19 +98,21 @@ import uk.co.imoqen.nourish.recipebook.ImageCardHeader
 import uk.co.imoqen.nourish.recipebook.TagSelection
 import uk.co.imoqen.nourish.common.tag.FilterState
 import uk.co.imoqen.nourish.common.tag.RecipeTagSelection
-
 import java.io.File
 
 /**
  * View for RecipeDiscovery, where LLM calls can be made and recipes thus generated.
  * @param viewModel - the view model holding methods and state for use in the view.
+ *
+ * @author Imogen Pemberton, 2026
  */
 @Composable
 fun RecipeDiscoveryScreen(
     viewModel: RecipeDiscoveryViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val keyboardFocusManager = LocalFocusManager.current // To close the keyboard once user submits input
+    // To close the keyboard once user submits input:
+    val keyboardFocusManager = LocalFocusManager.current
 
     // for scrolling to bottom of the chat
     val scope = rememberCoroutineScope()
@@ -139,7 +140,6 @@ fun RecipeDiscoveryScreen(
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -147,7 +147,7 @@ fun RecipeDiscoveryScreen(
                     LazyColumn(
                         state = listState,
                         contentPadding = PaddingValues(bottom = 8.dp),
-                        modifier = Modifier.testTag("recipeDiscoveryLazyColumn") // for identification in tests
+                        modifier = Modifier.testTag("recipeDiscoveryLazyColumn") // test identification
                     ) {
                         item {
                             InitialMessage(viewModel, uiState)
@@ -172,8 +172,9 @@ fun RecipeDiscoveryScreen(
                         }
                         item {
                             // any time after user has sent their request, they can choose to restart
-                            // just not if awaiting response as would then be messed up as response would be received afterwards
-                            // so check that the ordinal of the current stage is AFTER the ordinal of the awaiting response stage.
+                            // just not if awaiting response as would then be messed up as response
+                            // would be received afterwards so check that the ordinal of the current
+                            // stage is AFTER the ordinal of the awaiting response stage.
                             if (uiState.llmChatStage.ordinal > LlmChatStage.AWAITING_LLM_RESPONSE.ordinal) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
@@ -218,8 +219,7 @@ fun RecipeDiscoveryScreen(
         }
     }
 
-
-    // Image expansion dialog overlay:
+    // Image expansion Dialog overlay:
     if (uiState.displayImage) {
         Dialog(
             onDismissRequest = { viewModel.setDisplayImage(false) },
@@ -229,34 +229,31 @@ fun RecipeDiscoveryScreen(
                 modifier = Modifier.fillMaxSize()
             ) {
 
-                // display the higher quality image
+                // Display the higher quality image
                 if (uiState.savedImageMipmap.highQualityFilename != "") {
                     val context = LocalContext.current
                     val imageFile = File(context.filesDir, uiState.savedImageMipmap.highQualityFilename)
                     if (imageFile.exists()) {
-                        //Use Coil to display the selected image
+                        // Use Coil to display the selected image:
                         val painter = rememberAsyncImagePainter(
                             ImageRequest
                                 .Builder(LocalContext.current)
                                 .data(imageFile)
                                 .build()
                         )
-
                         Box(
                             modifier = Modifier
                                 .fillMaxSize(0.9f)
                                 .align(Alignment.Center)
-                                //.clipToBounds()
                         ) {
                             Image(
                                 painter = painter,
                                 contentDescription = null,
-
-                                // scale down the height of it
-                                contentScale = ContentScale.Fit, // fits rather than scaels
+                                // scale down the height of it:
+                                contentScale = ContentScale.Fit, // fits rather than scales
                                 modifier = Modifier.fillMaxSize()
                             )
-                            // close button
+                            // Close button:
                             NourishIconButton(
                                 onClick = { viewModel.setDisplayImage(false) },
                                 painter = painterResource(R.drawable.collapse),
@@ -275,7 +272,12 @@ fun RecipeDiscoveryScreen(
     }
 }
 
-// smooth transition between states when restarting: fades out and then back in via animatedvisibility
+/**
+ * Function to create a smooth transition between states when restarting: fades out and then back
+ * in, via AnimatedVisibility
+ * @param viewModel - The ViewModel of RecipeDiscovery, holding logic required to alter the view.
+ * @param scope - CoroutineScope for 500ms delay.
+ */
 fun restart(
     viewModel: RecipeDiscoveryViewModel,
     scope: CoroutineScope
@@ -288,11 +290,16 @@ fun restart(
     }
 }
 
+/**
+ * The text message to display from the user, with the dish they have chosen.
+ * This is used after an image / ingredients have been sent and possible recipes generated.
+ * @param uiState - The Ui State displayed in the view.
+ */
 @Composable
 fun UserDishChoice(
     uiState: RecipeDiscoveryUiState,
 ) {
-    // only display this bit if they have chosen a dish; that is, any mode which is not FROM DESCRIPTION.
+    // only display this bit if they have chosen a dish; that is, any mode which is not from description.
     if (uiState.chosenDish != "" && uiState.userChoice != LlmMode.FROM_DESCRIPTION) {
         Column( // column for the top contents
             modifier = Modifier.fillMaxWidth()
@@ -320,6 +327,13 @@ fun UserDishChoice(
     }
 }
 
+/**
+ * The user request text message, depicting the dish they wish to cook, meal type, and chosen
+ * nutritional tags.
+ * @param viewModel - The ViewModel of RecipeDiscovery, holding logic required to alter the view.
+ * @param uiState - The Ui State displayed in the view.
+ * @param context - The Context, required to display an image if uploaded.
+ */
 @Composable
 fun UserRequest(
     viewModel: RecipeDiscoveryViewModel,
@@ -380,6 +394,11 @@ fun UserRequest(
     }
 }
 
+/**
+ * The individual parts to the UserRequest; name, meal type, and tags.
+ * @param fillMaxWidth - Boolean reflecting whether the part should fill the max width of the request
+ * @param content - Content within the individual part.
+ */
 @Composable
 fun NourishUserRequestComponent(
     fillMaxWidth: Boolean = true,
@@ -404,13 +423,17 @@ fun NourishUserRequestComponent(
     }
 }
 
-// always displayed
+/**
+ * The initial message, to explain to the user how to use the LLM interface. This is always displayed.
+ * @param viewModel - The ViewModel of RecipeDiscovery, holding logic required to alter the view.
+ * @param uiState - The Ui State displayed in the view.
+ */
 @Composable
 fun InitialMessage(
     viewModel: RecipeDiscoveryViewModel,
     uiState: RecipeDiscoveryUiState,
 ) {
-    Column( // column for the top contents
+    Column(
         modifier = Modifier.fillMaxWidth()
     ) {
         NourishTextMessage(
@@ -443,7 +466,9 @@ fun InitialMessage(
                 )
 
                 NourishIconTextButton(
-                    enabled = (uiState.llmChatStage.ordinal <= LlmChatStage.USER_INPUT.ordinal), // only enabled if user hasnt yet sent a request  - so if in any state before they have sent it.
+                    // only enabled if user hasn't yet sent a request  - so if in any state before
+                    // they have sent it.
+                    enabled = (uiState.llmChatStage.ordinal <= LlmChatStage.USER_INPUT.ordinal),
                     onClick = {
                         viewModel.updateToInputStageGivenOptions(
                             LlmMode.FROM_DESCRIPTION, "Enter dish or description", LlmRequestType.RECIPE
@@ -459,7 +484,8 @@ fun InitialMessage(
                 )
 
                 NourishIconTextButton(
-                    enabled = (uiState.llmChatStage.ordinal <= LlmChatStage.USER_INPUT.ordinal), // only enabled if user hasnt yet sent a request
+                    // only enabled if user hasn't yet sent a request.
+                    enabled = (uiState.llmChatStage.ordinal <= LlmChatStage.USER_INPUT.ordinal),
                     onClick = {
                         viewModel.updateToInputStageGivenOptions(
                             LlmMode.FROM_IMAGE, "Enter optional details", LlmRequestType.DISHES_FROM_IMAGE
@@ -475,7 +501,8 @@ fun InitialMessage(
                 )
 
                 NourishIconTextButton(
-                    enabled = (uiState.llmChatStage.ordinal <= LlmChatStage.USER_INPUT.ordinal), // only enabled if user hasnt yet sent a request
+                    // only enabled if user hasn't yet sent a request.
+                    enabled = (uiState.llmChatStage.ordinal <= LlmChatStage.USER_INPUT.ordinal),
                     onClick = {
                         viewModel.updateToInputStageGivenOptions(
                             LlmMode.FROM_INGREDIENTS, "Enter ingredients", LlmRequestType.DISHES_FROM_INGREDIENTS
@@ -495,107 +522,115 @@ fun InitialMessage(
     }
 }
 
+/**
+ * Displays the information upon the recipe generation type being selected.
+ * @param uiState - The Ui State displayed in the view.
+ */
 @Composable
 fun RecipeGenerationInfo(
     uiState: RecipeDiscoveryUiState
 ) {
     Column() {
-        //if (uiState.userChoice != null) {
-            AnimatedContent(
-                targetState = uiState.userChoice
-            ) { state ->
-                when (state) {
-                    LlmMode.FROM_DESCRIPTION -> {
-                        NourishTextMessage(
-                            textSender = TextSender.LLM,
-                            modifier = Modifier.align(Alignment.Start)
+        AnimatedContent(
+            targetState = uiState.userChoice
+        ) { state ->
+            when (state) {
+                LlmMode.FROM_DESCRIPTION -> {
+                    NourishTextMessage(
+                        textSender = TextSender.LLM,
+                        modifier = Modifier.align(Alignment.Start)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .fillMaxWidth()
                         ) {
-                            Column(
-                                modifier = Modifier
-                                    .padding(8.dp)
-                                    .fillMaxWidth()
-                            ) {
-                                NourishH4(
-                                    text = "Enter the name or description of a dish.",
-                                    modifier = Modifier.padding(8.dp)
-                                )
-                                NourishTextDivider("Tip")
+                            NourishH4(
+                                text = "Enter the name or description of a dish.",
+                                modifier = Modifier.padding(8.dp)
+                            )
+                            NourishTextDivider("Tip")
 
-                                Text(
-                                    text = "The dish does not need to be precise; for example, you can enter 'something sweet but healthy ...'",
-                                    modifier = Modifier.padding(bottom = 8.dp),
-                                    textAlign = TextAlign.Center
-                                )
-                            }
+                            Text(
+                                text = "The dish does not need to be precise; for example, you can enter 'something sweet but healthy ...'",
+                                modifier = Modifier.padding(bottom = 8.dp),
+                                textAlign = TextAlign.Center
+                            )
                         }
-                    }
-
-                    LlmMode.FROM_IMAGE -> {
-                        NourishTextMessage(
-                            textSender = TextSender.LLM,
-                            modifier = Modifier.align(Alignment.Start)
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .padding(8.dp)
-                                    .fillMaxWidth()
-                            ) {
-                                NourishH4(
-                                    text = "Upload the image of the dish.",
-                                    modifier = Modifier
-                                        .padding(top = 8.dp)
-                                        .fillMaxWidth()
-                                )
-
-                                NourishTextDivider("Tip")
-
-                                Text(
-                                    text = "You can also provide further information as text, if you wish.",
-                                    modifier = Modifier.padding(bottom = 8.dp),
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                        }
-                    }
-
-                    LlmMode.FROM_INGREDIENTS -> {
-                        NourishTextMessage(
-                            textSender = TextSender.LLM,
-                            modifier = Modifier.align(Alignment.Start)
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .padding(8.dp)
-                                    .fillMaxWidth()
-                            ) {
-                                NourishH4(
-                                    text = "List your ingredients below, or upload an image of them.",
-                                    modifier = Modifier
-                                        .padding(top = 8.dp)
-                                        .fillMaxWidth()
-                                )
-
-                                NourishTextDivider("Tip")
-
-                                Text(
-                                    text = "Try uploading an image of the contents of your fridge!",
-                                    modifier = Modifier.padding(bottom = 8.dp),
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-
-                        }
-                    }
-
-                    null -> {
-                        // never reached, this is for before the user clicks the option so nothing will be displayed.
                     }
                 }
+
+                LlmMode.FROM_IMAGE -> {
+                    NourishTextMessage(
+                        textSender = TextSender.LLM,
+                        modifier = Modifier.align(Alignment.Start)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .fillMaxWidth()
+                        ) {
+                            NourishH4(
+                                text = "Upload the image of the dish.",
+                                modifier = Modifier
+                                    .padding(top = 8.dp)
+                                    .fillMaxWidth()
+                            )
+
+                            NourishTextDivider("Tip")
+
+                            Text(
+                                text = "You can also provide further information as text, if you wish.",
+                                modifier = Modifier.padding(bottom = 8.dp),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+
+                LlmMode.FROM_INGREDIENTS -> {
+                    NourishTextMessage(
+                        textSender = TextSender.LLM,
+                        modifier = Modifier.align(Alignment.Start)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .fillMaxWidth()
+                        ) {
+                            NourishH4(
+                                text = "List your ingredients below, or upload an image of them.",
+                                modifier = Modifier
+                                    .padding(top = 8.dp)
+                                    .fillMaxWidth()
+                            )
+
+                            NourishTextDivider("Tip")
+
+                            Text(
+                                text = "Try uploading an image of the contents of your fridge!",
+                                modifier = Modifier.padding(bottom = 8.dp),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+
+                    }
+                }
+                null -> {
+                    // Never reached, this is for before the user clicks the option so nothing will
+                    // be displayed.
+                }
             }
-        //}
+        }
     }
 }
 
+/**
+ * Outputs the result of the 4x dishes proposed by the LLM, in a list consisting of 4
+ * clickable buttons.
+ * @param viewModel - The ViewModel of RecipeDiscovery, holding logic required to alter the view.
+ * @param uiState - The Ui State displayed in the view.
+ */
 @Composable
 fun RecipeDishProposalGenerationResult(
     viewModel: RecipeDiscoveryViewModel,
@@ -645,7 +680,8 @@ fun RecipeDishProposalGenerationResult(
                                     )
                                 },
                                 text = dish,
-                                enabled = (uiState.chosenDish == "") // only enabled if user has not yet chosen the dish.
+                                // only enabled if user has not yet chosen the dish:
+                                enabled = (uiState.chosenDish == "")
                             )
                         }
                     }
@@ -665,31 +701,40 @@ fun RecipeDishProposalGenerationResult(
     }
 }
 
+/**
+ * Outputs the result of the generated recipe.
+ * @param viewModel - The ViewModel of RecipeDiscovery, holding logic required to alter the view.
+ * @param uiState - The Ui State displayed in the view.
+ */
 @Composable
 fun RecipeGenerationResult(
     viewModel: RecipeDiscoveryViewModel,
     uiState: RecipeDiscoveryUiState
 ) {
-    Column( // column for the top contents
+    Column( // Column for the top contents
         modifier = Modifier.fillMaxWidth()
     ) {
         NourishTextMessage(
             textSender = TextSender.LLM,
             modifier = Modifier.align(Alignment.Start)
         ) {
-
             // Outputs the response, or error if occurred.
             if (uiState.llmGeneratedRecipe != null) {
                 GeneratedRecipe(viewModel, uiState, uiState.llmGeneratedRecipe)
             }
         }
     }
-
-    // the loading circle:
+    // The loading circle:
     IndeterminateCircularIndicator(uiState.llmChatStage == LlmChatStage.AWAITING_LLM_RESPONSE)
-
 }
 
+/**
+ * The generated recipe, outputted in RecipeGenerationResult, with actions to save the Recipe or
+ * generate a new one.
+ * @param viewModel - The ViewModel of RecipeDiscovery, holding logic required to alter the view.
+ * @param uiState - The Ui State displayed in the view.
+ * @param recipe - The generated LlmRecipe.
+ */
 @Composable
 fun GeneratedRecipe(
     viewModel: RecipeDiscoveryViewModel,
@@ -744,6 +789,16 @@ fun GeneratedRecipe(
     }
 }
 
+/**
+ * The preview of the LLM-generated Recipe, before saved to the RecipeCard.
+ * @param recipe - The generated LlmRecipe.
+ * @param formatIngredientText - Function to format the text of an Ingredient.
+ * @param imageFilename - The filename of the image attached to the RecipeCard.
+ * @param context - The Context, used to display the image.
+ * @param tags - The list of Tags attached to this recipe.
+ * @param alteredRecipe - Boolean reflecting whether this is a recipe alteration, or a freshly
+ *                        generated recipe.
+ */
 @Composable
 fun RecipeCardPreview(
     recipe: LlmRecipe,
@@ -787,8 +842,12 @@ fun RecipeCardPreview(
                     }
                     ingredientSection.ingredients.forEach { ingredient ->
                         val ingredientText = if (alteredRecipe) {
-                            // scale the ingredient if it is an alteration, because it is returned for 1 sevring unlike others which return for the actual number of servings.
-                            formatIngredientText(ingredient.copy(ingredientAmount = ingredient.ingredientAmount * recipe.servings))
+                            // scale the ingredient if it is an alteration, because it is returned
+                            // for 1 serving unlike others which return for the actual number of
+                            // servings.
+                            formatIngredientText(ingredient.copy(
+                                ingredientAmount = ingredient.ingredientAmount * recipe.servings
+                            ))
                         } else {
                             formatIngredientText(ingredient)
                         }
@@ -821,7 +880,9 @@ fun RecipeCardPreview(
             ) {
                 Column(
                     modifier = Modifier
-                        .height(200.dp) // constrain height so it doesnt take over so much when the method because method is long
+                        // constrain height so it doesn't take over so much when the method,
+                        // because method is long
+                        .height(200.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
                     recipe.method.forEachIndexed { i, step ->
@@ -854,7 +915,7 @@ fun RecipeCardPreview(
                     }
                 }
             }
-            // shadow to signify that the method box is scrollable
+            // Shadow to signify that the method box is scrollable:
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -891,6 +952,14 @@ fun RecipeCardPreview(
     }
 }
 
+/**
+ * Function to call the view model's API call function, to generate a recipe when a dish is chosen
+ * @param dish - The dish which has been selected, to generate a recipe of.
+ * @param viewModel - The ViewModel of RecipeDiscovery, holding logic required to alter the view.
+ * @param uiState - The Ui State displayed in the view.
+ * @param context - The Context, required to display an image if uploaded.
+ * @param dishes - The 4x Dishes which were proposed by the LLM, which the user selected one of.
+ */
 fun generateRecipeFromChosenDish(
     dish: String,
     viewModel: RecipeDiscoveryViewModel,
@@ -903,11 +972,11 @@ fun generateRecipeFromChosenDish(
     if (dishes.ingredientsIdentified != null) {
         viewModel.setChosenDish(dish + "\n\nUsing ingredients: ${dishes.ingredientsIdentified}")
     } else if (uiState.userRequest != "" ){
-        viewModel.setChosenDish(dish + "\n\nFurther details: ${uiState.userRequest}") // if the user added further details
+        // if the user added further details
+        viewModel.setChosenDish(dish + "\n\nFurther details: ${uiState.userRequest}")
     } else {
         viewModel.setChosenDish(dish) // otherwise, the prompt is just the dish
     }
-
     // Make the LLM API call depending on whether an image or ingredients were included
     // lower quality image is sent to llm rather than high quality; mipmapping
     if (uiState.savedImageMipmap.lowQualityFilename == "") {
@@ -923,6 +992,13 @@ fun generateRecipeFromChosenDish(
     }
 }
 
+/**
+ * The user input textbox section, placed at the bottom of the screen, where the user can enter the
+ * dish, select nutritional tags, choose a dish type, and upload an image.
+ * @param viewModel - The ViewModel of RecipeDiscovery, holding logic required to alter the view.
+ * @param uiState - The Ui State displayed in the view.
+ * @param keyboardFocusManager - The keyboard focus manager.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserInputSection(
@@ -930,9 +1006,6 @@ fun UserInputSection(
     uiState: RecipeDiscoveryUiState,
     keyboardFocusManager: FocusManager
 ) {
-    // BOTTOM OF SCREEN: box for textbox user input
-    // if image is uploaded, change request type for the ingredient case
-
     val context = LocalContext.current
     // Photo picker: https://developer.android.com/training/data-storage/shared/photo-picker#compose
     // Registers a photo picker activity launcher in single-select mode.
@@ -953,16 +1026,16 @@ fun UserInputSection(
                 MaterialTheme.colorScheme.surfaceContainer
             )
     ) {
-
         Row(
             horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.Bottom, // push everything to bottom, particularly for nutriitonal filters button
+            // push everything to bottom, particularly for nutritional filters button:
+            verticalAlignment = Alignment.Bottom,
             modifier = Modifier
                 .padding(horizontal = 6.dp)
                 .padding(top = 12.dp) // extra to make distance between text input box and top of box
                 .fillMaxWidth()
         ) {
-            // FILTER SELECTOR: only display if at least one tag has been selected
+            // Filter Selector: only display if at least one tag has been selected
             Box(
                 modifier = Modifier
                     .fillMaxWidth(
@@ -981,7 +1054,10 @@ fun UserInputSection(
                     .animateContentSize()
             ) {
                 Column() {
-                    val filtersSelected = uiState.tagSheetState.recipeTags != null && uiState.tagSheetState.recipeTags.any { it.selected }
+                    val filtersSelected = uiState.tagSheetState.recipeTags != null && uiState.tagSheetState.recipeTags.any {
+                        it.selected
+                    }
+
                     // Selected dish type:
                     Row(
                         horizontalArrangement = Arrangement.Center,
@@ -994,7 +1070,8 @@ fun UserInputSection(
                                     shape = RoundedCornerShape(12.dp),
                                     color = MaterialTheme.colorScheme.surfaceContainer
                                 )
-                                .clip(RoundedCornerShape(12.dp)) // clip stops the clickable element from exceeding the rounded corner shape
+                                // Clip stops the clickable element from exceeding the rounded corner shape
+                                .clip(RoundedCornerShape(12.dp))
                                 .clickable {
                                     viewModel.setDisplayRecipeTypeSelector(true)
                                 }
@@ -1022,7 +1099,8 @@ fun UserInputSection(
                     }
 
                     // Selected tags:
-                    if (filtersSelected) { // only display if at least one has been selected, not if all unselected
+                    // only display if at least one has been selected, not if all unselected
+                    if (filtersSelected) {
                         SelectedTags(
                             tags = uiState.tagSheetState.recipeTags,
                             allowEdit = true,
@@ -1034,7 +1112,8 @@ fun UserInputSection(
 
 
             val nutritionalTagSheetState = rememberModalBottomSheetState(
-                skipPartiallyExpanded = true // makes it fill the screen with the required amount rather than stuck at half the screen size
+                // fill the screen with the required amount rather than stuck at half screen size
+                skipPartiallyExpanded = true
             )
             if (uiState.tagSheetState.filterDisplayState != FilterState.NONE) {
                 RecipeTagSelection(
@@ -1045,7 +1124,8 @@ fun UserInputSection(
             }
 
             val recipeTypeSheetState = rememberModalBottomSheetState(
-                skipPartiallyExpanded = true // makes it fill the screen with the required amount rather than stuck at half the screen size
+                // fill the screen with the required amount rather than stuck at half screen size
+                skipPartiallyExpanded = true
             )
 
             if (uiState.displayRecipeTypeSelector) {
@@ -1082,8 +1162,9 @@ fun UserInputSection(
                 }
             }
 
-            // IMAGE SELECTOR:
-            // push the image to always be on the right side (end of the row). allow user to edit and del them
+            // Image selector:
+            // push the image to always be on the right side (end of the row).
+            // allow user to edit and delete them.
             Spacer(modifier = Modifier.weight(1f))
             UserUploadedImage(viewModel, uiState, context, pickMedia,
                 allowEdit = true,
@@ -1106,8 +1187,11 @@ fun UserInputSection(
                     placeholder = uiState.placeholderText,
                     onDone = { keyboardFocusManager.clearFocus() },
                     modifier =
-                        // make the search bar fill the max width if: in from_description mode (cannot upload image), or an image has been uploaded (so cannot upload another)
-                        if (uiState.userChoice == LlmMode.FROM_DESCRIPTION || uiState.savedImageMipmap != Mipmap("","")) {
+                        // make the search bar fill the max width if: in from_description mode
+                        // (cannot upload image), or an image has been uploaded
+                        // (so cannot upload another)
+                        if (uiState.userChoice == LlmMode.FROM_DESCRIPTION ||
+                            uiState.savedImageMipmap != Mipmap("","")) {
                             Modifier.fillMaxWidth()
                         } // only leaves space for cam if needed
                         else {
@@ -1115,7 +1199,8 @@ fun UserInputSection(
                         }
                             .then(Modifier.padding(4.dp))
                             .animateBounds(this),
-                    leadingIcon = ImageVector.vectorResource(R.drawable.filter_icon), // converts painterresource to imagevector. in future should move to all painterresource approach - recommended by google.
+                    // converts painterResource to imageVector for backwards compatibility.
+                    leadingIcon = ImageVector.vectorResource(R.drawable.filter_icon),
                     onLeadingIconPress = {
                         viewModel.setFilterDisplayState(FilterState.APPLY) // back to apply filter menu
                     },
@@ -1147,6 +1232,15 @@ fun UserInputSection(
 
 }
 
+/**
+ * Displays the image uploaded by a user.
+ * @param viewModel - The ViewModel of RecipeDiscovery, holding logic required to alter the view.
+ * @param uiState - The Ui State displayed in the view.
+ * @param context - The context, to display the image.
+ * @param pickMedia - Used to open the Android Photo Picker.
+ * @param allowEdit - Boolean reflecting whether the user is allowed to edit (change) the uploaded image.
+ * @param allowDelete - Boolean reflecting whether the user is allowed to delete the uploaded image.
+ */
 @Composable
 fun UserUploadedImage(
     viewModel: RecipeDiscoveryViewModel,
@@ -1224,8 +1318,11 @@ fun UserUploadedImage(
                         NourishIconButton(
                             onClick = {
                                 imageFile.delete(); // deletes higher quality image
-                                // also delete lower quality image if it exists
-                                val lowQualityImageFile = File(context.filesDir, mipmapImageFilenames.lowQualityFilename)
+                                // also delete lower quality image if it exists:
+                                val lowQualityImageFile = File(
+                                    context.filesDir,
+                                    mipmapImageFilenames.lowQualityFilename
+                                )
                                 if (lowQualityImageFile.exists()) {
                                     lowQualityImageFile.delete()
                                 }
@@ -1253,7 +1350,13 @@ fun UserUploadedImage(
     }
 }
 
-// generates the recipe based on user input: makes the llm api call
+/**
+ * Function to send the request to the LLM, generating the recipe based on user input.
+ * This is done by calling the ViewModel's API call function.
+ * @param viewModel - The ViewModel of RecipeDiscovery, holding logic required to alter the view.
+ * @param uiState - The Ui State displayed in the view.
+ * @param context - The context, to display the image.
+ */
 fun sendToLlm(
     uiState: RecipeDiscoveryUiState,
     viewModel: RecipeDiscoveryViewModel,
@@ -1262,26 +1365,26 @@ fun sendToLlm(
     var validRequest = false
     val lowQualityFilename = uiState.savedImageMipmap.lowQualityFilename
 
-    if (lowQualityFilename == "" && uiState.requestType == LlmRequestType.RECIPE && uiState.userRequest != "") {
+    // Generate recipe from name of dish / description:
+    if (lowQualityFilename == "" &&
+        uiState.requestType == LlmRequestType.RECIPE &&
+        uiState.userRequest != "") {
         // generate recipe from text
         viewModel.makeLlmApiCall(uiState.requestType) // make llm call
         validRequest = true
-        // then as the data has been sent and not needed anymore (as recipe generated), can delete the compressed image (low quality image file): as only need high quality after this.
-        /*val lowQualityImageFile = File(context.filesDir, lowQualityFilename)
-        if (lowQualityImageFile.exists()) {
-            lowQualityImageFile.delete()
-            // note that the compressed image can only be deleted here, not after dish generation etc as it will be reused when sending to the llm to generate the chosen recipe. so this is the only safe place to delete it.
-        }*/
     }
 
-    // generate potential dishes from ingredients list:
-    else if (lowQualityFilename == "" && uiState.requestType == LlmRequestType.DISHES_FROM_INGREDIENTS && uiState.userRequest != "") {
+    // Generate potential dishes from ingredients list:
+    else if (lowQualityFilename == "" &&
+        uiState.requestType == LlmRequestType.DISHES_FROM_INGREDIENTS &&
+        uiState.userRequest != "") {
         viewModel.makeLlmApiCall(uiState.requestType)
         validRequest = true
     }
 
-    // generate potential dishes from image of ingredients, e.g. image of contents of a fridge:
-    else if (lowQualityFilename != "" && uiState.requestType == LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE) {
+    // Generate potential dishes from image of ingredients, e.g. image of contents of a fridge:
+    else if (lowQualityFilename != "" &&
+        uiState.requestType == LlmRequestType.DISHES_FROM_INGREDIENTS_IMAGE) {
         viewModel.makeLlmApiCall(
             uiState.requestType,
             lowQualityFilename,
@@ -1290,9 +1393,8 @@ fun sendToLlm(
         validRequest = true
     }
 
-    // generate potential dishes from an image of a dish, e.g. image of pasta:
+    // Generate potential dishes from an image of a dish, e.g. image of pasta:
     else if (lowQualityFilename != "" && uiState.requestType == LlmRequestType.DISHES_FROM_IMAGE) {
-        // generate recipe from image
         viewModel.makeLlmApiCall(
             uiState.requestType,
             lowQualityFilename,
@@ -1301,15 +1403,13 @@ fun sendToLlm(
         validRequest = true
     }
 
+    // Error: user did not input anything.
     else {
         viewModel.displayBlankInputError(uiState.requestType)
     }
 
     if (validRequest) {
-        // update the chosen dish with the user's request, so that the user request can remain when the dish is chosen and the correct val thus sent to the llm
-        //viewModel.setChosenDish(uiState.userRequest)
-        // then reset the ui state, as data has been sent and was valid
+        // Reset the ui state, as data has been sent and was valid
         viewModel.setLlmChatStage(LlmChatStage.AWAITING_LLM_RESPONSE)
     }
-
 }

@@ -12,22 +12,35 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import uk.co.imoqen.nourish.common.RecipeActions
 import uk.co.imoqen.nourish.common.ingredient.IngredientSheetAction
-import uk.co.imoqen.nourish.common.tag.TagSheetAction
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
 import uk.co.imoqen.nourish.db.NourishDatabase
 import uk.co.imoqen.nourish.db.ingredient.Ingredient
 import uk.co.imoqen.nourish.db.ingredient.IngredientRepository
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
-import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.shoppinglistentry.ShoppingListEntryRepository
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 import uk.co.imoqen.nourish.recipebook.ShoppingListIngredient
 import javax.inject.Inject
 
+/**
+ * ViewModel for ShoppingList.
+ * Logic for obtaining a user's ShoppingList ingredients, editing, reordering, adding, and
+ * deleting them
+ * @param db - The in-app local database. Not directly accessed, but required for transactional
+ *             functions.
+ * @param authenticationManager - The AuthenticationManager to get the user's uid.
+ * @param uiEventBus - The UiEventBus to display alerts / Snackbar messages.
+ * @param recipeActions - The Auxiliary class RecipeActions to access and use these common Recipe actions.
+ * @param shoppingListEntryRepository - The ShoppingListEntry Repository, to access the ShoppingList
+ *                                      db table.
+ * @param ingredientRepository - The Ingredient Repository, to access the Ingredient db table.
+ *
+ * @author Imogen Pemberton, 2026
+ */
 @HiltViewModel
 class ShoppingListViewModel @Inject constructor(
-    private val db: NourishDatabase, //TODO add back the db and work out how to mock this in a test. or if better way than passing db directly into view model.
+    private val db: NourishDatabase,
     private val authenticationManager: AuthenticationManager,
     private val uiEventBus: UiEventBus,
     private val recipeActions: RecipeActions,
@@ -169,7 +182,10 @@ class ShoppingListViewModel @Inject constructor(
         }
     }
 
-    // deletes every shopping list item of that user, or only the purchased ones if specified.
+    /**
+     * Deletes every shopping list item of that user, or only the purchased ones if specified.
+     * @param onlyDeletePurchased - If true, only deletes the purchased items. Otherwise all.
+     */
     fun clearShoppingList(
         onlyDeletePurchased: Boolean = false
     ) {
@@ -186,29 +202,41 @@ class ShoppingListViewModel @Inject constructor(
                 }
             }
                 .onSuccess {
-                   // now update in the UI:
+                   // Now update in the UI:
                     populateShoppingList()
                 }
         }
     }
 
-    fun updatePurchasedState(index: Int, newItem: ShoppingListUiEntry) {
+    /**
+     * "Checks off" the item, updating its purchased state to be true (or false if tapped when the
+     * item is already checked off.
+     * @param index - The index of the item in the shopping list list.
+     * @param newItem - The shopping list entry with its updated purchased state.
+     */
+    fun updatePurchasedState(
+        index: Int,
+        newItem: ShoppingListUiEntry
+    ) {
         viewModelScope.launch() {
             runCatching {
-                // first, update the DB:
+                // First, update the DB:
                 shoppingListEntryRepository.updatePurchaseStatus(newItem.id, newItem.purchased)
             }
                 .onSuccess {
-                    // if the DB update was successful, update the UI
+                    // If the DB update was successful, update the UI
                     val updatedList = mutableUiState.value.shoppingListEntries.toMutableList().apply {
                         this[index] = newItem
                     }
-                    // update the ui state:
+                    // Update the ui state:
                     setShoppingListEntries(updatedList)
                 }
         }
     }
 
+    /**
+     * Populates the shopping list with shopping list items.
+     */
     fun populateShoppingList() {
         viewModelScope.launch() {
             runCatching {
@@ -217,7 +245,7 @@ class ShoppingListViewModel @Inject constructor(
                     return@launch
                 }
 
-                val shoppingListEntries = shoppingListEntryRepository.getAll(uid).first() // gets them sorted
+                val shoppingListEntries = shoppingListEntryRepository.getAll(uid).first()
 
                 // required for the ui, to get the ingredients for each from the ingredient id.
                 val shoppingListUiEntries: MutableList<ShoppingListUiEntry> = mutableListOf()
@@ -227,7 +255,8 @@ class ShoppingListViewModel @Inject constructor(
                     var unit = shoppingListEntry.unit
 
                     // convert the amounts in the UI if g and kg and >= 1000
-                    // only in the UI - not in the db so everything is still stored as G / ML so easy to compare and bundle together.
+                    // only in the UI - not in the db so everything is still stored as G / ML,
+                    // so easy to compare and bundle together.
                     if (amount >= 1000 && (unit == IngredientUnit.G || unit == IngredientUnit.ML)) {
                         when (unit) {
                             IngredientUnit.G -> { unit = IngredientUnit.KG }
@@ -239,7 +268,8 @@ class ShoppingListViewModel @Inject constructor(
 
                     shoppingListUiEntries.add(
                         ShoppingListUiEntry(
-                            id = shoppingListEntry.id, // maybe need to store ingredient id in here in future but maybe not.
+                            // maybe need to store ingredient id in here in future but maybe not.
+                            id = shoppingListEntry.id,
                             plural = ingredientRepository.getById(shoppingListEntry.ingredientId).first()?.plural ?: "",
                             unit = unit,
                             amount = amount,
@@ -248,9 +278,7 @@ class ShoppingListViewModel @Inject constructor(
                         )
                     )
                 }
-
                 setShoppingListEntries(shoppingListUiEntries)
-                //sortShoppingListByOrdinal()
             }
                 .onFailure { e ->
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar("Shopping list could not be obtained. Please try again later."))
@@ -258,6 +286,12 @@ class ShoppingListViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Reorders the shopping list items by changing their ordinal and persisting it to the
+     * database.
+     * @param fromKey - the key of the shopping list item being moved from
+     * @param toKey - the key of the shopping list item being moved to
+     */
     fun reorderShoppingList(fromKey: Long?, toKey: Long?) {
         viewModelScope.launch() {
             runCatching {
@@ -289,6 +323,15 @@ class ShoppingListViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Formats the ingredient amount, to display in the UI.
+     * This shaves off the decimal if it is .0, otherwise keeps it.
+     * e.g. 5.0 -> 5 but 5.5 remains -> 5.5
+     * @param ingredientAmount - the amount of the ingredient to format.
+     * @param roundToNearestQuarter - Whether it should be rounded to a quarter or not. It should
+     *                                only not be rounded to a quarter (thus be precise) if KG or L.
+     * @returns The formatted ingredient amount string.
+     */
     fun formatIngredientAmount(
         ingredientAmount: Double,
         roundToNearestQuarter: Boolean = true
@@ -296,6 +339,9 @@ class ShoppingListViewModel @Inject constructor(
         return recipeActions.formatIngredientAmount(ingredientAmount, roundToNearestQuarter)
     }
 
+    /**
+     * Adds an ingredient to the shopping list, by creating a ShoppingListItem db entry.
+     */
     fun addIngredientToShoppingList() {
         viewModelScope.launch() {
             runCatching {
@@ -303,13 +349,15 @@ class ShoppingListViewModel @Inject constructor(
                 if (uid == "") {
                     return@launch
                 }
-
-                val ingredientName = mutableUiState.value.ingredientToAdd.name.trim() // whitespace si removed
+                // Whitespace is removed
+                val ingredientName = mutableUiState.value.ingredientToAdd.name.trim()
                 if (ingredientName.trim() == "") {
                     setIngredientToAddError("The item cannot be blank.")
                     return@launch
                 }
-                // add it to ingredient table if doesn't already exist in either singular or plurla (as its user input, dont know whether this will be singular or plural, so both are checked)
+                // add it to ingredient table if doesn't already exist in either singular or plural
+                // (as its user input, don't know whether this will be singular or plural,
+                // so both are checked)
                 var ingredientId = ingredientRepository.getIdByPlural(ingredientName)
                 if (ingredientId == null) {
                     // plural search returned null, now look for singular.
@@ -318,7 +366,8 @@ class ShoppingListViewModel @Inject constructor(
                         // still null means it doesnt exist: add it
                         ingredientId = ingredientRepository.insert(
                             Ingredient(
-                                // both singular and plural are set to the user input. then it is flagged as user inputted, so ai can correct plurality if required.
+                                // both singular and plural are set to the user input. then it is
+                                // flagged as user inputted, so ai can correct plurality if required.
                                 singular = ingredientName,
                                 plural = ingredientName,
                                 userAdded = true
@@ -327,12 +376,14 @@ class ShoppingListViewModel @Inject constructor(
                     }
                 }
 
-                // dynamically determine when UNIT should be used: if no unit was selected, but an amount was entered, it is UNIT.
+                // dynamically determine when UNIT should be used: if no unit was selected,
+                // but an amount was entered, it is UNIT.
                 var unit = mutableUiState.value.ingredientToAdd.unit
                 val amount = mutableUiState.value.ingredientToAdd.amount
                 // overwriting to compensate for different cases:
 
-                // distinguish between SINGLE and UNIT: single is if there is no amount, otherwise it is unit.
+                // distinguish between SINGLE and UNIT: single is if there is no amount,
+                // otherwise it is unit.
                 if (unit == IngredientUnit.SINGLE && amount != "") {
                     unit = IngredientUnit.UNIT
                 }
@@ -369,23 +420,29 @@ class ShoppingListViewModel @Inject constructor(
                 populateShoppingList()
             }
         }
-
     }
 
+    /**
+     * For editing the amount of an ingredint; persists this updated amount to the database.
+     */
     fun updateIngredientAmount() {
         viewModelScope.launch() {
             runCatching {
                 val shoppingListUiEntry =
-                    mutableUiState.value.shoppingListEntries[mutableUiState.value.ingredientToEdit.index]
+                    mutableUiState.value.shoppingListEntries[
+                        mutableUiState.value.ingredientToEdit.index
+                    ]
                 val shoppingListEntry =
                     shoppingListEntryRepository.getById(shoppingListUiEntry.id).first()
 
                 if (shoppingListEntry == null) {
                     throw NullPointerException()
                 }
-                var amount = mutableUiState.value.ingredientToEdit.amount.replace(',','.').toDoubleOrNull() ?: 1.0 // 1.0 if the input is invalid.
-                if (shoppingListUiEntry.unit == IngredientUnit.KG || shoppingListUiEntry.unit == IngredientUnit.L) {
-                    // multiply the value by 1000 as it will be stored in the db as G or ML.
+                var amount = mutableUiState.value.ingredientToEdit.amount
+                    .replace(',','.').toDoubleOrNull() ?: 1.0 // 1.0 if the input is invalid.
+                if (shoppingListUiEntry.unit == IngredientUnit.KG ||
+                    shoppingListUiEntry.unit == IngredientUnit.L) {
+                    // Multiply the value by 1000 as it will be stored in the db as G or ML.
                     amount = amount * 1000
                 }
                 shoppingListEntryRepository.update(
@@ -407,6 +464,9 @@ class ShoppingListViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Resets the Ingredient Addition UI, once an Ingredient has been added to the shopping list.
+     */
     fun resetIngredientAdditionUI() {
         setIngredientToAddAmount("")
         setIngredientToAddUnit(IngredientUnit.SINGLE)
@@ -415,10 +475,15 @@ class ShoppingListViewModel @Inject constructor(
         setIngredientToAddError("")
     }
 
-    // the actions for the ingredient addition sheet;
+    /**
+     * Organises the actions for the Ingredient Addition sheet, forwarding them to their relevant
+     * handler.
+     * @param action - the IngredientSheetAction to handle.
+     */
     fun onIngredientSheetAction(action: IngredientSheetAction) {
         when (action) {
-            is IngredientSheetAction.OnDismissRequest -> { setUserInteractionStatus(UserInteractionStatus.BROWSE) }
+            is IngredientSheetAction.OnDismissRequest ->
+                { setUserInteractionStatus(UserInteractionStatus.BROWSE) }
             is IngredientSheetAction.OnComplete -> { addIngredientToShoppingList() }
             is IngredientSheetAction.SetIngredientAmount -> { setIngredientToAddAmount(action.amount) }
             is IngredientSheetAction.SetIngredientName -> { setIngredientToAddName(action.name) }

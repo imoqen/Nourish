@@ -26,6 +26,27 @@ import uk.co.imoqen.nourish.db.tag.TagRepositoryImpl
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 import javax.inject.Inject
 
+/**
+ * The RecipeRepositoryImpl, implementing the repository for Recipe by interacting with
+ * the required DAOs.
+ * Doc comments are not provided for most methods, because most are trivial CRUD operations explained
+ * simply by their signature. For those which are non-trivial, a doc comment is provided.
+ * @param db - The database used within the app
+ * the following tables are internal to Recipe, thus DAOs are used:
+ * @param recipeDao - the Recipe DAO, for performing CRUD operations on Recipe
+ * @param recipeTypeDao - the RecipeType DAO, for performing CRUD operations on RecipeType
+ * @param recipeIngredientDao - the RecipeIngredients DAO, for performing CRUD operations on RecipeIngredient
+ * @param recipeIngredientSectionDao - the RecipeIngredientSection DAO, for performing CRUD operations on RecipeIngredientSection
+ * @param recipeTagDao - the RecipeTag DAO, for performing CRUD operations on RecipeTag
+ * @param recipeStepDao - the RecipeStep DAO, for performing CRUD operations on RecipeStep
+ * @param recipeNutritionDao - the RecipeNutrition DAO, for performing CRUD operations on RecipeNutrition
+ * @param recipeQueryDao - the RecipeQuery DAO, for performing CRUD operations on RecipeQuery
+ * the following tables are external to Recipe, so Repositories are used instead:
+ * @param ingredientRepository - the IngredientRepository, for accessing CRUD logic on Ingredient
+ * @param tagRepository - the TagRepository, for accessing CRUD logic on Tag.
+ *
+ * @author Imogen Pemberton, 2026
+ */
 class RecipeRepositoryImpl @Inject constructor(
     private val db: NourishDatabase,
     // internal recipe types, therefore must use Dao as all use this shared Repository:
@@ -41,37 +62,51 @@ class RecipeRepositoryImpl @Inject constructor(
     private val ingredientRepository: IngredientRepositoryImpl,
     private val tagRepository: TagRepositoryImpl,
 ): RecipeRepository {
-    // RECIPE LOGIC:
-    // get all recipes: (not suspend)
+    // Recipe Logic:
     override fun getAllRecipes(uid: String): Flow<List<Recipe>> = recipeDao.getAll(uid)
     override fun getRecipeById(recipeId: Long): Flow<Recipe?> = recipeDao.getById(recipeId)
     override suspend fun insertRecipe(recipe: Recipe): Long = recipeDao.insert(recipe)
-    //fun getRecipeWithIngredients(recipeId: Long): Flow<RecipeWithIngredients> = recipeDao.getRecipeWithIngredients(recipeId)
-    override fun getRecipeWithRecipeIngredients(recipeId: Long): Flow<RecipeWithRecipeIngredients> = recipeDao.getRecipeWithRecipeIngredients(recipeId)
-    override fun getRecipeWithRecipeTags(recipeId: Long): Flow<RecipeWithRecipeTags> = recipeDao.getRecipeWithRecipeTags(recipeId)
-    override fun getRecipeWithRecipeSteps(recipeId: Long): Flow<RecipeWithRecipeSteps> = recipeDao.getRecipeWithRecipeSteps(recipeId)
+    override fun getRecipeWithRecipeIngredients(
+        recipeId: Long
+    ): Flow<RecipeWithRecipeIngredients> = recipeDao.getRecipeWithRecipeIngredients(recipeId)
+    override fun getRecipeWithRecipeTags(
+        recipeId: Long
+    ): Flow<RecipeWithRecipeTags> = recipeDao.getRecipeWithRecipeTags(recipeId)
+    override fun getRecipeWithRecipeSteps(
+        recipeId: Long
+    ): Flow<RecipeWithRecipeSteps> = recipeDao.getRecipeWithRecipeSteps(recipeId)
 
-    // RECIPE TYPE LOGIC:
+    // Recipe Type Logic:
     override fun getAllRecipeTypes(): Flow<List<RecipeType>> = recipeTypeDao.getAll()
     override fun getRecipeTypeById(id: Long): Flow<RecipeType?> = recipeTypeDao.getById(id)
     override suspend fun insertRecipeType(recipeType: RecipeType): Long = recipeTypeDao.insert(recipeType)
     override suspend fun getIdByTitle(title: String): Long? = recipeTypeDao.getIdByTitle(title)
 
-    // RECIPE INGREDIENT LOGIC:
-    override suspend fun insertRecipeIngredient(recipeIngredient: RecipeIngredient): Long = recipeIngredientDao.insert(recipeIngredient)
+    // Recipe Ingredient Logic:
+    override suspend fun insertRecipeIngredient(
+        recipeIngredient: RecipeIngredient
+    ): Long = recipeIngredientDao.insert(recipeIngredient)
 
-    // RECIPE INGREDIENT SECTION LOGIC:
-    override suspend fun insertRecipeIngredientSection(recipeIngredientSection: RecipeIngredientSection): Long = recipeIngredientSectionDao.insert(recipeIngredientSection)
-    override fun getRecipeSectionById(id: Long): Flow<RecipeIngredientSection?> = recipeIngredientSectionDao.getById(id)
+    // Recipe Ingredient Section Logic:
+    override suspend fun insertRecipeIngredientSection(
+        recipeIngredientSection: RecipeIngredientSection
+    ): Long = recipeIngredientSectionDao.insert(recipeIngredientSection)
+    override fun getRecipeSectionById(
+        id: Long
+    ): Flow<RecipeIngredientSection?> = recipeIngredientSectionDao.getById(id)
 
-    // RECIPE STEP LOGIC:
-    override suspend fun insertRecipeStep(recipeStep: RecipeStep): Long = recipeStepDao.insert(recipeStep)
-    override suspend fun updateStepCompleteness(recipeStepId: Long, complete: Boolean) = recipeStepDao.updateStepCompleteness(recipeStepId, complete)
+    // Recipe Step Logic:
+    override suspend fun insertRecipeStep(
+        recipeStep: RecipeStep
+    ): Long = recipeStepDao.insert(recipeStep)
+    override suspend fun updateStepCompleteness(
+        recipeStepId: Long, complete: Boolean
+    ) = recipeStepDao.updateStepCompleteness(recipeStepId, complete)
 
-    // RECIPE TAG LOGIC:
+    // Recipe Tag Logic:
     override suspend fun insertRecipeTag(recipeTag: RecipeTag): Long = recipeTagDao.insert(recipeTag)
 
-    // RECIPE NUTRITION LOGIC:
+    // Recipe Nutrition Logic:
     override suspend fun insertRecipeNutrition(recipeNutrition: RecipeNutrition) {
         recipeNutritionDao.insert(recipeNutrition)
     }
@@ -84,7 +119,7 @@ class RecipeRepositoryImpl @Inject constructor(
         return recipeNutritionDao.getByRecipeId(recipeId)
     }
 
-    // RECIPE QUERY LOGIC:
+    // Recipe Query Logic:
     override suspend fun insertRecipeQuery(recipeQuery: RecipeQuery): Long {
         return recipeQueryDao.insert(recipeQuery)
     }
@@ -102,21 +137,30 @@ class RecipeRepositoryImpl @Inject constructor(
     }
 
     /**
-     * Creates a recipe in the database and its corresponding entitites
+     * Creates a recipe in the database and its corresponding entities
+     * @param uid - The uid of the recipe to add to the db
+     * @param llmRecipe - The LlmRecipe to add to the db
+     * @param shouldNotScaleIngredients - ensures that altered recipes don't get divided by serving
+     *                                    size. only new recipes should have this.
+     * @param recipeId - The id of the recipe to add.
+     * @param imagePath - The image path of the image attached to the recipe, and "" if none is provided.
+     * @param llmGenerated - determines if the recipe was user inputted or generated by the LLM
      */
     override suspend fun createRecipe(
         uid: String,
         llmRecipe: LlmRecipe,
-        shouldNotScaleIngredients: Boolean, // purpose of shouldNotScaleIngredients is to ensure that altered recipes dont get divided by serving size. only new reicpes should have this.
+        shouldNotScaleIngredients: Boolean,
         recipeId: Long,
-        imagePath: String, // just set to "" if none, which is fine.
-        llmGenerated: Boolean // to determine if the recipe was user inputted or generated by the llm
+        imagePath: String,
+        llmGenerated: Boolean
     ) {
-        // if throws, it is handled accordingly where it is called.
+        // If throws, it is handled accordingly where it is called.
         db.withTransaction {
             // 1. Create or get the recipe type, only add in form where first char is capital
             // (i.e. dinner -> Dinner) to ensure no dupes
-            val mealTypeFormatted = (llmRecipe.mealType).lowercase().replaceFirstChar { it.uppercase() }
+            val mealTypeFormatted = (llmRecipe.mealType).lowercase().replaceFirstChar {
+                it.uppercase()
+            }
             val recipeTypeId = getIdByTitle(mealTypeFormatted)
             // must already exist; llm has to choose it from given list. if wrong, throw error.
             if (recipeTypeId == null) {
@@ -161,19 +205,37 @@ class RecipeRepositoryImpl @Inject constructor(
                 val sectionId = recipeIngredientSectionDao.insert(RecipeIngredientSection(title = section))
                 // for each Ingredient in the section:
                 ingredients.forEach{ingredient ->
-                    val singular = if (llmGenerated) { ingredient.ingredientSingular.lowercase() } else { ingredient.ingredientSingular } // always lowercase from LLM
-                    val plural = if (llmGenerated) { ingredient.ingredientPlural.lowercase() } else { ingredient.ingredientPlural } // always lowercase from LLM
-                    // purpose of shouldNotScaleIngredients is to ensure that altered recipes dont get divided by serving size. only LLM generated reicpes should have this. Otherwise, this is handled in the parseToLlmRecipe for user-added/-edited recipes, and already by the LLM in alterations.
-                    val amount = if (shouldNotScaleIngredients) {ingredient.ingredientAmount} else { ingredient.ingredientAmount / recipe.numberOfServings }// divide by number of servings, so ingredient is stored for 1 serving.
+                    val singular = if (llmGenerated) {
+                        ingredient.ingredientSingular.lowercase() // always lowercase from LLM
+                    } else {
+                        ingredient.ingredientSingular
+                    }
+                    val plural = if (llmGenerated) {
+                        ingredient.ingredientPlural.lowercase() // always lowercase from LLM
+                    } else {
+                        ingredient.ingredientPlural
+                    }
+                    // purpose of shouldNotScaleIngredients is to ensure that altered recipes
+                    // don't get divided by serving size. only LLM generated recipes should have this.
+                    // Otherwise, this is handled in the parseToLlmRecipe for user-added/-edited recipes,
+                    // and already by the LLM in alterations.
+                    val amount = if (shouldNotScaleIngredients) {
+                        ingredient.ingredientAmount
+                    } else {
+                        // divide by number of servings, so ingredient is stored for 1 serving.
+                        ingredient.ingredientAmount / recipe.numberOfServings
+                    }
                     val unit = ingredient.ingredientAmountUnit
-                    // add it to ingredient table if doesn't already exist in its plural form, check both values due to human error:
+                    // add it to ingredient table if doesn't already exist in its plural form,
+                    // check both values due to human error:
                     var ingredientId = ingredientRepository.getIdByPlural(plural)
 
                     if (ingredientId == null) {
-                        // if plural doesn't match, singular is checked to ensure it doesnt exist: (against plural - as this is the field populated by the user when adding an ingredient)
+                        // if plural doesn't match, singular is checked to ensure it doesn't exist:
+                        // (against plural - as this is the field populated by the user when adding an ingredient)
                         ingredientId = ingredientRepository.getIdByPlural(singular)
                         if (ingredientId == null) {
-                            // if still null, it doesnt exist so add the ingredient
+                            // if still null, it doesn't exist so add the ingredient
                             ingredientId = ingredientRepository.insert(Ingredient(
                                 singular = singular, plural = plural, userAdded = !llmGenerated)
                             )
@@ -185,13 +247,17 @@ class RecipeRepositoryImpl @Inject constructor(
                     // check if the true singular = the stored singular, and same for plural.
                     // If either don't match, update it to be correct.
                     val ingredient = ingredientRepository.getById(ingredientId).first()
-                    if (ingredient != null && ingredient.userAdded && (ingredient.singular != singular || ingredient.plural != plural)) {
-                        ingredientRepository.update(ingredient.copy(plural = plural, singular = singular, userAdded = false))
+                    if (ingredient != null && ingredient.userAdded &&
+                        (ingredient.singular != singular || ingredient.plural != plural)) {
+                        ingredientRepository.update(ingredient.copy(
+                            plural = plural, singular = singular, userAdded = false)
+                        )
                     }
 
                     // Ingredient unit: find the corresponding unit in the enum
                     val ingredientUnit = IngredientUnit.valueOf(unit)
-                    // Then create a RecipeIngredient with the Recipe, Ingredient and the newly added RecipeSection:
+                    // Then create a RecipeIngredient with the Recipe, Ingredient and the newly
+                    // added RecipeSection:
                     recipeIngredientDao.insert(
                         RecipeIngredient(
                             recipeId = recipeId, ingredientId = ingredientId,
@@ -217,12 +283,13 @@ class RecipeRepositoryImpl @Inject constructor(
 
             // 5. Create tags
             llmRecipe.tags.forEach { tagIdentifier ->
-                val tagId = tagRepository.getIdByIdentifier(tagIdentifier, uid) // per user identifier.
-                // must already exist; llm has to choose from predefined (not make own). only users can add more.
-
+                // per user identifier.
+                val tagId = tagRepository.getIdByIdentifier(tagIdentifier, uid)
+                // must already exist; llm has to choose from predefined (not make own).
+                // only users can add more.
                 if (tagId != null) {
-                    // just ignore it if null; dont add the tag. may be produced from llm hallucination, user doesn't need to know about this.
-
+                    // just ignore it if null; don't add the tag. may be produced from llm
+                    // hallucination, user doesn't need to know about this.
                     recipeTagDao.insert(
                         RecipeTag(recipeId = recipeId, tagId = tagId)
                     )
@@ -235,7 +302,10 @@ class RecipeRepositoryImpl @Inject constructor(
         recipeDao.update(recipe)
     }
 
-    // transactional so the scale is reverted if an error occurs, so the recipe scale stays correct
+    /**
+     * Scales a recipe's serving size.
+     * Transactional so the scale is reverted if an error occurs, so the recipe scale stays correct.
+     */
     override suspend fun scaleRecipe(recipe: Recipe, currentServingSize: Int, increase: Boolean) {
         db.withTransaction {
             val newServingSize = if (increase) { currentServingSize+1 } else { currentServingSize-1 }
@@ -244,7 +314,21 @@ class RecipeRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun replaceRecipe(currentRecipe: Recipe, newRecipe: LlmRecipe, updatedImagePath: String, llmGenerated: Boolean) {
+    /**
+     * Replaces a Recipe, by deleting the Recipe to replace and creating a new Recipe.
+     * @param currentRecipe - The current recipe, which is to be deleted
+     * @param newRecipe - The new recipe, to be added to the DB under the same ID as currentRecipe
+     *                    once deleted.
+     * @param updatedImagePath - The path of the new image, if a new image was added.
+     * @param llmGenerated - Boolean reflecting whether the replaced recipe was LLM generated (from
+     *                       alteration) or not (from manual edit).
+     */
+    override suspend fun replaceRecipe(
+        currentRecipe: Recipe,
+        newRecipe: LlmRecipe,
+        updatedImagePath: String,
+        llmGenerated: Boolean
+    ) {
         val originalRecipeId = currentRecipe.id
         val originalRecipeAuthor = currentRecipe.authorUid
 
@@ -252,7 +336,14 @@ class RecipeRepositoryImpl @Inject constructor(
         deleteNutritionForRecipeId(originalRecipeId)
 
         deleteRecipe(currentRecipe)
-        createRecipe(originalRecipeAuthor,newRecipe, shouldNotScaleIngredients = true, originalRecipeId, updatedImagePath, llmGenerated = llmGenerated)
+        createRecipe(
+            originalRecipeAuthor,
+            newRecipe,
+            shouldNotScaleIngredients = true,
+            originalRecipeId,
+            updatedImagePath,
+            llmGenerated = llmGenerated
+        )
     }
 
     override suspend fun deleteRecipe(recipe: Recipe) {

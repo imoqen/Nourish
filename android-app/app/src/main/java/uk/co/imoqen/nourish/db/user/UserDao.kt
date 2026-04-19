@@ -1,11 +1,14 @@
 package uk.co.imoqen.nourish.db.user
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import uk.co.imoqen.nourish.db.ingredient.Ingredient
+
+/**
+ * The UserDao, holding logic to perform CRUD operations on the database relating to User.
+ *
+ * @author Imogen Pemberton, 2026
+ */
 
 @Dao
 interface UserDao {
