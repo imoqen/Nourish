@@ -178,7 +178,9 @@ class RecipeBookViewModel @Inject constructor(
         }
     }
 
-    fun setIngredientsToAddToShoppingList(ingredientsToAddToShoppingList: MutableList<Pair<ShoppingListIngredient, Boolean>>?) {
+    fun setIngredientsToAddToShoppingList(
+        ingredientsToAddToShoppingList: MutableList<Pair<ShoppingListIngredient, Boolean>>?
+    ) {
         mutableUiState.update { currentState ->
             currentState.copy(
                 ingredientsToAddToShoppingList = ingredientsToAddToShoppingList
@@ -255,8 +257,9 @@ class RecipeBookViewModel @Inject constructor(
                         var unit = recipeIngredient.ingredientUnit
                         val toConvertToUnit: List<IngredientUnit> = listOf(
                             IngredientUnit.HEAD, IngredientUnit.BUNCH, IngredientUnit.BULB,
-                            IngredientUnit.STALK, IngredientUnit.STICK, IngredientUnit.LOAF, IngredientUnit.ROLL,
-                            IngredientUnit.SHEET, IngredientUnit.BLOCK, IngredientUnit.BAR
+                            IngredientUnit.STALK, IngredientUnit.STICK, IngredientUnit.LOAF,
+                            IngredientUnit.ROLL, IngredientUnit.SHEET, IngredientUnit.BLOCK,
+                            IngredientUnit.BAR
                         )
                         if (toConvertToUnit.contains(unit)) {
                             unit = IngredientUnit.UNIT // So it converts to a countable
@@ -303,8 +306,8 @@ class RecipeBookViewModel @Inject constructor(
                     }
                 }
 
-                // Then go through the array containing no duplicates and add them to the selection list
-                // declare the list for storing the selections after preprocessing:
+                // Then go through the array containing no duplicates and add them to the
+                // selection list - declare the list for storing the selections after preprocessing:
                 val shoppingListIngredientSelections: MutableList<Pair<ShoppingListIngredient, Boolean>> = mutableListOf()
 
                 shoppingListIngredients.forEach { shoppingListIngredient ->
@@ -795,7 +798,7 @@ class RecipeBookViewModel @Inject constructor(
 
                 // validation
                 if (userPrompt.trim() == "") {
-                    setActionChatStage(ActionChatStage.USER_INPUT) // no longer awaiting - error occurred.
+                    setActionChatStage(ActionChatStage.USER_INPUT) // error occurred - not awaiting.
                     setLlmAwaitActionType(LlmActionType.NONE)
                     uiEventBus.enqueueEvent(
                         UiEvent.ShowSnackbar(
@@ -805,7 +808,7 @@ class RecipeBookViewModel @Inject constructor(
                     return@launch
                 }
                 if (recipe == null) {
-                    setActionChatStage(ActionChatStage.USER_INPUT) // no longer awaiting - error occurred.
+                    setActionChatStage(ActionChatStage.USER_INPUT) // error occurred - not awaiting.
                     setLlmAwaitActionType(LlmActionType.NONE)
                     uiEventBus.enqueueEvent(
                         UiEvent.ShowSnackbar(
@@ -835,7 +838,7 @@ class RecipeBookViewModel @Inject constructor(
                     allNutritionalFilters = "[]" // signifies empty list
                 }
                 // make it into a request:
-                val includeServings = (type == LlmActionType.ALTERATION) // only include servings in alteration
+                val includeServings = (type == LlmActionType.ALTERATION) // alteration only has servings
                 val request = LlmActionRequest(
                     parseRecipeToLlmRecipe(recipe, includeServings),
                     userPrompt, allNutritionalFilters, dishType
@@ -934,7 +937,7 @@ class RecipeBookViewModel @Inject constructor(
             }
                 .onFailure {
                     // error occurred
-                    setActionChatStage(ActionChatStage.USER_INPUT) // no longer awaiting - error occurred.
+                    setActionChatStage(ActionChatStage.USER_INPUT) // error occurred - not awaiting.
                     setLlmAwaitActionType(LlmActionType.NONE)
                     uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
                         ErrorMessage.API_ERROR_SERVICE_UNREACHABLE)
