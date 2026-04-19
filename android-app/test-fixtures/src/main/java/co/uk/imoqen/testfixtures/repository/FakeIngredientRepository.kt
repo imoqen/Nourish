@@ -48,6 +48,5 @@ class FakeIngredientRepository(): IngredientRepository {
     }
 
     override suspend fun update(ingredient: Ingredient) {
-        TODO("Not yet implemented")
     }
 }

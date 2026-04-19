@@ -5,6 +5,8 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsToggleable
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasClickAction
@@ -16,11 +18,13 @@ import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextClearance
@@ -369,10 +373,28 @@ class RecipeBookViewTest {
             .assertExists()
 
         // check that can check off a step, by checking off the first step:
+        composeRule.onNode(
+            hasText("Dismiss")
+        ).performClick()
         composeRule
-            .onAllNodesWithTag("stepCheckbox").onFirst() // delete the first tag: Dairy-free
+            .onAllNodesWithTag("stepCheckbox")
+            .onLast()
+            .performScrollTo()
+        composeRule
+            .onAllNodesWithTag("stepCheckbox").onFirst()
+            .assertIsToggleable()
             .performClick()
-
+        // then wait for the update to complete, step to be checked off:
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            try {
+                composeRule
+                    .onAllNodesWithTag("stepCheckbox").onFirst()
+                    .assertIsOn()
+                true
+            } catch (e: AssertionError) {
+                false
+            }
+        }
         // check that storage guidance is visible:
         composeRule
             .onNodeWithText("Storage Guidance")

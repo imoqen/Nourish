@@ -195,7 +195,8 @@ val instrumentedTestExclusions = listOf(
     // fine database implementation aspects are excluded:
     "**/Converters*",
     "**/NourishDatabaseModule*",
-    "**/RepositoryModule*"
+    "**/RepositoryModule*",
+    "**/*ViewModel*.*" // ViewModels shouldn't be in instrumented tests; they are tested in unit tests instead.
 )
 
 val unitTestInclusions = listOf(

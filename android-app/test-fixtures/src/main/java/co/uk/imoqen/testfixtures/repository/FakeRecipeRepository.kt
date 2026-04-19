@@ -56,7 +56,7 @@ class FakeRecipeRepository(): RecipeRepository {
     }
 
     override suspend fun insertRecipe(recipe: Recipe): Long {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override fun getRecipeWithRecipeIngredients(recipeId: Long): Flow<RecipeWithRecipeIngredients> {
@@ -179,19 +179,19 @@ class FakeRecipeRepository(): RecipeRepository {
     }
 
     override suspend fun insertRecipeType(recipeType: RecipeType): Long {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override suspend fun getIdByTitle(title: String): Long? {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override suspend fun insertRecipeIngredient(recipeIngredient: RecipeIngredient): Long {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override suspend fun insertRecipeIngredientSection(recipeIngredientSection: RecipeIngredientSection): Long {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override fun getRecipeSectionById(id: Long): Flow<RecipeIngredientSection?> {
@@ -201,12 +201,11 @@ class FakeRecipeRepository(): RecipeRepository {
         if (id == 1L) {
             return flowOf(TestData.recipeIngredientSection_salad)
         }
-        // add more in furute
         return flowOf(TestData.recipeIngredientSection_salad)
     }
 
     override suspend fun insertRecipeStep(recipeStep: RecipeStep): Long {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override suspend fun updateStepCompleteness(
@@ -220,7 +219,7 @@ class FakeRecipeRepository(): RecipeRepository {
     }
 
     override suspend fun insertRecipeTag(recipeTag: RecipeTag): Long {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override suspend fun insertRecipeNutrition(recipeNutrition: RecipeNutrition) {
@@ -232,7 +231,6 @@ class FakeRecipeRepository(): RecipeRepository {
     }
 
     override suspend fun deleteNutritionForRecipeId(recipeId: Long) {
-        TODO("Not yet implemented")
     }
 
     override suspend fun insertRecipeQuery(recipeQuery: RecipeQuery): Long {
@@ -286,7 +284,6 @@ class FakeRecipeRepository(): RecipeRepository {
     }
 
     override suspend fun updateRecipe(recipe: Recipe) {
-        TODO("Not yet implemented")
     }
 
     override suspend fun deleteRecipe(recipe: Recipe) {
