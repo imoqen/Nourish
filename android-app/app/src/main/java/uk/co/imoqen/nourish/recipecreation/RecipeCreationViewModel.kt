@@ -2,7 +2,6 @@ package uk.co.imoqen.nourish.recipecreation
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -39,6 +38,16 @@ import java.util.UUID
 import javax.inject.Inject
 import kotlin.math.round
 
+/**
+ * The ViewModel for RecipeCreation related logic. Utilised in the View to handle recipe creation
+ * and editing.
+ * @param authenticationManager - The AuthenticationManager to get the user's uid.
+ * @param uiEventBus - The UiEventBus to display alerts / Snackbar messages.
+ * @param recipeRepository - The Recipe Repository, to access the Recipe db table.
+ * @param recipeActions - The Auxiliary class RecipeActions to access and use these common Recipe actions.
+ * @param tagRepository - The Tag Repository, to access the Tag db table.
+ * @param ingredientRepository - The Ingredient Repository, to access the Ingredient db table.
+ */
 @HiltViewModel
 class RecipeCreationViewModel @Inject constructor(
     private val authenticationManager: AuthenticationManager,
@@ -51,7 +60,9 @@ class RecipeCreationViewModel @Inject constructor(
     private val mutableUiState = MutableStateFlow(RecipeCreationUiState())
     val uiState: StateFlow<RecipeCreationUiState> = mutableUiState.asStateFlow()
 
-    // to go back:
+    // Setters for UiState:
+
+    // To go back:
     fun setShowBackConfirmation(showBackConfirmation: Boolean) {
         mutableUiState.update { currentState ->
             currentState.copy(
@@ -60,7 +71,7 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
-    // for editing:
+    // For editing:
     fun setCreationMode(creationMode: CreationMode) {
         mutableUiState.update { currentState ->
             currentState.copy(
@@ -76,7 +87,7 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
-    // to go back if recipe created
+    // To go back if recipe created
     fun setRecipeCreated(recipeCreated: Boolean) {
         mutableUiState.update { currentState ->
             currentState.copy(
@@ -85,7 +96,7 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
-    // error for recipe creation
+    // Error for recipe creation
     fun setRecipeCreationError(recipeCreationError: String) {
         mutableUiState.update { currentState ->
             currentState.copy(
@@ -94,7 +105,7 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
-    // display (image, colour, and emoji):
+    // Display (image, colour, and emoji):
     fun setImageFile(imageFile: String) {
         mutableUiState.update { currentState ->
             currentState.copy(
@@ -133,7 +144,7 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
-    // method setters:
+    // Method setters:
     fun setMethod(method: List<RecipeStep>) {
         mutableUiState.update { currentState ->
             currentState.copy(
@@ -402,6 +413,11 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Updates which Tags are currently selected, by calling RecipeActions.
+     * @param tag - The Tag to update;
+     * @param status - whether the Tag is selected or not, to be updated.
+     */
     fun updateSelected(tag: Tag, status: Boolean) {
         viewModelScope.launch() {
             setRecipeTags(
@@ -410,6 +426,9 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Creates a nutritional Tag, by calling RecipeActions.
+     */
     fun createTag(
     ) {
         viewModelScope.launch() {
@@ -435,6 +454,9 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Deletes a nutritional Tag, by calling RecipeActions.
+     */
     fun deleteTag() {
         viewModelScope.launch() {
             runCatching {
@@ -448,7 +470,10 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
-    // closes the tag creation area. Purely for updating the UI state and does not use any shared action.
+    /**
+     * Closes the tag creation area. Purely for updating the UI state - does not use any shared
+     * RecipeAction.
+     */
     fun closeTagCreation() {
         setFilterDisplayState(FilterState.APPLY) // go back to apply filter menu
         setCreatedTagColour(null)
@@ -456,7 +481,10 @@ class RecipeCreationViewModel @Inject constructor(
         setTagCreationError("")
     }
 
-    // the actions for the tag sheet:
+    /**
+     * Organises the actions for the Tag sheet, forwarding them to their relevant handler.
+     * @param action - the TagSheetAction to handle.
+     */
     fun onTagSheetAction(action: TagSheetAction) {
         when (action) {
             is TagSheetAction.SetFilterDisplayState -> setFilterDisplayState(action.displayState)
@@ -471,15 +499,19 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
-    // for updating the number of servings of a recipe
-    // much less complex than for a recipe card, as this doesnt scale the ingredients. its simply what the user enters.
+    /**
+     * To update the number of servings of a recipe.
+     * Much less complex than for a recipe card, as this doesn't scale the ingredients -
+     * it's simply what the user enters.
+     * @param increase - Whether to increase (true) or decrease (false) the serving size.
+     */
     fun alterServingSize(
         increase: Boolean
     ) {
         if (increase) {
             setNumberOfServings(mutableUiState.value.numberOfServings+1)
         } else {
-            // ensure it doesnt go negative or 0
+            // ensure it doesn't go negative or 0
             setNumberOfServings(
                 if (mutableUiState.value.numberOfServings > 1) {
                     mutableUiState.value.numberOfServings - 1
@@ -490,12 +522,16 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
-    // design choice: ingredients, if the same, will not be merged. this may be for if a user wants to
-    // separate amounts (e.g. 5g butter for the batter, 5g of butter for frying) etc.
+    /**
+     * Adds a user-inputted Ingredient to a Recipe.
+     * Design choice: ingredients, if the same, will not be merged. this may be for if a user wants
+     *                to separate amounts (e.g. 5g butter for the batter, 5g of butter for frying) etc.
+     *                So they will be kept separate.
+     */
     fun addIngredientToRecipe() {
         viewModelScope.launch() {
             runCatching {
-                // validate
+                // Validate:
                 val amount = mutableUiState.value.ingredientToAdd.amount.replace(',', '.').toDoubleOrNull()
                 val name = mutableUiState.value.ingredientToAdd.name.trim()
                 val unit = mutableUiState.value.ingredientToAdd.unit
@@ -507,12 +543,15 @@ class RecipeCreationViewModel @Inject constructor(
                     setIngredientToAddError("The amount cannot be blank.")
                     return@launch
                 }
-                // then simply update the ingredients list such that it is populated correctly (with name in the plural field) for use in recipe repo createRecipe()
+                // then simply update the ingredients list such that it is populated correctly
+                // (with name in the plural field) for use in recipe repo createRecipe()
                 val ingredient = LlmIngredient(
                     ingredientAmount = amount, // if user inputted invalid, it just gets set to 1.0
                     ingredientPlural = name,
-                    ingredientAmountUnit = unit.name, // will always be safe as user must select, all options are ok.
-                    ingredientSingular = name // user inputted ingredients value is always set to the same as plural, although this may not be correct - this is due to human error. but CAN be fixed byt he llm if it generated subsequent.
+                    ingredientAmountUnit = unit.name, // will always be safe as user must select
+                    // user inputted ingredients value is always set to the same as plural so that
+                    // user does not need to enter both singular and plural.
+                    ingredientSingular = name
                 )
                 setIngredients(
                     // adds the ingredient or makes a new list with the ingredient if it is empty
@@ -529,6 +568,9 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Resets the UI after Ingredient creation is complete.
+     */
     fun resetIngredientAdditionUI() {
         setIngredientToAddAmount("")
         setIngredientToAddUnit(IngredientUnit.UNIT)
@@ -537,7 +579,10 @@ class RecipeCreationViewModel @Inject constructor(
         setIngredientToAddError("")
     }
 
-    // the actions for the ingredient addition sheet;
+    /**
+     * Organises the actions for the Ingredient sheet, forwarding them to their relevant handler.
+     * @param action - the IngredientSheetAction to handle.
+     */
     fun onIngredientSheetAction(action: IngredientSheetAction) {
         when (action) {
             is IngredientSheetAction.OnDismissRequest -> { setShowAddIngredientSheet(false) }
@@ -548,7 +593,9 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
-    // action for persisting an ingredient amount update:
+    /**
+     * Persists an ingredient amount update.
+     */
     fun updateIngredientAmount() {
         viewModelScope.launch() {
             runCatching {
@@ -557,7 +604,8 @@ class RecipeCreationViewModel @Inject constructor(
                 if (ingredients == null) {
                     return@launch
                 }
-                val amount = mutableUiState.value.ingredientToEdit.amount.replace(',','.').toDoubleOrNull() ?: 1.0 // 1.0 if the input is invalid.
+                val amount = mutableUiState.value.ingredientToEdit.amount
+                    .replace(',','.').toDoubleOrNull() ?: 1.0 // 1.0 if the input is invalid.
                 // update the ingredients list:
                 setIngredients(
                     ingredients.toMutableList().apply {
@@ -566,7 +614,6 @@ class RecipeCreationViewModel @Inject constructor(
                         )
                     }
                 )
-
                 // reset in UI:
                 setEditIngredientIndex(-1)
                 setEditIngredientAmount("")
@@ -578,7 +625,9 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
-    // exposing the recipe actions format method
+    /**
+     * Exposes the formatting method from RecipeActions:
+     */
     fun formatIngredientAmount(
         ingredientAmount: Double,
         roundToNearestQuarter: Boolean = true
@@ -586,6 +635,9 @@ class RecipeCreationViewModel @Inject constructor(
         return recipeActions.formatIngredientAmount(ingredientAmount, roundToNearestQuarter)
     }
 
+    /**
+     * Deletes an Ingredient from the database.
+     */
     fun deleteIngredient() {
         viewModelScope.launch() {
             runCatching {
@@ -594,11 +646,11 @@ class RecipeCreationViewModel @Inject constructor(
                 if (ingredients == null) {
                     return@launch
                 }
-                // update the ingredients list by removing the ingredient
+                // Update the ingredients list by removing the ingredient
                 setIngredients(
                     ingredients.toMutableList().apply{ removeAt(index) }
                 )
-                // then reset in the ui
+                // Then reset in the ui
                 setIngredientIndexToDelete(-1)
             } .onSuccess {
                 uiEventBus.enqueueEvent(UiEvent.ShowSnackbar(
@@ -613,6 +665,9 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Adds a RecipeStep to the database.
+     */
     fun addRecipeStep() {
         viewModelScope.launch() {
             runCatching {
@@ -625,24 +680,31 @@ class RecipeCreationViewModel @Inject constructor(
                 }
 
                 setMethod(
-                    // adds the step and makes an empty list with the step if the method has not yet been intiialised (null)
+                    // Adds the step and makes an empty list with the step if the method has not
+                    // yet been initialised (null)
                     mutableUiState.value.method?.toMutableList().apply {
                         this?.add(RecipeStep(step, UUID.randomUUID()))
                     } ?: listOf(RecipeStep(step, UUID.randomUUID()))
                 )
             }
                 .onSuccess {
-                    // after it is successfully added, clear the ui of any of the addition
+                    // After it is successfully added, clear the ui of any of the addition
                     resetRecipeStepAddition()
                 }
         }
     }
 
+    /**
+     * Resets the UI after RecipeStep creation is complete.
+     */
     fun resetRecipeStepAddition() {
         setShowAddMethodSheet(false)
         setStepToAdd("")
     }
 
+    /**
+     * Updates a RecipeStep; this can be either its order in the list, or its step description.
+     */
     fun updateStep() {
         viewModelScope.launch() {
             runCatching {
@@ -674,6 +736,9 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Deletes a RecipeStep from the database.
+     */
     fun deleteStep() {
         viewModelScope.launch() {
             runCatching {
@@ -682,11 +747,11 @@ class RecipeCreationViewModel @Inject constructor(
                 if (method == null) {
                     return@launch
                 }
-                // update the ingredients list by removing the ingredient
+                // Update the RecipeSteps list, by removing the RecipeStep
                 setMethod(
                     method.toMutableList().apply{ removeAt(index) }
                 )
-                // then reset in the ui
+                // Then reset in the ui
                 setStepIndexToDelete(-1)
                 setStepIndexToEdit(-1)
             } .onSuccess {
@@ -702,6 +767,11 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Displays an image in the RecipeCreation view.
+     * @param uri - The uri of the image to display.
+     * @param context - The local context, required to load the image.
+     */
     fun handleImage(
         uri: Uri?,
         context: Context
@@ -719,9 +789,10 @@ class RecipeCreationViewModel @Inject constructor(
 
     }
 
-    fun addRecipe(
-
-    ) {
+    /**
+     * Adds the user-created Recipe to the database, using RecipeRepository.
+     */
+    fun addRecipe() {
         viewModelScope.launch() {
             runCatching {
                 // Check that user is logged in validly
@@ -731,11 +802,13 @@ class RecipeCreationViewModel @Inject constructor(
                 } // user is null; throw to be handled appropriately
                 val llmRecipe = parseIntoLlmRecipe()
                 // Add the user created recipe to the database:
-                // ingredients are not scaled here, because they are scaled in parseToLlmRecipe instead. as with editing ingredients of a recipe.
+                // ingredients are not scaled here, because they are scaled in parseToLlmRecipe
+                // instead. as with editing ingredients of a recipe.
                 recipeRepository.createRecipe(
                     // recipe is saved with the higher quality image, which is stored in second place
                     uid, llmRecipe, imagePath = mutableUiState.value.imageFile,
-                    shouldNotScaleIngredients = true, llmGenerated = false // not an alteration; it is a new recipe. and it is NOT llm generated.
+                    // not an alteration; it is a new recipe. and it is NOT llm generated.
+                    shouldNotScaleIngredients = true, llmGenerated = false
                 )
             }
                 .onSuccess {
@@ -761,7 +834,11 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
-    // updates a recipe by deleting the old recipe and replacing it with the new one.
+    /**
+     * Recipe editing:
+     * Updates a Recipe, by deleting the old Recipe and replacing it with the new one.
+     * @param context - The local context, required to delete the Recipe's image file from local storage.
+     */
     fun updateRecipe(
         context: Context // required for image deletion
     ) {
@@ -773,7 +850,9 @@ class RecipeCreationViewModel @Inject constructor(
                     throw NullPointerException()
                 } // user is null; throw to be handled appropriately
 
-                val originalRecipe = recipeRepository.getRecipeById(mutableUiState.value.recipeEditId).first()
+                val originalRecipe = recipeRepository.getRecipeById(
+                    mutableUiState.value.recipeEditId
+                ).first()
                 if (originalRecipe == null) {
                     return@launch
                 }
@@ -788,7 +867,12 @@ class RecipeCreationViewModel @Inject constructor(
                 }
 
                 // Add the recipe to the database:
-                recipeRepository.replaceRecipe(originalRecipe, updatedRecipe, mutableUiState.value.imageFile, llmGenerated=false) // now  non llm generated, vecayse user edited it
+                recipeRepository.replaceRecipe(
+                    originalRecipe,
+                    updatedRecipe,
+                    mutableUiState.value.imageFile,
+                    llmGenerated=false // now non-LLM generated, because user edited it.
+                )
             }
                 .onSuccess {
                     setRecipeCreated(true) // so the user gets forced back
@@ -813,6 +897,13 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Validates the Recipe Creation / Edit fields which are not optional, to ensure they are present.
+     * @param title - The user-inputted title of the Recipe to be created.
+     * @param ingredients - The user-inputted ingredients list of the Recipe to be created.
+     * @param recipeType - The user-inputted Recipe Type of the Recipe to be created.
+     * @param title - The user-inputted method of the Recipe to be created.
+     */
     fun validateRecipeRequiredFields(
         title: String,
         ingredients: List<LlmIngredient>?,
@@ -836,6 +927,10 @@ class RecipeCreationViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Parses a user-inputted Recipe into an LlmRecipe.
+     * This is so that actions can be performed on the Recipe.
+     */
     fun parseIntoLlmRecipe(): LlmRecipe {
         val ingredients = mutableUiState.value.ingredients
         val recipeType = mutableUiState.value.recipeType
@@ -848,11 +943,19 @@ class RecipeCreationViewModel @Inject constructor(
         val servings = mutableUiState.value.numberOfServings
         return LlmRecipe(
             title = mutableUiState.value.title,
-            sectionIngredients = listOf(LlmIngredientSection("For the recipe", ingredients!!.map { it.copy(ingredientAmount = (it.ingredientAmount / servings)) })), // scale such that it stores the amount for 1 serving. so that it isnt done in the addRecipe method with the db
+            sectionIngredients = listOf(LlmIngredientSection(
+                "For the recipe",
+                ingredients!!.map {
+                    it.copy(ingredientAmount = (it.ingredientAmount / servings))
+                })),
             servings = servings,
             mealType = recipeType!!.title,
             method = method!!.map { it.step }, // only get the steps, remove the uuids
-            tags = mutableUiState.value.tagSheetState.recipeTags?.filter { it.selected }?.map { it.tag.identifier } ?: listOf(""), // finds all selected tags, then gets their identifiers. tags are not mandatory so "" is ok if it is null.
+            // finds all selected tags, then gets their identifiers. tags are not mandatory so ""
+            // is ok if it is null:
+            tags = mutableUiState.value.tagSheetState.recipeTags?.filter {
+                it.selected
+            }?.map { it.tag.identifier } ?: listOf(""),
             storage = mutableUiState.value.storageGuidance,
             recipeNotPossible = false,
             emoji = mutableUiState.value.emoji,
@@ -860,7 +963,10 @@ class RecipeCreationViewModel @Inject constructor(
         )
     }
 
-    // populates the screen with an existing recipe, so that it can be edited.
+    /**
+     * Populates the screen with an existing recipe, so that it can be edited.
+     * @param recipeId - The id of the recipe to populate the state with, to be displayed.
+     */
     fun populateFromId(recipeId: Long) {
         viewModelScope.launch() {
             runCatching {
@@ -872,13 +978,15 @@ class RecipeCreationViewModel @Inject constructor(
                 }
                 val recipeType = recipeRepository.getRecipeTypeById(recipe.recipeTypeId).first()
 
-                // get all tags and the selected tags for this recipe
+                // Get all tags and the selected tags for this recipe
                 val allTags = tagRepository.getAllForUser(recipe.authorUid).first()
-                val selectedTags = recipeRepository.getRecipeWithRecipeTags(recipe.id).first().recipeTags.map { tag ->
-                    val tag = tagRepository.getById(tag.tagId).first()
-                    TagSelection(tag!!, true)
+                val selectedTags = recipeRepository.getRecipeWithRecipeTags(recipe.id).first()
+                    .recipeTags.map { tag ->
+                        val tag = tagRepository.getById(tag.tagId).first()
+                        TagSelection(tag!!, true)
                 }.toMutableList()
-                // then populate the selected tags such that the non-selected ones are added and set to false
+
+                // Populate the selected tags such that the non-selected ones are added, set to false
                 allTags.forEach { tag ->
                     if (!selectedTags.contains(TagSelection(tag, true))) {
                         // if not selected, add it as non selected
@@ -886,23 +994,29 @@ class RecipeCreationViewModel @Inject constructor(
                     }
                 }
 
-                // build ingredients
+                // Build ingredients
                 val llmIngredients: MutableList<LlmIngredient> = mutableListOf()
                 val allIngredients = recipeRepository.getRecipeWithRecipeIngredients(recipe.id).first().ingredients
 
-                // sections get just put together. in future, could improve this to keep the sections. but for now leaving it as this, not a big issue.
+                // Sections get just put together. in future, could improve this to keep the
+                // sections. but for now leaving it as this, not a big issue.
                 allIngredients.forEach { recipeIngredient ->
                     val ingredient = ingredientRepository.getById(recipeIngredient.ingredientId).first()
                     llmIngredients.add(LlmIngredient(
                         ingredientSingular = ingredient?.singular ?: "",
                         ingredientPlural = ingredient?.plural ?: "",
-                        ingredientAmount = round(recipeIngredient.amount * recipe.numberOfServings * 100) / 100, // gets multiplied by no. servings so that the output looks correct to usr (as it is stored in db for 1 serving). then when the user saves, it will be divided back down again by the servings.
+                        // gets multiplied by no. servings so that the output looks correct to user
+                        // (as it is stored in db for 1 serving). then when the user saves,
+                        // it will be divided back down again by the servings.
+                        ingredientAmount = round(recipeIngredient.amount * recipe.numberOfServings * 100) / 100,
                         ingredientAmountUnit = recipeIngredient.ingredientUnit.name
                     ))
                 }
 
-                val method = recipeRepository.getRecipeWithRecipeSteps(recipe.id).first().recipeSteps.map { step ->
-                    RecipeStep( step.instruction, UUID.randomUUID() ) // random UUID to use as the key in the draggable list
+                val method = recipeRepository.getRecipeWithRecipeSteps(recipe.id).first()
+                    .recipeSteps.map { step ->
+                        // random UUID to use as the key in the draggable list:
+                        RecipeStep( step.instruction, UUID.randomUUID() )
                 }
 
                 // do checks for null etc
@@ -920,9 +1034,7 @@ class RecipeCreationViewModel @Inject constructor(
                 setImageFile(recipe.imagePath)
                 setEmoji(recipe.emoji)
                 setColour(enumValueOf<NourishColour>(recipe.colour))
-
             }
         }
     }
-
 }
