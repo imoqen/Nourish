@@ -1,6 +1,5 @@
 package uk.co.imoqen.nourish.shoppinglist
 
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.BorderStroke
@@ -61,7 +60,9 @@ import uk.co.imoqen.nourish.recipebook.RecipeLoadingBar
 import kotlin.math.ceil
 
 /**
- * Shopping list view
+ * View for ShoppingList, used for viewing the shopping list, adding, editing, reordering,
+ * and deleting items from it.
+ * @param viewModel - the ViewModel for this view, holding the required logic.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,14 +71,16 @@ fun ShoppingListScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val lazyListState = rememberLazyListState()
-    val hapticFeedback = LocalHapticFeedback.current // to provide haptic feedback when reordering list items
+    // to provide haptic feedback when reordering list items:
+    val hapticFeedback = LocalHapticFeedback.current
     val keyboardFocusManager = LocalFocusManager.current
 
     LaunchedEffect("POPULATE_SHOPPING_LIST") {
         viewModel.populateShoppingList()
     }
 
-    // whenever the entries change (e.g. from checking off items as purchased), need to resort them in the UI.
+    // Whenever the entries change (e.g. from checking off items as purchased),
+    // need to restore them in the UI.
     LaunchedEffect(uiState.shoppingListEntries) {
         viewModel.setShoppingListEntries(uiState.shoppingListEntries.sortedWith(
             compareBy<ShoppingListUiEntry> { it.purchased }
@@ -87,7 +90,6 @@ fun ShoppingListScreen(
     }
 
     val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
-
         // Update the UI:
         val list = uiState.shoppingListEntries.toMutableList().apply {
             add(to.index, removeAt(from.index))
@@ -104,23 +106,33 @@ fun ShoppingListScreen(
         hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
     }
 
-    // for deleting all (reset)
+    // For deleting all (reset)
     NourishConfirmationDialog(
         show = uiState.showDeleteAllDialog,
         title = "Confirm Clear",
         description = "Are you sure you wish to clear the shopping list?\n\nAll items in the shopping list will be deleted.",
-        onConfirmation = { viewModel.clearShoppingList(); viewModel.setShowDeleteAllDialog(false); viewModel.setUserInteractionStatus(UserInteractionStatus.BROWSE) },
+        onConfirmation = {
+            viewModel.clearShoppingList()
+            viewModel.setShowDeleteAllDialog(false)
+            viewModel.setUserInteractionStatus(UserInteractionStatus.BROWSE)
+                         },
         onDismiss = { viewModel.setShowDeleteAllDialog(false) }
     )
-    // to delete only the purchased ones
+
+    // To delete only the purchased ones
     NourishConfirmationDialog(
         show = uiState.showDeletePurchasedDialog,
         title = "Confirm Clear",
         description = "Are you sure you wish to clear all purchased items from the shopping list?",
-        onConfirmation = { viewModel.clearShoppingList(onlyDeletePurchased = true); viewModel.setShowDeletePurchasedDialog(false); viewModel.setUserInteractionStatus(UserInteractionStatus.BROWSE) },
+        onConfirmation = {
+            viewModel.clearShoppingList(onlyDeletePurchased = true)
+            viewModel.setShowDeletePurchasedDialog(false)
+            viewModel.setUserInteractionStatus(UserInteractionStatus.BROWSE)
+                         },
         onDismiss = { viewModel.setShowDeletePurchasedDialog(false) }
     )
-    // for deleting single item
+
+    // For deleting single item
     NourishConfirmationDialog(
         show = (uiState.itemIndexToDelete != -1),
         title = "Confirm Delete",
@@ -183,7 +195,9 @@ fun ShoppingListScreen(
                 LazyColumn(
                     state = lazyListState,
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 72.dp) // padding at bottom to accommodate for the space that the FAB takes up, so that all elements of the page are 100% visible by scrolling
+                    // padding at bottom to accommodate for the space that the FAB takes up, so that
+                    // all elements of the page are 100% visible by scrolling
+                    contentPadding = PaddingValues(bottom = 72.dp)
                 ) {
 
                 // Lists the items, using the primary key as its key: stable.
@@ -191,13 +205,16 @@ fun ShoppingListScreen(
                     uiState.shoppingListEntries,
                     key = { i, shoppingListItem -> shoppingListItem.id }) { i, shoppingListItem ->
 
-                    // checks whether another item under the same name exists but a small amount
-                    // e.g. in recipes when only a small amount is required (30ml or so). don't add this as irs own item, but
+                    // Checks whether another item under the same name exists but a small amount
+                    // e.g. in recipes when only a small amount is required (30ml or so).
+                    // don't add this as irs own item, but
                     // add it as a disclaimer under an existing item.
-                    // removed it - think i was obvercomplicating it
+                    // removed it - think i was overcomplicating it
 
-                    if (shoppingListItem.plural.lowercase().contains(uiState.searchTerm.lowercase())) { // applies the search
-                        // Uses ReorderableItem library: https://github.com/Calvin-LL/Reorderable
+                    // applies the search and displays all items in a Reorderable List:
+                    // using Calvin Reorderable for reorderability:
+                    // https://github.com/Calvin-LL/Reorderable
+                    if (shoppingListItem.plural.lowercase().contains(uiState.searchTerm.lowercase())) {
                         ReorderableItem(
                             reorderableLazyListState,
                             key = shoppingListItem.id,
@@ -225,7 +242,7 @@ fun ShoppingListScreen(
                                             val index =
                                                 uiState.shoppingListEntries.indexOfFirst { it.id == shoppingListItem.id }
                                             if (index != -1) {
-                                                // update the UI and DB with the purchase state
+                                                // Update the UI and DB with the purchase state
                                                 viewModel.updatePurchasedState(
                                                     index,
                                                     shoppingListItem.copy(purchased = !shoppingListItem.purchased)
@@ -248,7 +265,8 @@ fun ShoppingListScreen(
                                         )
                                     }
 
-                                    // if the unit type is SINGLE, dont display the amount. only display if UNIT or others which have a unit and amount.
+                                    // If the unit type is SINGLE, don't display the amount.
+                                    // Only display if UNIT or others which have a unit and amount.
 
                                     IngredientAmount(
                                         unit = shoppingListItem.unit,
@@ -263,7 +281,7 @@ fun ShoppingListScreen(
                                                             )
                                                             viewModel.setEditIngredientAmount(
                                                                 "${shoppingListItem.amount}"
-                                                            ) // so the user can updte the existing
+                                                            ) // So the user can update the existing
                                                         }
                                                     )
                                             } else {
@@ -283,14 +301,12 @@ fun ShoppingListScreen(
                                         },
                                         formatIngredientAmount = viewModel::formatIngredientAmount
                                     )
-
-                                    //Spacer(modifier = Modifier.weight(1f))
-                                    // buttons, amounts, etc, go to the very end
+                                    // Buttons, amounts, etc, go to the very end
                                     AnimatedVisibility(
                                         visible = uiState.userInteractionStatus == UserInteractionStatus.EDIT
                                     ) {
                                         Row() {
-                                            // delete the item
+                                            // Delete the item
                                             Icon(
                                                 painter = painterResource(R.drawable.delete),
                                                 contentDescription = "Delete Item",
@@ -302,7 +318,7 @@ fun ShoppingListScreen(
                                                 )
                                             )
 
-                                            // move the item
+                                            // Move the item
                                             Icon(
                                                 modifier = Modifier
                                                     .draggableHandle(
@@ -336,13 +352,13 @@ fun ShoppingListScreen(
                 }
             }
 
-
             // FAB for adding and editing
             Row(
                 modifier = Modifier.align(Alignment.BottomEnd)
             ) {
                 AnimatedVisibility(
-                    visible = uiState.userInteractionStatus == UserInteractionStatus.BROWSE || uiState.userInteractionStatus == UserInteractionStatus.EDIT
+                    visible = uiState.userInteractionStatus == UserInteractionStatus.BROWSE ||
+                            uiState.userInteractionStatus == UserInteractionStatus.EDIT
                 ) {
                     Row() {
                         // Delete All button:
@@ -389,7 +405,8 @@ fun ShoppingListScreen(
                             )
                         }
                         // Edit button:
-                        if (uiState.userInteractionStatus == UserInteractionStatus.BROWSE || uiState.userInteractionStatus == UserInteractionStatus.EDIT) {
+                        if (uiState.userInteractionStatus == UserInteractionStatus.BROWSE ||
+                            uiState.userInteractionStatus == UserInteractionStatus.EDIT) {
                             if (uiState.userInteractionStatus == UserInteractionStatus.BROWSE) {
                                 ExtendedFloatingActionButton(
                                     modifier = Modifier.padding(vertical=12.dp,horizontal=6.dp).testTag("editList"),
@@ -437,7 +454,8 @@ fun ShoppingListScreen(
                 }
 
                 AnimatedVisibility(
-                    visible = uiState.userInteractionStatus == UserInteractionStatus.BROWSE || uiState.userInteractionStatus == UserInteractionStatus.ADD
+                    visible = uiState.userInteractionStatus == UserInteractionStatus.BROWSE ||
+                            uiState.userInteractionStatus == UserInteractionStatus.ADD
                 ) {
                     if (uiState.userInteractionStatus == UserInteractionStatus.BROWSE) {
                         ExtendedFloatingActionButton(
@@ -468,7 +486,8 @@ fun ShoppingListScreen(
                     ingredient = uiState.ingredientToAdd,
                     action = viewModel::onIngredientSheetAction,
                     possibleUnits = listOf(
-                        IngredientUnit.ML, IngredientUnit.L, IngredientUnit.G, IngredientUnit.KG, IngredientUnit.PINT
+                        IngredientUnit.ML, IngredientUnit.L, IngredientUnit.G,
+                        IngredientUnit.KG, IngredientUnit.PINT
                     ),
                     text = AddIngredientSheetText(
                         title = "Add an item to your Shopping List",
@@ -486,7 +505,9 @@ fun ShoppingListScreen(
             ) {
                 EditIngredientBottomSheet(
                     onDismiss = { viewModel.setIngredientIndexToEdit(-1) },
-                    unitName = uiState.shoppingListEntries.getOrNull(uiState.ingredientToEdit.index)?.unit?.singularName ?: "",
+                    unitName = uiState.shoppingListEntries.getOrNull(
+                        uiState.ingredientToEdit.index
+                    )?.unit?.singularName ?: "",
                     amount = uiState.ingredientToEdit.amount,
                     setAmount = viewModel::setEditIngredientAmount,
                     persistAmountUpdate = viewModel::updateIngredientAmount,
@@ -499,6 +520,13 @@ fun ShoppingListScreen(
     }
 }
 
+/**
+ * The selection button for Unit, allowing a Unit to be selected for a shopping list item.
+ * @param selectedUnit - The unit which has been selected
+ * @param onUnitChange - Function which runs when a different unit is selected.
+ * @param text - String to display, describing the button.
+ * @param currentUnit - The unit itself.
+ */
 @Composable
 fun UnitSelectionButton(
     selectedUnit: IngredientUnit,
@@ -527,6 +555,16 @@ fun UnitSelectionButton(
     }
 }
 
+/**
+ * The formatted amount of an ingredient in the shopping list.
+ * @param unit - The unit of the ingredient
+ * @param amount - The amount of the ingredient
+ * @param formatIngredientAmount - Function to format the amount.
+ * @param editModifierFunctionality - Function to edit the modifier
+ * @param editContent - Function to edit the content of the composable.
+ * @param round - Boolean reflecting whether the amount should be rounded or not (should not be rounded
+ *                for kg, l,o r user-inputted).
+ */
 @Composable
 fun IngredientAmount(
     unit: IngredientUnit,
@@ -558,9 +596,13 @@ fun IngredientAmount(
                 text = "${
                     formatIngredientAmount(
                         if (round) {
-                            ceil(amount) // gets ceiled because cant buy 0.5 of a lemon e.g.. BUT should still store the decimal because required for calc e.g. ifuser adds 0.5 lemon twice, it shuold still say 1 lemon.
+                            // gets Ceiled because cant buy 0.5 of a lemon e.g.. 
+                            // BUT should still store the decimal because required for calc e.g. 
+                            // if user adds 0.5 lemon twice, it should still say 1 lemon.
+                            ceil(amount)
                         } else {
-                            // dont ceil if kg or L - these need to be precise. or if in the user created recipe.
+                            // Ceil is not used if kg or L - these need to be precise. 
+                            // or if in the user created recipe.
                             amount
                         },
                         round

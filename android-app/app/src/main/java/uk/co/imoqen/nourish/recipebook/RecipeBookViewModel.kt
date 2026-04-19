@@ -716,6 +716,15 @@ class RecipeBookViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Formats the ingredient amount, to display in the UI.
+     * This shaves off the decimal if it is .0, otherwise keeps it.
+     * e.g. 5.0 -> 5 but 5.5 remains -> 5.5
+     * @param ingredientAmount - the amount of the ingredient to format.
+     * @param roundToNearestQuarter - Whether it should be rounded to a quarter or not. It should
+     *                                only not be rounded to a quarter (thus be precise) if KG or L.
+     * @returns The formatted ingredient amount string.
+     */
     fun formatIngredientAmount(
         ingredientAmount: Double,
         roundToNearestQuarter: Boolean = true
