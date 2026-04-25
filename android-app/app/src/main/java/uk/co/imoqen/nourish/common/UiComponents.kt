@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -94,7 +95,8 @@ fun NourishTextField(
         ,
         modifier = modifier
             .fillMaxWidth(0.9f)
-            .padding(top = 8.dp),
+            .padding(top = 8.dp)
+            .testTag("nourishTextField"),
         colors = OutlinedTextFieldDefaults.colors(
             focusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
             unfocusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
