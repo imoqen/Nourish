@@ -423,7 +423,7 @@ class ShoppingListViewModel @Inject constructor(
     }
 
     /**
-     * For editing the amount of an ingredint; persists this updated amount to the database.
+     * For editing the amount of an ingredient; persists this updated amount to the database.
      */
     fun updateIngredientAmount() {
         viewModelScope.launch() {
