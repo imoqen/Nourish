@@ -10,19 +10,19 @@
  */
 
 // LangChain:
-const { createAgent, toolStrategy } = require("langchain");
+import { createAgent, toolStrategy } from "langchain";
 // VertexAI:
-const { ChatVertexAI } = require("@langchain/google-vertexai");
+import { ChatVertexAI } from "@langchain/google-vertexai";
 
 // Custom LangChain schemas, defined in langchain-schemas.js:
-const {
+import {
   NutritionSchemaZod,
   QuestionAnswerSchemaZod,
   RecipeSchemaZod,
   DishListFromIngredientsSchemaZod,
   DishListFromImageIngredientsSchemaZod,
   DishListFromImageSchemaZod,
-} = require("./llm-calls");
+} from "./langchain-schemas.js";
 
 /**
  * LlmActionRequest: To generate nutritional values of the provided recipe.

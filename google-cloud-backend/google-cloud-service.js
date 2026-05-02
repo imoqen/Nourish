@@ -24,7 +24,7 @@ const {
   generateDishesFromIngredients,
   generateDishesFromIngredientsImage,
   generateDishesFromImage,
-} = require("./llm-calls");
+} = require("./llm-calls.js");
 
 // Javascript-style enums (real enums are only supported in typescript)
 // these are the same as present in the Nourish Kotlin app

@@ -17,7 +17,7 @@
  */
 
 // For structuring LangChain outputs:
-const { z } = require("zod");
+import { z } from "zod";
 
 // Units: given as metric, something to address in the future would be also
 // adding support for imperial which the software has the capacity to do but was
@@ -269,14 +269,14 @@ export function RecipeSchemaZod(allNutritionalFilters, dishType) {
     recipeNotPossible: z
       .boolean()
       .describe(
-        "If the provided prompt is invalid for generating a human-edible recipe, " +
-          "such as something which is inedible, " +
-          "return 'true' here and fill in every other required field with an empty string, " +
-          "otherwise return 'false' and generate the recipe accordingly." +
-          " With this being said, though, still be creative and if it isn't " +
+        "If the provided prompt is invalid for generating a human-edible " +
+          "recipe, such as something which is inedible, return 'true' here " +
+          "and fill in every other required field with an empty string, " +
+          "otherwise return 'false' and generate the recipe accordingly. " +
+          "With this being said, though, still be creative and if it isn't " +
           "immediately obvious how to make a dish within the constraints, " +
-          "BE CREATIVE and think of a way (as long as it is edible by a human). " +
-          "Only return true here if there really is no way.",
+          "be creative to discover a method (as long as it is edible by a " +
+          "human). Only return true here if there really is no possible recipe.",
       ),
 
     emoji: z
