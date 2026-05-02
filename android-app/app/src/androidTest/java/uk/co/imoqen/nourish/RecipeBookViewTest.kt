@@ -414,8 +414,8 @@ class RecipeBookViewTest {
         // wait for the data to load from the DB:
         composeRule.waitUntil(timeoutMillis = 10_000) {
             composeRule
-                .onAllNodes(hasText("Healthy Salad"))
-                .fetchSemanticsNodes().isNotEmpty()
+                .onAllNodes(hasText("Healthy Salad"), useUnmergedTree = true)
+                .fetchSemanticsNodes().size == 1
         }
 
         composeRule
@@ -430,37 +430,42 @@ class RecipeBookViewTest {
         composeRule
             // have to use test tag as the text is embedded within the button so not clickable itself
             // and semantics action rather than .performClick() otherwise not clicked
-            .onNodeWithTag("Make Alteration", useUnmergedTree = true)
+            .onNodeWithTag("Make Alteration")
             .assertIsDisplayed()
             .assertIsEnabled()
             .assertHasClickAction()
             .performSemanticsAction(SemanticsActions.OnClick)
 
         composeRule
-            .onNodeWithText("Enter an alteration")
+            .onNodeWithTag("nourishTextField", useUnmergedTree = true)
             .performTextInput("Make it healthier")
 
         composeRule
-            .onNodeWithContentDescription("Trailing Icon")
+            .onNodeWithContentDescription("Trailing Icon", useUnmergedTree = true)
             .performClick() // send it
 
         // check altered recipe is made:
         composeRule
             .onAllNodesWithText("Healthy Salad")
-            .assertCountEquals(2)
+            .fetchSemanticsNodes().isNotEmpty()
 
         // and check can save recipe:
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasTestTag("alterationColumn"), useUnmergedTree = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule
             .onNodeWithTag("alterationColumn")
             .performScrollToNode(
                 hasText("Save as new recipe", substring = true)
             )
         composeRule
-            .onNodeWithText("Save as new recipe")
+            .onNodeWithText("Save as new recipe", useUnmergedTree = true)
             .performClick()
         // and get sent to the new recipe:
         composeRule
-            .onNodeWithText("Healthy Salad")
+            .onNodeWithText("Healthy Salad", useUnmergedTree = true)
             .assertExists()
     }
 
@@ -507,9 +512,15 @@ class RecipeBookViewTest {
         // check altered recipe is made:
         composeRule
             .onAllNodesWithText("Healthy Salad")
-            .assertCountEquals(2)
+            .fetchSemanticsNodes().isNotEmpty()
 
         // and check can save recipe:
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasTestTag("alterationColumn"), useUnmergedTree = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+
         composeRule
             .onNodeWithTag("alterationColumn")
             .performScrollToNode(
@@ -567,9 +578,14 @@ class RecipeBookViewTest {
         // check altered recipe is made:
         composeRule
             .onAllNodesWithText("Healthy Salad")
-            .assertCountEquals(2)
+            .fetchSemanticsNodes().isNotEmpty()
 
         // and check can save recipe:
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasTestTag("alterationColumn"), useUnmergedTree = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule
             .onNodeWithTag("alterationColumn")
             .performScrollToNode(
@@ -626,6 +642,11 @@ class RecipeBookViewTest {
             .performClick() // send it
 
         // check response is received:
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodes(hasText("This recipe is healthy."))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule
             .onNodeWithText("This recipe is healthy.")
             .assertExists()

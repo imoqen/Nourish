@@ -25,14 +25,8 @@ import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withTimeout
-import okhttp3.internal.wait
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -577,7 +571,7 @@ class ShoppingListViewTest {
             .onNodeWithText("Add to Shopping List")
             .performClick()
         composeRule
-            .onNodeWithText("oat milk")
+            .onNodeWithText("oat milk", useUnmergedTree = true)
             .assertExists()
         composeRule
             .onNodeWithText("1 L")
@@ -597,7 +591,7 @@ class ShoppingListViewTest {
             .onNodeWithText("Update Amount")
             .performClick()
         composeRule
-            .onNodeWithText("500 ml")
+            .onNodeWithText("500 ml", useUnmergedTree = true)
             .assertExists()
         composeRule
             .onAllNodesWithContentDescription("Edit Item Amount")[1]

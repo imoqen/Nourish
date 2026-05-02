@@ -54,8 +54,8 @@ class ApiManagerImpl @Inject constructor(
         type: LlmRequestType,
         request: LlmRequest,
         bearerToken: String,
-        imageFilename: String, // optional; only for generating from image
-        filesDir: File?, // optional; only for generating from image
+        imageFilename: String, // optional; only to generate from image
+        filesDir: File?, // optional; only to generate from image
         onDishesProposed: (LlmDishesProposed?) -> Unit,
         onError: (String) -> Unit,
         onResponse: (LlmRecipe?) -> Unit,
