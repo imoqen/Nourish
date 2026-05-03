@@ -14,7 +14,7 @@ const { initializeApp } = require("firebase-admin/app"); // Firebase Admin sdk
 const { getAuth } = require("firebase-admin/auth"); // Auth method from firebase
 const { getFirestore, FieldValue } = require("firebase-admin/firestore"); // Firestore
 
-// Custom LLM calls, defined in llm-calls.js:
+// Custom LLM calls, defined in llm-calls.mjs:
 const {
   generateNutritionalValues,
   generateQuestionAnswer,
@@ -24,7 +24,7 @@ const {
   generateDishesFromIngredients,
   generateDishesFromIngredientsImage,
   generateDishesFromImage,
-} = require("./llm-calls.js");
+} = require("./llm-calls.mjs");
 
 // Javascript-style enums (real enums are only supported in typescript)
 // these are the same as present in the Nourish Kotlin app

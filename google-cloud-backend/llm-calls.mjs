@@ -14,7 +14,7 @@ import { createAgent, toolStrategy } from "langchain";
 // VertexAI:
 import { ChatVertexAI } from "@langchain/google-vertexai";
 
-// Custom LangChain schemas, defined in langchain-schemas.js:
+// Custom LangChain schemas, defined in langchain-schemas.mjs:
 import {
   NutritionSchemaZod,
   QuestionAnswerSchemaZod,
@@ -22,7 +22,7 @@ import {
   DishListFromIngredientsSchemaZod,
   DishListFromImageIngredientsSchemaZod,
   DishListFromImageSchemaZod,
-} from "./langchain-schemas.js";
+} from "./langchain-schemas.mjs";
 
 /**
  * LlmActionRequest: To generate nutritional values of the provided recipe.
