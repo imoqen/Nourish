@@ -16,8 +16,8 @@
     "@langchain/google-genai": "^2.1.17",
     "@langchain/google-vertexai": "^2.1.17",
     "express": "^5.2.1",
-    "firebase-admin": "^13.6.0",
-    "langchain": "^1.2.21",
+    "firebase-admin": "^13.8.0",
+    "langchain": "^1.3.5",
     "multer": "^2.0.2",
     "zod": "^4.3.6"
   }
