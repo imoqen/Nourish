@@ -8,7 +8,9 @@ COM3610 Dissertation Project
 
 ## Showcase Video
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/KMuAeE98rdQ?si=s3Jtcbi5Zos-XK7Q" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<a href="https://www.youtube.com/watch?v=KMuAeE98rdQ">
+  <img src="nourish-thumbnail.png" width="600">
+</a>
 
 ## Prerequisites
 
