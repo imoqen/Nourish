@@ -17,7 +17,15 @@ COM3610 Dissertation Project
 - Android Studio SDK (Nourish was created using version Narwahl 3)
 - Access to an Android phone or emulator (emulator is provided in Android Studio) with minimum SDK API 33 (Tiramisu; Android 13.0). Optimal SDK for the project: API 36.0 (Baklava; Android 16.0).
 
-## Setup
+## Setup and Installation
+
+If you have an Android device that you wish to install the application on, rather than installing manually,
+you can simply contact Imogen Pemberton by email (ipemberton1@sheffield.ac.uk).
+
+In the email, include the email address associated with a Google Play account that you wish to access the application on.
+You will then be added as an internal tester, and can install directly through Google Play.
+
+If you prefer manual setup, please keep reading.
 
 ### Mobile Application
 
@@ -29,11 +37,15 @@ COM3610 Dissertation Project
 
 ### Google Cloud Service
 
-The Google Cloud Service can be established using the following command while in the `google-cloud-backend` directory:
+The Google Cloud Service can only be established when authenticated with the GOOGLE_CLOUD_PROJECT_NAME project through the Google Cloud Console. Therefore, it has been left on for the duration of the dissertation marking period; it does not need to be set up, only continue reading if you are authenticated.
 
+The service can be established using the following commands while in the `google-cloud-backend` directory:
+
+First, ensure all libraries are installed:
+`npm install`
+
+Then bring up the GCS:
 `gcloud run deploy llm --source . --region GOOGLE_CLOUD_PROJECT_REGION --allow-unauthenticated`
-
-This is only possible when authenticated with the GOOGLE_CLOUD_PROJECT_NAME project through the Google Cloud Console.
 
 ## Testing Execution
 
