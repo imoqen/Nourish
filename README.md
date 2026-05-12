@@ -31,7 +31,7 @@ If you prefer manual setup, please keep reading.
 
 1. _(skip this step if you have been provided with the Nourish zip file)_ Clone the git repository using
    `git clone https://github.com/imoqen/Nourish`
-2. Open the project in Android Studio with minimum SDK API 33 (Tiramisu; Android 13).
+2. Open the android-app directory in Android Studio with minimum SDK API 33 (Tiramisu; Android 13).
 3. Set up and boot either the emulator or USB debugging on a real connected Android phone.
 4. Press the play icon in the top right of Android studio. The app will then launch on the phone. This may take some time for the first launch, due to library installations.
 
