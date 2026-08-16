@@ -7,6 +7,9 @@ import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.db.tag.TagRepository
 import kotlin.collections.listOf
 
+/**
+ * Mock TagRepository for tests.
+ */
 class FakeTagRepository(): TagRepository {
 
     var lastCalled = ""

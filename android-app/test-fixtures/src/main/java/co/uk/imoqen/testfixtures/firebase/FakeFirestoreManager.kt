@@ -2,6 +2,9 @@ package co.uk.imoqen.testfixtures.firebase
 
 import uk.co.imoqen.nourish.firebase.firestore.FirestoreManager
 
+/**
+ * Mock FirestoreManager for tests.
+ */
 class FakeFirestoreManager(): FirestoreManager {
 
     override suspend fun addUserToFirestoreIfNotExists(uid: String, email: String) {

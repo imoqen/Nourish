@@ -7,6 +7,9 @@ import uk.co.imoqen.nourish.db.shoppinglistentry.ShoppingListEntry
 import uk.co.imoqen.nourish.db.shoppinglistentry.ShoppingListEntryRepository
 import uk.co.imoqen.nourish.recipebook.ShoppingListIngredient
 
+/**
+ * Mock ShoppingListEntryRepository for tests.
+ */
 class FakeShoppingListEntryRepository(): ShoppingListEntryRepository {
     override fun getAll(uid: String): Flow<List<ShoppingListEntry>> {
         if (uid == "user_with_ingr_to_convert_l_and_kg") {

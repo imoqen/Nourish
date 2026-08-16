@@ -6,6 +6,9 @@ import kotlinx.coroutines.flow.flowOf
 import uk.co.imoqen.nourish.db.ingredient.Ingredient
 import uk.co.imoqen.nourish.db.ingredient.IngredientRepository
 
+/**
+ * Mock IngredientRepository for tests.
+ */
 class FakeIngredientRepository(): IngredientRepository {
     override fun getById(id: Long): Flow<Ingredient?> {
         if (id == -1L) {

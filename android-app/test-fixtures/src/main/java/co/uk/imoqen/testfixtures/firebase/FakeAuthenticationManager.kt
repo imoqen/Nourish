@@ -9,6 +9,9 @@ import kotlinx.coroutines.flow.update
 import uk.co.imoqen.nourish.authentication.AuthenticationState
 import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 
+/**
+ * Mock Authentication Manager for tests.
+ */
 class FakeAuthenticationManager(): AuthenticationManager {
 
     private val mutableAuthenticationState = MutableStateFlow(AuthenticationState())
@@ -16,7 +19,7 @@ class FakeAuthenticationManager(): AuthenticationManager {
     override val authenticationState: StateFlow<AuthenticationState> = mutableAuthenticationState.asStateFlow()
 
     override suspend fun addIfNotExists() {
-        // do nothing
+        // Do nothing if doesn't exist
     }
 
     fun setLoginState(loggedInState: Boolean, uid: String = "") {
@@ -48,15 +51,13 @@ class FakeAuthenticationManager(): AuthenticationManager {
         if (email == "unknown@gmail.com") {
             throw RuntimeException("Fake sign in failure")
         }
-        // Known email address, registered on the app:
-        // dont throw anything; success.
         else {
             setLoginState(true, "test_uid")
         }
     }
 
     override suspend fun signInWithGoogle(context: Context) {
-        // simply log in the user
+        // Simply log in the user
         setLoginState(true, "google_uid")
     }
 
@@ -67,7 +68,7 @@ class FakeAuthenticationManager(): AuthenticationManager {
         }
     }
 
-    // mocks the password based accounts by setting their uid to "test_uid"
+    // Mocks the password based accounts by setting their uid to "test_uid"
     override suspend fun hasPasswordProvider(): Boolean {
         return mutableAuthenticationState.value.uid == "test_uid"
     }
@@ -86,7 +87,7 @@ class FakeAuthenticationManager(): AuthenticationManager {
     }
 
     override suspend fun deletePasswordAccount() {
-        // do nothing to simulate success
+        // Do nothing to simulate success
     }
 
     override suspend fun deleteGoogleAccount(
@@ -95,7 +96,7 @@ class FakeAuthenticationManager(): AuthenticationManager {
         if (!mutableAuthenticationState.value.loggedIn) {
             throw Exception()
         }
-        // otherwise do nothing to simulate success
+        // Otherwise do nothing to simulate success
     }
 
     override suspend fun getUserToken(): String? {
@@ -123,6 +124,6 @@ class FakeAuthenticationManager(): AuthenticationManager {
     }
 
     override fun getIsFirstLogin(): Boolean {
-        return true // first time logging in always
+        return true
     }
 }
