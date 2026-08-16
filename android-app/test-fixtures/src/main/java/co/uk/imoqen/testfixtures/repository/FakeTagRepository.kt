@@ -9,6 +9,8 @@ import kotlin.collections.listOf
 
 /**
  * Mock TagRepository for tests.
+ *
+ * @author Imogen Pemberton, 2026
  */
 class FakeTagRepository(): TagRepository {
 

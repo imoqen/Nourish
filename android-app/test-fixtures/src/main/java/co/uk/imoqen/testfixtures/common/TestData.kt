@@ -31,6 +31,8 @@ import uk.co.imoqen.nourish.shoppinglist.ShoppingListUiEntry
 
 /**
  * Shared data used across tests
+ *
+ * @author Imogen Pemberton, 2026
  */
 object TestData {
 

@@ -33,6 +33,8 @@ import kotlin.collections.listOf
 
 /**
  * Unit tests for the RecipeCreation ViewModel
+ *
+ * @author Imogen Pemberton, 2026
  */
 class RecipeCreationViewModelTest {
 

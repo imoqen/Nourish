@@ -30,6 +30,8 @@ import uk.co.imoqen.nourish.shoppinglist.UserInteractionStatus
 
 /**
  * Unit tests for the ShoppingList ViewModel
+ *
+ * @author Imogen Pemberton, 2026
  */
 class ShoppingListViewModelTest {
     val fakeAuthenticationManager = FakeAuthenticationManager()

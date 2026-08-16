@@ -20,6 +20,8 @@ import uk.co.imoqen.nourish.network.response.LlmRecipe
 
 /**
  * Mock RecipeRepository for tests.
+ *
+ * @author Imogen Pemberton, 2026
  */
 class FakeRecipeRepository(): RecipeRepository {
 

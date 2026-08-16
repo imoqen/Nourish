@@ -15,6 +15,8 @@ import uk.co.imoqen.nourish.setup.MainDispatcherRule
 
 /**
  * Unit tests for the Profile ViewModel
+ *
+ * @author Imogen Pemberton, 2026
  */
 class ProfileViewModelTest {
 

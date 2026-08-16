@@ -18,6 +18,8 @@ import uk.co.imoqen.nourish.setup.MainDispatcherRule
 
 /**
  * Unit tests for the Authentication ViewModel
+ *
+ * @author Imogen Pemberton, 2026
  */
 class AuthenticationViewModelTest {
 

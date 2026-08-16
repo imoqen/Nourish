@@ -4,6 +4,8 @@ import uk.co.imoqen.nourish.firebase.firestore.FirestoreManager
 
 /**
  * Mock FirestoreManager for tests.
+ *
+ * @author Imogen Pemberton, 2026
  */
 class FakeFirestoreManager(): FirestoreManager {
 

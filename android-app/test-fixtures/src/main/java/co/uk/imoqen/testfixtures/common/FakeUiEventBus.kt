@@ -6,6 +6,8 @@ import uk.co.imoqen.nourish.common.uievent.UiEventBus
 
 /**
  * Mock UiEventBus
+ *
+ * @author Imogen Pemberton, 2026
  */
 class FakeUiEventBus(): UiEventBus {
 

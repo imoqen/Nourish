@@ -9,6 +9,8 @@ import uk.co.imoqen.nourish.recipebook.ShoppingListIngredient
 
 /**
  * Mock ShoppingListEntryRepository for tests.
+ *
+ * @author Imogen Pemberton, 2026
  */
 class FakeShoppingListEntryRepository(): ShoppingListEntryRepository {
     override fun getAll(uid: String): Flow<List<ShoppingListEntry>> {

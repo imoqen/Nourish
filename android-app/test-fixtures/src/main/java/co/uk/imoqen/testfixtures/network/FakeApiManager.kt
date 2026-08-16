@@ -14,6 +14,8 @@ import java.io.File
 
 /**
  * Mock ApiManager for tests.
+ *
+ * @author Imogen Pemberton, 2026
  */
 class FakeApiManager(): ApiManager {
 

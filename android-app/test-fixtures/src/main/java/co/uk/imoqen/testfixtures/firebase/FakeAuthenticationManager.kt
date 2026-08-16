@@ -11,6 +11,8 @@ import uk.co.imoqen.nourish.firebase.authentication.AuthenticationManager
 
 /**
  * Mock Authentication Manager for tests.
+ *
+ * @author Imogen Pemberton, 2026
  */
 class FakeAuthenticationManager(): AuthenticationManager {
 

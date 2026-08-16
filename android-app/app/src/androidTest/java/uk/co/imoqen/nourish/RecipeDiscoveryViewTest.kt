@@ -60,6 +60,8 @@ import javax.inject.Inject
 
 /**
  * Instrumented tests for the RecipeDiscovery View
+ *
+ * @author Imogen Pemberton, 2026
  */
 @UninstallModules(AuthenticationModule::class, FirebaseModule::class, ApiManagerModule::class)
 @HiltAndroidTest

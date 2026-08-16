@@ -31,6 +31,8 @@ import kotlin.test.assertFailsWith
 
 /**
  * Unit tests for the RecipeBook ViewModel
+ *
+ * @author Imogen Pemberton, 2026
  */
 class RecipeBookViewModelTest {
     val fakeAuthenticationManager = FakeAuthenticationManager()
