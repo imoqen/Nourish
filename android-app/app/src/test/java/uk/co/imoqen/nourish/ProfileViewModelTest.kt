@@ -1,7 +1,6 @@
 package uk.co.imoqen.nourish
 
 import android.app.Activity
-import android.content.Context
 import co.uk.imoqen.testfixtures.common.FakeUiEventBus
 import co.uk.imoqen.testfixtures.firebase.FakeAuthenticationManager
 import io.mockk.mockk
@@ -14,6 +13,9 @@ import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.profile.ProfileViewModel
 import uk.co.imoqen.nourish.setup.MainDispatcherRule
 
+/**
+ * Unit tests for the Profile ViewModel
+ */
 class ProfileViewModelTest {
 
     val fakeAuthenticationManager = FakeAuthenticationManager()

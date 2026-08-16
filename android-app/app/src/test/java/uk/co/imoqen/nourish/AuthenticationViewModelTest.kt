@@ -5,7 +5,6 @@ import co.uk.imoqen.testfixtures.common.FakeUiEventBus
 import co.uk.imoqen.testfixtures.firebase.FakeAuthenticationManager
 import co.uk.imoqen.testfixtures.repository.FakeTagRepository
 import co.uk.imoqen.testfixtures.repository.FakeUserRepository
-import io.mockk.every
 import io.mockk.mockk
 import org.junit.Assert
 import org.junit.Before
@@ -16,8 +15,10 @@ import uk.co.imoqen.nourish.authentication.AuthenticationViewModel
 import uk.co.imoqen.nourish.common.ErrorMessage
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.setup.MainDispatcherRule
-import java.io.File
 
+/**
+ * Unit tests for the Authentication ViewModel
+ */
 class AuthenticationViewModelTest {
 
     val fakeAuthenticationManager = FakeAuthenticationManager()

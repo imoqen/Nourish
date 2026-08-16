@@ -58,6 +58,9 @@ import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import uk.co.imoqen.nourish.network.apimanager.ApiManagerModule
 import javax.inject.Inject
 
+/**
+ * Instrumented tests for the RecipeDiscovery View
+ */
 @UninstallModules(AuthenticationModule::class, FirebaseModule::class, ApiManagerModule::class)
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
@@ -231,7 +234,6 @@ class RecipeDiscoveryViewTest {
             .assertIsDisplayed()
             .performClick()
 
-        // Uses UIAutomator provided by Android: https://developer.android.com/training/testing/other-components/ui-automator
         // to select an image
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
@@ -322,7 +324,6 @@ class RecipeDiscoveryViewTest {
             .assertIsDisplayed()
             .performClick()
 
-        // Uses UIAutomator provided by Android: https://developer.android.com/training/testing/other-components/ui-automator
         // to select an image
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 

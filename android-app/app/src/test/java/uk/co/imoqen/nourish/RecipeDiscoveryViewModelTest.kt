@@ -1,20 +1,17 @@
 package uk.co.imoqen.nourish
 
-import androidx.compose.ui.platform.LocalContext
 import co.uk.imoqen.testfixtures.common.FakeUiEventBus
 import co.uk.imoqen.testfixtures.common.TestData
 import co.uk.imoqen.testfixtures.firebase.FakeAuthenticationManager
 import co.uk.imoqen.testfixtures.network.FakeApiManager
 import co.uk.imoqen.testfixtures.repository.FakeRecipeRepository
 import co.uk.imoqen.testfixtures.repository.FakeTagRepository
-import coil3.Uri
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.RecipeActions
-import uk.co.imoqen.nourish.common.ingredient.IngredientSheetAction
 import uk.co.imoqen.nourish.common.tag.FilterState
 import uk.co.imoqen.nourish.common.tag.TagSheetAction
 import uk.co.imoqen.nourish.network.request.LlmRequestType
@@ -24,8 +21,10 @@ import uk.co.imoqen.nourish.recipediscovery.LlmMode
 import uk.co.imoqen.nourish.recipediscovery.Mipmap
 import uk.co.imoqen.nourish.recipediscovery.RecipeDiscoveryViewModel
 import uk.co.imoqen.nourish.setup.MainDispatcherRule
-import kotlin.collections.emptyList
 
+/**
+ * Unit tests for the RecipeDiscovery ViewModel
+ */
 class RecipeDiscoveryViewModelTest {
 
     val fakeAuthenticationManager = FakeAuthenticationManager()
