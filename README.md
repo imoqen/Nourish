@@ -4,7 +4,7 @@
 
 Imogen Pemberton, The University of Sheffield (Academic Year 25-26)
 
-COM3610 Dissertation Project
+Dissertation Project
 
 ## Showcase Video
 
@@ -29,26 +29,25 @@ COM3610 Dissertation Project
 
 ### Google Cloud Service
 
-The Google Cloud Service can only be established when authenticated with the Google Cloud project through the Google Cloud Console.
-This requires:
+The Google Cloud Service can be spun up and Firebase connected to the Nourish mobile application when the following are satisfied.
 
-- Authentication with a Google Cloud Project in the Google Cloud console
+- Authentication with a Google Cloud Project in the Google Cloud console. This project should be [registered with Firebase](https://firebase.google.com/docs/android/setup#register-app).
 
-- Replacing the secret keys throughout the code with the Google Cloud project keys:
+- Replacement of placeholder secret values throughout the code with the corresponding values in the Google Cloud project:
+
   `GOOGLE_CLOUD_URL`
+
   `WEB_CLIENT_ID`
+
   `GOOGLE_CLOUD_PROJECT_NAME`
+
   `GOOGLE_CLOUD_PROJECT_REGION`
 
-- Initialising the Google Cloud connection through creation of a `google-services.json` file in Put path here according to the Google Cloud documentation (add googles link here).
+- Initialisation of the Google Cloud connection to the application using a [google-services.json file](https://firebase.google.com/docs/android/setup#add-config-file). The [SDKs](https://firebase.google.com/docs/android/setup#add-sdks) are already configured.
 
-Once Google Cloud is connected, the service can be established using the following commands while in the `google-cloud-backend` directory:
-
-First, ensure all libraries are installed:
+Once Google Cloud is connected, the service can be established using the following commands while in the `google-cloud-backend` directory, replacing `GOOGLE_CLOUD_SERVICE_NAME` and `GOOGLE_CLOUD_REGION` with the Google Cloud Service's name and region, respectively.
 
 `npm install`
-
-Then bring up the GCS, replacing GOOGLE_CLOUD_SERVICE_NAME and GOOGLE_CLOUD_REGION with the GCS' name and region, respectively:
 
 `gcloud run deploy GOOGLE_CLOUD_SERVICE_NAME --source . --region GOOGLE_CLOUD_REGION --allow-unauthenticated`
 
