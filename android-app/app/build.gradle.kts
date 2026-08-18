@@ -1,6 +1,3 @@
-import org.gradle.kotlin.dsl.invoke
-import java.util.Locale
-
 // app module build gradle file
 
 plugins {

@@ -19,14 +19,6 @@ COM3610 Dissertation Project
 
 ## Setup and Installation
 
-If you have an Android device that you wish to install the application on, rather than installing manually,
-you can simply contact Imogen Pemberton by email (ipemberton1@sheffield.ac.uk).
-
-In the email, include the email address associated with a Google Play account that you wish to access the application on.
-You will then be added as an internal tester, and can install directly through Google Play.
-
-If you prefer manual setup, please keep reading.
-
 ### Mobile Application
 
 1. _(skip this step if you have been provided with the Nourish zip file)_ Clone the git repository using
@@ -37,15 +29,28 @@ If you prefer manual setup, please keep reading.
 
 ### Google Cloud Service
 
-The Google Cloud Service can only be established when authenticated with the GOOGLE_CLOUD_PROJECT_NAME project through the Google Cloud Console. Therefore, it has been left on for the duration of the dissertation marking period; it does not need to be set up, only continue reading if you are authenticated.
+The Google Cloud Service can only be established when authenticated with the Google Cloud project through the Google Cloud Console.
+This requires:
 
-The service can be established using the following commands while in the `google-cloud-backend` directory:
+- Authentication with a Google Cloud Project in the Google Cloud console
+
+- Replacing the secret keys throughout the code with the Google Cloud project keys:
+  `GOOGLE_CLOUD_URL`
+  `WEB_CLIENT_ID`
+  `GOOGLE_CLOUD_PROJECT_NAME`
+  `GOOGLE_CLOUD_PROJECT_REGION`
+
+- Initialising the Google Cloud connection through creation of a `google-services.json` file in Put path here according to the Google Cloud documentation (add googles link here).
+
+Once Google Cloud is connected, the service can be established using the following commands while in the `google-cloud-backend` directory:
 
 First, ensure all libraries are installed:
+
 `npm install`
 
-Then bring up the GCS:
-`gcloud run deploy llm --source . --region GOOGLE_CLOUD_PROJECT_REGION --allow-unauthenticated`
+Then bring up the GCS, replacing GOOGLE_CLOUD_SERVICE_NAME and GOOGLE_CLOUD_REGION with the GCS' name and region, respectively:
+
+`gcloud run deploy GOOGLE_CLOUD_SERVICE_NAME --source . --region GOOGLE_CLOUD_REGION --allow-unauthenticated`
 
 ## Testing Execution
 
