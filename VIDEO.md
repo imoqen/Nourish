@@ -5,7 +5,7 @@
 ## Showcase Video
 
 <a href="https://www.youtube.com/watch?v=KMuAeE98rdQ">
-  <img src="nourish-thumbnail.png" width="600">
+  <img src="images/nourish-thumbnail.png" width="600">
 </a>
 
 A showcase video has been uploaded to YouTube as an unlisted video.
