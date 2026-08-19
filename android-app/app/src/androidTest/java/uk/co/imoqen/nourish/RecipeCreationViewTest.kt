@@ -2,15 +2,10 @@ package uk.co.imoqen.nourish
 
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.SemanticsMatcher
-import androidx.compose.ui.test.assert
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.click
-import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isRoot
@@ -18,7 +13,6 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -29,14 +23,12 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.printToLog
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
-import co.uk.imoqen.testfixtures.common.TestData
 import co.uk.imoqen.testfixtures.firebase.FakeAuthenticationManager
 import co.uk.imoqen.testfixtures.firebase.FakeFirestoreManager
 import co.uk.imoqen.testfixtures.network.FakeApiManager
@@ -44,7 +36,6 @@ import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
-import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -72,6 +63,11 @@ import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import uk.co.imoqen.nourish.network.apimanager.ApiManagerModule
 import javax.inject.Inject
 
+/**
+ * Instrumented tests for the RecipeCreation View
+ *
+ * @author Imogen Pemberton, 2026
+ */
 @UninstallModules(AuthenticationModule::class, FirebaseModule::class, ApiManagerModule::class)
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
@@ -276,7 +272,6 @@ class RecipeCreationViewTest {
         composeRule
             .onNodeWithContentDescription("Update image")
             .performClick()
-        // Uses UIAutomator provided by Android: https://developer.android.com/training/testing/other-components/ui-automator
         // to select an image
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
@@ -624,7 +619,6 @@ class RecipeCreationViewTest {
         composeRule
             .onNodeWithContentDescription("Update image")
             .performClick()
-        // Uses UIAutomator provided by Android: https://developer.android.com/training/testing/other-components/ui-automator
         // to select an image
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
@@ -1012,7 +1006,6 @@ class RecipeCreationViewTest {
         composeRule
             .onNodeWithContentDescription("Update image")
             .performClick()
-        // Uses UIAutomator provided by Android: https://developer.android.com/training/testing/other-components/ui-automator
         // to select an image
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
@@ -1098,7 +1091,6 @@ class RecipeCreationViewTest {
         composeRule
             .onNodeWithContentDescription("Update image")
             .performClick()
-        // Uses UIAutomator provided by Android: https://developer.android.com/training/testing/other-components/ui-automator
         // to select an image
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 

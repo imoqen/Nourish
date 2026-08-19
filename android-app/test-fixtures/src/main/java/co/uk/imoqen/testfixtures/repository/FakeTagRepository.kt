@@ -7,6 +7,11 @@ import uk.co.imoqen.nourish.db.tag.Tag
 import uk.co.imoqen.nourish.db.tag.TagRepository
 import kotlin.collections.listOf
 
+/**
+ * Mock TagRepository for tests.
+ *
+ * @author Imogen Pemberton, 2026
+ */
 class FakeTagRepository(): TagRepository {
 
     var lastCalled = ""

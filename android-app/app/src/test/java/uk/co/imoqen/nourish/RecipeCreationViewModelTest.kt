@@ -26,12 +26,16 @@ import uk.co.imoqen.nourish.recipebook.TagSelection
 import uk.co.imoqen.nourish.recipecreation.CreationMode
 import uk.co.imoqen.nourish.recipecreation.RecipeCreationViewModel
 import uk.co.imoqen.nourish.recipecreation.RecipeStep
-import uk.co.imoqen.nourish.recipediscovery.RecipeDiscoveryViewModel
 import uk.co.imoqen.nourish.setup.MainDispatcherRule
 import java.io.File
 import java.util.UUID
 import kotlin.collections.listOf
 
+/**
+ * Unit tests for the RecipeCreation ViewModel
+ *
+ * @author Imogen Pemberton, 2026
+ */
 class RecipeCreationViewModelTest {
 
     val fakeAuthenticationManager = FakeAuthenticationManager()
@@ -777,8 +781,6 @@ class RecipeCreationViewModelTest {
         vm.updateRecipe(mockContext)
         Assert.assertEquals(vm.uiState.value.recipeCreated, true) // the recipe was not created (updated)
     }
-
-    // deleting file not covered, would need to mock it but not sure how. maybe look into in the future if more cov required.
 
     @Test
     fun `populateFromId fills in the UI state with a recipe's details successfully, for editing`() {

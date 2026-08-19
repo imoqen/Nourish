@@ -19,4 +19,5 @@ android-app/local.properties
 /google-cloud-backend/node_modules/
 android-app/build
 android-app/htmlReport
-
+google-cloud-backend/node_modules
+local.properties

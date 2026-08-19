@@ -1,6 +1,5 @@
 package uk.co.imoqen.nourish
 
-import androidx.compose.runtime.collectAsState
 import co.uk.imoqen.testfixtures.common.FakeUiEventBus
 import co.uk.imoqen.testfixtures.common.TestData
 import co.uk.imoqen.testfixtures.firebase.FakeAuthenticationManager
@@ -9,39 +8,32 @@ import co.uk.imoqen.testfixtures.repository.FakeIngredientRepository
 import co.uk.imoqen.testfixtures.repository.FakeRecipeRepository
 import co.uk.imoqen.testfixtures.repository.FakeShoppingListEntryRepository
 import co.uk.imoqen.testfixtures.repository.FakeTagRepository
-import io.mockk.coEvery
-import io.mockk.every
-import io.mockk.mockk
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import uk.co.imoqen.nourish.common.NourishColour
 import uk.co.imoqen.nourish.common.RecipeActions
-import uk.co.imoqen.nourish.common.tag.FilterState
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.db.recipe.Recipe
-import uk.co.imoqen.nourish.db.recipe.RecipeRepository
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.network.request.LlmActionType
-import uk.co.imoqen.nourish.network.request.LlmRequestType
 import uk.co.imoqen.nourish.recipebook.ActionChatStage
 import uk.co.imoqen.nourish.recipebook.RecipeBookViewModel
-import uk.co.imoqen.nourish.recipebook.RecipeCardExpanded
 import uk.co.imoqen.nourish.recipebook.RecipeCardUnexpanded
 import uk.co.imoqen.nourish.recipebook.ShoppingListIngredient
 import uk.co.imoqen.nourish.recipebook.TagSelection
-import uk.co.imoqen.nourish.recipebook.TypeSelection
-import uk.co.imoqen.nourish.recipediscovery.LlmMode
 import uk.co.imoqen.nourish.setup.MainDispatcherRule
-import kotlin.collections.emptyList
 import kotlin.collections.listOf
 import kotlin.collections.mutableListOf
 import kotlin.test.assertFailsWith
 
+/**
+ * Unit tests for the RecipeBook ViewModel
+ *
+ * @author Imogen Pemberton, 2026
+ */
 class RecipeBookViewModelTest {
     val fakeAuthenticationManager = FakeAuthenticationManager()
     val fakeApiManager = FakeApiManager()
@@ -246,7 +238,7 @@ class RecipeBookViewModelTest {
         vm.setIngredientsToAddToShoppingList(TestData.ingredientsToAddToShoppingList)
         fakeAuthenticationManager.setLoginState(false, "") // not logged in
         vm.addIngredientsToShoppingList()
-        // the ingredients do not get added because the user is not logged in, so tbey remain in the state:
+        // the ingredients do not get added because the user is not logged in, so they remain in the state:
         Assert.assertEquals(
             vm.uiState.value.ingredientsToAddToShoppingList,
             TestData.ingredientsToAddToShoppingList
@@ -258,7 +250,7 @@ class RecipeBookViewModelTest {
         vm.setIngredientsToAddToShoppingList(TestData.ingredientsToAddToShoppingList_oneSelected_oneNotSelected)
         fakeAuthenticationManager.setLoginState(true, "valid_user") // not logged in
         vm.addIngredientsToShoppingList()
-        // the ingredients do not get added because the user is not logged in, so tbey remain in the state:
+        // the ingredients do not get added because the user is not logged in, so they remain in the state:
         Assert.assertEquals(
             vm.uiState.value.ingredientsToAddToShoppingList, null // items got persisted to the DB, hence no longer in the UI state.
         )
@@ -269,7 +261,7 @@ class RecipeBookViewModelTest {
         vm.setIngredientsToAddToShoppingList(TestData.ingredientsToAddToShoppingList_triggerError)
         fakeAuthenticationManager.setLoginState(true, "valid_user") // not logged in
         vm.addIngredientsToShoppingList()
-        // the ingredients do not get added because the user is not logged in, so tbey remain in the state:
+        // the ingredients do not get added because the user is not logged in, so they remain in the state:
         Assert.assertEquals(
             vm.uiState.value.ingredientsToAddToShoppingList, TestData.ingredientsToAddToShoppingList_triggerError // items do not get added as error occurs, so remain in state.
         )

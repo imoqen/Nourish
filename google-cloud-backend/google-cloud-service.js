@@ -340,7 +340,7 @@ async function updateUserTokenCount(userRef, date, incrementAmount) {
 // Error Validation:
 
 /**
- * returns 400 errors (Bad Request) to signify error on the client's input;
+ * Returns 400 errors (Bad Request) to signify error on the client's input;
  * invalid syntax, malformed data, invalid Bearer token
  * @param req - The request handled by express, to be dealt with
  * @param prompt - The user-entered prompt.

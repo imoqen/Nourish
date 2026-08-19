@@ -30,6 +30,11 @@ import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import uk.co.imoqen.nourish.network.apimanager.ApiManagerModule
 import javax.inject.Inject
 
+/**
+ * Instrumented tests for the Profile View
+ *
+ * @author Imogen Pemberton, 2026
+ */
 @UninstallModules(AuthenticationModule::class, FirebaseModule::class, ApiManagerModule::class)
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)

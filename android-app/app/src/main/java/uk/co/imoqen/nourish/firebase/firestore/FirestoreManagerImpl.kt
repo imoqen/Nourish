@@ -54,7 +54,8 @@ class FirestoreManagerImpl @Inject constructor(
      * Private auxiliary function to add the user's email to the Firebase Firestore users collection,
      * in a document titled their uid and containing their email address.
      * Adding data to firestore: https://firebase.google.com/docs/firestore/quickstart#android
-     * @param user - the user to add to Firestore
+     * @param uid - the uid of the user to add to Firestore
+     * @param email - the email address of the user to add to Firestore
      */
     private fun addUserToFirestore(uid: String, email: String) {
         val userData = hashMapOf(

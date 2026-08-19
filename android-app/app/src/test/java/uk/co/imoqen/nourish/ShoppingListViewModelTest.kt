@@ -20,8 +20,6 @@ import org.junit.Test
 import uk.co.imoqen.nourish.common.RecipeActions
 import uk.co.imoqen.nourish.common.ingredient.AddIngredientSheetState
 import uk.co.imoqen.nourish.common.ingredient.IngredientSheetAction
-import uk.co.imoqen.nourish.common.tag.FilterState
-import uk.co.imoqen.nourish.common.tag.TagSheetAction
 import uk.co.imoqen.nourish.db.NourishDatabase
 import uk.co.imoqen.nourish.db.ingredientunit.IngredientUnit
 import uk.co.imoqen.nourish.setup.MainDispatcherRule
@@ -30,6 +28,11 @@ import uk.co.imoqen.nourish.shoppinglist.ShoppingListUiEntry
 import uk.co.imoqen.nourish.shoppinglist.ShoppingListViewModel
 import uk.co.imoqen.nourish.shoppinglist.UserInteractionStatus
 
+/**
+ * Unit tests for the ShoppingList ViewModel
+ *
+ * @author Imogen Pemberton, 2026
+ */
 class ShoppingListViewModelTest {
     val fakeAuthenticationManager = FakeAuthenticationManager()
     val fakeUiEventBus = FakeUiEventBus()
@@ -379,7 +382,7 @@ class ShoppingListViewModelTest {
 
     @Test
     fun `addIngredientToShoppingList adds an ingredient which does not yet exist in the db`() {
-        // if it doesnt exist, getIdByPlural / Singular will return null, triggering the addition of the ingredient.
+        // if it doesn't exist, getIdByPlural / Singular will return null, triggering the addition of the ingredient.
         fakeAuthenticationManager.setLoginState(true, "valid_user")
         vm.setShoppingListEntries(listOf())
         vm.setIngredientToAddName("not yet in db")

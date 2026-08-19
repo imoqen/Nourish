@@ -30,8 +30,11 @@ import uk.co.imoqen.nourish.network.apimanager.ApiManager
 import uk.co.imoqen.nourish.network.apimanager.ApiManagerModule
 import javax.inject.Inject
 
-// https://developer.android.com/training/testing/ui-tests
-// https://dagger.dev/hilt/testing.html
+/**
+ * Instrumented tests for the Authentication View
+ *
+ * @author Imogen Pemberton, 2026
+ */
 @UninstallModules(AuthenticationModule::class, FirebaseModule::class, ApiManagerModule::class)
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)

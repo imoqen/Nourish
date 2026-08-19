@@ -4,11 +4,17 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import uk.co.imoqen.nourish.common.uievent.UiEvent
 import uk.co.imoqen.nourish.common.uievent.UiEventBus
 
+/**
+ * Mock UiEventBus
+ *
+ * @author Imogen Pemberton, 2026
+ */
 class FakeUiEventBus(): UiEventBus {
 
-    // not used in the tests, simply present to fulfil the interface contract
+    // Not used in the tests, simply present to fulfil the interface contract
     override val uiEvents = MutableSharedFlow<UiEvent>()
-    val events = mutableListOf<UiEvent>() // used for testing purposes.
+    // Used for testing purposes.
+    val events = mutableListOf<UiEvent>()
 
     override suspend fun enqueueEvent(event: UiEvent) {
         events.add(event)

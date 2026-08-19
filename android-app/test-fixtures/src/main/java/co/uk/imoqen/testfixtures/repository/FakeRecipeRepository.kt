@@ -18,9 +18,15 @@ import uk.co.imoqen.nourish.db.recipe.recipetag.RecipeTag
 import uk.co.imoqen.nourish.db.recipe.recipetype.RecipeType
 import uk.co.imoqen.nourish.network.response.LlmRecipe
 
+/**
+ * Mock RecipeRepository for tests.
+ *
+ * @author Imogen Pemberton, 2026
+ */
 class FakeRecipeRepository(): RecipeRepository {
 
-    var lastCalled: String = "" // to tell if a call was last made to a certain method, in the test
+    // to tell if a call was last made to a certain method, in the test
+    var lastCalled: String = ""
 
     override fun getAllRecipes(uid: String): Flow<List<Recipe>> {
         if (uid == "has_recipe_with_invalid_recipeTypeId") {

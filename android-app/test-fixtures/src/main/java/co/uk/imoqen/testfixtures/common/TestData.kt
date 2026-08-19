@@ -29,6 +29,11 @@ import uk.co.imoqen.nourish.recipebook.TagSelection
 import uk.co.imoqen.nourish.recipebook.TypeSelection
 import uk.co.imoqen.nourish.shoppinglist.ShoppingListUiEntry
 
+/**
+ * Shared data used across tests
+ *
+ * @author Imogen Pemberton, 2026
+ */
 object TestData {
 
     // Llm Ingredients:
@@ -409,13 +414,6 @@ object TestData {
         id = 5,
         singular = "lettuce",
         plural = "lettuce",
-        userAdded = false
-    )
-
-    val ingredient_unitToConvert = Ingredient(
-        id = 0,
-        singular = "cherry",
-        plural = "cherries",
         userAdded = false
     )
 
