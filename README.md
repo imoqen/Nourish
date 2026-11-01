@@ -113,3 +113,12 @@ If you would like to read the paper, please get in touch with Imogen Pemberton.
 **Technical Advisor:** Shaun Donnelly
 
 **Languages, Libraries and Services:** [Kotlin](https://kotlinlang.org/) with [Jetpack Compose](https://developer.android.com/compose), [LangChain](https://www.langchain.com/), [Google Cloud](https://cloud.google.com/), [Calvin Reorderable](https://github.com/Calvin-LL/Reorderable), [JaCoCo](https://www.eclemma.org/jacoco/)
+
+## License
+
+This project is source-available under the **PolyForm Noncommercial License 1.0.0**. 
+
+* **For Students, Researchers, & Hobbyists:** You are completely free to view, copy, modify, and learn from this code for any non-commercial or academic purpose.
+* **For Businesses & Startups:** Any commercial use, profit-generating deployment, or integration into a commercial product strictly requires a separate commercial license agreement. 
+
+If you would like to negotiate a commercial license or royalty agreement, please contact Imogen Pemberton.
