@@ -2,9 +2,9 @@
 
 # Nourish: An LLM-integrated Mobile App to promote Home Cooking
 
-## Imogen Pemberton
+<img src="images/nourish-overview.png" width="800">
 
-### Dissertation Project at The University of Sheffield (Academic Year 25-26)
+## Imogen Pemberton, Dissertation Project at The University of Sheffield (Academic Year 25-26)
 
 Food is fuel, vital for the maintenance of human life and existence. Due to the lack of time
 faced by individuals in their everyday lives, disregard for nutrition is becoming increasingly
@@ -97,6 +97,14 @@ Once successfully executed, JaCoCo coverage reports are generated within the `an
 Requires a device capable of executing the tests to be connected (physical Android or emulator).
 
 ` ./gradlew JacocoInstrumentedCodeCoverage`
+
+## Dissertation Report
+
+<img src="images/dissertation-report-title.png" width="200">
+
+Accompanying the mobile application is an academic dissertation paper, covering the literature review, user requirements gathering, design decisions, implementation details, testing, and evaluation. This dissertation was awarded with a First Class grade from the University of Sheffield.
+
+If you would like to read the paper, please get in touch with Imogen Pemberton.
 
 ## Acknowledgements
 
